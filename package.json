@@ -1,0 +1,12 @@
+{
+  "name": "rcl",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@11.19.0",
+  "scripts": {
+    "db:generate": "pnpm --filter @rcl/database db:generate",
+    "db:migrate": "pnpm --filter @rcl/database db:migrate",
+    "db:studio": "pnpm --filter @rcl/database db:studio",
+    "typecheck": "pnpm -r typecheck"
+  }
+}
