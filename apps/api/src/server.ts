@@ -13,15 +13,18 @@ try {
   await checkDatabase();
 } catch {
   await connection.close();
-  console.error('PostgreSQL is unavailable or not migrated. Run pnpm db:check and pnpm db:migrate.');
+  console.error(
+    'PostgreSQL is unavailable or not migrated. Run pnpm db:check and pnpm db:migrate.'
+  );
   process.exit(1);
 }
 const app = createApp({
   repository: new PostgresCompetitionRepository(connection.db),
-  checkDatabase, corsOrigin: env.CORS_ORIGIN
+  checkDatabase,
+  corsOrigin: env.CORS_ORIGIN
 });
 const server = app.listen(env.PORT, env.HOST, () => {
-  console.info('RCL API: http://' + env.HOST + ':' + env.PORT + '/api/v1/seasons');
+  console.info(`RCL API: http://${env.HOST}:${env.PORT}/api/v1/seasons`);
 });
 server.on('error', async () => {
   console.error('API could not listen on the configured address.');

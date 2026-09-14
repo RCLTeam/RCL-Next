@@ -12,7 +12,10 @@
       "**/node_modules/**",
       "**/dist/**",
       "**/coverage/**",
-      "**/packages/database/**",
+      "packages/database/drizzle/**",
+      "**/schema-sync*/**",
+      "**/apps/parser/data/**",
+      "**/apps/parser/result/**",
       "**/*.py"
     ]
   },
@@ -76,7 +79,7 @@
           "level": "error",
           "options": {
             "strictCase": false,
-            "filenameCases": ["camelCase", "export"]
+            "filenameCases": ["camelCase", "kebab-case", "export"]
           }
         }
       }

@@ -1,6 +1,12 @@
+import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
+  resolve: {
+    alias: {
+      'node:test': fileURLToPath(new URL('./tests/nodeTestShim.ts', import.meta.url))
+    }
+  },
   test: {
     globals: true,
     environment: 'node',
@@ -12,8 +18,7 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html'],
-      // Excluded temporarily while the database migration in feat/database is in progress
-      exclude: ['**/node_modules/**', '**/dist/**', '**/packages/database/**', '**/*.config.*']
+      exclude: ['**/node_modules/**', '**/dist/**', '**/*.config.*']
     }
   }
 });

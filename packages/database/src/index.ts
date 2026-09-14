@@ -9,8 +9,11 @@ export function createDatabase(connectionString: string) {
     throw new Error('DATABASE_URL must use PostgreSQL.');
   }
   const pool = new Pool({
-    connectionString, max: 10, connectionTimeoutMillis: 5000,
-    idleTimeoutMillis: 30000, statement_timeout: 10000,
+    connectionString,
+    max: 10,
+    connectionTimeoutMillis: 5000,
+    idleTimeoutMillis: 30000,
+    statement_timeout: 10000,
     application_name: 'rcl-api'
   });
   const db = drizzle({ client: pool, schema });
