@@ -17,9 +17,9 @@ CREATE TABLE "seasons" (
 );
 
 CREATE TABLE "divisions" (
-  "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(), #
+  "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(), 
   "season_id" uuid NOT NULL REFERENCES "seasons"("id") ON DELETE CASCADE,
-  "code" varchar(32) NOT NULL, 
+  "code" varchar(32) NOT NULL,
   "name" varchar(80) NOT NULL, 
   "sort_order" smallint NOT NULL DEFAULT 0,
   "created_at" timestamptz NOT NULL DEFAULT now(), 
@@ -41,15 +41,13 @@ CREATE TABLE "discord_users" (
 CREATE TABLE "teams" (
   "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(), 
   "division_id" uuid NOT NULL REFERENCES "divisions"("id") ON DELETE RESTRICT,
-  "slug" varchar(64) NOT NULL, 
   "name" varchar(120) NOT NULL, 
   "short_name" varchar(16), 
   "logo_url" text, 
   "color" varchar(7),
   "is_active" boolean NOT NULL DEFAULT true,
   "created_at" timestamptz NOT NULL DEFAULT now(), 
-  "updated_at" timestamptz NOT NULL DEFAULT now(),
-  CONSTRAINT "teams_division_slug_key" UNIQUE ("division_id", "slug")
+  "updated_at" timestamptz NOT NULL DEFAULT now()
 );
 
 CREATE TABLE "players" (
@@ -91,7 +89,7 @@ CREATE TABLE "rounds" (
 );
 
 CREATE TABLE "matches" (
-  "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(), 
+  "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   "division_id" uuid NOT NULL REFERENCES "divisions"("id") ON DELETE RESTRICT,
   "round_id" uuid REFERENCES "rounds"("id") ON DELETE SET NULL,
   "home_team_id" uuid NOT NULL REFERENCES "teams"("id") ON DELETE RESTRICT,
@@ -129,13 +127,22 @@ CREATE TABLE "match_games" (
   CONSTRAINT "match_games_duration_check" CHECK ("duration_seconds" IS NULL OR "duration_seconds" > 0)
 );
 
-CREATE TABLE "player_game_stats" (
+CREATE TABLE "player_game_info" (
   "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(), 
   "match_game_id" uuid NOT NULL REFERENCES "match_games"("id") ON DELETE CASCADE,
   "player_id" uuid NOT NULL REFERENCES "players"("id") ON DELETE RESTRICT, 
   "team_id" uuid NOT NULL REFERENCES "teams"("id") ON DELETE RESTRICT,
   "side" "game_side" NOT NULL, 
   "champion" varchar(64) NOT NULL,
+  "runes_id" uuid NOT NULL REFERENCES "player_game_runes"("id") ON DELETE RESTRICT,
+  "build_id" uuid NOT NULL REFERENCES "player_game_build"("id") ON DELETE RESTRICT,
+  "stats_id" uuid NOT NULL REFERENCES "player_game_stats"("id") ON DELETE RESTRICT
+  "created_at" timestamptz NOT NULL DEFAULT now(), 
+  "updated_at" timestamptz NOT NULL DEFAULT now(),
+);
+
+CREATE TABLE "player_game_stats" (
+  "id" uuid PRIMARY KEY DEFAULT gen_random_uuid() REFERENCES "player_game_info"("id") ON DELETE CASCADE, 
   "kills" smallint NOT NULL DEFAULT 0, 
   "deaths" smallint NOT NULL DEFAULT 0, 
   "assists" smallint NOT NULL DEFAULT 0,
@@ -146,6 +153,36 @@ CREATE TABLE "player_game_stats" (
   "updated_at" timestamptz NOT NULL DEFAULT now(),
   CONSTRAINT "player_game_stats_game_player_key" UNIQUE ("match_game_id", "player_id"),
   CONSTRAINT "player_game_stats_non_negative_check" CHECK ("kills" >= 0 AND "deaths" >= 0 AND "assists" >= 0 AND "cs" >= 0 AND "damage_to_champions" >= 0)
+);
+
+CREATE TABLE "player_game_runes" (
+  "id" uuid PRIMARY KEY DEFAULT gen_random_uuid() REFERENCES "player_game_info"("id") ON DELETE CASCADE, 
+  "primary_keystone_id" integer NOT NULL,
+  "secundary_rune_id" integer NOT NULL,
+  "primary_perk" integer NOT NULL,
+  "primary_perk_1" integer NOT NULL,
+  "primary_perk_2" integer NOT NULL,
+  "primary_perk_3" integer NOT NULL,
+  "secundary_perk_1" integer NOT NULL,
+  "secundary_perk_2" integer NOT NULL,
+  "stat_perk_offense" integer NOT NULL,
+  "stat_perk_flex" integer NOT NULL,
+  "stat_perk_defense" integer NOT NULL,
+  "created_at" timestamptz NOT NULL DEFAULT now(), 
+  "updated_at" timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE "player_game_build" (
+  "id" uuid PRIMARY KEY REFERENCES "player_game_info"("id") ON DELETE CASCADE,
+  "item_0" integer NOT NULL DEFAULT 0,
+  "item_1" integer NOT NULL DEFAULT 0,
+  "item_2" integer NOT NULL DEFAULT 0,
+  "item_3" integer NOT NULL DEFAULT 0,
+  "item_4" integer NOT NULL DEFAULT 0,
+  "item_5" integer NOT NULL DEFAULT 0,
+  "trinket" integer NOT NULL DEFAULT 0 
+  "created_at" timestamptz NOT NULL DEFAULT now(), 
+  "updated_at" timestamptz NOT NULL DEFAULT now(),
 );
 
 CREATE TABLE "pickem_predictions" (
@@ -206,12 +243,40 @@ CREATE INDEX "pickem_predictions_match_id_idx" ON "pickem_predictions" ("match_i
 CREATE INDEX "pickem_bonus_questions_season_id_idx" ON "pickem_bonus_questions" ("season_id");
 CREATE INDEX "audit_logs_entity_idx" ON "audit_logs" ("entity_type", "entity_id");
 
+-- Trigger para actualizar automáticamente la columna "updated_at" en todas las tablas cuando se realice un UPDATE.
 CREATE OR REPLACE FUNCTION set_updated_at()
-  RETURNS TRIGGER AS $$
-    BEGIN
-      NEW.updated_at = now();
-      RETURN NEW;
-    END;
-  $$ LANGUAGE plpgsql;
+RETURNS TRIGGER AS $$
+  BEGIN
+    NEW.updated_at = now();
+    RETURN NEW;
+  END;
+$$ LANGUAGE plpgsql;
+-- Definicion del trigger
+CREATE TRIGGER trigger_updated_at 
+BEFORE UPDATE ON * 
+FOR EACH ROW 
+EXECUTE FUNCTION set_updated_at();
 
-CREATE TRIGGER trigger_updated_at BEFORE UPDATE ON * FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+--Trigger para asegurar que solo haya una temporada activa a la vez.
+CREATE OR REPLACE FUNCTION check_single_active_season()
+RETURNS TRIGGER AS $$
+  BEGIN
+    IF NEW.is_active = true THEN
+      IF EXISTS (
+        SELECT 1 
+        FROM "seasons" 
+        WHERE "is_active" = true 
+          AND "id" <> NEW.id
+      ) THEN
+        RAISE EXCEPTION 'Ya existe una temporada activa. Desactiva la temporada actual antes de activar otra.';
+      END IF;
+    END IF;
+    RETURN NEW;
+  END;
+$$ LANGUAGE plpgsql;
+-- Definicion del trigger
+CREATE TRIGGER "trigger_check_single_active_season"
+BEFORE INSERT OR UPDATE OF "is_active" ON "seasons"
+FOR EACH ROW
+WHEN (NEW.is_active = true)
+EXECUTE FUNCTION check_single_active_season();
