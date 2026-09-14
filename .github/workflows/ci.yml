@@ -24,3 +24,6 @@ jobs:
       - run: pnpm install --frozen-lockfile
 
       - run: pnpm check
+
+      - name: Run Python Parser Tests
+        run: python3 -m unittest discover -s apps/parser -p "test_*.py" -v
