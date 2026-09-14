@@ -14,7 +14,14 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html'],
-      exclude: ['**/node_modules/**', '**/dist/**', '**/*.config.*']
+      exclude: [
+        '**/node_modules/**',
+        '**/dist/**',
+        '**/*.config.*',
+        '**/apps/api/src/server.ts',
+        '**/apps/api/src/modules/competition/competition.repository.ts',
+        '**/packages/database/src/{check,environment,index,migrate,seed}.ts'
+      ]
     }
   }
 });
