@@ -66,7 +66,6 @@ apps/api/
   src/shared/                    Errores centralizados
   src/app.ts                     Composición e inyección de dependencias
   src/server.ts                  Conexión, arranque y cierre controlado
-  test/                          Pruebas HTTP, servicio e integración
 packages/database/
   src/schema.ts                  Las 16 tablas del modelo
   src/index.ts                   Factoría Drizzle + pool PostgreSQL
@@ -76,11 +75,14 @@ packages/database/
   src/check.ts                   Conexión y listado de tablas
   drizzle/                       Migraciones SQL, journal y snapshots
   seed/demo.sql                  Datos de prueba
-  test/                          PostgreSQL embebido, claves y cascadas
+tests/
+  unit/                          Pruebas unitarias (servicios, base de datos)
+  integration/                   Pruebas de integración HTTP y de base de datos con PGlite
 docs/
   architecture/database.md       Correcciones y decisiones del modelo
   architecture/roadmap.md         Mapa funcional y siguientes etapas
   api.md                         Contrato de los endpoints implementados
+  verification.md                Resultados y censo de pruebas del monorepo
 ```
 
 El frontend futuro irá en `apps/web`; aún no se ha creado. No se incorporan bots o servicios adicionales en esta fase.
@@ -88,15 +90,18 @@ El frontend futuro irá en `apps/web`; aún no se ha creado. No se incorporan bo
 ## Verificación
 
 ```powershell
-pnpm build
-pnpm typecheck
-pnpm test
+pnpm check
 pnpm db:generate
 ```
 
-Las pruebas no necesitan una base de datos externa ni leen .env. Ejecutan las migraciones reales y el seed en PostgreSQL embebido, comprueban las 16 tablas mediante Drizzle y recorren HTTP → controlador → servicio → repositorio → base de datos. La generación sin cambios no debe producir nuevas migraciones.
+El comando unificado `pnpm check` valida exhaustivamente la salud del proyecto ejecutando en pipeline:
+1. `pnpm typecheck`: compila `@rcl/database` para emitir los tipos y artefactos en `dist`, comprueba los tipos de las suites de prueba en `tests/` mediante `tsc -p tsconfig.json` y valida con TypeScript estricto (`tsc --noEmit`) cada paquete del workspace.
+2. `biome check .`: valida reglas de linter, formato y ordenación de imports en todo el repositorio.
+3. `vitest run`: ejecuta la totalidad de las suites de prueba centralizadas en `tests/`.
 
-Para ejecutar la compilación sin watch: `pnpm build` y `pnpm --filter @rcl/api start`. Los paquetes se compilan en orden y se consumen desde `dist`.
+Los paquetes que consumen código de `@rcl/database` (como `@rcl/api` y los tests de integración) acceden a las exportaciones tipadas a través de su carpeta `dist`. Por este motivo, se requiere compilar previamente la base de datos (`pnpm --filter @rcl/database build` o `pnpm build`) antes de ejecutar pruebas o arrancar los servicios en modo producción (`pnpm --filter @rcl/api start`).
+
+Las pruebas no requieren una base de datos externa ni variables en `.env`: ejecutan las migraciones reales y el seed sobre PostgreSQL embebido en memoria (`@electric-sql/pglite`), verificando las 16 tablas mediante Drizzle y recorriendo el flujo HTTP → controlador → servicio → repositorio → base de datos. PGlite proporciona aislamiento determinista e instantáneo para tests locales y CI sin dependencias de red. Para entornos de desarrollo integrados y producción, se utiliza el servidor PostgreSQL 17 desplegado mediante Docker Compose (`compose.yaml`). Las migraciones de base de datos se gestionan mediante `pnpm db:generate`, sobre el baseline consolidado en `0000_initial_schema.sql`.
 
 ## Migraciones e historial
 

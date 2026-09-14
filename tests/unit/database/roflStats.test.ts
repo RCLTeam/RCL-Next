@@ -6,7 +6,7 @@ import { PGlite } from '@electric-sql/pglite';
 import { eq } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/pglite';
 import { migrate } from 'drizzle-orm/pglite/migrator';
-import * as schema from '../src/schema.js';
+import * as schema from '../../../packages/database/src/schema.js';
 
 const extraStats = [
   ['doubleKills', 'kda.double_kills'],
@@ -67,9 +67,13 @@ test('all ten ROFL JSON participants fit the normalized schema without losing me
   const client = new PGlite();
   t.after(() => client.close());
   const db = drizzle(client, { schema });
-  await migrate(db, { migrationsFolder: fileURLToPath(new URL('../drizzle', import.meta.url)) });
+  await migrate(db, {
+    migrationsFolder: fileURLToPath(new URL('../../../packages/database/drizzle', import.meta.url))
+  });
   await client.transaction(async (tx) => {
-    await tx.exec(await readFile(new URL('../seed/demo.sql', import.meta.url), 'utf8'));
+    await tx.exec(
+      await readFile(new URL('../../../packages/database/seed/demo.sql', import.meta.url), 'utf8')
+    );
   });
   const document: unknown = JSON.parse(
     await readFile(

@@ -14,8 +14,8 @@
     "db:studio": "drizzle-kit studio",
     "db:check": "tsx src/check.ts",
     "build": "tsc",
-    "test": "tsx --test test/*.test.ts",
-    "typecheck": "tsc --noEmit && tsc -p tsconfig.test.json"
+    "test": "pnpm --filter rcl test",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "drizzle-orm": "^0.44.7",
