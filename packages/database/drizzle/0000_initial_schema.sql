@@ -59,6 +59,7 @@ CREATE TABLE "players" (
 	"riot_tag" varchar(16),
 	"puuid" varchar(128),
 	"country_code" varchar(2),
+	"is_main" boolean DEFAULT false NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
 	CONSTRAINT "players_game_name_riot_tag_key" UNIQUE ("game_name", "riot_tag")
