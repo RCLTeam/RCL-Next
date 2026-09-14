@@ -6,14 +6,14 @@ Fecha: 14 de septiembre de 2026.
 | --- | --- |
 | pnpm build | Paquetes database y API compilados |
 | pnpm typecheck | Código y pruebas con TypeScript estricto |
-| pnpm test | 22 tests correctos: 12 de datos, 3 de métricas ROFL (incluidos tests contenedores), 6 HTTP/servicios y 1 integración completa |
+| pnpm test | 26 tests correctos: 16 de datos, 3 de métricas ROFL (incluidos tests contenedores), 6 HTTP/servicios y 1 integración completa |
 | drizzle-kit generate sin cambios | No schema changes, nothing to migrate |
 | drizzle-kit check | Historial de migraciones válido |
 | git diff --check | Sin errores de whitespace |
 | PostgreSQL TCP localhost:5432 | ECONNREFUSED: no hay servidor local arrancado |
 | Docker / psql en este entorno | No disponibles |
 
-Las pruebas de datos ejecutan la única migración SQL consolidada con Drizzle/PGlite y repiten migración y seed. Validan las 17 tablas a través del ORM, claves compartidas, rollback si faltan hijos, protección frente a borrado de un hijo, cascadas, ganador válido, valores negativos, temporada activa única y updated_at.
+Las pruebas de datos ejecutan la única migración SQL consolidada con Drizzle/PGlite y repiten migración y seed. Validan las 16 tablas a través del ORM, columnas y nulabilidad, nombres de FK/checks/índices, membresías Discord, múltiples cuentas por usuario, capitanes, jornadas con clave compuesta, claves compartidas, rollback si faltan hijos, protección frente a borrado de un hijo, cascadas, ganador válido, valores negativos, temporada activa única y updated_at.
 
 La integración HTTP usa el mismo controlador, servicio y PostgresCompetitionRepository de la aplicación; solo cambia el driver PostgreSQL por PGlite. No sustituye al repositorio por un mock. Las pruebas unitarias HTTP adicionales sí usan un repositorio controlado para provocar fallos y recursos inexistentes.
 

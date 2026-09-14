@@ -7,7 +7,7 @@ import type { CompetitionRepository, Match, Team } from '../src/modules/competit
 
 const seasonId = '10000000-0000-4000-8000-000000000001';
 const divisionId = '20000000-0000-4000-8000-000000000001';
-const roundId = '60000000-0000-4000-8000-000000000001';
+const roundId = '1';
 const homeId = '30000000-0000-4000-8000-000000000001';
 const awayId = '30000000-0000-4000-8000-000000000002';
 const teams: Team[] = [homeId, awayId].map((id, index) => ({
@@ -56,7 +56,7 @@ test('validation, missing resources and unsupported routes use stable errors', a
   await request(app).get('/api/v1/divisions/not-a-uuid/teams').expect(422);
   await request(app).get('/api/v1/divisions/' + homeId + '/teams').expect(404);
   await request(app).get('/api/v1/admin/matches').expect(404);
-  await request(app).get('/api/v1/divisions/' + divisionId + '/calendar?roundId=' + homeId).expect(404);
+  await request(app).get('/api/v1/divisions/' + divisionId + '/calendar?roundId=99').expect(404);
   await request(app).get('/api/v1/divisions/' + divisionId + '/calendar?unexpected=1').expect(422);
 });
 test('malformed JSON and unexpected failures do not leak internals', async () => {

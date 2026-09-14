@@ -7,7 +7,7 @@ const env = loadEnvironment();
 const connection = createDatabase(env.DATABASE_URL);
 connection.pool.on('error', () => console.error('An idle PostgreSQL connection failed.'));
 async function checkDatabase() {
-  await connection.db.select({ id: seasons.id }).from(seasons).limit(1);
+  await connection.db.select({ name: seasons.name }).from(seasons).limit(1);
 }
 try {
   await checkDatabase();
