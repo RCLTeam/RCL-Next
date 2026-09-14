@@ -1,8 +1,15 @@
-# Modelo PostgreSQL: referencia y correcciones
+# Modelo PostgreSQL: Referencia y Decisiones Arquitectónicas
 
-La fuente vigente es `packages/database/drizzle/0000_initial_schema.sql`, editada por el usuario y sincronizada con schema.ts y el snapshot de Drizzle. Contiene 16 tablas. `docs/reference/0000_initial_schema.original.sql` es únicamente una referencia histórica.
+La fuente de verdad del esquema vigente es `packages/database/drizzle/0000_initial_schema.sql`, sincronizada con `packages/database/src/schema.ts` y el snapshot de Drizzle ORM. Contiene las 16 tablas del sistema. El archivo `docs/reference/0000_initial_schema.original.sql` se conserva únicamente como referencia histórica del diseño previo.
 
-## Relaciones
+Para la referencia exhaustiva del modelo relacional, diagramas y operaciones, consulta los documentos complementarios:
+- [**Diagrama ER, Enumeraciones y Restricciones**](database-schema.md): Diagrama Mermaid ER de las 16 tablas, 5 enums del sistema, restricciones `CHECK` e índices únicos parciales.
+- [**Operaciones, Concurrencia y Comandos**](database-operations.md): Bloqueos consultivos (`pg_advisory_lock`, `pg_advisory_xact_lock`), configuración del pool de conexiones, variables de entorno y comandos CLI (`db:migrate`, `db:seed`, etc.).
+- [**Mapeo de Estadísticas ROFL**](rofl-mapping.md): Correspondencia detallada de métricas JSON de repeticiones hacia tablas relacionales.
+
+---
+
+## Relaciones Principales
 
 ```text
 seasons → seasons_divisions ← divisions
@@ -14,62 +21,78 @@ discord_users → predictions → matches               ├─ player_game_stats
 discord_users → audit_logs
 ```
 
-Usuarios Discord y jugadores no son la misma entidad: un espectador puede pronosticar sin ser jugador, y un jugador puede existir sin cuenta vinculada.
+* **Separación de Identidades:** Usuarios Discord (`discord_users`) y jugadores (`players`) no son la misma entidad: un espectador puede emitir pronósticos sin ser jugador, y un jugador puede competir en la liga sin disponer de una cuenta de Discord vinculada.
+* **Jerarquía de Competición:** Temporadas (`seasons`) y divisiones (`divisions`) se identifican naturalmente por `name`. La tabla intermedia `seasons_divisions` asigna un UUID primario que vincula a ambas y actúa como raíz para equipos (`teams`), jornadas (`rounds`) y partidos (`matches`).
+* **Plantillas y Capitanía:** `team_memberships` emplea la clave primaria compuesta (`team_id`, `discord_user_id`), admite como máximo un único capitán por equipo mediante índice único parcial, y permite a un usuario poseer múltiples cuentas asociadas en `players` mediante el flag `is_main`.
+* **Estructura de Partidos:** `rounds` utiliza clave compuesta (`id smallint`, `id_season_division uuid`) con fase `stage` enum (`'regular'`, `'playoff'`). `matches` enfrenta a `team1_id` y `team2_id`, y cada mapa individual se registra en `match_games` vinculado por `matches_id`.
+* **Pronósticos:** Se gestionan en `predictions` con unicidad por usuario y partido (`discord_user_id`, `match_id`).
 
-Temporadas y divisiones se identifican por name; seasons_divisions tiene UUID y vincula ambas. discord_users usa discord_id como PK. Las plantillas usan la PK compuesta (team_id, discord_user_id), admiten un capitán por equipo y un usuario puede tener varias cuentas players, con is_main. rounds usa (id smallint, id_season_division) y stage es un enum. matches usa team1_id/team2_id y match_games referencia la serie mediante matches_id. Los pronósticos están en predictions; no existen tablas de bonus.
+---
 
-## Correcciones necesarias
+## Decisiones de Diseño y Correcciones del Esquema
 
-| Original | Implementación |
+Respecto a la especificación inicial preliminar, se aplicaron correcciones arquitectónicas indispensables para garantizar la integridad referencial y el rendimiento del motor relacional:
+
+| Deficiencia Original | Corrección Implementada en el Baseline |
 | --- | --- |
-| FK hacia tablas aún no creadas, coma ausente y comas sobrantes | SQL generado por Drizzle con tablas y FK ordenadas |
-| info apunta a stats/runes/build y estas vuelven a info | Hijas con PK=FK hacia info; se eliminan runes_id/build_id/stats_id del padre |
-| DEFAULT UUID independiente en IDs de hijas | El ID de cada hija se recibe del padre |
-| UNIQUE e índices de stats referencian match_game_id/player_id/team_id inexistentes | Se sitúan en player_game_info, donde están esas columnas |
-| BEFORE UPDATE ON * | Un trigger por tabla, incluido audit_logs |
-| Trigger de temporada activa con SELECT previo | Índice único parcial; seguro frente a inserciones concurrentes |
-| Schema.ts tenía slugs, editor y no incluía las tablas nuevas | ORM alineado al SQL de referencia corregido |
-| No existe visión en el SQL | El baseline unificado incluye vision_score nullable con CHECK no negativo |
+| Claves foráneas hacia tablas aún no creadas y errores de sintaxis SQL | Generación ordenada y determinista de DDL mediante Drizzle Kit con resolución topológica de dependencias. |
+| Referencias circulares: `info` apuntaba a `stats`/`runes`/`build` y estas apuntaban a `info` | Modelado jerárquico 1:1 estricto: las tablas hijas (`stats`, `runes`, `build`) usan su `id` como PK y FK en cascada hacia `player_game_info.id`, eliminando columnas redundantes del padre. |
+| Claves UUID independientes generadas con `DEFAULT` en tablas hijas | El `id` de cada tabla hija coincide exactamente con el `id` de su registro padre en `player_game_info`. |
+| Índices y restricciones `UNIQUE` de `stats` referenciaban columnas inexistentes en esa tabla | Se reubicaron en `player_game_info`, donde residen `match_game_id`, `player_id` y `team_id`. |
+| Triggers sintácticamente incorrectos (`BEFORE UPDATE ON *`) | Se crearon triggers individuales específicos por tabla para invocar `set_updated_at()`, incluyendo `audit_logs`. |
+| Validación de temporada activa mediante trigger con `SELECT` previo (vulnerable a condiciones de carrera concurrentes) | Reemplazado por índice único parcial `seasons_one_active_key` a nivel de catálogo de PostgreSQL. |
+| Desalineación de `schema.ts` respecto al modelo relacional | ORM tipado 100% alineado con `0000_initial_schema.sql` y snapshots de migraciones. |
+| Ausencia de campos de visión y estadísticas de repetición | Inclusión de `vision_score` y 33 métricas avanzadas ROFL con validaciones de no negatividad (`CHECK`). |
 
-Los tres registros hijos son obligatorios al confirmar la transacción. Los constraint triggers diferidos permiten insertar info y luego sus hijos; si falta alguno, COMMIT falla y revierte todo. Borrar info elimina sus hijos en cascada. Borrar solo una hija falla. No se cambia la identidad de un snapshot para asignarlo a otro jugador.
+### Atomicidad de Snapshots de Participación
+Los tres registros hijos (`player_game_stats`, `player_game_runes`, `player_game_build`) son de existencia obligatoria para cada `player_game_info` al confirmar la transacción. El sistema implementa un constraint trigger diferido (`complete_player_game` con `DEFERRABLE INITIALLY DEFERRED`), permitiendo insertar en primer lugar la cabecera `player_game_info` y seguidamente sus tres tablas dependientes. Si alguna de las tres no se inserta antes del `COMMIT`, el motor revierte la transacción automáticamente. Asimismo, la eliminación del registro en `player_game_info` borra en cascada sus tres hijas, mientras que el borrado aislado de una tabla hija es rechazado por el trigger.
 
-El SQL usa gen_random_uuid() de PostgreSQL moderno; no necesita instalar pgcrypto para generar UUID. Se añade validación de fechas de temporada y de ganador perteneciente a los dos participantes.
+### Generación de Identificadores
+El esquema emplea la función nativa `gen_random_uuid()` de PostgreSQL moderno, prescindiendo de dependencias o extensiones externas como `pgcrypto`.
 
-## Runas y objetos
+---
 
-Se conservan los nombres originales, incluida la grafía secundary. Para la futura adaptación del JSON ROFL se propone:
+## Estadísticas y Adaptación de Partidas
 
-| SQL | Campo del parser |
-| --- | --- |
-| primary_keystone_id | runas.primaria.keystone_id |
-| primary_perk | runas.primaria.estilo_id |
-| primary_perk_1/2/3 | runas.primaria.runa_1/2/3_id |
-| secundary_rune_id | runas.secundaria.estilo_id |
-| secundary_perk_1/2 | runas.secundaria.runa_1/2_id |
-| stat_perk_offense/flex/defense | runas.fragmentos.ofensiva/flexible/defensiva_id |
-| item_0…item_5 / trinket | objetos.slots 0…5 / 6 |
-| vision_score | vision.score |
+El almacenamiento de estadísticas descompone la información del mapa en participación (`player_game_info`), métricas (`player_game_stats`), runas (`player_game_runes`) y objetos/hechizos (`player_game_build`).
 
-Este mapeo se documenta como interpretación de los nombres ambiguos, antes de implementar el importador. En esta entrega no se ingiere el ROFL ni se vinculan automáticamente sus jugadores con equipos de liga.
+* **Distinción entre Nulo y Cero:** Los campos numéricos de métricas avanzadas son `INTEGER` o `SMALLINT` nullables. Un valor `NULL` representa dato desconocido o no capturado; un valor `0` representa un registro explícito de cero unidades (ej. cero muertes o cero centinelas colocados).
+* **Consistencia de Unidades:** Se respetan los valores numéricos y unidades directas del parser de repeticiones sin conversiones artificiales ni suposiciones de eventos no presentes en el archivo.
+* **Documentación de Mapeo:** La equivalencia exacta entre las propiedades extraídas del JSON de repetición y las columnas del esquema relacional se encuentra documentada en [`docs/architecture/rofl-mapping.md`](rofl-mapping.md).
 
-NULL en visión y en las nuevas métricas significa desconocido; cero significa que se registró cero. El baseline incorpora los campos de oro, multikills, daño recibido/mitigado, estructuras, wards, objetivos, lanzamientos de hechizos y gameplay del parser. Los IDs de hechizos están en player_game_build; la posición por mapa está en player_game_info y el PUUID opcional, sin UNIQUE, en players. El mapeo completo está en rofl-mapping.md. Se conservan los valores numéricos y unidades del parser; no se inventan timelines ni baneos.
+---
 
-## Clasificación
+## Reglas de Clasificación (Standings)
 
-Se deriva de matches completed/forfeit con ganador, acotados por división y fase de rounds. Por defecto solo regular; playoffs no contaminarán la tabla regular. Partidos sin jornada quedan fuera hasta ser asignados a una fase.
+La clasificación de una división se calcula dinámicamente a partir de los partidos con estado `status IN ('completed', 'forfeit')` que cuenten con un ganador registrado (`winner_team_id IS NOT NULL`), acotados por la división (`id_season_division`) y la fase de la ronda (`rounds.stage = 'regular'`).
 
-Se conserva el orden de la web anterior: victorias DESC, derrotas ASC, diferencia de mapas DESC, nombre ASC. El nombre solo proporciona un orden determinista; no es una regla deportiva nueva. Las reglas oficiales de desempate siguen pendientes de confirmación.
+* **Segregación de Fases:** Por defecto solo se computan los partidos de fase regular (`stage = 'regular'`). Los enfrentamientos de playoff no contaminan la clasificación general de la división.
+* **Partidos no Asignados:** Los partidos sin jornada asignada (`id_round IS NULL`) quedan fuera del cómputo hasta que se vinculen a una ronda específica.
+* **Criterio de Ordenación y Desempate:**
+  1. Victorias en partidos (`matches won`) DESC.
+  2. Derrotas en partidos (`matches lost`) ASC.
+  3. Diferencia de mapas (`game differential = map_wins - map_losses`) DESC.
+  4. Nombre del equipo (`team name`) ASC (orden determinista de desempate técnico; no constituye una regla deportiva de liga definitiva).
 
-## Alcance de las garantías
+Las reglas oficiales de desempate federadas o particulares de la liga permanecen pendientes de formalización reglamentaria.
 
-La base valida FK, unicidad, valores no negativos definidos, ganadores participantes y snapshots completos. El futuro servicio de importación deberá validar que ambos equipos y jornada pertenecen a la división, coherencia de los lados con la serie, diez jugadores, elegibilidad de plantilla histórica y resultado Bo1/Bo3/Bo5. No hay todavía rutas de escritura expuestas.
+---
 
-El cierre por fecha de Pick'em y la autorización son reglas de la siguiente fase. Que predictions tenga fixtures no significa que ese flujo esté implementado.
+## Alcance de las Garantías y Reglas Pendientes
 
-Advertencia del SQL actual: matches_round_fkey declara ON DELETE SET NULL para ambas columnas, pero id_season_division es NOT NULL. Borrar una jornada referenciada fallará. Se conserva esta regla del modelo recibido; cambiarla requiere decidir si se desvincula únicamente id_round o se impide explícitamente el borrado.
+* **Garantías Validadas en Base de Datos:**
+  El motor relacional garantiza claves foráneas, restricciones de unicidad, valores no negativos, pertenencia del ganador a los equipos participantes y atomicidad de snapshots 1:1.
+* **Validaciones Delegadas al Servicio de Ingesta:**
+  El futuro servicio de importación de repeticiones o actas deberá validar que ambos equipos pertenezcan a la división, que los lados correspondan a la serie, la presencia de diez jugadores elegibles en plantilla histórica y la coherencia del formato Bo1/Bo3/Bo5.
+* **Pick'em y Autorización:**
+  El cierre temporal de pronósticos por fecha de inicio de partido y los permisos de usuario corresponden a capas de aplicación posteriores. La presencia de la tabla `predictions` en el baseline proporciona soporte de esquema, pero no presupone la lógica de negocio final implementada.
+* **Advertencia de Cascada en `matches_round_fkey`:**
+  La clave foránea compuesta `matches_round_fkey` (`matches(id_round, id_season_division)` hacia `rounds(id, id_season_division)`) declara `ON DELETE SET NULL`. Sin embargo, la columna `matches.id_season_division` está tipada como `NOT NULL`. En consecuencia, si se intenta eliminar una jornada (`rounds`) que esté referenciada por partidos existentes, la operación fallará a nivel de motor. Esta regla se conserva deliberadamente del modelo inicial recibido; cualquier modificación futura requerirá decidir si se desvincula únicamente `id_round` o si se establece explícitamente una restricción `ON DELETE RESTRICT`.
 
-## Fuentes técnicas
+---
 
-- [Drizzle: generación y snapshots](https://orm.drizzle.team/docs/drizzle-kit-generate).
-- [Drizzle: migraciones](https://orm.drizzle.team/docs/migrations).
-- [PGlite: PostgreSQL embebido para las pruebas](https://pglite.dev/docs/about).
+## Fuentes Técnicas de Referencia
+
+- [Drizzle ORM: Generación y Snapshots](https://orm.drizzle.team/docs/drizzle-kit-generate)
+- [Drizzle ORM: Migraciones en Node-Postgres](https://orm.drizzle.team/docs/migrations)
+- [PGlite: PostgreSQL Embebido en Memoria](https://pglite.dev/docs/about)
