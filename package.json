@@ -4,9 +4,14 @@
   "private": true,
   "packageManager": "pnpm@11.19.0",
   "scripts": {
+    "dev:api": "pnpm --filter @rcl/database build && pnpm --filter @rcl/api dev",
     "db:generate": "pnpm --filter @rcl/database db:generate",
     "db:migrate": "pnpm --filter @rcl/database db:migrate",
+    "db:seed": "pnpm --filter @rcl/database db:seed",
     "db:studio": "pnpm --filter @rcl/database db:studio",
-    "typecheck": "pnpm -r typecheck"
+    "db:check": "pnpm --filter @rcl/database db:check",
+    "build": "pnpm -r build",
+    "test": "pnpm build && pnpm -r test",
+    "typecheck": "pnpm --filter @rcl/database build && pnpm -r typecheck"
   }
 }
