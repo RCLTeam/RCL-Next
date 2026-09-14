@@ -7,7 +7,7 @@ La migración 0000 contiene el esquema completo. Mantiene las tablas de particip
 | JSON | Destino |
 | --- | --- |
 | nombre / tag | players.game_name / riot_tag |
-| puuid | players.puuid (opcional, único; varchar, no UUID PostgreSQL) |
+| puuid | players.puuid (opcional, no único; varchar, no UUID PostgreSQL) |
 | posicion | player_game_info.position (valor reportado, independiente del rol de plantilla) |
 | campeon | player_game_info.champion |
 | equipo | Traducir 100/200 a side blue/red y al UUID de equipo seleccionado |
@@ -72,6 +72,6 @@ No necesita nuevas columnas. El mapeo de estilo, keystone, runas secundarias y f
 
 ## Verificación y alcance
 
-test/rofl-stats.test.ts aplica el baseline, carga fixtures y escribe las métricas del JSON EUW1-7982902321_estadisticas.json en PostgreSQL embebido. Comprueba su lectura sin pérdidas, rechaza métricas negativas y distingue NULL de cero.
+test/rofl-stats.test.ts aplica el baseline, carga fixtures y escribe las métricas de apps/parser/result/EUW1-7982902321_estadisticas.json en PostgreSQL embebido. Comprueba su lectura sin pérdidas, rechaza métricas negativas y distingue NULL de cero. PUUID no identifica de forma única una cuenta en este modelo; Discord puede tener varias cuentas y players.is_main distingue las principales.
 
 La estructura está preparada para el volcado; todavía no hay endpoint/importador de ROFL que asigne jugadores y equipos reales. El parser Python presenta una modificación local: player() no devuelve resultado, aunque team() lo consulta. No se ha sobrescrito esa modificación; el test utiliza el JSON existente.

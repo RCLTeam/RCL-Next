@@ -25,7 +25,7 @@ test('HTTP -> controller -> service -> real repository -> embedded PostgreSQL', 
   await request(app).get('/health/ready').expect(200);
   const seasons = await request(app).get('/api/v1/seasons').expect(200);
   assert.equal(seasons.body.data.length, 1);
-  const divisions = await request(app).get('/api/v1/seasons/' + seasons.body.data[0].id + '/divisions').expect(200);
+  const divisions = await request(app).get('/api/v1/seasons/' + encodeURIComponent(seasons.body.data[0].id) + '/divisions').expect(200);
   assert.equal(divisions.body.data.length, 2);
   const divisionId = divisions.body.data[0].id as string;
   const standings = await request(app).get('/api/v1/divisions/' + divisionId + '/standings').expect(200);

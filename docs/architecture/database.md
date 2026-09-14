@@ -1,20 +1,22 @@
 # Modelo PostgreSQL: referencia y correcciones
 
-La fuente funcional es `docs/reference/0000_initial_schema.original.sql`, conservada desde el commit d3df3da. Se mantienen sus 17 tablas, nombres públicos, UUID, roles viewer/admin y roles de plantilla, incluido partners. Se retiran del intento anterior los slugs, el rol editor y la tabla plana de estadísticas/runas/objetos.
+La fuente vigente es `packages/database/drizzle/0000_initial_schema.sql`, editada por el usuario y sincronizada con schema.ts y el snapshot de Drizzle. Contiene 16 tablas. `docs/reference/0000_initial_schema.original.sql` es únicamente una referencia histórica.
 
 ## Relaciones
 
 ```text
-seasons → divisions → teams
-                  → rounds → matches → match_games → player_game_info
-players → team_memberships → teams                       ├─ player_game_stats (1:1)
-discord_users → players                                 ├─ player_game_runes (1:1)
-              → pickem_predictions → matches            └─ player_game_build (1:1)
-seasons → pickem_bonus_questions → pickem_bonus_answers ← discord_users
+seasons → seasons_divisions ← divisions
+             ├─ teams ← team_memberships ← discord_users → players
+             └─ rounds → matches → match_games → player_game_info
+discord_users → predictions → matches               ├─ player_game_stats (1:1)
+                                                   ├─ player_game_runes (1:1)
+                                                   └─ player_game_build (1:1)
 discord_users → audit_logs
 ```
 
 Usuarios Discord y jugadores no son la misma entidad: un espectador puede pronosticar sin ser jugador, y un jugador puede existir sin cuenta vinculada.
+
+Temporadas y divisiones se identifican por name; seasons_divisions tiene UUID y vincula ambas. discord_users usa discord_id como PK. Las plantillas usan la PK compuesta (team_id, discord_user_id), admiten un capitán por equipo y un usuario puede tener varias cuentas players, con is_main. rounds usa (id smallint, id_season_division) y stage es un enum. matches usa team1_id/team2_id y match_games referencia la serie mediante matches_id. Los pronósticos están en predictions; no existen tablas de bonus.
 
 ## Correcciones necesarias
 
@@ -50,7 +52,7 @@ Se conservan los nombres originales, incluida la grafía secundary. Para la futu
 
 Este mapeo se documenta como interpretación de los nombres ambiguos, antes de implementar el importador. En esta entrega no se ingiere el ROFL ni se vinculan automáticamente sus jugadores con equipos de liga.
 
-NULL en visión y en las nuevas métricas significa desconocido; cero significa que se registró cero. El baseline incorpora los campos de oro, multikills, daño recibido/mitigado, estructuras, wards, objetivos, lanzamientos de hechizos y gameplay del parser. Los IDs de hechizos están en player_game_build; la posición por mapa está en player_game_info y el PUUID opcional y único en players. El mapeo completo está en rofl-mapping.md. Se conservan los valores numéricos y unidades del parser; no se inventan timelines ni baneos.
+NULL en visión y en las nuevas métricas significa desconocido; cero significa que se registró cero. El baseline incorpora los campos de oro, multikills, daño recibido/mitigado, estructuras, wards, objetivos, lanzamientos de hechizos y gameplay del parser. Los IDs de hechizos están en player_game_build; la posición por mapa está en player_game_info y el PUUID opcional, sin UNIQUE, en players. El mapeo completo está en rofl-mapping.md. Se conservan los valores numéricos y unidades del parser; no se inventan timelines ni baneos.
 
 ## Clasificación
 
@@ -62,7 +64,9 @@ Se conserva el orden de la web anterior: victorias DESC, derrotas ASC, diferenci
 
 La base valida FK, unicidad, valores no negativos definidos, ganadores participantes y snapshots completos. El futuro servicio de importación deberá validar que ambos equipos y jornada pertenecen a la división, coherencia de los lados con la serie, diez jugadores, elegibilidad de plantilla histórica y resultado Bo1/Bo3/Bo5. No hay todavía rutas de escritura expuestas.
 
-El cierre por fecha de Pick'em, la autorización y la validación de bonus son reglas de la siguiente fase. Que sus tablas estén modeladas y tengan fixtures no significa que ese flujo esté implementado.
+El cierre por fecha de Pick'em y la autorización son reglas de la siguiente fase. Que predictions tenga fixtures no significa que ese flujo esté implementado.
+
+Advertencia del SQL actual: matches_round_fkey declara ON DELETE SET NULL para ambas columnas, pero id_season_division es NOT NULL. Borrar una jornada referenciada fallará. Se conserva esta regla del modelo recibido; cambiarla requiere decidir si se desvincula únicamente id_round o se impide explícitamente el borrado.
 
 ## Fuentes técnicas
 

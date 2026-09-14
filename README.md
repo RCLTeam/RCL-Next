@@ -28,7 +28,7 @@ pnpm db:check
 pnpm dev:api
 ```
 
-El seed requiere `ALLOW_DEMO_SEED=true` y rechaza `NODE_ENV=production`. Crea una temporada DEMO **inactiva**, dos divisiones, cuatro equipos, veinte jugadores/miembros, tres jornadas/series y un mapa con diez snapshots completos. Incluye un usuario ficticio, un pronóstico y un bonus. Repetirlo no borra datos ni modifica filas existentes. Sus fechas de 2050 y nombres DEMO son deliberadamente ficticios.
+El seed requiere `ALLOW_DEMO_SEED=true` y rechaza `NODE_ENV=production`. Crea una temporada DEMO **inactiva**, dos divisiones vinculadas mediante seasons_divisions, cuatro equipos, veinte cuentas principales y sus miembros Discord, tres jornadas/series y un mapa con diez snapshots completos. Incluye 21 usuarios Discord ficticios (todos viewer) y un pronóstico; ya no hay tablas de bonus. Repetirlo no borra datos ni modifica filas existentes. Sus fechas de 2050 y nombres DEMO son deliberadamente ficticios.
 
 ## Cómo ver las tablas y los registros
 
@@ -45,7 +45,8 @@ Abre http://localhost:8080 y selecciona PostgreSQL. Servidor: `postgres`; usuari
 ```powershell
 Invoke-RestMethod http://localhost:3001/health/ready
 Invoke-RestMethod http://localhost:3001/api/v1/seasons
-Invoke-RestMethod http://localhost:3001/api/v1/seasons/10000000-0000-4000-8000-000000000001/divisions
+$seasonName = [uri]::EscapeDataString('Temporada DEMO — datos ficticios')
+Invoke-RestMethod "http://localhost:3001/api/v1/seasons/$seasonName/divisions"
 Invoke-RestMethod http://localhost:3001/api/v1/divisions/20000000-0000-4000-8000-000000000001/standings
 ```
 
@@ -67,7 +68,7 @@ apps/api/
   src/server.ts                  Conexión, arranque y cierre controlado
   test/                          Pruebas HTTP, servicio e integración
 packages/database/
-  src/schema.ts                  Las 17 tablas del modelo
+  src/schema.ts                  Las 16 tablas del modelo
   src/index.ts                   Factoría Drizzle + pool PostgreSQL
   src/environment.ts             Ruta única de .env
   src/migrate.ts                 Runner con control de historial
@@ -93,7 +94,7 @@ pnpm test
 pnpm db:generate
 ```
 
-Las pruebas no necesitan una base de datos externa ni leen .env. Ejecutan las migraciones reales y el seed en PostgreSQL embebido, comprueban las 17 tablas mediante Drizzle y recorren HTTP → controlador → servicio → repositorio → base de datos. La generación sin cambios no debe producir nuevas migraciones.
+Las pruebas no necesitan una base de datos externa ni leen .env. Ejecutan las migraciones reales y el seed en PostgreSQL embebido, comprueban las 16 tablas mediante Drizzle y recorren HTTP → controlador → servicio → repositorio → base de datos. La generación sin cambios no debe producir nuevas migraciones.
 
 Para ejecutar la compilación sin watch: `pnpm build` y `pnpm --filter @rcl/api start`. Los paquetes se compilan en orden y se consumen desde `dist`.
 

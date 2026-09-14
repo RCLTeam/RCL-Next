@@ -165,7 +165,7 @@ test('all ten ROFL JSON participants fit the normalized schema without losing me
   await client.transaction(async tx => {
     await tx.exec(await readFile(new URL('../seed/demo.sql', import.meta.url), 'utf8'));
   });
-  const document: unknown = JSON.parse(await readFile(new URL('../../../EUW1-7982902321_estadisticas.json', import.meta.url), 'utf8'));
+  const document: unknown = JSON.parse(await readFile(new URL('../../../apps/parser/result/EUW1-7982902321_estadisticas.json', import.meta.url), 'utf8'));
   const participants = field(document, 'jugadores');
   assert.ok(Array.isArray(participants));
   assert.equal(participants.length, 10);
