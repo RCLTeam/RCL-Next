@@ -24,9 +24,6 @@
     "simple-git-hooks": "^2.11.1",
     "vitest": "^3.0.7"
   },
-  "pnpm": {
-    "onlyBuiltDependencies": ["esbuild"]
-  },
   "simple-git-hooks": {
     "pre-commit": "pnpm biome check --staged --no-errors-on-unmatched"
   }

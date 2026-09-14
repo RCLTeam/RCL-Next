@@ -12,6 +12,7 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html'],
+      // Excluded temporarily while the database migration in feat/database is in progress
       exclude: ['**/node_modules/**', '**/dist/**', '**/packages/database/**', '**/*.config.*']
     }
   }
