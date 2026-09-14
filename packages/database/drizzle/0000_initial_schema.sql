@@ -2,7 +2,6 @@ CREATE TYPE "public"."app_role" AS ENUM('viewer', 'admin');--> statement-breakpo
 CREATE TYPE "public"."game_side" AS ENUM('blue', 'red');--> statement-breakpoint
 CREATE TYPE "public"."stage" AS ENUM('regular', 'playoff');--> statement-breakpoint
 CREATE TYPE "public"."match_status" AS ENUM('scheduled', 'live', 'completed', 'cancelled', 'forfeit');--> statement-breakpoint
-CREATE TYPE "public"."pickem_question_type" AS ENUM('team', 'player', 'champion', 'number', 'text');--> statement-breakpoint
 CREATE TYPE "public"."roster_role" AS ENUM('top', 'jungle', 'mid', 'adc', 'support', 'substitute', 'coach', 'staff', 'partners');--> statement-breakpoint
 CREATE TABLE "discord_users" (
 	"discord_id" varchar(32) PRIMARY KEY NOT NULL,
@@ -275,35 +274,14 @@ CREATE TABLE "player_game_stats" (
   )
 );
 --> statement-breakpoint
-CREATE TABLE "pickem_bonus_questions" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"season_name" varchar(120) NOT NULL REFERENCES "public"."seasons"("name") ON DELETE cascade ON UPDATE no action,
-	"prompt" text NOT NULL,
-	"question_type" "public"."pickem_question_type" NOT NULL,
-	"locks_at" timestamp with time zone NOT NULL,
-	"correct_answer" text,
-	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
-	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
-);
---> statement-breakpoint
-CREATE TABLE "pickem_bonus_answers" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"discord_user_id" varchar(32) NOT NULL REFERENCES "public"."discord_users"("discord_id") ON DELETE cascade ON UPDATE no action,
-	"question_id" uuid NOT NULL REFERENCES "public"."pickem_bonus_questions"("id") ON DELETE cascade ON UPDATE no action,
-	"answer" text NOT NULL,
-	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
-	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
-	CONSTRAINT "pickem_bonus_answers_user_question_key" UNIQUE ("discord_user_id", "question_id")
-);
---> statement-breakpoint
-CREATE TABLE "pickem_predictions" (
+CREATE TABLE "predictions" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"discord_user_id" varchar(32) NOT NULL REFERENCES "public"."discord_users"("discord_id") ON DELETE cascade ON UPDATE no action,
 	"match_id" uuid NOT NULL REFERENCES "public"."matches"("id") ON DELETE cascade ON UPDATE no action,
 	"selected_team_id" uuid NOT NULL REFERENCES "public"."teams"("id") ON DELETE restrict ON UPDATE no action,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
-	CONSTRAINT "pickem_predictions_user_match_key" UNIQUE ("discord_user_id", "match_id")
+	CONSTRAINT "predictions_user_match_key" UNIQUE ("discord_user_id", "match_id")
 );
 --> statement-breakpoint
 CREATE INDEX "audit_logs_entity_idx" ON "audit_logs" USING btree ("entity_type", "entity_id");--> statement-breakpoint
@@ -330,11 +308,8 @@ CREATE INDEX "match_games_red_team_id_idx" ON "match_games" USING btree ("red_te
 CREATE INDEX "player_game_info_match_game_id_idx" ON "player_game_info" USING btree ("match_game_id");--> statement-breakpoint
 CREATE INDEX "player_game_info_player_id_idx" ON "player_game_info" USING btree ("player_id");--> statement-breakpoint
 CREATE INDEX "player_game_info_team_id_idx" ON "player_game_info" USING btree ("team_id");--> statement-breakpoint
-CREATE INDEX "pickem_bonus_questions_season_name_idx" ON "pickem_bonus_questions" USING btree ("season_name");--> statement-breakpoint
-CREATE INDEX "pickem_bonus_answers_question_id_idx" ON "pickem_bonus_answers" USING btree ("question_id");--> statement-breakpoint
-CREATE INDEX "pickem_bonus_answers_discord_user_id_idx" ON "pickem_bonus_answers" USING btree ("discord_user_id");--> statement-breakpoint
-CREATE INDEX "pickem_predictions_match_id_idx" ON "pickem_predictions" USING btree ("match_id");--> statement-breakpoint
-CREATE INDEX "pickem_predictions_discord_user_id_idx" ON "pickem_predictions" USING btree ("discord_user_id");--> statement-breakpoint
+CREATE INDEX "predictions_match_id_idx" ON "predictions" USING btree ("match_id");--> statement-breakpoint
+CREATE INDEX "predictions_discord_user_id_idx" ON "predictions" USING btree ("discord_user_id");--> statement-breakpoint
 CREATE FUNCTION set_updated_at() RETURNS trigger LANGUAGE plpgsql AS $$
 BEGIN
   NEW.updated_at = clock_timestamp();
@@ -348,8 +323,8 @@ BEGIN
   FOREACH table_name IN ARRAY ARRAY[
     'seasons', 'divisions', 'seasons_divisions', 'discord_users', 'teams', 'players', 'team_memberships',
     'rounds', 'matches', 'match_games', 'player_game_info', 'player_game_stats',
-    'player_game_runes', 'player_game_build', 'pickem_predictions',
-    'pickem_bonus_questions', 'pickem_bonus_answers', 'audit_logs'
+    'player_game_runes', 'player_game_build', 'predictions',
+    'audit_logs'
   ] LOOP
     EXECUTE format('CREATE TRIGGER set_updated_at BEFORE UPDATE ON %I FOR EACH ROW EXECUTE FUNCTION set_updated_at()', table_name);
   END LOOP;
