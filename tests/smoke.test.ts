@@ -7,6 +7,6 @@ describe('smoke test', () => {
     const isHealthy = status === 'healthy';
 
     // Assert
-    expect(isHealthy).toBe(false);
+    expect(isHealthy).toBe(true);
   });
 });
