@@ -3,22 +3,22 @@ import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { PGlite } from '@electric-sql/pglite';
-import * as schema from '@rcl/database/schema';
 import { drizzle } from 'drizzle-orm/pglite';
 import { migrate } from 'drizzle-orm/pglite/migrator';
 import request from 'supertest';
-import { createApp } from '../src/app.js';
-import { PostgresCompetitionRepository } from '../src/modules/competition/postgres-competition.repository.js';
+import { createApp } from '../../apps/api/src/app.js';
+import { PostgresCompetitionRepository } from '../../apps/api/src/modules/competition/postgres-competition.repository.js';
+import * as schema from '../../packages/database/src/schema.js';
 
 test('HTTP -> controller -> service -> real repository -> embedded PostgreSQL', async (t) => {
   const client = new PGlite();
   t.after(() => client.close());
   const db = drizzle(client, { schema });
   await migrate(db, {
-    migrationsFolder: fileURLToPath(new URL('../../../packages/database/drizzle', import.meta.url))
+    migrationsFolder: fileURLToPath(new URL('../../packages/database/drizzle', import.meta.url))
   });
   const seed = await readFile(
-    new URL('../../../packages/database/seed/demo.sql', import.meta.url),
+    new URL('../../packages/database/seed/demo.sql', import.meta.url),
     'utf8'
   );
   await client.transaction((tx) => tx.exec(seed));

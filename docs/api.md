@@ -15,6 +15,46 @@ Prefijo: `/api/v1`. Respuestas correctas: `{ "data": ... }`. Errores: `{ "error"
 
 seasonId es ahora el nombre de la temporada, codificado en la URL. divisionId es el UUID de seasons_divisions, no el nombre de la división. roundId es un número smallint representado como texto, acotado a esa relación temporada/división. Un formato inválido devuelve 422; un recurso inexistente 404. El calendario puede filtrarse por jornada. La clasificación por fase conserva el orden de la aplicación antigua.
 
+### Validación estricta y control de errores 422
+
+Los endpoints que aceptan query parameters (`/api/v1/divisions/:divisionId/calendar` y `/api/v1/divisions/:divisionId/standings`) aplican validación estricta de esquemas Zod con `.strict()`. La presencia de cualquier parámetro no reconocido (por ejemplo `?unexpected=1`) o un formato inválido en los valores esperados (como un `roundId` que no sea un entero representable en un `smallint` de PostgreSQL entre -32768 y 32767) provoca el rechazo inmediato de la petición con estado HTTP 422 (Unprocessable Entity) y la estructura de error estandarizada generada por `error.flatten()`:
+
+Para parámetros no reconocidos (`.strict()`):
+
+```json
+{
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Invalid request.",
+    "details": {
+      "formErrors": [
+        "Unrecognized key(s) in object: 'unexpected'"
+      ],
+      "fieldErrors": {}
+    }
+  }
+}
+```
+
+Para fallos de validación en campos específicos (por ejemplo `roundId=999999`):
+
+```json
+{
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Invalid request.",
+    "details": {
+      "formErrors": [],
+      "fieldErrors": {
+        "roundId": [
+          "Invalid input"
+        ]
+      }
+    }
+  }
+}
+```
+
 Se mantienen los nombres de los DTO: Season.id contiene name; Division.code contiene name; Round.sequence contiene id y Round.lockAt es null (ya no existe lock_at). Los campos homeTeamId/awayTeamId y homeScore/awayScore se obtienen de team1_id/team2_id y team1_score/team2_score.
 
 Las colecciones de competición se limitan por división y devuelven el conjunto completo, sin paginación en esta fase. El servicio depende de CompetitionRepository; únicamente la implementación PostgreSQL importa Drizzle. Los controladores usan Zod. Express 5 propaga los rechazos asíncronos al middleware central.

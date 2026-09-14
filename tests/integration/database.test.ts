@@ -7,10 +7,13 @@ import { Table, is, sql } from 'drizzle-orm';
 import { getTableConfig } from 'drizzle-orm/pg-core';
 import { drizzle } from 'drizzle-orm/pglite';
 import { migrate } from 'drizzle-orm/pglite/migrator';
-import * as schema from '../src/schema.js';
+import * as schema from '../../packages/database/src/schema.js';
 
-const migrationsFolder = fileURLToPath(new URL('../drizzle', import.meta.url));
-const seed = await readFile(new URL('../seed/demo.sql', import.meta.url), 'utf8');
+const migrationsFolder = fileURLToPath(new URL('../../packages/database/drizzle', import.meta.url));
+const seed = await readFile(
+  new URL('../../packages/database/seed/demo.sql', import.meta.url),
+  'utf8'
+);
 const teamId = '30000000-0000-4000-8000-000000000001';
 const infoId = 'a0000000-0000-4000-8000-000000000001';
 

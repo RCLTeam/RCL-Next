@@ -1,13 +1,13 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import request from 'supertest';
-import { createApp } from '../src/app.js';
+import { createApp } from '../../../apps/api/src/app.js';
 import type {
   CompetitionRepository,
   Match,
   Team
-} from '../src/modules/competition/competition.repository.js';
-import { CompetitionService } from '../src/modules/competition/competition.service.js';
+} from '../../../apps/api/src/modules/competition/competition.repository.js';
+import { CompetitionService } from '../../../apps/api/src/modules/competition/competition.service.js';
 
 const seasonId = '10000000-0000-4000-8000-000000000001';
 const divisionId = '20000000-0000-4000-8000-000000000001';
@@ -104,7 +104,16 @@ test('validation, missing resources and unsupported routes use stable errors', a
   await request(app).get(`/api/v1/divisions/${homeId}/teams`).expect(404);
   await request(app).get('/api/v1/admin/matches').expect(404);
   await request(app).get(`/api/v1/divisions/${divisionId}/calendar?roundId=99`).expect(404);
-  await request(app).get(`/api/v1/divisions/${divisionId}/calendar?unexpected=1`).expect(422);
+  const unexpectedRes = await request(app)
+    .get(`/api/v1/divisions/${divisionId}/calendar?unexpected=1`)
+    .expect(422);
+  assert.equal(unexpectedRes.body.error.code, 'VALIDATION_ERROR');
+  assert.ok(
+    unexpectedRes.body.error.details.formErrors.includes(
+      "Unrecognized key(s) in object: 'unexpected'"
+    )
+  );
+  assert.deepEqual(unexpectedRes.body.error.details.fieldErrors, {});
 });
 test('malformed JSON and unexpected failures do not leak internals', async () => {
   await request(app).post('/unknown').set('content-type', 'application/json').send('{').expect(400);
