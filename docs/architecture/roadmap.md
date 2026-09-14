@@ -1,0 +1,43 @@
+# Plan de refactorización y correspondencia funcional
+
+## Entrega 1 — implementada
+
+PostgreSQL/Drizzle coherentes con el SQL original, migraciones con snapshots, seed repetible, conexión y configuración centralizadas, API REST de consulta, separación controlador/servicio/repositorio y pruebas. Ver README para arranque y límites del entorno.
+
+## Entrega 2 — API de negocio
+
+- Discord OAuth con state ligado al navegador, sesión segura y autorización contra el rol persistido; viewer/admin.
+- Gestión de equipos y jugadores, altas/bajas de plantilla con fechas y auditoría.
+- Perfiles y estadísticas agregadas a partir de info/stats/runas/build; filtro por temporada/división.
+- Administración de series y resultados con transacciones y validación Bo1/Bo3/Bo5.
+- Importación JSON del parser ROFL: mapeo explícito de equipos y jugadores, duplicados por external_game_id, diez participantes, elegibilidad histórica y rollback completo.
+- Pick'em: selección de ganador, cierre transaccional por jornada/partido, bonus validados y preguntas sin filtrar la respuesta correcta.
+- Pruebas de autenticación, permisos, carreras al cerrar pronósticos e importaciones repetidas.
+
+## Entrega 3 — React
+
+Ubicación propuesta: apps/web. React + TypeScript, React Router y TanStack Query. Componentes funcionales y hooks de consulta por dominio. Estructura prevista: src/app, src/components/ui, src/features/{home,competition,teams,players,pickem,admin}, src/lib/api.
+
+Referencia visual real: Maqueta/Rebel Crown Legacy_files/saved_resource.html y los assets contiguos. La página superior Rebel Crown Legacy.html es la envoltura guardada. Tokens detectados: amarillo #F4FF3A, púrpura #7B2CFF, tipografía de display Manuka Condensed/Bebas Neue y bloques oscuros. Implementar responsive, navegación, estados de carga/vacío/error y teclado.
+
+## Mapa funcional
+
+| Referencia antigua | Nuevo destino |
+| --- | --- |
+| index.ejs y vídeos destacados | Home; los vídeos son contenido, las noticias necesitan fuente editorial |
+| clasificacion.ejs | Vista de clasificación; API de consulta ya disponible |
+| calendario.ejs | Calendario por división/jornada/temporada; API de consulta disponible |
+| equipos-list / equipo-detalle | Lista, ficha y plantilla histórica |
+| jugadores / jugadorResumen | Ranking, ficha y estadísticas por mapa |
+| campeones | Agregados de picks y winrate desde participaciones |
+| playoffs | Vista de calendario por fase; cuadro competitivo posterior |
+| pickem + bonus | Predicciones autenticadas |
+| admin/match-stats y picks-equipos | Importación de un mapa completo y coherente |
+| admin/info-tablas | Gestión específica de entidades; sin editor SQL genérico |
+| auth/discord | Autenticación Discord segura |
+
+La maqueta también muestra Fantasy, equipo de la semana y votación MVP. No son Pick'em ni existen sus entidades en el SQL: requieren decisiones funcionales y nuevas migraciones. Esta fase no inventa esa lógica ni la presenta como implementada. Los nombres Premier/Ascend caben en divisions.code/name sin convertirlos en enums rígidos.
+
+## Pendiente de datos reales
+
+No se ha encontrado un dump de la base MySQL antigua: hay controladores, consultas y vistas de referencia. No se han importado temporadas, cuentas o estadísticas reales. Para una migración histórica hará falta extraer la base de origen y definir correspondencias entre sus IDs y los UUID nuevos.

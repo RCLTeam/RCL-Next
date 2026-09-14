@@ -7,7 +7,6 @@ import {
   jsonb,
   pgEnum,
   pgTable,
-  primaryKey,
   smallint,
   text,
   timestamp,
@@ -18,8 +17,8 @@ import {
 } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 
-export const appRole = pgEnum('app_role', ['viewer', 'editor', 'admin']);
-export const rosterRole = pgEnum('roster_role', ['top', 'jungle', 'mid', 'adc', 'support', 'substitute', 'coach']);
+export const appRole = pgEnum('app_role', ['viewer', 'admin']);
+export const rosterRole = pgEnum('roster_role', ['top', 'jungle', 'mid', 'adc', 'support', 'substitute', 'coach', 'staff', 'partners']);
 export const matchStatus = pgEnum('match_status', ['scheduled', 'live', 'completed', 'cancelled', 'forfeit']);
 export const gameSide = pgEnum('game_side', ['blue', 'red']);
 export const pickemQuestionType = pgEnum('pickem_question_type', ['team', 'player', 'text']);
@@ -31,13 +30,15 @@ const timestamps = {
 
 export const seasons = pgTable('seasons', {
   id: uuid('id').defaultRandom().primaryKey(),
-  slug: varchar('slug', { length: 64 }).notNull(),
   name: varchar('name', { length: 120 }).notNull(),
   startsOn: date('starts_on'),
   endsOn: date('ends_on'),
   isActive: boolean('is_active').notNull().default(false),
   ...timestamps
-}, (table) => [uniqueIndex('seasons_slug_key').on(table.slug)]);
+}, (table) => [
+  uniqueIndex('seasons_one_active_key').on(table.isActive).where(sql`${table.isActive} = true`),
+  check('seasons_dates_check', sql`${table.endsOn} IS NULL OR ${table.startsOn} IS NULL OR ${table.endsOn} >= ${table.startsOn}`)
+]);
 
 export const divisions = pgTable('divisions', {
   id: uuid('id').defaultRandom().primaryKey(),
@@ -61,7 +62,6 @@ export const discordUsers = pgTable('discord_users', {
 export const teams = pgTable('teams', {
   id: uuid('id').defaultRandom().primaryKey(),
   divisionId: uuid('division_id').notNull().references(() => divisions.id, { onDelete: 'restrict' }),
-  slug: varchar('slug', { length: 64 }).notNull(),
   name: varchar('name', { length: 120 }).notNull(),
   shortName: varchar('short_name', { length: 16 }),
   logoUrl: text('logo_url'),
@@ -69,7 +69,6 @@ export const teams = pgTable('teams', {
   isActive: boolean('is_active').notNull().default(true),
   ...timestamps
 }, (table) => [
-  unique('teams_division_slug_key').on(table.divisionId, table.slug),
   index('teams_division_id_idx').on(table.divisionId)
 ]);
 
@@ -77,12 +76,14 @@ export const players = pgTable('players', {
   id: uuid('id').defaultRandom().primaryKey(),
   discordUserId: uuid('discord_user_id').references(() => discordUsers.id, { onDelete: 'set null' }),
   gameName: varchar('game_name', { length: 64 }).notNull(),
+  puuid: varchar('puuid', { length: 128 }),
   riotTag: varchar('riot_tag', { length: 16 }),
   countryCode: varchar('country_code', { length: 2 }),
   isActive: boolean('is_active').notNull().default(true),
   ...timestamps
 }, (table) => [
   uniqueIndex('players_discord_user_id_key').on(table.discordUserId),
+  uniqueIndex('players_puuid_key').on(table.puuid),
   index('players_riot_id_idx').on(table.gameName, table.riotTag)
 ]);
 
@@ -160,26 +161,137 @@ export const matchGames = pgTable('match_games', {
   check('match_games_duration_check', sql`${table.durationSeconds} IS NULL OR ${table.durationSeconds} > 0`)
 ]);
 
-export const playerGameStats = pgTable('player_game_stats', {
+/** Parent participation. Children use this ID as both primary and foreign key. */
+export const playerGameInfo = pgTable('player_game_info', {
   id: uuid('id').defaultRandom().primaryKey(),
   matchGameId: uuid('match_game_id').notNull().references(() => matchGames.id, { onDelete: 'cascade' }),
   playerId: uuid('player_id').notNull().references(() => players.id, { onDelete: 'restrict' }),
   teamId: uuid('team_id').notNull().references(() => teams.id, { onDelete: 'restrict' }),
   side: gameSide('side').notNull(),
   champion: varchar('champion', { length: 64 }).notNull(),
+  // Preserve the position reported for this map, independent of roster role.
+  position: varchar('position', { length: 64 }),
+  ...timestamps
+}, (t) => [
+  unique('player_game_info_game_player_key').on(t.matchGameId, t.playerId),
+  index('player_game_info_player_id_idx').on(t.playerId),
+  index('player_game_info_team_id_idx').on(t.teamId)
+]);
+
+export const playerGameStats = pgTable('player_game_stats', {
+  id: uuid('id').primaryKey().references(() => playerGameInfo.id, { onDelete: 'cascade' }),
   kills: smallint('kills').notNull().default(0),
   deaths: smallint('deaths').notNull().default(0),
   assists: smallint('assists').notNull().default(0),
   cs: smallint('cs').notNull().default(0),
   damageToChampions: integer('damage_to_champions').notNull().default(0),
+  visionScore: integer('vision_score'),
+  // NULL means not supplied. The parser's numeric zero is stored as zero.
+  doubleKills: integer('double_kills'),
+  tripleKills: integer('triple_kills'),
+  quadraKills: integer('quadra_kills'),
+  pentaKills: integer('penta_kills'),
+  largestKillingSpree: integer('largest_killing_spree'),
+  goldEarned: integer('gold_earned'),
+  level: integer('level'),
+  damageTakenFromChampions: integer('damage_taken_from_champions'),
+  damageMitigated: integer('damage_mitigated'),
+  crowdControlTime: integer('crowd_control_time'),
+  turretsKilled: integer('turrets_killed'),
+  turretTakedowns: integer('turret_takedowns'),
+  inhibitorsKilled: integer('inhibitors_killed'),
+  inhibitorTakedowns: integer('inhibitor_takedowns'),
+  wardsPlaced: integer('wards_placed'),
+  wardsDestroyed: integer('wards_destroyed'),
+  controlWardsPurchased: integer('control_wards_purchased'),
+  detectorWardsPlaced: integer('detector_wards_placed'),
+  pings: integer('pings'),
+  summonerSpell1Casts: integer('summoner_spell_1_casts'),
+  summonerSpell2Casts: integer('summoner_spell_2_casts'),
+  dragonsKilled: integer('dragons_killed'),
+  baronsKilled: integer('barons_killed'),
+  riftHeraldsKilled: integer('rift_heralds_killed'),
+  voidGrubsKilled: integer('void_grubs_killed'),
+  elderDragonsKilled: integer('elder_dragons_killed'),
+  objectivesStolen: integer('objectives_stolen'),
+  objectivesStolenAssists: integer('objectives_stolen_assists'),
+  largestAbilityDamage: integer('largest_ability_damage'),
+  largestAttackDamage: integer('largest_attack_damage'),
+  largestCriticalStrike: integer('largest_critical_strike'),
+  longestTimeLiving: integer('longest_time_living'),
+  timeSpentDead: integer('time_spent_dead'),
   isMvp: boolean('is_mvp').notNull().default(false),
   ...timestamps
-}, (table) => [
-  unique('player_game_stats_game_player_key').on(table.matchGameId, table.playerId),
-  index('player_game_stats_player_id_idx').on(table.playerId),
-  index('player_game_stats_team_id_idx').on(table.teamId),
-  check('player_game_stats_non_negative_check', sql`${table.kills} >= 0 AND ${table.deaths} >= 0 AND ${table.assists} >= 0 AND ${table.cs} >= 0 AND ${table.damageToChampions} >= 0`)
+}, (t) => [
+  check('player_game_stats_non_negative_check', sql`${t.kills} >= 0 AND ${t.deaths} >= 0 AND ${t.assists} >= 0 AND ${t.cs} >= 0 AND ${t.damageToChampions} >= 0`),
+  check('player_game_stats_vision_check', sql`${t.visionScore} IS NULL OR ${t.visionScore} >= 0`),
+  check('player_game_stats_rofl_non_negative_check', sql`
+    (${t.doubleKills} IS NULL OR ${t.doubleKills} >= 0) AND
+    (${t.tripleKills} IS NULL OR ${t.tripleKills} >= 0) AND
+    (${t.quadraKills} IS NULL OR ${t.quadraKills} >= 0) AND
+    (${t.pentaKills} IS NULL OR ${t.pentaKills} >= 0) AND
+    (${t.largestKillingSpree} IS NULL OR ${t.largestKillingSpree} >= 0) AND
+    (${t.goldEarned} IS NULL OR ${t.goldEarned} >= 0) AND
+    (${t.level} IS NULL OR ${t.level} >= 0) AND
+    (${t.damageTakenFromChampions} IS NULL OR ${t.damageTakenFromChampions} >= 0) AND
+    (${t.damageMitigated} IS NULL OR ${t.damageMitigated} >= 0) AND
+    (${t.crowdControlTime} IS NULL OR ${t.crowdControlTime} >= 0) AND
+    (${t.turretsKilled} IS NULL OR ${t.turretsKilled} >= 0) AND
+    (${t.turretTakedowns} IS NULL OR ${t.turretTakedowns} >= 0) AND
+    (${t.inhibitorsKilled} IS NULL OR ${t.inhibitorsKilled} >= 0) AND
+    (${t.inhibitorTakedowns} IS NULL OR ${t.inhibitorTakedowns} >= 0) AND
+    (${t.wardsPlaced} IS NULL OR ${t.wardsPlaced} >= 0) AND
+    (${t.wardsDestroyed} IS NULL OR ${t.wardsDestroyed} >= 0) AND
+    (${t.controlWardsPurchased} IS NULL OR ${t.controlWardsPurchased} >= 0) AND
+    (${t.detectorWardsPlaced} IS NULL OR ${t.detectorWardsPlaced} >= 0) AND
+    (${t.pings} IS NULL OR ${t.pings} >= 0) AND
+    (${t.summonerSpell1Casts} IS NULL OR ${t.summonerSpell1Casts} >= 0) AND
+    (${t.summonerSpell2Casts} IS NULL OR ${t.summonerSpell2Casts} >= 0) AND
+    (${t.dragonsKilled} IS NULL OR ${t.dragonsKilled} >= 0) AND
+    (${t.baronsKilled} IS NULL OR ${t.baronsKilled} >= 0) AND
+    (${t.riftHeraldsKilled} IS NULL OR ${t.riftHeraldsKilled} >= 0) AND
+    (${t.voidGrubsKilled} IS NULL OR ${t.voidGrubsKilled} >= 0) AND
+    (${t.elderDragonsKilled} IS NULL OR ${t.elderDragonsKilled} >= 0) AND
+    (${t.objectivesStolen} IS NULL OR ${t.objectivesStolen} >= 0) AND
+    (${t.objectivesStolenAssists} IS NULL OR ${t.objectivesStolenAssists} >= 0) AND
+    (${t.largestAbilityDamage} IS NULL OR ${t.largestAbilityDamage} >= 0) AND
+    (${t.largestAttackDamage} IS NULL OR ${t.largestAttackDamage} >= 0) AND
+    (${t.largestCriticalStrike} IS NULL OR ${t.largestCriticalStrike} >= 0) AND
+    (${t.longestTimeLiving} IS NULL OR ${t.longestTimeLiving} >= 0) AND
+    (${t.timeSpentDead} IS NULL OR ${t.timeSpentDead} >= 0)
+  `)
 ]);
+
+// Keep the original SQL names, including "secundary", for traceable mapping.
+export const playerGameRunes = pgTable('player_game_runes', {
+  id: uuid('id').primaryKey().references(() => playerGameInfo.id, { onDelete: 'cascade' }),
+  primaryKeystoneId: integer('primary_keystone_id').notNull(),
+  secundaryRuneId: integer('secundary_rune_id').notNull(),
+  primaryPerk: integer('primary_perk').notNull(),
+  primaryPerk1: integer('primary_perk_1').notNull(),
+  primaryPerk2: integer('primary_perk_2').notNull(),
+  primaryPerk3: integer('primary_perk_3').notNull(),
+  secundaryPerk1: integer('secundary_perk_1').notNull(),
+  secundaryPerk2: integer('secundary_perk_2').notNull(),
+  statPerkOffense: integer('stat_perk_offense').notNull(),
+  statPerkFlex: integer('stat_perk_flex').notNull(),
+  statPerkDefense: integer('stat_perk_defense').notNull(),
+  ...timestamps
+});
+
+export const playerGameBuild = pgTable('player_game_build', {
+  id: uuid('id').primaryKey().references(() => playerGameInfo.id, { onDelete: 'cascade' }),
+  item0: integer('item_0').notNull().default(0),
+  item1: integer('item_1').notNull().default(0),
+  item2: integer('item_2').notNull().default(0),
+  item3: integer('item_3').notNull().default(0),
+  item4: integer('item_4').notNull().default(0),
+  item5: integer('item_5').notNull().default(0),
+  trinket: integer('trinket').notNull().default(0),
+  summonerSpell1Id: integer('summoner_spell_1_id'),
+  summonerSpell2Id: integer('summoner_spell_2_id'),
+  ...timestamps
+});
 
 export const pickemPredictions = pgTable('pickem_predictions', {
   id: uuid('id').defaultRandom().primaryKey(),
@@ -218,5 +330,5 @@ export const auditLogs = pgTable('audit_logs', {
   entityId: uuid('entity_id'),
   before: jsonb('before'),
   after: jsonb('after'),
-  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
+  ...timestamps
 }, (table) => [index('audit_logs_entity_idx').on(table.entityType, table.entityId)]);
