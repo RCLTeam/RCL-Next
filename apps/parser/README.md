@@ -77,11 +77,11 @@ data = parse_rofl(
 El subsistema incluye una suite completa de pruebas unitarias bajo `unittest`:
 
 ```bash
-# Ejecución directa desde apps/parser/
+# Ejecución directa desde apps/parser/tests/
 python -m unittest test_roflParser.py
 
 # Descubrimiento desde la raíz del proyecto RCL-Next
-python3 -m unittest discover -s apps/parser -p "test_*.py"
+python3 -m unittest discover -s apps/parser/tests -p "test_*.py"
 ```
 
 La batería de pruebas comprueba la existencia de fixtures, la fidelidad de campos de los 10 jugadores, el rechazo de archivos sin cabecera `b"RIOT"`, la validación de cotas numéricas y el comportamiento de la CLI.
@@ -93,8 +93,9 @@ La batería de pruebas comprueba la existencia de fixtures, la fidelidad de camp
 ```text
 apps/parser/
 ├── roflParser.py           # Motor extractor principal y CLI en Python
-├── test_roflParser.py      # Suite de pruebas unitarias (unittest)
 ├── README.md               # Documentación e instrucciones de uso
+├── tests/                  # Suite de pruebas unitarias (unittest)
+│   └── test_roflParser.py
 ├── data/                   # Archivos .rofl de entrada
 │   └── EUW1-7982902321.rofl
 └── result/                 # Reportes generados en formato JSON

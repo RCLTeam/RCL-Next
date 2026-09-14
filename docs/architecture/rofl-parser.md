@@ -81,7 +81,7 @@ Flujo de ejecución de read_rofl():
 | **Modularidad y API** | Conflación de CLI y lógica en una función monolítica `main(path)`. | Exportación de `parse_rofl(path, output_path=None, quiet=False) -> Dict[str, Any]`. | Integración directa como biblioteca en servicios backend, workers de ingesta y tests. |
 | **Tipado Estricto** | Sin anotaciones de tipo (`typing`). | Anotaciones de tipo completas (`Dict`, `List`, `Optional`, `Union`, `Tuple`, etc.). | Mantenibilidad, autocompletado y validación estática de tipos. |
 | **Interfaz CLI** | Argumentos crudos `sys.argv[1]` sin opciones ni ayuda contextual. | `argparse.ArgumentParser` con argumentos `path`, `-o/--output` y `-q/--quiet`. | Cumplimiento con estándares POSIX de herramientas de línea de comandos. |
-| **Pruebas Automatizadas** | Sin suite de pruebas automatizadas (0% de cobertura en Python). | Suite unitaria completa en `apps/parser/test_roflParser.py` (`unittest`). | Verificación continua de integridad binaria, esquemas y límites en < 0.01 segundos. |
+| **Pruebas Automatizadas** | Sin suite de pruebas automatizadas (0% de cobertura en Python). | Suite unitaria completa en `apps/parser/tests/test_roflParser.py` (`unittest`). | Verificación continua de integridad binaria, esquemas y límites en < 0.01 segundos. |
 
 ---
 
@@ -154,9 +154,9 @@ datos = parse_rofl(
 ### 5.3. Ejecución de la Suite de Pruebas Unitarias
 
 ```bash
-# Descubrimiento automático de todas las pruebas en apps/parser/
-python3 -m unittest discover -s apps/parser -p "test_*.py"
+# Descubrimiento automático de todas las pruebas en apps/parser/tests/
+python3 -m unittest discover -s apps/parser/tests -p "test_*.py"
 
 # Ejecución directa del archivo de test
-python3 -m unittest apps/parser/test_roflParser.py
+python3 -m unittest apps/parser/tests/test_roflParser.py
 ```
