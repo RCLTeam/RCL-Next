@@ -66,6 +66,10 @@ apps/api/
   src/shared/                    Errores centralizados
   src/app.ts                     Composición e inyección de dependencias
   src/server.ts                  Conexión, arranque y cierre controlado
+apps/parser/
+  roflParser.py                  Extractor CLI de repeticiones de LoL (.rofl)
+  data/                          Archivos .rofl de entrada
+  result/                        Reportes generados en formato JSON
 packages/database/
   src/schema.ts                  Las 16 tablas del modelo
   src/index.ts                   Factoría Drizzle + pool PostgreSQL
@@ -79,10 +83,13 @@ tests/
   unit/                          Pruebas unitarias (servicios, base de datos)
   integration/                   Pruebas de integración HTTP y de base de datos con PGlite
 docs/
-  architecture/database.md       Correcciones y decisiones del modelo
-  architecture/roadmap.md         Mapa funcional y siguientes etapas
-  api.md                         Contrato de los endpoints implementados
-  verification.md                Resultados y censo de pruebas del monorepo
+  architecture/database.md            Decisiones de diseño y correcciones del modelo
+  architecture/database-schema.md     Diagrama ER de 16 tablas, enums y restricciones
+  architecture/database-operations.md Concurrencia, advisory locks, pool y comandos
+  architecture/rofl-mapping.md        Mapeo de estadísticas JSON a tablas relacionales
+  architecture/roadmap.md             Mapa funcional y siguientes etapas
+  api.md                              Contrato de los endpoints implementados
+  verification.md                     Resultados y censo de pruebas del monorepo
 ```
 
 El frontend futuro irá en `apps/web`; aún no se ha creado. No se incorporan bots o servicios adicionales en esta fase.
