@@ -7,17 +7,15 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
-REPO_ROOT = os.path.abspath(os.path.join(CURRENT_DIR, "..", ".."))
-if CURRENT_DIR not in sys.path:
-    sys.path.insert(0, CURRENT_DIR)
-if REPO_ROOT not in sys.path:
-    sys.path.insert(0, REPO_ROOT)
+PARSER_DIR = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
+REPO_ROOT = os.path.abspath(os.path.join(PARSER_DIR, "..", ".."))
+sys.path.insert(0, PARSER_DIR)
+sys.path.insert(0, REPO_ROOT)
 
 from roflParser import MAX_METADATA_SIZE, main, parse_rofl
 
-FIXTURE_PATH = os.path.join(CURRENT_DIR, "data", "EUW1-7982902321.rofl")
-EXPECTED_RESULT_PATH = os.path.join(CURRENT_DIR, "result", "EUW1-7982902321_estadisticas.json")
+FIXTURE_PATH = os.path.join(PARSER_DIR, "data", "EUW1-7982902321.rofl")
+EXPECTED_RESULT_PATH = os.path.join(PARSER_DIR, "result", "EUW1-7982902321_estadisticas.json")
 
 
 class TestRoflParser(unittest.TestCase):

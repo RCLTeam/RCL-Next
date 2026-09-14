@@ -9,7 +9,7 @@ Fecha: 14 de septiembre de 2026.
 | biome check . | 0 errores de linter, formato y orden de imports en 33 archivos |
 | vitest run / pnpm test | 6 suites de prueba y 11 tests principales ejecutados al 100% en verde |
 | pnpm check | Pipeline unificado (`typecheck` + `biome check` + `vitest run`) exitoso |
-| python3 -m unittest discover -s apps/parser -p "test_*.py" | 7 tests ejecutados al 100% en verde (integridad binaria ROFL, cabecera y esquema) |
+| python3 -m unittest discover -s apps/parser/tests -p "test_*.py" | 7 tests ejecutados al 100% en verde (integridad binaria ROFL, cabecera y esquema) |
 | pnpm db:generate | Generador de migraciones Drizzle sobre el baseline consolidado `0000_initial_schema.sql` |
 | drizzle-kit check | Historial de migraciones válido |
 | git diff --check | Sin errores de whitespace |
@@ -56,10 +56,10 @@ Las suites de prueba se encuentran centralizadas bajo el directorio raíz `tests
 
 ## Censo de suites de prueba del parser ROFL (`apps/parser/`)
 
-La suite de pruebas unitarias en Python se encuentra en `apps/parser/test_roflParser.py` y se ejecuta con:
+La suite de pruebas unitarias en Python se encuentra en `apps/parser/tests/test_roflParser.py` y se ejecuta con:
 
 ```bash
-python3 -m unittest discover -s apps/parser -p "test_*.py"
+python3 -m unittest discover -s apps/parser/tests -p "test_*.py"
 ```
 
 Comprende 7 casos de prueba ejecutados en milisegundos sin dependencias externas:

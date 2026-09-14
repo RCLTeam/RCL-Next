@@ -26,4 +26,4 @@ jobs:
       - run: pnpm check
 
       - name: Run Python Parser Tests
-        run: python3 -m unittest discover -s apps/parser -p "test_*.py" -v
+        run: python3 -m unittest discover -s apps/parser/tests -p "test_*.py" -v

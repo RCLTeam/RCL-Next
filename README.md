@@ -68,7 +68,7 @@ apps/api/
   src/server.ts                  Conexión, arranque y cierre controlado
 apps/parser/
   roflParser.py                  Extractor CLI optimizado y API de repeticiones LoL (.rofl) con seek inverso
-  test_roflParser.py             Suite de pruebas unitarias automatizadas (unittest)
+  tests/test_roflParser.py       Suite de pruebas unitarias automatizadas (unittest)
   data/                          Archivos .rofl de entrada
   result/                        Reportes generados en formato JSON
 packages/database/
@@ -101,14 +101,14 @@ El frontend futuro irá en `apps/web`; aún no se ha creado. No se incorporan bo
 ```powershell
 pnpm check
 pnpm db:generate
-python3 -m unittest discover -s apps/parser -p "test_*.py"
+python3 -m unittest discover -s apps/parser/tests -p "test_*.py"
 ```
 
 El pipeline de validación comprueba la salud integral del proyecto:
 1. `pnpm typecheck`: compila `@rcl/database` para emitir los tipos y artefactos en `dist`, comprueba los tipos de las suites de prueba en `tests/` mediante `tsc -p tsconfig.json` y valida con TypeScript estricto (`tsc --noEmit`) cada paquete del workspace.
 2. `biome check .`: valida reglas de linter, formato y ordenación de imports en todo el repositorio.
 3. `vitest run`: ejecuta la totalidad de las suites de prueba centralizadas en `tests/`.
-4. `python3 -m unittest discover -s apps/parser -p "test_*.py"`: ejecuta la batería de pruebas unitarias del extractor ROFL en `apps/parser/`, validando la lectura por seek inverso, comprobación de cabecera mágica `b"RIOT"`, cotas de metadatos y fidelidad del esquema JSON.
+4. `python3 -m unittest discover -s apps/parser/tests -p "test_*.py"`: ejecuta la batería de pruebas unitarias del extractor ROFL en `apps/parser/tests/`, validando la lectura por seek inverso, comprobación de cabecera mágica `b"RIOT"`, cotas de metadatos y fidelidad del esquema JSON.
 
 Los paquetes que consumen código de `@rcl/database` (como `@rcl/api` y los tests de integración) acceden a las exportaciones tipadas a través de su carpeta `dist`. Por este motivo, se requiere compilar previamente la base de datos (`pnpm --filter @rcl/database build` o `pnpm build`) antes de ejecutar pruebas o arrancar los servicios en modo producción (`pnpm --filter @rcl/api start`).
 
