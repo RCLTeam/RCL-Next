@@ -9,6 +9,7 @@ Fecha: 14 de septiembre de 2026.
 | biome check . | 0 errores de linter, formato y orden de imports en 33 archivos |
 | vitest run / pnpm test | 6 suites de prueba y 11 tests principales ejecutados al 100% en verde |
 | pnpm check | Pipeline unificado (`typecheck` + `biome check` + `vitest run`) exitoso |
+| python3 -m unittest discover -s apps/parser -p "test_*.py" | 7 tests ejecutados al 100% en verde (integridad binaria ROFL, cabecera y esquema) |
 | pnpm db:generate | Generador de migraciones Drizzle sobre el baseline consolidado `0000_initial_schema.sql` |
 | drizzle-kit check | Historial de migraciones válido |
 | git diff --check | Sin errores de whitespace |
@@ -53,4 +54,26 @@ Las suites de prueba se encuentran centralizadas bajo el directorio raíz `tests
 6. **`tests/integration/apiIntegration.test.ts`** (1 test de flujo completo):
    - Recorrido extremo a extremo HTTP (Supertest) → controlador Express → servicio de competición → repositorio PostgreSQL real → base de datos embebida PGlite.
 
-La suite completa se ejecuta de forma determinista y sin dependencias de red mediante PostgreSQL embebido en memoria (`PGlite`), validando esquemas reales y datos sintéticos en menos de dos segundos. No se ha validado todavía una conexión TCP con PostgreSQL 17 ni ejecutado Docker Compose, porque faltan esas herramientas en el entorno. No forman parte de esta entrega autenticación Discord, endpoints de escritura, importación ROFL, perfiles detallados, UI Pick'em ni frontend React (descritos en `architecture/roadmap.md`).
+## Censo de suites de prueba del parser ROFL (`apps/parser/`)
+
+La suite de pruebas unitarias en Python se encuentra en `apps/parser/test_roflParser.py` y se ejecuta con:
+
+```bash
+python3 -m unittest discover -s apps/parser -p "test_*.py"
+```
+
+Comprende 7 casos de prueba ejecutados en milisegundos sin dependencias externas:
+1. **`test_sample_rofl_exists`**: Verifica la presencia física del fixture de repetición real en `apps/parser/data/EUW1-7982902321.rofl`.
+2. **`test_parse_real_rofl`**: Ejecuta la extracción de estadísticas sobre el fixture real hacia un archivo temporal, validando:
+   - Versión de esquema (`version == 2`).
+   - Número de participantes (`len(jugadores) == 10`).
+   - Identificación del equipo ganador (`partida.equipo_ganador == 100`).
+   - Presencia y tipos de campos esenciales de cada jugador (`nombre`, `tag`, `riot_id`, `kda`, `oro`, `cs`, `resultado` en `'Win'/'Lose'`, `runas` primarias/secundarias/fragmentos, inventario de exactamente 7 slots con `slot` e `id`).
+   - Fidelidad al 100% frente al archivo de referencia `apps/parser/result/EUW1-7982902321_estadisticas.json`.
+3. **`test_invalid_header_rejection`**: Comprueba que archivos que no comiencen por la firma mágica `b"RIOT"` sean rechazados inmediatamente con `ValueError("Cabecera ROFL no reconocida...")`.
+4. **`test_file_too_small_rejection`**: Comprueba que archivos binarios menores a 8 bytes levanten `ValueError("Archivo ROFL demasiado pequeño")`.
+5. **`test_invalid_metadata_length_rejection`**: Comprueba que trailers con longitud de metadatos no válida ($n \le 0$, $n > \text{MAX\_METADATA\_SIZE}$ o que excedan el tamaño físico del archivo) sean rechazados con `ValueError`.
+6. **`test_cli_main_success_and_quiet`**: Verifica la invocación de la CLI mediante `main()` con los flags `-o` (ruta personalizada) y `-q` (modo silencioso), comprobando la creación del archivo de salida.
+7. **`test_cli_main_file_not_found`**: Verifica que la CLI gestione rutas inexistentes devolviendo código de salida 1 y mensaje de error en `sys.stderr`.
+
+La suite completa de pruebas de TypeScript se ejecuta de forma determinista y sin dependencias de red mediante PostgreSQL embebido en memoria (`PGlite`), validando esquemas reales y datos sintéticos en menos de dos segundos. No se ha validado todavía una conexión TCP con PostgreSQL 17 ni ejecutado Docker Compose, porque faltan esas herramientas en el entorno. No forman parte de esta entrega autenticación Discord, endpoints de escritura, importación ROFL, perfiles detallados, UI Pick'em ni frontend React (descritos en `architecture/roadmap.md`).

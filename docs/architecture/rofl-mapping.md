@@ -3,6 +3,7 @@
 La migración `packages/database/drizzle/0000_initial_schema.sql` y el modelo `packages/database/src/schema.ts` contienen el esquema normalizado completo. Mantienen separadas las tablas de participación, estadísticas, runas e inventario/build; las métricas se registran por jugador y mapa individual, evitando acumulados agregados en la tabla `players`.
 
 Para consultar el diseño de entidades, diagramas y operaciones de base de datos:
+- [**Arquitectura del Parser ROFL**](rofl-parser.md): Motor binario, algoritmo de seek inverso, validación de cabecera y cotas de memoria.
 - [**Modelo y Decisiones Arquitectónicas**](database.md): Decisiones de diseño, desempate y garantías relacionales.
 - [**Esquema Relacional y Diagrama ER**](database-schema.md): Diagrama Mermaid ER de las 16 tablas, enums, checks y reglas de integridad.
 - [**Operaciones, Concurrencia y Comandos**](database-operations.md): Bloqueos consultivos (`pg_advisory_lock`, `pg_advisory_xact_lock`), configuración del pool y comandos CLI.
@@ -116,7 +117,7 @@ Los slots de inventario se indexan por la posición fija del slot (0 a 6), no po
 La suite de pruebas automatizadas en `tests/unit/database/roflStats.test.ts` aplica la migración consolidada del esquema, carga los datos del fixture y comprueba que las estadísticas del archivo real `apps/parser/result/EUW1-7982902321_estadisticas.json` se persisten e hidratan sin pérdidas en PostgreSQL embebido (PGlite).
 
 * **Comportamiento del Parser Python (`roflParser.py`):**
-  La función `player()` en `apps/parser/roflParser.py` extrae y devuelve explícitamente el campo `'resultado'` (`'Win'` o `'Lose'`), calculado a partir de la propiedad booleana `WIN` (`"resultado": "Win" if b(p.get("WIN")) else "Lose"`).
+  La función `player()` en `apps/parser/roflParser.py` extrae y devuelve explícitamente el campo `'resultado'` (`'Win'` o `'Lose'`), calculado a partir de la propiedad booleana `WIN` (`"resultado": "Win" if b(p.get("WIN")) else "Lose"`). Para los detalles técnicos del motor de extracción por seek inverso y las pruebas unitarias automatizadas del parser, consultar [Arquitectura del Extractor de Repeticiones ROFL](rofl-parser.md).
 * **Múltiples Cuentas por Usuario:**
   El PUUID de Riot no actúa como identificador único global del participante en este modelo. Un mismo usuario de Discord puede tener asociadas múltiples cuentas de juego (`players`), identificándose la principal mediante la columna `players.is_main`.
 * **Desacoplamiento del Ingestor:**

@@ -1,20 +1,26 @@
 #!/usr/bin/env python3
+from __future__ import annotations
 
-import sys
-import os
+import argparse
 import json
+import os
 import struct
+import sys
+from typing import Any, Dict, List, Optional, Tuple, Union
 
-OUTPUT_SUFFIX = "_estadisticas.json"
+OUTPUT_SUFFIX: str = "_estadisticas.json"
+MAGIC_HEADER: bytes = b"RIOT"
+MAX_METADATA_SIZE: int = 10 * 1024 * 1024  # 10 MB
 
-def i(v, default=0):
+
+def i(v: Any, default: int = 0) -> int:
     try:
         return int(v)
     except (TypeError, ValueError):
         return default
 
 
-def b(v):
+def b(v: Any) -> bool:
     if isinstance(v, bool):
         return v
 
@@ -24,14 +30,14 @@ def b(v):
     return bool(v)
 
 
-def duration(s):
+def duration(s: Any) -> str:
     # gameLength de estos ROFL está expresado en milisegundos.
     s = i(s) // 1000
 
     return f"{s // 60}:{s % 60:02d}"
 
 
-def first(d, *keys, default=None):
+def first(d: Dict[str, Any], *keys: str, default: Any = None) -> Any:
     for k in keys:
         if k in d and d[k] not in (None, ""):
             return d[k]
@@ -39,30 +45,44 @@ def first(d, *keys, default=None):
     return default
 
 
-def read_rofl(path):
+def read_rofl(path: Union[str, os.PathLike]) -> Dict[str, Any]:
     with open(path, "rb") as f:
-        data = f.read()
+        header = f.read(4)
+        if header != MAGIC_HEADER:
+            raise ValueError(
+                f"Cabecera ROFL no reconocida: se esperaba {MAGIC_HEADER!r}, obtenido {header!r}"
+            )
 
-    if len(data) < 4:
-        raise ValueError("ROFL demasiado pequeño")
+        f.seek(0, os.SEEK_END)
+        total_size = f.tell()
+        if total_size < 8:
+            raise ValueError("Archivo ROFL demasiado pequeño")
 
-    n = struct.unpack("<I", data[-4:])[0]
-    start = len(data) - 4 - n
+        f.seek(-4, os.SEEK_END)
+        tail = f.read(4)
+        if len(tail) != 4:
+            raise ValueError("No se pudo leer el trailer de metadata")
 
-    if start < 0:
-        raise ValueError("Longitud de metadata inválida")
+        (n,) = struct.unpack("<I", tail)
+        if n <= 0 or n > MAX_METADATA_SIZE:
+            raise ValueError(f"Longitud de metadata inválida: {n}")
 
-    meta = json.loads(
-        data[start:-4].decode("utf-8")
-    )
+        if total_size < 4 + n + 4:
+            raise ValueError("Longitud de metadata inválida: excede el tamaño del archivo")
 
+        f.seek(-4 - n, os.SEEK_END)
+        payload = f.read(n)
+        if len(payload) != n:
+            raise ValueError("No se pudieron leer todos los bytes de metadata")
+
+    meta = json.loads(payload.decode("utf-8"))
     if not isinstance(meta, dict):
         raise ValueError("Metadata inválida")
 
     return meta
 
 
-def runes(p):
+def runes(p: Dict[str, Any]) -> Dict[str, Any]:
     return {
         "primaria": {
             "estilo_id": i(p.get("PERK_PRIMARY_STYLE")),
@@ -84,7 +104,7 @@ def runes(p):
     }
 
 
-def items(p):
+def items(p: Dict[str, Any]) -> Dict[str, List[Dict[str, int]]]:
     return {
         "slots": [
             {
@@ -96,7 +116,7 @@ def items(p):
     }
 
 
-def player(p):
+def player(p: Dict[str, Any]) -> Dict[str, Any]:
     name = first(
         p,
         "RIOT_ID_GAME_NAME",
@@ -198,7 +218,7 @@ def player(p):
     }
 
 
-def team(team_id, ps):
+def team(team_id: int, ps: List[Dict[str, Any]]) -> Dict[str, Any]:
     victory = any(
         p["resultado"] == "Win"
         for p in ps
@@ -233,14 +253,19 @@ def team(team_id, ps):
     }
 
 
-def main(path):
+def parse_rofl(
+    path: Union[str, os.PathLike],
+    output_path: Optional[Union[str, os.PathLike]] = None,
+    quiet: bool = False,
+) -> Dict[str, Any]:
     meta = read_rofl(path)
 
-    raw = json.loads(
-        meta.get("statsJson", "[]")
-    )
+    stats_json_str = meta.get("statsJson")
+    if not stats_json_str:
+        raise ValueError("No se encontró statsJson")
 
-    if not raw:
+    raw = json.loads(stats_json_str)
+    if not isinstance(raw, list) or not raw:
         raise ValueError("No se encontró statsJson")
 
     players = [
@@ -320,8 +345,15 @@ def main(path):
         ),
     }
 
-    base, _ = os.path.splitext(path)
-    outpath = base + OUTPUT_SUFFIX
+    if output_path is None:
+        base, _ = os.path.splitext(path)
+        outpath = base + OUTPUT_SUFFIX
+    else:
+        outpath = os.fspath(output_path)
+
+    outdir = os.path.dirname(outpath)
+    if outdir and not os.path.exists(outdir):
+        os.makedirs(outdir, exist_ok=True)
 
     with open(
         outpath,
@@ -335,16 +367,51 @@ def main(path):
             indent=2,
         )
 
+    if not quiet:
+        print(f"Estadísticas extraídas exitosamente: {outpath}")
 
-if __name__ == "__main__":
-    if (
-        len(sys.argv) != 2
-        or not os.path.isfile(sys.argv[1])
-    ):
-        sys.exit(1)
+    return out
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        description="Extractor de estadísticas de repeticiones ROFL de League of Legends."
+    )
+    parser.add_argument(
+        "path",
+        help="Ruta al archivo .rofl de entrada",
+    )
+    parser.add_argument(
+        "-o",
+        "--output",
+        default=None,
+        help="Ruta personalizada para el archivo JSON de salida (por defecto: <nombre>_estadisticas.json)",
+    )
+    parser.add_argument(
+        "-q",
+        "--quiet",
+        action="store_true",
+        help="Suprimir mensajes informativos en consola",
+    )
+    return parser
+
+
+def main(argv: Optional[List[str]] = None) -> int:
+    parser = build_parser()
+    args = parser.parse_args(argv)
+
+    if not os.path.isfile(args.path):
+        sys.stderr.write(f"Error: El archivo no existe o no es válido: {args.path}\n")
+        return 1
 
     try:
-        main(sys.argv[1])
-    except Exception:
-        sys.exit(1)
+        parse_rofl(args.path, output_path=args.output, quiet=args.quiet)
+        return 0
+    except Exception as e:
+        sys.stderr.write(f"Error al procesar el archivo: {e}\n")
+        return 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())
 
