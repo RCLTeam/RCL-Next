@@ -1,7 +1,7 @@
-import { defineConfig } from 'drizzle-kit';
-import { config } from 'dotenv';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { config } from 'dotenv';
+import { defineConfig } from 'drizzle-kit';
 
 const packageDirectory = dirname(fileURLToPath(import.meta.url));
 config({ path: resolve(packageDirectory, '../../.env'), quiet: true });

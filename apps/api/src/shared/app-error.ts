@@ -12,4 +12,5 @@ export class AppError extends Error {
   }
 }
 
-export const notFound = (resource: string): AppError => new AppError(404, 'NOT_FOUND', `${resource} was not found.`);
+export const notFound = (resource: string): AppError =>
+  new AppError(404, 'NOT_FOUND', `${resource} was not found.`);
