@@ -81,14 +81,6 @@ def runes(p):
             "flexible_id": i(p.get("STAT_PERK_1")),
             "defensiva_id": i(p.get("STAT_PERK_2")),
         },
-        "variables": {
-            f"perk{n}": {
-                "var1": i(p.get(f"PERK{n}_VAR1")),
-                "var2": i(p.get(f"PERK{n}_VAR2")),
-                "var3": i(p.get(f"PERK{n}_VAR3")),
-            }
-            for n in range(6)
-        },
     }
 
 
@@ -101,11 +93,6 @@ def items(p):
             }
             for n in range(7)
         ],
-        "comprados": i(p.get("ITEMS_PURCHASED")),
-        "consumibles_comprados": i(
-            p.get("CONSUMABLES_PURCHASED")
-        ),
-        "oro_gastado": i(p.get("GOLD_SPENT")),
     }
 
 
@@ -150,149 +137,36 @@ def player(p):
             "triple_kills": i(p.get("TRIPLE_KILLS")),
             "quadra_kills": i(p.get("QUADRA_KILLS")),
             "penta_kills": i(p.get("PENTA_KILLS")),
-            "killing_sprees": i(p.get("KILLING_SPREES")),
             "largest_killing_spree": i(p.get("LARGEST_KILLING_SPREE")),
         },
 
-        "economia": {
-            "oro": i(p.get("GOLD_EARNED")),
-            "oro_gastado": i(p.get("GOLD_SPENT")),
-        },
-
-        "farm": {
-            "cs": i(p.get("MINIONS_KILLED")),
-            "neutrales": i(
-                p.get("NEUTRAL_MINIONS_KILLED")
-            ),
-            "jungla_propia": i(
-                p.get("NEUTRAL_MINIONS_KILLED_YOUR_JUNGLE")
-            ),
-            "jungla_enemiga": i(
-                p.get("NEUTRAL_MINIONS_KILLED_ENEMY_JUNGLE")
-            ),
-        },
-
+        "oro": i(p.get("GOLD_EARNED")),
+        "cs": i(p.get("MINIONS_KILLED")) + i(p.get("NEUTRAL_MINIONS_KILLED")),
         "nivel": i(p.get("LEVEL")),
-
-        "daño": {
-            "total": i(p.get("TOTAL_DAMAGE_DEALT")),
-            "campeones": i(
-                p.get("TOTAL_DAMAGE_DEALT_TO_CHAMPIONS")
-            ),
-            "estructuras": i(
-                p.get("TOTAL_DAMAGE_DEALT_TO_BUILDINGS")
-            ),
-            "torres": i(
-                p.get("TOTAL_DAMAGE_DEALT_TO_TURRETS")
-            ),
-            "objetivos": i(
-                p.get("TOTAL_DAMAGE_DEALT_TO_OBJECTIVES")
-            ),
-            "monstruos_epicos": i(
-                p.get("TOTAL_DAMAGE_DEALT_TO_EPIC_MONSTERS")
-            ),
-            "fisico": i(
-                p.get("PHYSICAL_DAMAGE_DEALT_PLAYER")
-            ),
-            "fisico_campeones": i(
-                p.get("PHYSICAL_DAMAGE_DEALT_TO_CHAMPIONS")
-            ),
-            "magico": i(
-                p.get("MAGIC_DAMAGE_DEALT_PLAYER")
-            ),
-            "magico_campeones": i(
-                p.get("MAGIC_DAMAGE_DEALT_TO_CHAMPIONS")
-            ),
-            "verdadero": i(
-                p.get("TRUE_DAMAGE_DEALT_PLAYER")
-            ),
-            "verdadero_campeones": i(
-                p.get("TRUE_DAMAGE_DEALT_TO_CHAMPIONS")
-            ),
-        },
-
-        "daño_recibido": {
-            "total": i(p.get("TOTAL_DAMAGE_TAKEN")),
-            "campeones": i(
-                p.get("TOTAL_DAMAGE_TAKEN_FROM_CHAMPIONS")
-            ),
-            "estructuras": i(
-                p.get("TOTAL_DAMAGE_TAKEN_FROM_BUILDINGS")
-            ),
-            "fisico": i(
-                p.get("PHYSICAL_DAMAGE_TAKEN")
-            ),
-            "magico": i(
-                p.get("MAGIC_DAMAGE_TAKEN")
-            ),
-            "verdadero": i(
-                p.get("TRUE_DAMAGE_TAKEN")
-            ),
-        },
+        "daño_campeones": i(p.get("TOTAL_DAMAGE_DEALT_TO_CHAMPIONS")),
+        "daño_recibido_campeones": i(p.get("TOTAL_DAMAGE_TAKEN_FROM_CHAMPIONS")),
 
         "soporte": {
-            "daño_mitigado": i(
-                p.get("TOTAL_DAMAGE_SELF_MITIGATED")
-            ),
-            "daño_curado": i(
-                p.get("TOTAL_HEAL")
-            ),
-            "curacion_a_compañeros": i(
-                p.get("TOTAL_HEAL_ON_TEAMMATES")
-            ),
-            "daño_escudado_a_compañeros": i(
-                p.get("TOTAL_DAMAGE_SHIELDED_ON_TEAMMATES")
-            ),
-            "unidades_curadas": i(
-                p.get("TOTAL_UNITS_HEALED")
-            ),
-            "control_adversarios": i(
-                p.get("TOTAL_TIME_CROWD_CONTROL_DEALT_TO_CHAMPIONS")
-            ),
+            "daño_mitigado": i(p.get("TOTAL_DAMAGE_SELF_MITIGATED")),
+            "control_adversarios": i(p.get("TOTAL_TIME_CROWD_CONTROL_DEALT_TO_CHAMPIONS")),
         },
 
         "estructuras": {
             "torres": i(p.get("TURRETS_KILLED")),
-            "derribos_torres": i(
-                p.get("TURRET_TAKEDOWNS")
-            ),
-            "inhibidores": i(
-                p.get("BARRACKS_KILLED")
-            ),
-            "derribos_inhibidores": i(
-                p.get("BARRACKS_TAKEDOWNS")
-            ),
+            "derribos_torres": i(p.get("TURRET_TAKEDOWNS")),
+            "inhibidores": i(p.get("BARRACKS_KILLED")),
+            "derribos_inhibidores": i(p.get("BARRACKS_TAKEDOWNS")),
         },
 
         "vision": {
             "score": i(p.get("VISION_SCORE")),
             "wards_colocados": i(p.get("WARD_PLACED")),
             "wards_destruidos": i(p.get("WARD_KILLED")),
-            "pinkwards_comprados": i(
-                p.get("VISION_WARDS_BOUGHT_IN_GAME")
-            ),
-            "wards_detector": i(
-                p.get("WARD_PLACED_DETECTOR")
-            ),
+            "pinkwards_comprados": i(p.get("VISION_WARDS_BOUGHT_IN_GAME")),
+            "wards_detector": i(p.get("WARD_PLACED_DETECTOR")),
         },
 
-        "pings": {
-            "total": i(p.get("PING")),
-            "basic": i(p.get("BASIC_PINGS")),
-            "command": i(p.get("COMMAND_PINGS")),
-            "danger": i(p.get("DANGER_PINGS")),
-            "enemy_missing": i(p.get("ENEMY_MISSING_PINGS")),
-            "enemy_vision": i(p.get("ENEMY_VISION_PINGS")),
-            "get_back": i(p.get("GET_BACK_PINGS")),
-            "hold": i(p.get("HOLD_PINGS")),
-            "on_my_way": i(p.get("ON_MY_WAY_PINGS")),
-            "push": i(p.get("PUSH_PINGS")),
-            "retreat": i(p.get("RETREAT_PINGS")),
-            "vision_cleared": i(p.get("VISION_CLEARED_PINGS")),
-            "need_vision": i(p.get("NEED_VISION_PINGS")),
-            "all_in": i(p.get("ALL_IN_PINGS")),
-            "assist_me": i(p.get("ASSIST_ME_PINGS")),
-        },
+        "pings": i(p.get("PING")),
 
         "runas": runes(p),
         "objetos": items(p),
@@ -310,7 +184,6 @@ def player(p):
             "heraldos": i(p.get("RIFT_HERALD_KILLS")),
             "void_grubs": i(p.get("HORDE_KILLS")),
             "elder_dragons": i(p.get("ELDER_DRAGON_KILLS")),
-            "atakhans": i(p.get("ATAKHAN_KILLS")),
             "objetivos_robados": i(p.get("OBJECTIVES_STOLEN")),
             "asistencias_robo": i(p.get("OBJECTIVES_STOLEN_ASSISTS")),
         },
@@ -321,8 +194,6 @@ def player(p):
             "mayor_critico": i(p.get("LARGEST_CRITICAL_STRIKE")),
             "tiempo_vivo_mas_largo": i(p.get("LONGEST_TIME_SPENT_LIVING")),
             "tiempo_muerto": i(p.get("TOTAL_TIME_SPENT_DEAD")),
-            "tiempo_desconectado": i(p.get("TIME_SPENT_DISCONNECTED")),
-            "ultimo_takedown_tiempo": i(p.get("LAST_TAKEDOWN_TIME")),
         },
     }
 
@@ -341,67 +212,24 @@ def team(team_id, ps):
         "victoria": victory,
 
         "resumen": {
-            "kills": sum(
-                p["kda"]["kills"]
-                for p in ps
-            ),
-            "muertes": sum(
-                p["kda"]["muertes"]
-                for p in ps
-            ),
-            "asistencias": sum(
-                p["kda"]["asistencias"]
-                for p in ps
-            ),
-            "oro_total": sum(
-                p["economia"]["oro"]
-                for p in ps
-            ),
-            "daño_campeones": sum(
-                p["daño"]["campeones"]
-                for p in ps
-            ),
-            "daño_recibido_campeones": sum(
-                p["daño_recibido"]["campeones"]
-                for p in ps
-            ),
+            "kills": sum(p["kda"]["kills"] for p in ps),
+            "muertes": sum(p["kda"]["muertes"] for p in ps),
+            "asistencias": sum(p["kda"]["asistencias"] for p in ps),
+            "oro_total": sum(p["oro"] for p in ps),
+            "daño_campeones": sum(p["daño_campeones"] for p in ps),
+            "daño_recibido_campeones": sum(p["daño_recibido_campeones"] for p in ps),
         },
 
         "objetivos": {
-            "dragones": sum(
-                p["monstruos"]["dragones"]
-                for p in ps
-            ),
-            "barones": sum(
-                p["monstruos"]["barones"]
-                for p in ps
-            ),
-            "heraldos": sum(
-                p["monstruos"]["heraldos"]
-                for p in ps
-            ),
-            "void_grubs": sum(
-                p["monstruos"]["void_grubs"]
-                for p in ps
-            ),
-            "elder_dragons": sum(
-                p["monstruos"]["elder_dragons"]
-                for p in ps
-            ),
-            "atakhans": sum(
-                p["monstruos"]["atakhans"]
-                for p in ps
-            ),
-            "inhibidores": sum(
-                p["estructuras"]["inhibidores"]
-                for p in ps
-            ),
+            "dragones": sum(p["monstruos"]["dragones"] for p in ps),
+            "barones": sum(p["monstruos"]["barones"] for p in ps),
+            "heraldos": sum(p["monstruos"]["heraldos"] for p in ps),
+            "void_grubs": sum(p["monstruos"]["void_grubs"] for p in ps),
+            "elder_dragons": sum(p["monstruos"]["elder_dragons"] for p in ps),
+            "inhibidores": sum(p["estructuras"]["inhibidores"] for p in ps),
         },
 
-        "jugadores": [
-            p["riot_id"]
-            for p in ps
-        ],
+        "jugadores": [p["riot_id"] for p in ps],
     }
 
 
@@ -482,95 +310,6 @@ def main(path):
 
         "equipos": teams,
         "jugadores": players,
-
-        "graficas": {
-            "daño_por_jugador": [
-                {
-                    "jugador": p["riot_id"],
-                    "equipo": p["equipo"],
-                    "valor": p["daño"]["campeones"],
-                }
-                for p in players
-            ],
-
-            "oro_por_jugador": [
-                {
-                    "jugador": p["riot_id"],
-                    "equipo": p["equipo"],
-                    "valor": p["economia"]["oro"],
-                }
-                for p in players
-            ],
-
-            "cs_por_jugador": [
-                {
-                    "jugador": p["riot_id"],
-                    "equipo": p["equipo"],
-                    "valor": p["farm"]["cs"],
-                }
-                for p in players
-            ],
-
-            "vision_por_jugador": [
-                {
-                    "jugador": p["riot_id"],
-                    "equipo": p["equipo"],
-                    "valor": p["vision"]["score"],
-                }
-                for p in players
-            ],
-
-            "mitigacion_por_jugador": [
-                {
-                    "jugador": p["riot_id"],
-                    "equipo": p["equipo"],
-                    "valor": p["soporte"]["daño_mitigado"],
-                }
-                for p in players
-            ],
-
-            "curacion_por_jugador": [
-                {
-                    "jugador": p["riot_id"],
-                    "equipo": p["equipo"],
-                    "valor": p["soporte"]["daño_curado"],
-                }
-                for p in players
-            ],
-
-            "control_por_jugador": [
-                {
-                    "jugador": p["riot_id"],
-                    "equipo": p["equipo"],
-                    "valor": p["soporte"]["control_adversarios"],
-                }
-                for p in players
-            ],
-
-            "kills_por_equipo": [
-                {
-                    "equipo": t,
-                    "valor": v["resumen"]["kills"],
-                }
-                for t, v in teams.items()
-            ],
-
-            "oro_por_equipo": [
-                {
-                    "equipo": t,
-                    "valor": v["resumen"]["oro_total"],
-                }
-                for t, v in teams.items()
-            ],
-        },
-
-        "disponibilidad": {
-            "timeline": False,
-            "first_blood": False,
-            "participacion_objetivos": False,
-            "compras_con_tiempo": False,
-            "eventos": False,
-        },
 
         "nota": (
             "Los campos timeline/eventos/first_blood "
