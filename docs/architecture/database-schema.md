@@ -11,7 +11,7 @@ Para el contexto de diseño, operaciones y mapeo de partidas:
 
 ## Diagrama Entidad-Relación (Mermaid ER)
 
-El esquema se compone de 16 tablas organizadas jerárquicamente en torno a la competición, la participación de jugadores en partidas de League of Legends y el registro de auditoría y pronósticos.
+El esquema se compone de 17 tablas organizadas jerárquicamente en torno a la competición, la participación de jugadores en partidas de League of Legends y el registro de auditoría y pronósticos.
 
 ```mermaid
 erDiagram
@@ -22,6 +22,9 @@ erDiagram
     SEASONS_DIVISIONS ||--o{ MATCHES : "contiene"
     TEAMS ||--o{ TEAM_MEMBERSHIPS : "tiene_miembros"
     DISCORD_USERS ||--o{ TEAM_MEMBERSHIPS : "pertenece_a"
+    TEAMS ||--o{ ROSTER_MOVEMENTS : "registra_movimiento"
+    DISCORD_USERS ||--o{ ROSTER_MOVEMENTS : "sujeto_movimiento"
+    DISCORD_USERS |o--o{ ROSTER_MOVEMENTS : "autor_movimiento"
     DISCORD_USERS |o--o{ PLAYERS : "posee_cuentas"
     DISCORD_USERS ||--o{ PREDICTIONS : "realiza"
     DISCORD_USERS |o--o{ AUDIT_LOGS : "ejecuta_acciones"
@@ -93,8 +96,17 @@ erDiagram
         varchar discord_user_id PK, FK
         roster_role role
         boolean is_captain
-        date starts_on
-        date ends_on
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    ROSTER_MOVEMENTS {
+        uuid id PK
+        uuid team_id FK
+        varchar discord_user_id FK
+        roster_movement_action action
+        roster_role role
+        varchar actor_id FK
         timestamp created_at
         timestamp updated_at
     }
@@ -269,7 +281,7 @@ erDiagram
 
 ## Enumeraciones del Sistema
 
-El esquema define 5 enumeraciones PostgreSQL nativas (`CREATE TYPE ... AS ENUM`) para asegurar la integridad de dominio en los valores categóricos:
+El esquema define 6 enumeraciones PostgreSQL nativas (`CREATE TYPE ... AS ENUM`) para asegurar la integridad de dominio en los valores categóricos:
 
 ### 1. `app_role`
 * **Tipo:** `"public"."app_role"`
@@ -303,8 +315,19 @@ El esquema define 5 enumeraciones PostgreSQL nativas (`CREATE TYPE ... AS ENUM`)
 ### 5. `roster_role`
 * **Tipo:** `"public"."roster_role"`
 * **Valores permitidos:** `'top'`, `'jungle'`, `'mid'`, `'adc'`, `'support'`, `'substitute'`, `'coach'`, `'staff'`, `'partners'`
-* **Columna de aplicación:** `team_memberships.role`
+* **Columna de aplicación:** `team_memberships.role`, `roster_movements.role`
 * **Propósito:** Clasifica la función de cada integrante en la plantilla de un equipo. Los primeros cinco corresponden a las posiciones competitivas activas, mientras que los restantes contemplan suplentes, cuerpo técnico, directiva y colaboradores.
+
+### 6. `roster_movement_action`
+* **Tipo:** `"public"."roster_movement_action"`
+* **Valores permitidos:** `'joined'`, `'left'`, `'promoted_to_captain'`, `'demoted_from_captain'`, `'role_changed'`
+* **Columna de aplicación:** `roster_movements.action`
+* **Propósito:** Tipifica los eventos y transiciones del historial de plantilla:
+  - `'joined'`: Alta o incorporación de un miembro al equipo.
+  - `'left'`: Baja o desvinculación de un miembro del equipo.
+  - `'promoted_to_captain'`: Designación o ascenso a capitán del equipo.
+  - `'demoted_from_captain'`: Cese o revocación de la capitanía.
+  - `'role_changed'`: Modificación del rol o posición competitiva en la plantilla.
 
 ---
 
@@ -334,13 +357,6 @@ El modelo delega en el motor relacional la validación de restricciones invarian
   CHECK ("ends_on" IS NULL OR "starts_on" IS NULL OR "ends_on" >= "starts_on")
   ```
   Evita inconsistencias cronológicas en la definición de temporadas.
-
-* **`team_memberships_dates_check`**:
-  ```sql
-  CONSTRAINT "team_memberships_dates_check" 
-  CHECK ("ends_on" IS NULL OR "ends_on" >= "starts_on")
-  ```
-  Garantiza que la fecha de baja de un jugador en una plantilla no sea anterior a su fecha de incorporación.
 
 * **`matches_different_teams_check`**:
   ```sql
@@ -430,7 +446,7 @@ El modelo delega en el motor relacional la validación de restricciones invarian
 ### 3. Triggers y Restricciones Diferidas
 
 * **Actualización de marcas temporales (`set_updated_at`)**:
-  Trigger `BEFORE UPDATE` en las 16 tablas del sistema que invoca la función `set_updated_at()`, asignando automáticamente `clock_timestamp()` a la columna `updated_at`.
+  Trigger `BEFORE UPDATE` en las 17 tablas del sistema que invoca la función `set_updated_at()`, asignando automáticamente `clock_timestamp()` a la columna `updated_at`.
 
 * **Validación de equipos en mapas (`check_match_games_teams_trigger`)**:
   Trigger `BEFORE INSERT OR UPDATE` sobre `match_games` que ejecuta `check_match_games_teams()`. Valida que los equipos asignados a los lados azul (`blue_team_id`) y rojo (`red_team_id`) del mapa coincidan exactamente con `team1_id` o `team2_id` registrados en la serie padre (`matches`).
@@ -509,20 +525,30 @@ El modelo delega en el motor relacional la validación de restricciones invarian
   - `created_at` / `updated_at`: `timestamp with time zone` NOT NULL DEFAULT `now()`.
 
 ### 6. `team_memberships`
-* **Descripción:** Miembros y alineación de los equipos (plantilla histórica y activa).
+* **Descripción:** Miembros y alineación actual de los equipos (plantilla activa).
 * **Clave primaria compuesta:** (`team_id`, `discord_user_id`).
 * **Columnas:**
   - `team_id`: `uuid` NOT NULL REFERENCES `teams(id)` ON DELETE CASCADE.
   - `discord_user_id`: `varchar(32)` NOT NULL REFERENCES `discord_users(discord_id)` ON DELETE CASCADE.
   - `role`: `roster_role` NOT NULL.
   - `is_captain`: `boolean` NOT NULL DEFAULT `false`.
-  - `starts_on`: `date` NOT NULL DEFAULT `CURRENT_DATE`.
-  - `ends_on`: `date` (opcional).
   - `created_at` / `updated_at`: `timestamp with time zone` NOT NULL DEFAULT `now()`.
-* **Restricciones:** `team_memberships_dates_check`, `team_memberships_captain_role_check`, `team_memberships_unique_captain`.
+* **Restricciones:** `team_memberships_captain_role_check`, `team_memberships_unique_captain`.
 * **Índices:** `team_memberships_team_id_idx`, `team_memberships_discord_user_id_idx`.
 
-### 7. `players`
+### 7. `roster_movements`
+* **Descripción:** Historial de movimientos, incorporaciones, bajas y cambios de rol en la plantilla de los equipos.
+* **Columnas:**
+  - `id`: `uuid` PRIMARY KEY DEFAULT `gen_random_uuid()`.
+  - `team_id`: `uuid` NOT NULL REFERENCES `teams(id)` ON DELETE CASCADE.
+  - `discord_user_id`: `varchar(32)` NOT NULL REFERENCES `discord_users(discord_id)` ON DELETE CASCADE.
+  - `action`: `roster_movement_action` NOT NULL.
+  - `role`: `roster_role` (opcional).
+  - `actor_id`: `varchar(32)` REFERENCES `discord_users(discord_id)` ON DELETE SET NULL.
+  - `created_at` / `updated_at`: `timestamp with time zone` NOT NULL DEFAULT `now()`.
+* **Índices:** `roster_movements_team_id_idx`, `roster_movements_discord_user_id_idx`, `roster_movements_actor_id_idx`, `roster_movements_created_at_idx`.
+
+### 8. `players`
 * **Descripción:** Cuentas de juego de League of Legends asociadas o no a usuarios de Discord.
 * **Columnas:**
   - `id`: `uuid` PRIMARY KEY DEFAULT `gen_random_uuid()`.
@@ -536,7 +562,7 @@ El modelo delega en el motor relacional la validación de restricciones invarian
 * **Restricciones:** UNIQUE (`game_name`, `riot_tag`) (`players_game_name_riot_tag_key`).
 * **Índices:** `players_discord_user_id_idx`.
 
-### 8. `rounds`
+### 9. `rounds`
 * **Descripción:** Jornadas o rondas de competición dentro de una temporada y división.
 * **Clave primaria compuesta:** (`id`, `id_season_division`).
 * **Columnas:**
@@ -548,7 +574,7 @@ El modelo delega en el motor relacional la validación de restricciones invarian
   - `created_at` / `updated_at`: `timestamp with time zone` NOT NULL DEFAULT `now()`.
 * **Índices:** `rounds_season_division_idx`.
 
-### 9. `matches`
+### 10. `matches`
 * **Descripción:** Enfrentamientos o series competitivas entre dos equipos.
 * **Columnas:**
   - `id`: `uuid` PRIMARY KEY DEFAULT `gen_random_uuid()`.
@@ -571,7 +597,7 @@ El modelo delega en el motor relacional la validación de restricciones invarian
 * **Restricciones:** UNIQUE (`id_season_division`, `id_round`, `team1_id`, `team2_id`) (`matches_unique_combination`), `matches_different_teams_check`, `matches_best_of_check`, `matches_scores_check`, `matches_winner_participant_check`.
 * **Índices:** `matches_season_division_scheduled_at_idx`, `matches_round_idx`, `matches_team1_id_idx`, `matches_team2_id_idx`.
 
-### 10. `match_games`
+### 11. `match_games`
 * **Descripción:** Mapas o partidas individuales que componen una serie (`matches`).
 * **Columnas:**
   - `id`: `uuid` PRIMARY KEY DEFAULT `gen_random_uuid()`.
@@ -586,7 +612,7 @@ El modelo delega en el motor relacional la validación de restricciones invarian
 * **Restricciones:** UNIQUE (`matches_id`, `game_number`) (`match_games_matches_id_game_number_unique`), UNIQUE (`external_game_id`) (`match_games_external_game_id_key`), `match_games_different_teams_check`, `match_games_number_check`, `match_games_duration_check`, `match_games_winner_participant_check`.
 * **Índices:** `match_games_matches_id_idx`, `match_games_blue_team_id_idx`, `match_games_red_team_id_idx`.
 
-### 11. `player_game_info`
+### 12. `player_game_info`
 * **Descripción:** Participación individual de un jugador en un mapa concreto. Actúa como entidad padre para las estadísticas, runas y objetos.
 * **Columnas:**
   - `id`: `uuid` PRIMARY KEY DEFAULT `gen_random_uuid()`.
@@ -600,7 +626,7 @@ El modelo delega en el motor relacional la validación de restricciones invarian
 * **Restricciones:** UNIQUE (`match_game_id`, `player_id`) (`player_game_info_match_game_player_key`).
 * **Índices:** `player_game_info_match_game_id_idx`, `player_game_info_player_id_idx`, `player_game_info_team_id_idx`.
 
-### 12. `player_game_stats`
+### 13. `player_game_stats`
 * **Descripción:** Métricas cuantitativas y estadísticas del jugador en el mapa. Relación 1:1 con `player_game_info`.
 * **Columnas:**
   - `id`: `uuid` PRIMARY KEY REFERENCES `player_game_info(id)` ON DELETE CASCADE.
@@ -647,7 +673,7 @@ El modelo delega en el motor relacional la validación de restricciones invarian
   - `created_at` / `updated_at`: `timestamp with time zone` NOT NULL DEFAULT `now()`.
 * **Restricciones:** `player_game_stats_non_negative_check`, `player_game_stats_vision_check`, `player_game_stats_rofl_non_negative_check`.
 
-### 13. `player_game_runes`
+### 14. `player_game_runes`
 * **Descripción:** Árbol de runas y fragmentos seleccionados por el jugador en la partida. Relación 1:1 con `player_game_info`.
 * **Columnas:**
   - `id`: `uuid` PRIMARY KEY REFERENCES `player_game_info(id)` ON DELETE CASCADE.
@@ -664,7 +690,7 @@ El modelo delega en el motor relacional la validación de restricciones invarian
   - `stat_perk_defense`: `integer` NOT NULL.
   - `created_at` / `updated_at`: `timestamp with time zone` NOT NULL DEFAULT `now()`.
 
-### 14. `player_game_build`
+### 15. `player_game_build`
 * **Descripción:** Inventario final de objetos y hechizos de invocador del jugador en la partida. Relación 1:1 con `player_game_info`.
 * **Columnas:**
   - `id`: `uuid` PRIMARY KEY REFERENCES `player_game_info(id)` ON DELETE CASCADE.
@@ -679,7 +705,7 @@ El modelo delega en el motor relacional la validación de restricciones invarian
   - `summoner_spell_2_id`: `integer` (opcional).
   - `created_at` / `updated_at`: `timestamp with time zone` NOT NULL DEFAULT `now()`.
 
-### 15. `predictions`
+### 16. `predictions`
 * **Descripción:** Pronósticos realizados por usuarios de Discord sobre los enfrentamientos de la liga.
 * **Columnas:**
   - `id`: `uuid` PRIMARY KEY DEFAULT `gen_random_uuid()`.
@@ -690,7 +716,7 @@ El modelo delega en el motor relacional la validación de restricciones invarian
 * **Restricciones:** UNIQUE (`discord_user_id`, `match_id`) (`predictions_user_match_key`).
 * **Índices:** `predictions_match_id_idx`, `predictions_discord_user_id_idx`.
 
-### 16. `audit_logs`
+### 17. `audit_logs`
 * **Descripción:** Pistas de auditoría con registro antes/después (`jsonb`) para operaciones administrativas y cambios de estado.
 * **Columnas:**
   - `id`: `uuid` PRIMARY KEY DEFAULT `gen_random_uuid()`.
