@@ -4,24 +4,30 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/index.ts",
-    "./schema": "./src/schema.ts"
+    ".": { "types": "./dist/index.d.ts", "default": "./dist/index.js" },
+    "./schema": { "types": "./dist/schema.d.ts", "default": "./dist/schema.js" }
   },
   "scripts": {
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate",
+    "db:migrate": "tsx src/migrate.ts",
+    "db:seed": "tsx src/seed.ts",
     "db:studio": "drizzle-kit studio",
+    "db:check": "tsx src/check.ts",
+    "build": "tsc",
+    "test": "pnpm --filter rcl test",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "drizzle-orm": "^0.44.7",
-    "pg": "^8.16.3"
+    "pg": "^8.16.3",
+    "dotenv": "^17.2.2"
   },
   "devDependencies": {
     "@types/node": "^24.3.0",
     "@types/pg": "^8.15.5",
-    "dotenv": "^17.2.2",
+    "@electric-sql/pglite": "^0.3.14",
     "drizzle-kit": "^0.31.4",
+    "tsx": "^4.20.5",
     "typescript": "^5.9.2"
   }
 }

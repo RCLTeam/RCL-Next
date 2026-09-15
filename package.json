@@ -3,11 +3,16 @@
   "version": "0.1.0",
   "private": true,
   "packageManager": "pnpm@11.19.0",
+  "type": "module",
   "scripts": {
+    "dev:api": "pnpm --filter @rcl/database build && pnpm --filter @rcl/api dev",
     "db:generate": "pnpm --filter @rcl/database db:generate",
     "db:migrate": "pnpm --filter @rcl/database db:migrate",
+    "db:seed": "pnpm --filter @rcl/database db:seed",
     "db:studio": "pnpm --filter @rcl/database db:studio",
-    "typecheck": "pnpm -r typecheck",
+    "db:check": "pnpm --filter @rcl/database db:check",
+    "build": "pnpm -r build",
+    "typecheck": "pnpm --filter @rcl/database build && tsc -p tsconfig.json && pnpm -r typecheck",
     "lint": "biome lint .",
     "lint:fix": "biome lint --write .",
     "format": "biome format --write .",
@@ -20,8 +25,14 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
+    "@electric-sql/pglite": "^0.3.14",
+    "@types/node": "^24.3.0",
+    "@types/supertest": "^6.0.3",
     "@vitest/coverage-v8": "^3.0.7",
+    "drizzle-orm": "^0.44.7",
     "simple-git-hooks": "^2.11.1",
+    "supertest": "^7.1.4",
+    "typescript": "^5.9.2",
     "vitest": "^3.0.7"
   },
   "simple-git-hooks": {
