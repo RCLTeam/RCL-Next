@@ -5,7 +5,7 @@ El subsistema `apps/parser` proporciona la infraestructura de análisis binario,
 Para consultar el diseño de entidades, diagramas y operaciones de base de datos relacionadas:
 - [**Mapeo de Estadísticas JSON a PostgreSQL**](rofl-mapping.md): Correspondencia entre campos del JSON generado y las tablas `player_game_info`, `player_game_stats`, `player_game_runes`, `player_game_build`.
 - [**Modelo y Decisiones Arquitectónicas**](database.md): Decisiones de diseño relacional, desempate e integridad referencial.
-- [**Esquema Relacional y Diagrama ER**](database-schema.md): Diagrama Mermaid ER de las 16 tablas, enums, checks y reglas de integridad.
+- [**Esquema Relacional y Diagrama ER**](database-schema.md): Diagrama Mermaid ER de las 17 tablas, enums, checks y reglas de integridad.
 - [**Operaciones, Concurrencia y Comandos**](database-operations.md): Bloqueos consultivos, configuración del pool y comandos CLI.
 
 ---

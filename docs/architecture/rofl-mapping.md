@@ -5,7 +5,7 @@ La migración `packages/database/drizzle/0000_initial_schema.sql` y el modelo `p
 Para consultar el diseño de entidades, diagramas y operaciones de base de datos:
 - [**Arquitectura del Parser ROFL**](rofl-parser.md): Motor binario, algoritmo de seek inverso, validación de cabecera y cotas de memoria.
 - [**Modelo y Decisiones Arquitectónicas**](database.md): Decisiones de diseño, desempate y garantías relacionales.
-- [**Esquema Relacional y Diagrama ER**](database-schema.md): Diagrama Mermaid ER de las 16 tablas, enums, checks y reglas de integridad.
+- [**Esquema Relacional y Diagrama ER**](database-schema.md): Diagrama Mermaid ER de las 17 tablas, enums, checks y reglas de integridad.
 - [**Operaciones, Concurrencia y Comandos**](database-operations.md): Bloqueos consultivos (`pg_advisory_lock`, `pg_advisory_xact_lock`), configuración del pool y comandos CLI.
 
 ---

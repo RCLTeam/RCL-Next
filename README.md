@@ -72,7 +72,7 @@ apps/parser/
   data/                          Archivos .rofl de entrada
   result/                        Reportes generados en formato JSON
 packages/database/
-  src/schema.ts                  Las 16 tablas del modelo
+  src/schema.ts                  Las 17 tablas del modelo
   src/index.ts                   Factoría Drizzle + pool PostgreSQL
   src/environment.ts             Ruta única de .env
   src/migrate.ts                 Runner con control de historial
@@ -85,7 +85,7 @@ tests/
   integration/                   Pruebas de integración HTTP y de base de datos con PGlite
 docs/
   architecture/database.md            Decisiones de diseño y correcciones del modelo
-  architecture/database-schema.md     Diagrama ER de 16 tablas, enums y restricciones
+  architecture/database-schema.md     Diagrama ER de 17 tablas, enums y restricciones
   architecture/database-operations.md Concurrencia, advisory locks, pool y comandos
   architecture/rofl-parser.md         Arquitectura del parser ROFL, streaming y seek inverso
   architecture/rofl-mapping.md        Mapeo de estadísticas JSON a tablas relacionales
@@ -112,7 +112,7 @@ El pipeline de validación comprueba la salud integral del proyecto:
 
 Los paquetes que consumen código de `@rcl/database` (como `@rcl/api` y los tests de integración) acceden a las exportaciones tipadas a través de su carpeta `dist`. Por este motivo, se requiere compilar previamente la base de datos (`pnpm --filter @rcl/database build` o `pnpm build`) antes de ejecutar pruebas o arrancar los servicios en modo producción (`pnpm --filter @rcl/api start`).
 
-Las pruebas no requieren una base de datos externa ni variables en `.env`: ejecutan las migraciones reales y el seed sobre PostgreSQL embebido en memoria (`@electric-sql/pglite`), verificando las 16 tablas mediante Drizzle y recorriendo el flujo HTTP → controlador → servicio → repositorio → base de datos. PGlite proporciona aislamiento determinista e instantáneo para tests locales y CI sin dependencias de red. Para entornos de desarrollo integrados y producción, se utiliza el servidor PostgreSQL 17 desplegado mediante Docker Compose (`compose.yaml`). Las migraciones de base de datos se gestionan mediante `pnpm db:generate`, sobre el baseline consolidado en `0000_initial_schema.sql`.
+Las pruebas no requieren una base de datos externa ni variables en `.env`: ejecutan las migraciones reales y el seed sobre PostgreSQL embebido en memoria (`@electric-sql/pglite`), verificando las 17 tablas mediante Drizzle y recorriendo el flujo HTTP → controlador → servicio → repositorio → base de datos. PGlite proporciona aislamiento determinista e instantáneo para tests locales y CI sin dependencias de red. Para entornos de desarrollo integrados y producción, se utiliza el servidor PostgreSQL 17 desplegado mediante Docker Compose (`compose.yaml`). Las migraciones de base de datos se gestionan mediante `pnpm db:generate`, sobre el baseline consolidado en `0000_initial_schema.sql`.
 
 ## Migraciones e historial
 

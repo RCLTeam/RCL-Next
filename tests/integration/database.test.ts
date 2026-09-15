@@ -37,9 +37,9 @@ test('PostgreSQL migrations, fixtures and relational constraints', async (t) => 
     assert.equal((await db.select().from(schema.playerGameInfo)).length, 10);
     assert.equal((await db.select().from(schema.seasons))[0]?.isActive, false);
   });
-  await t.test('all 16 ORM tables map to executable SQL', async () => {
+  await t.test('all 17 ORM tables map to executable SQL', async () => {
     const tables = Object.values(schema).filter((value) => is(value, Table));
-    assert.equal(tables.length, 16);
+    assert.equal(tables.length, 17);
     for (const table of tables) await db.select().from(table).limit(1);
   });
   await t.test('SQL columns, foreign keys, checks and indexes match Drizzle metadata', async () => {
@@ -198,5 +198,138 @@ test('PostgreSQL migrations, fixtures and relational constraints', async (t) => 
     for (const table of [schema.playerGameStats, schema.playerGameRunes, schema.playerGameBuild]) {
       assert.equal((await db.select().from(table).where(sql`${table.id} = ${infoId}`)).length, 0);
     }
+  });
+  await t.test(
+    'roster_movements inserts all 5 valid actions and rejects invalid enum',
+    async () => {
+      const actions = [
+        'joined',
+        'left',
+        'promoted_to_captain',
+        'demoted_from_captain',
+        'role_changed'
+      ] as const;
+
+      for (const action of actions) {
+        const [inserted] = await db
+          .insert(schema.rosterMovements)
+          .values({
+            teamId,
+            discordUserId: '900000000000000001',
+            action,
+            role: 'top',
+            actorId: '900000000000000002'
+          })
+          .returning();
+        assert.ok(inserted);
+        assert.equal(inserted.action, action);
+        assert.equal(inserted.role, 'top');
+      }
+
+      await assert.rejects(
+        client.query(
+          "INSERT INTO roster_movements (team_id, discord_user_id, action) VALUES ($1, $2, 'invalid_action')",
+          [teamId, '900000000000000001']
+        )
+      );
+    }
+  );
+  await t.test(
+    'roster_movements cascades on team and subject user deletion, and sets null on actor deletion',
+    async () => {
+      // 1. Team cascade
+      const tempSeasonDivId = '20000000-0000-4000-8000-000000000001';
+      const tempTeamId = '30000000-0000-4000-8000-000000000099';
+      await client.query(
+        "INSERT INTO teams (id, season_division_id, name, short_name) VALUES ($1, $2, 'Ephemeral Team', 'EPHT')",
+        [tempTeamId, tempSeasonDivId]
+      );
+      const [teamMov] = await db
+        .insert(schema.rosterMovements)
+        .values({
+          teamId: tempTeamId,
+          discordUserId: '900000000000000001',
+          action: 'joined'
+        })
+        .returning();
+      assert.ok(teamMov);
+
+      await client.query('DELETE FROM teams WHERE id = $1', [tempTeamId]);
+      const afterTeamDelete = await db
+        .select()
+        .from(schema.rosterMovements)
+        .where(sql`${schema.rosterMovements.id} = ${teamMov.id}`);
+      assert.equal(afterTeamDelete.length, 0);
+
+      // 2. Subject user cascade
+      const tempSubjectId = '900000000000000088';
+      await client.query(
+        "INSERT INTO discord_users (discord_id, username) VALUES ($1, 'Ephemeral Subject')",
+        [tempSubjectId]
+      );
+      const [userMov] = await db
+        .insert(schema.rosterMovements)
+        .values({
+          teamId,
+          discordUserId: tempSubjectId,
+          action: 'joined'
+        })
+        .returning();
+      assert.ok(userMov);
+
+      await client.query('DELETE FROM discord_users WHERE discord_id = $1', [tempSubjectId]);
+      const afterUserDelete = await db
+        .select()
+        .from(schema.rosterMovements)
+        .where(sql`${schema.rosterMovements.id} = ${userMov.id}`);
+      assert.equal(afterUserDelete.length, 0);
+
+      // 3. Actor user SET NULL
+      const tempActorId = '900000000000000089';
+      await client.query(
+        "INSERT INTO discord_users (discord_id, username) VALUES ($1, 'Ephemeral Actor')",
+        [tempActorId]
+      );
+      const [actorMov] = await db
+        .insert(schema.rosterMovements)
+        .values({
+          teamId,
+          discordUserId: '900000000000000001',
+          action: 'promoted_to_captain',
+          actorId: tempActorId
+        })
+        .returning();
+      assert.ok(actorMov);
+      assert.equal(actorMov.actorId, tempActorId);
+
+      await client.query('DELETE FROM discord_users WHERE discord_id = $1', [tempActorId]);
+      const [afterActorDelete] = await db
+        .select()
+        .from(schema.rosterMovements)
+        .where(sql`${schema.rosterMovements.id} = ${actorMov.id}`);
+      assert.ok(afterActorDelete);
+      assert.equal(afterActorDelete.actorId, null);
+    }
+  );
+  await t.test('roster_movements updated_at changes via set_updated_at trigger', async () => {
+    const [mov] = await db
+      .insert(schema.rosterMovements)
+      .values({
+        teamId,
+        discordUserId: '900000000000000001',
+        action: 'role_changed',
+        role: 'substitute'
+      })
+      .returning();
+    assert.ok(mov);
+
+    await client.query("UPDATE roster_movements SET updated_at = '2000-01-01' WHERE id = $1", [
+      mov.id
+    ]);
+    const result = await client.query<{ recent: boolean }>(
+      "SELECT updated_at > '2020-01-01'::timestamptz AS recent FROM roster_movements WHERE id = $1",
+      [mov.id]
+    );
+    assert.equal(result.rows[0]?.recent, true);
   });
 });

@@ -1653,6 +1653,173 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "public.roster_movements": {
+      "name": "roster_movements",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "team_id": {
+          "name": "team_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "discord_user_id": {
+          "name": "discord_user_id",
+          "type": "varchar(32)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "action": {
+          "name": "action",
+          "type": "roster_movement_action",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "role": {
+          "name": "role",
+          "type": "roster_role",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "actor_id": {
+          "name": "actor_id",
+          "type": "varchar(32)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "roster_movements_team_id_idx": {
+          "name": "roster_movements_team_id_idx",
+          "columns": [
+            {
+              "expression": "team_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "roster_movements_discord_user_id_idx": {
+          "name": "roster_movements_discord_user_id_idx",
+          "columns": [
+            {
+              "expression": "discord_user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "roster_movements_actor_id_idx": {
+          "name": "roster_movements_actor_id_idx",
+          "columns": [
+            {
+              "expression": "actor_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "roster_movements_created_at_idx": {
+          "name": "roster_movements_created_at_idx",
+          "columns": [
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "roster_movements_team_id_fkey": {
+          "name": "roster_movements_team_id_fkey",
+          "tableFrom": "roster_movements",
+          "tableTo": "teams",
+          "columnsFrom": [
+            "team_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "roster_movements_discord_user_id_fkey": {
+          "name": "roster_movements_discord_user_id_fkey",
+          "tableFrom": "roster_movements",
+          "tableTo": "discord_users",
+          "columnsFrom": [
+            "discord_user_id"
+          ],
+          "columnsTo": [
+            "discord_id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "roster_movements_actor_id_fkey": {
+          "name": "roster_movements_actor_id_fkey",
+          "tableFrom": "roster_movements",
+          "tableTo": "discord_users",
+          "columnsFrom": [
+            "actor_id"
+          ],
+          "columnsTo": [
+            "discord_id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.rounds": {
       "name": "rounds",
       "schema": "",
@@ -1967,19 +2134,6 @@
           "notNull": true,
           "default": false
         },
-        "starts_on": {
-          "name": "starts_on",
-          "type": "date",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "CURRENT_DATE"
-        },
-        "ends_on": {
-          "name": "ends_on",
-          "type": "date",
-          "primaryKey": false,
-          "notNull": false
-        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp with time zone",
@@ -2083,10 +2237,6 @@
       "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {
-        "team_memberships_dates_check": {
-          "name": "team_memberships_dates_check",
-          "value": "\"ends_on\" IS NULL OR \"ends_on\" >= \"starts_on\""
-        },
         "team_memberships_captain_role_check": {
           "name": "team_memberships_captain_role_check",
           "value": "\"is_captain\" = false OR \"role\" IN ('top', 'jungle', 'mid', 'adc', 'support')"
@@ -2242,6 +2392,17 @@
         "champion",
         "number",
         "text"
+      ]
+    },
+    "public.roster_movement_action": {
+      "name": "roster_movement_action",
+      "schema": "public",
+      "values": [
+        "joined",
+        "left",
+        "promoted_to_captain",
+        "demoted_from_captain",
+        "role_changed"
       ]
     },
     "public.roster_role": {
