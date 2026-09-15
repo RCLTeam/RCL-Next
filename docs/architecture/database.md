@@ -1,9 +1,9 @@
 # Modelo PostgreSQL: Referencia y Decisiones Arquitectónicas
 
-La fuente de verdad del esquema vigente es `packages/database/drizzle/0000_initial_schema.sql`, sincronizada con `packages/database/src/schema.ts` y el snapshot de Drizzle ORM. Contiene las 16 tablas del sistema. El archivo `docs/reference/0000_initial_schema.original.sql` se conserva únicamente como referencia histórica del diseño previo.
+La fuente de verdad del esquema vigente es `packages/database/drizzle/0000_initial_schema.sql`, sincronizada con `packages/database/src/schema.ts` y el snapshot de Drizzle ORM. Contiene las 17 tablas del sistema. El archivo `docs/reference/0000_initial_schema.original.sql` se conserva únicamente como referencia histórica del diseño previo.
 
 Para la referencia exhaustiva del modelo relacional, diagramas y operaciones, consulta los documentos complementarios:
-- [**Diagrama ER, Enumeraciones y Restricciones**](database-schema.md): Diagrama Mermaid ER de las 16 tablas, 5 enums del sistema, restricciones `CHECK` e índices únicos parciales.
+- [**Diagrama ER, Enumeraciones y Restricciones**](database-schema.md): Diagrama Mermaid ER de las 17 tablas, 6 enums del sistema, restricciones `CHECK` e índices únicos parciales.
 - [**Operaciones, Concurrencia y Comandos**](database-operations.md): Bloqueos consultivos (`pg_advisory_lock`, `pg_advisory_xact_lock`), configuración del pool de conexiones, variables de entorno y comandos CLI (`db:migrate`, `db:seed`, etc.).
 - [**Mapeo de Estadísticas ROFL**](rofl-mapping.md): Correspondencia detallada de métricas JSON de repeticiones hacia tablas relacionales.
 
@@ -14,6 +14,7 @@ Para la referencia exhaustiva del modelo relacional, diagramas y operaciones, co
 ```text
 seasons → seasons_divisions ← divisions
              ├─ teams ← team_memberships ← discord_users → players
+             │    ├─ roster_movements ← discord_users
              └─ rounds → matches → match_games → player_game_info
 discord_users → predictions → matches               ├─ player_game_stats (1:1)
                                                    ├─ player_game_runes (1:1)
@@ -23,7 +24,7 @@ discord_users → audit_logs
 
 * **Separación de Identidades:** Usuarios Discord (`discord_users`) y jugadores (`players`) no son la misma entidad: un espectador puede emitir pronósticos sin ser jugador, y un jugador puede competir en la liga sin disponer de una cuenta de Discord vinculada.
 * **Jerarquía de Competición:** Temporadas (`seasons`) y divisiones (`divisions`) se identifican naturalmente por `name`. La tabla intermedia `seasons_divisions` asigna un UUID primario que vincula a ambas y actúa como raíz para equipos (`teams`), jornadas (`rounds`) y partidos (`matches`).
-* **Plantillas y Capitanía:** `team_memberships` emplea la clave primaria compuesta (`team_id`, `discord_user_id`), admite como máximo un único capitán por equipo mediante índice único parcial, y permite a un usuario poseer múltiples cuentas asociadas en `players` mediante el flag `is_main`.
+* **Plantillas y Capitanía:** `team_memberships` emplea la clave primaria compuesta (`team_id`, `discord_user_id`), admite como máximo un único capitán por equipo mediante índice único parcial, y permite a un usuario poseer múltiples cuentas asociadas en `players` mediante el flag `is_main`. El historial de transiciones y cambios de rol se preserva en `roster_movements`.
 * **Estructura de Partidos:** `rounds` utiliza clave compuesta (`id smallint`, `id_season_division uuid`) con fase `stage` enum (`'regular'`, `'playoff'`). `matches` enfrenta a `team1_id` y `team2_id`, y cada mapa individual se registra en `match_games` vinculado por `matches_id`.
 * **Pronósticos:** Se gestionan en `predictions` con unicidad por usuario y partido (`discord_user_id`, `match_id`).
 

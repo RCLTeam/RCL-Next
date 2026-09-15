@@ -41,6 +41,13 @@ export const rosterRole = pgEnum('roster_role', [
   'staff',
   'partners'
 ]);
+export const rosterMovementAction = pgEnum('roster_movement_action', [
+  'joined',
+  'left',
+  'promoted_to_captain',
+  'demoted_from_captain',
+  'role_changed'
+]);
 
 export const discordUsers = pgTable('discord_users', {
   discordId: varchar('discord_id', { length: 32 }).primaryKey(),
@@ -183,8 +190,6 @@ export const teamMemberships = pgTable(
     discordUserId: varchar('discord_user_id', { length: 32 }).notNull(),
     role: rosterRole('role').notNull(),
     isCaptain: boolean('is_captain').notNull().default(false),
-    startsOn: date('starts_on').notNull().default(sql`CURRENT_DATE`),
-    endsOn: date('ends_on'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
   },
@@ -200,7 +205,6 @@ export const teamMemberships = pgTable(
       foreignColumns: [discordUsers.discordId]
     }).onDelete('cascade'),
     primaryKey({ name: 'team_memberships_pkey', columns: [t.teamId, t.discordUserId] }),
-    check('team_memberships_dates_check', sql`"ends_on" IS NULL OR "ends_on" >= "starts_on"`),
     check(
       'team_memberships_captain_role_check',
       sql`"is_captain" = false OR "role" IN ('top', 'jungle', 'mid', 'adc', 'support')`
@@ -210,6 +214,41 @@ export const teamMemberships = pgTable(
     uniqueIndex('team_memberships_unique_captain')
       .on(t.teamId)
       .where(sql`"team_memberships"."is_captain" = true`)
+  ]
+);
+
+export const rosterMovements = pgTable(
+  'roster_movements',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    teamId: uuid('team_id').notNull(),
+    discordUserId: varchar('discord_user_id', { length: 32 }).notNull(),
+    action: rosterMovementAction('action').notNull(),
+    role: rosterRole('role'),
+    actorId: varchar('actor_id', { length: 32 }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
+  },
+  (t) => [
+    foreignKey({
+      name: 'roster_movements_team_id_fkey',
+      columns: [t.teamId],
+      foreignColumns: [teams.id]
+    }).onDelete('cascade'),
+    foreignKey({
+      name: 'roster_movements_discord_user_id_fkey',
+      columns: [t.discordUserId],
+      foreignColumns: [discordUsers.discordId]
+    }).onDelete('cascade'),
+    foreignKey({
+      name: 'roster_movements_actor_id_fkey',
+      columns: [t.actorId],
+      foreignColumns: [discordUsers.discordId]
+    }).onDelete('set null'),
+    index('roster_movements_team_id_idx').on(t.teamId),
+    index('roster_movements_discord_user_id_idx').on(t.discordUserId),
+    index('roster_movements_actor_id_idx').on(t.actorId),
+    index('roster_movements_created_at_idx').on(t.createdAt)
   ]
 );
 

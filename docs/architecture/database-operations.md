@@ -4,7 +4,7 @@ Este documento detalla la gestión operativa de PostgreSQL en Rebel Crown Legacy
 
 Para consultar el diseño de entidades, diagramas y mapeo de partidas:
 - [**Modelo y Decisiones Arquitectónicas**](database.md): Decisiones de diseño, reglas de clasificación y garantías relacionales.
-- [**Esquema Relacional y Diagrama ER**](database-schema.md): Diagrama Mermaid ER de las 16 tablas, enums, checks y reglas de integridad.
+- [**Esquema Relacional y Diagrama ER**](database-schema.md): Diagrama Mermaid ER de las 17 tablas, enums, checks y reglas de integridad.
 - [**Mapeo de Estadísticas ROFL**](rofl-mapping.md): Correspondencia detallada de métricas JSON de repeticiones hacia tablas relacionales.
 
 ---

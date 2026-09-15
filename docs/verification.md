@@ -35,10 +35,10 @@ Las suites de prueba se encuentran centralizadas bajo el directorio raíz `tests
    - Inserción y normalización de los 10 participantes de una repetición ROFL sin pérdida de métricas (KDA, visión, objetivos, hechizos, objetos, runas y fragmentos).
    - Rechazo de estadísticas numéricas con valores negativos a nivel de constraint.
    - Retención de NULL en métricas ausentes y conservación de ceros explícitos.
-5. **`tests/integration/database.test.ts`** (1 suite con 15 aserciones relacionales):
+5. **`tests/integration/database.test.ts`** (1 suite con 18 aserciones relacionales):
    - Idempotencia de migración reteniendo una única entrada en el journal.
    - Idempotencia de seed transaccional sin duplicación de filas.
-   - Mapeo de las 16 tablas ORM a consultas SQL ejecutables.
+   - Mapeo de las 17 tablas ORM a consultas SQL ejecutables.
    - Concordancia exacta de columnas, tipos, foreign keys, checks e índices frente a metadatos Drizzle.
    - Identidad compartida entre stats, runas y build vinculadas al padre `player_game_info`.
    - Propiedad de equipos por identidades Discord y soporte de múltiples cuentas de juego.
@@ -51,6 +51,9 @@ Las suites de prueba se encuentran centralizadas bajo el directorio raíz `tests
    - Unicidad estricta de temporada activa.
    - Actualización desatendida del timestamp `updated_at`.
    - Cascada completa al eliminar la entidad principal del jugador en partida.
+   - Registro de movimientos de plantilla (`roster_movements`): inserción de los 5 valores del enum `roster_movement_action` y rechazo de acciones inválidas.
+   - Integridad referencial de movimientos: borrado en cascada por equipo y usuario sujeto, y preservación con `SET NULL` al eliminar el usuario autor (`actor_id`).
+   - Disparo automático del trigger `set_updated_at` en modificaciones de `roster_movements`.
 6. **`tests/integration/apiIntegration.test.ts`** (1 test de flujo completo):
    - Recorrido extremo a extremo HTTP (Supertest) → controlador Express → servicio de competición → repositorio PostgreSQL real → base de datos embebida PGlite.
 

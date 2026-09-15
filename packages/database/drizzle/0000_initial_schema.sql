@@ -3,6 +3,7 @@ CREATE TYPE "public"."game_side" AS ENUM('blue', 'red');--> statement-breakpoint
 CREATE TYPE "public"."stage" AS ENUM('regular', 'playoff');--> statement-breakpoint
 CREATE TYPE "public"."match_status" AS ENUM('scheduled', 'live', 'completed', 'cancelled', 'forfeit');--> statement-breakpoint
 CREATE TYPE "public"."roster_role" AS ENUM('top', 'jungle', 'mid', 'adc', 'support', 'substitute', 'coach', 'staff', 'partners');--> statement-breakpoint
+CREATE TYPE "public"."roster_movement_action" AS ENUM('joined', 'left', 'promoted_to_captain', 'demoted_from_captain', 'role_changed');--> statement-breakpoint
 CREATE TABLE "discord_users" (
 	"discord_id" varchar(32) PRIMARY KEY NOT NULL,
 	"username" varchar(64) NOT NULL,
@@ -82,13 +83,21 @@ CREATE TABLE "team_memberships" (
 	"discord_user_id" varchar(32) NOT NULL REFERENCES "public"."discord_users"("discord_id") ON DELETE cascade ON UPDATE no action,
 	"role" "public"."roster_role" NOT NULL,
 	"is_captain" boolean DEFAULT false NOT NULL,
-	"starts_on" date DEFAULT CURRENT_DATE NOT NULL,
-	"ends_on" date,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
-	CONSTRAINT "team_memberships_dates_check" CHECK ("ends_on" IS NULL OR "ends_on" >= "starts_on"),
 	CONSTRAINT "team_memberships_captain_role_check" CHECK ("is_captain" = false OR "role" IN ('top', 'jungle', 'mid', 'adc', 'support')),
 	PRIMARY KEY ("team_id", "discord_user_id")
+);
+--> statement-breakpoint
+CREATE TABLE "roster_movements" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"team_id" uuid NOT NULL REFERENCES "public"."teams"("id") ON DELETE cascade ON UPDATE no action,
+	"discord_user_id" varchar(32) NOT NULL REFERENCES "public"."discord_users"("discord_id") ON DELETE cascade ON UPDATE no action,
+	"action" "public"."roster_movement_action" NOT NULL,
+	"role" "public"."roster_role",
+	"actor_id" varchar(32) REFERENCES "public"."discord_users"("discord_id") ON DELETE set null ON UPDATE no action,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "rounds" (
@@ -297,6 +306,10 @@ CREATE INDEX "players_discord_user_id_idx" ON "players" USING btree ("discord_us
 CREATE INDEX "team_memberships_team_id_idx" ON "team_memberships" USING btree ("team_id");--> statement-breakpoint
 CREATE INDEX "team_memberships_discord_user_id_idx" ON "team_memberships" USING btree ("discord_user_id");--> statement-breakpoint
 CREATE UNIQUE INDEX "team_memberships_unique_captain" ON "team_memberships" USING btree ("team_id") WHERE "team_memberships"."is_captain" = true;--> statement-breakpoint
+CREATE INDEX "roster_movements_team_id_idx" ON "roster_movements" USING btree ("team_id");--> statement-breakpoint
+CREATE INDEX "roster_movements_discord_user_id_idx" ON "roster_movements" USING btree ("discord_user_id");--> statement-breakpoint
+CREATE INDEX "roster_movements_actor_id_idx" ON "roster_movements" USING btree ("actor_id");--> statement-breakpoint
+CREATE INDEX "roster_movements_created_at_idx" ON "roster_movements" USING btree ("created_at");--> statement-breakpoint
 CREATE INDEX "rounds_season_division_idx" ON "rounds" USING btree ("id_season_division");--> statement-breakpoint
 CREATE INDEX "matches_season_division_scheduled_at_idx" ON "matches" USING btree ("id_season_division", "scheduled_at");--> statement-breakpoint
 CREATE INDEX "matches_round_idx" ON "matches" USING btree ("id_round", "id_season_division");--> statement-breakpoint
@@ -322,7 +335,7 @@ DECLARE table_name text;
 BEGIN
   FOREACH table_name IN ARRAY ARRAY[
     'seasons', 'divisions', 'seasons_divisions', 'discord_users', 'teams', 'players', 'team_memberships',
-    'rounds', 'matches', 'match_games', 'player_game_info', 'player_game_stats',
+    'roster_movements', 'rounds', 'matches', 'match_games', 'player_game_info', 'player_game_stats',
     'player_game_runes', 'player_game_build', 'predictions',
     'audit_logs'
   ] LOOP
