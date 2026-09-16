@@ -1,10 +1,10 @@
 # Rebel Crown Legacy
 
-Base de la refactorización en TypeScript, Express y PostgreSQL con Drizzle. Incluye esquema, migraciones, datos de prueba, API de consulta y autenticación Discord con sesiones PostgreSQL. Incluye también el cliente React y la subida de repeticiones ROFL. Las siguientes etapas se detallan en [el roadmap](docs/architecture/roadmap.md).
+Base de la refactorización en TypeScript, Express y PostgreSQL con Drizzle. Incluye esquema, migraciones, datos de prueba, API de consulta y autenticación Discord con sesiones PostgreSQL. Las siguientes etapas son administración, perfiles/estadísticas, Pick'em y React.
 
 ## Inicio de sesión con Discord
 
-Configura `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET` y `DISCORD_REDIRECT_URI` en `.env`, aplica `pnpm db:migrate`, arranca `pnpm dev:api` y `pnpm dev:web` en terminales separadas y abre `http://localhost:5173`. La cabecera incluye **Entrar con Discord**, el usuario conectado y el cierre de sesión. Consulta [la guía de autenticación](docs/authentication.md) para registrar el callback y probar el acceso. Sin credenciales, la API pública sigue disponible y las rutas de autenticación devuelven 503.
+Configura `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET` y `DISCORD_REDIRECT_URI` en `.env`, aplica `pnpm db:migrate` y abre `/api/v1/auth/discord` en la API. Consulta [la guía de autenticación](docs/authentication.md) para registrar el callback, probar la sesión y conectar el futuro frontend. Sin credenciales, la API pública sigue disponible y las rutas de autenticación devuelven 503.
 
 ## Dónde está la base de datos
 
@@ -144,6 +144,6 @@ Las pruebas no requieren una base de datos externa ni variables en `.env`: ejecu
 
 ## Migraciones e historial
 
-La migración original era SQL incompleto y no ejecutable. Se conserva íntegra como referencia y se ha reconstruido el baseline para **bases nuevas**. Por petición del usuario, antes de desplegar en producción se han consolidado las migraciones 0000/0001/0002 en una única `0000_initial_schema.sql`. Incluye visión, estadísticas ROFL, timestamps y validación de snapshots completos. Solo existe un snapshot y una entrada en el journal. Si ya aplicaste el historial anterior en desarrollo, utiliza otra base vacía o prepara una adaptación explícita; no se ha borrado ninguna base existente. Consulta `docs/architecture/rofl-mapping.md` para el mapeo completo de estadísticas.
+La migración original era SQL incompleto y no ejecutable. Se conserva íntegra como referencia y se ha reconstruido el baseline para **bases nuevas**. Por petición del usuario, antes de desplegar en producción se consolidaron las migraciones antiguas 0000/0001/0002 en una única `0000_initial_schema.sql`. Incluye visión, estadísticas ROFL, timestamps y validación de snapshots completos. Ahora se añade `0001_discord_auth.sql` para autenticación: hay dos snapshots y dos entradas en el journal. Si ya aplicaste el historial previo a la consolidación en desarrollo, utiliza otra base vacía o prepara una adaptación explícita; no se ha borrado ninguna base existente. Consulta `docs/architecture/rofl-mapping.md` para el mapeo completo de estadísticas.
 
 Si tienes una base previa, no borres su volumen ni apliques este baseline manualmente. El runner rechaza esquemas sin historial o con hashes distintos. En ese caso hace falta una migración de adaptación basada en el esquema realmente desplegado. No se ha importado ni alterado ninguna base MySQL o PostgreSQL existente.

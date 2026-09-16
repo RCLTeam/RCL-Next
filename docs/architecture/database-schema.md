@@ -1,6 +1,6 @@
 # Esquema Relacional de Base de Datos
 
-Documentación exhaustiva del modelo de datos PostgreSQL de Rebel Crown Legacy (RCL), sincronizado entre `packages/database/src/schema.ts` y la migración `packages/database/drizzle/0000_initial_schema.sql`.
+Documentación del modelo de datos PostgreSQL de Rebel Crown Legacy (RCL), sincronizado entre `packages/database/src/schema.ts` y las migraciones `0000_initial_schema.sql` y `0001_discord_auth.sql`.
 
 Para el contexto de diseño, operaciones y mapeo de partidas:
 - [**Modelo y Decisiones Arquitectónicas**](database.md): Decisiones de diseño, desempate y garantías relacionales.
@@ -11,7 +11,7 @@ Para el contexto de diseño, operaciones y mapeo de partidas:
 
 ## Diagrama Entidad-Relación (Mermaid ER)
 
-El esquema se compone de 17 tablas organizadas jerárquicamente en torno a la competición, la participación de jugadores en partidas de League of Legends y el registro de auditoría y pronósticos.
+El esquema se compone de 19 tablas: las 17 de competición, jugadores, auditoría y pronósticos del diagrama siguiente, más `auth_sessions` y `oauth_states`, descritas en [autenticación](../authentication.md). `auth_sessions.discord_user_id` referencia `discord_users.discord_id` con borrado en cascada; ambas tablas nuevas almacenan hashes de tokens y fechas de caducidad indexadas.
 
 ```mermaid
 erDiagram

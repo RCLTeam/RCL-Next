@@ -1,4 +1,4 @@
-# API implementada — fase 1
+# API implementada
 
 Prefijo: `/api/v1`. Respuestas correctas: `{ "data": ... }`. Errores: `{ "error": { "code": "...", "message": "..." } }`; validación añade details.
 
@@ -79,3 +79,7 @@ La configuración de CORS acepta el origen definido en CORS_ORIGIN. El servidor 
   - `warning`, `anomaly`: Avisos y anomalías detectadas.
   - `success`, `error`: Finalización exitosa o error crítico.
 - **Cleanup:** Limpieza determinista de descriptores y flujos ante la desconexión del socket (`ws.on('close')`).
+
+## Autenticación Discord
+
+Las rutas `/api/v1/auth/discord`, `/api/v1/auth/discord/callback`, `/api/v1/auth/me` y `/api/v1/auth/logout` están implementadas. Consulta [autenticación](authentication.md) para configuración, cookies, permisos y contrato completo.

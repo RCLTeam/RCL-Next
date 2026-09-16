@@ -1,4 +1,4 @@
-// Synchronized with drizzle/0000_initial_schema.sql. SQL triggers remain in that migration.
+// Synchronized with drizzle migrations. SQL triggers remain in the baseline migration.
 import { sql } from 'drizzle-orm';
 import {
   boolean,
