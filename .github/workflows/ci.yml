@@ -1,0 +1,29 @@
+name: CI
+
+on:
+  push:
+    branches: [main, MergeBranch]
+  pull_request:
+    branches: [main, MergeBranch]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.19.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'pnpm'
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm check
+
+      - name: Run Python Parser Tests
+        run: python3 -m unittest discover -s apps/parser/tests -p "test_*.py" -v

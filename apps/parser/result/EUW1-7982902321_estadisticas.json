@@ -1,0 +1,1234 @@
+{
+  "version": 2,
+  "fuente": {
+    "tipo": "rofl",
+    "archivo": "EUW1-7982902321.rofl"
+  },
+  "rofl": {
+    "game_length_raw": 1475698,
+    "last_game_chunk_id": 52,
+    "last_key_frame_id": 25
+  },
+  "partida": {
+    "duracion": 1475,
+    "duracion_formateada": "24:35",
+    "equipo_ganador": 100
+  },
+  "equipos": {
+    "100": {
+      "victoria": true,
+      "resumen": {
+        "kills": 33,
+        "muertes": 19,
+        "asistencias": 26,
+        "oro_total": 58325,
+        "daño_campeones": 95478,
+        "daño_recibido_campeones": 67000
+      },
+      "objetivos": {
+        "dragones": 2,
+        "barones": 0,
+        "heraldos": 0,
+        "void_grubs": 2,
+        "elder_dragons": 0,
+        "inhibidores": 2
+      },
+      "jugadores": [
+        "Iron Tou#EUW",
+        "Melintavahalma#8835",
+        "Mystery Shack#EUW7",
+        "Kento#ROUX",
+        "Gaby#GoT"
+      ]
+    },
+    "200": {
+      "victoria": false,
+      "resumen": {
+        "kills": 19,
+        "muertes": 33,
+        "asistencias": 29,
+        "oro_total": 45656,
+        "daño_campeones": 67000,
+        "daño_recibido_campeones": 95479
+      },
+      "objetivos": {
+        "dragones": 0,
+        "barones": 0,
+        "heraldos": 0,
+        "void_grubs": 1,
+        "elder_dragons": 0,
+        "inhibidores": 0
+      },
+      "jugadores": [
+        "Meuleur Teigneux#EUW",
+        "Heinben#EUW",
+        "Hysbel#EUW",
+        "Jonibaba71#2277",
+        "BigNikEnergy#VEINY"
+      ]
+    }
+  },
+  "jugadores": [
+    {
+      "nombre": "Iron Tou",
+      "tag": "EUW",
+      "riot_id": "Iron Tou#EUW",
+      "puuid": "2bc8d38f-dd29-55e2-9f62-8dd8be48a046",
+      "campeon": "Malphite",
+      "posicion": "TOP",
+      "equipo": 100,
+      "resultado": "Win",
+      "kda": {
+        "kills": 1,
+        "muertes": 3,
+        "asistencias": 3,
+        "double_kills": 0,
+        "triple_kills": 0,
+        "quadra_kills": 0,
+        "penta_kills": 0,
+        "largest_killing_spree": 0
+      },
+      "oro": 8910,
+      "cs": 185,
+      "nivel": 15,
+      "daño_campeones": 13719,
+      "daño_recibido_campeones": 11690,
+      "soporte": {
+        "daño_mitigado": 37295,
+        "control_adversarios": 174
+      },
+      "estructuras": {
+        "torres": 2,
+        "derribos_torres": 2,
+        "inhibidores": 0,
+        "derribos_inhibidores": 0
+      },
+      "vision": {
+        "score": 19,
+        "wards_colocados": 6,
+        "wards_destruidos": 2,
+        "pinkwards_comprados": 0,
+        "wards_detector": 0
+      },
+      "pings": 30,
+      "runas": {
+        "primaria": {
+          "estilo_id": 8400,
+          "keystone_id": 8437,
+          "runa_1_id": 8401,
+          "runa_2_id": 8429,
+          "runa_3_id": 8451
+        },
+        "secundaria": {
+          "estilo_id": 8200,
+          "runa_1_id": 8226,
+          "runa_2_id": 8210
+        },
+        "fragmentos": {
+          "ofensiva_id": 5005,
+          "flexible_id": 5001,
+          "defensiva_id": 5001
+        }
+      },
+      "objetos": {
+        "slots": [
+          {
+            "slot": 0,
+            "id": 1120
+          },
+          {
+            "slot": 1,
+            "id": 2031
+          },
+          {
+            "slot": 2,
+            "id": 3075
+          },
+          {
+            "slot": 3,
+            "id": 3047
+          },
+          {
+            "slot": 4,
+            "id": 3068
+          },
+          {
+            "slot": 5,
+            "id": 2021
+          },
+          {
+            "slot": 6,
+            "id": 3340
+          }
+        ]
+      },
+      "hechizos": {
+        "hechizo_1_id": 12,
+        "hechizo_2_id": 4,
+        "casts_1": 4,
+        "casts_2": 2
+      },
+      "monstruos": {
+        "dragones": 0,
+        "barones": 0,
+        "heraldos": 0,
+        "void_grubs": 0,
+        "elder_dragons": 0,
+        "objetivos_robados": 0,
+        "asistencias_robo": 0
+      },
+      "gameplay": {
+        "mayor_daño_habilidad": 423,
+        "mayor_daño_ataque": 985,
+        "mayor_critico": 0,
+        "tiempo_vivo_mas_largo": 501,
+        "tiempo_muerto": 106
+      }
+    },
+    {
+      "nombre": "Melintavahalma",
+      "tag": "8835",
+      "riot_id": "Melintavahalma#8835",
+      "puuid": "41187809-700d-5296-9738-55500a55b254",
+      "campeon": "Ambessa",
+      "posicion": "JUNGLE",
+      "equipo": 100,
+      "resultado": "Win",
+      "kda": {
+        "kills": 12,
+        "muertes": 5,
+        "asistencias": 2,
+        "double_kills": 3,
+        "triple_kills": 0,
+        "quadra_kills": 0,
+        "penta_kills": 0,
+        "largest_killing_spree": 5
+      },
+      "oro": 15262,
+      "cs": 245,
+      "nivel": 18,
+      "daño_campeones": 28286,
+      "daño_recibido_campeones": 15646,
+      "soporte": {
+        "daño_mitigado": 31449,
+        "control_adversarios": 112
+      },
+      "estructuras": {
+        "torres": 1,
+        "derribos_torres": 1,
+        "inhibidores": 0,
+        "derribos_inhibidores": 0
+      },
+      "vision": {
+        "score": 17,
+        "wards_colocados": 4,
+        "wards_destruidos": 0,
+        "pinkwards_comprados": 0,
+        "wards_detector": 0
+      },
+      "pings": 27,
+      "runas": {
+        "primaria": {
+          "estilo_id": 8000,
+          "keystone_id": 8010,
+          "runa_1_id": 9111,
+          "runa_2_id": 9105,
+          "runa_3_id": 8299
+        },
+        "secundaria": {
+          "estilo_id": 8300,
+          "runa_1_id": 8321,
+          "runa_2_id": 8347
+        },
+        "fragmentos": {
+          "ofensiva_id": 5008,
+          "flexible_id": 5008,
+          "defensiva_id": 5001
+        }
+      },
+      "objetos": {
+        "slots": [
+          {
+            "slot": 0,
+            "id": 6699
+          },
+          {
+            "slot": 1,
+            "id": 6697
+          },
+          {
+            "slot": 2,
+            "id": 1001
+          },
+          {
+            "slot": 3,
+            "id": 6333
+          },
+          {
+            "slot": 4,
+            "id": 1036
+          },
+          {
+            "slot": 5,
+            "id": 1037
+          },
+          {
+            "slot": 6,
+            "id": 3364
+          }
+        ]
+      },
+      "hechizos": {
+        "hechizo_1_id": 11,
+        "hechizo_2_id": 4,
+        "casts_1": 14,
+        "casts_2": 3
+      },
+      "monstruos": {
+        "dragones": 2,
+        "barones": 0,
+        "heraldos": 0,
+        "void_grubs": 2,
+        "elder_dragons": 0,
+        "objetivos_robados": 0,
+        "asistencias_robo": 0
+      },
+      "gameplay": {
+        "mayor_daño_habilidad": 1400,
+        "mayor_daño_ataque": 441,
+        "mayor_critico": 0,
+        "tiempo_vivo_mas_largo": 567,
+        "tiempo_muerto": 132
+      }
+    },
+    {
+      "nombre": "Mystery Shack",
+      "tag": "EUW7",
+      "riot_id": "Mystery Shack#EUW7",
+      "puuid": "c6b99a52-9393-5c1f-8ccd-a7f19565ee15",
+      "campeon": "Sylas",
+      "posicion": "MIDDLE",
+      "equipo": 100,
+      "resultado": "Win",
+      "kda": {
+        "kills": 11,
+        "muertes": 9,
+        "asistencias": 5,
+        "double_kills": 1,
+        "triple_kills": 0,
+        "quadra_kills": 0,
+        "penta_kills": 0,
+        "largest_killing_spree": 3
+      },
+      "oro": 11516,
+      "cs": 140,
+      "nivel": 15,
+      "daño_campeones": 30181,
+      "daño_recibido_campeones": 30534,
+      "soporte": {
+        "daño_mitigado": 20270,
+        "control_adversarios": 84
+      },
+      "estructuras": {
+        "torres": 1,
+        "derribos_torres": 2,
+        "inhibidores": 1,
+        "derribos_inhibidores": 1
+      },
+      "vision": {
+        "score": 19,
+        "wards_colocados": 8,
+        "wards_destruidos": 1,
+        "pinkwards_comprados": 1,
+        "wards_detector": 0
+      },
+      "pings": 60,
+      "runas": {
+        "primaria": {
+          "estilo_id": 8000,
+          "keystone_id": 8010,
+          "runa_1_id": 8009,
+          "runa_2_id": 9105,
+          "runa_3_id": 8299
+        },
+        "secundaria": {
+          "estilo_id": 8400,
+          "runa_1_id": 8444,
+          "runa_2_id": 8242
+        },
+        "fragmentos": {
+          "ofensiva_id": 5008,
+          "flexible_id": 5008,
+          "defensiva_id": 5001
+        }
+      },
+      "objetos": {
+        "slots": [
+          {
+            "slot": 0,
+            "id": 2055
+          },
+          {
+            "slot": 1,
+            "id": 3152
+          },
+          {
+            "slot": 2,
+            "id": 1082
+          },
+          {
+            "slot": 3,
+            "id": 8010
+          },
+          {
+            "slot": 4,
+            "id": 3171
+          },
+          {
+            "slot": 5,
+            "id": 4633
+          },
+          {
+            "slot": 6,
+            "id": 3364
+          }
+        ]
+      },
+      "hechizos": {
+        "hechizo_1_id": 4,
+        "hechizo_2_id": 14,
+        "casts_1": 4,
+        "casts_2": 6
+      },
+      "monstruos": {
+        "dragones": 0,
+        "barones": 0,
+        "heraldos": 0,
+        "void_grubs": 0,
+        "elder_dragons": 0,
+        "objetivos_robados": 0,
+        "asistencias_robo": 0
+      },
+      "gameplay": {
+        "mayor_daño_habilidad": 567,
+        "mayor_daño_ataque": 572,
+        "mayor_critico": 0,
+        "tiempo_vivo_mas_largo": 282,
+        "tiempo_muerto": 211
+      }
+    },
+    {
+      "nombre": "Kento",
+      "tag": "ROUX",
+      "riot_id": "Kento#ROUX",
+      "puuid": "4d5316ea-c46d-5bd1-8b8f-6de99b2743b4",
+      "campeon": "Zeri",
+      "posicion": "BOTTOM",
+      "equipo": 100,
+      "resultado": "Win",
+      "kda": {
+        "kills": 7,
+        "muertes": 1,
+        "asistencias": 5,
+        "double_kills": 1,
+        "triple_kills": 0,
+        "quadra_kills": 0,
+        "penta_kills": 0,
+        "largest_killing_spree": 6
+      },
+      "oro": 14370,
+      "cs": 252,
+      "nivel": 13,
+      "daño_campeones": 16303,
+      "daño_recibido_campeones": 7548,
+      "soporte": {
+        "daño_mitigado": 4963,
+        "control_adversarios": 20
+      },
+      "estructuras": {
+        "torres": 6,
+        "derribos_torres": 7,
+        "inhibidores": 1,
+        "derribos_inhibidores": 1
+      },
+      "vision": {
+        "score": 15,
+        "wards_colocados": 8,
+        "wards_destruidos": 3,
+        "pinkwards_comprados": 0,
+        "wards_detector": 0
+      },
+      "pings": 43,
+      "runas": {
+        "primaria": {
+          "estilo_id": 8000,
+          "keystone_id": 8008,
+          "runa_1_id": 9111,
+          "runa_2_id": 9104,
+          "runa_3_id": 8017
+        },
+        "secundaria": {
+          "estilo_id": 8300,
+          "runa_1_id": 8321,
+          "runa_2_id": 8313
+        },
+        "fragmentos": {
+          "ofensiva_id": 5005,
+          "flexible_id": 5008,
+          "defensiva_id": 5011
+        }
+      },
+      "objetos": {
+        "slots": [
+          {
+            "slot": 0,
+            "id": 3031
+          },
+          {
+            "slot": 1,
+            "id": 3085
+          },
+          {
+            "slot": 2,
+            "id": 3032
+          },
+          {
+            "slot": 3,
+            "id": 1018
+          },
+          {
+            "slot": 4,
+            "id": 1036
+          },
+          {
+            "slot": 5,
+            "id": 0
+          },
+          {
+            "slot": 6,
+            "id": 3363
+          }
+        ]
+      },
+      "hechizos": {
+        "hechizo_1_id": 4,
+        "hechizo_2_id": 21,
+        "casts_1": 3,
+        "casts_2": 3
+      },
+      "monstruos": {
+        "dragones": 0,
+        "barones": 0,
+        "heraldos": 0,
+        "void_grubs": 0,
+        "elder_dragons": 0,
+        "objetivos_robados": 0,
+        "asistencias_robo": 0
+      },
+      "gameplay": {
+        "mayor_daño_habilidad": 387,
+        "mayor_daño_ataque": 574,
+        "mayor_critico": 387,
+        "tiempo_vivo_mas_largo": 757,
+        "tiempo_muerto": 25
+      }
+    },
+    {
+      "nombre": "Gaby",
+      "tag": "GoT",
+      "riot_id": "Gaby#GoT",
+      "puuid": "9d69416d-5bdc-5a20-83bf-b25d220708df",
+      "campeon": "Yuumi",
+      "posicion": "UTILITY",
+      "equipo": 100,
+      "resultado": "Win",
+      "kda": {
+        "kills": 2,
+        "muertes": 1,
+        "asistencias": 11,
+        "double_kills": 0,
+        "triple_kills": 0,
+        "quadra_kills": 0,
+        "penta_kills": 0,
+        "largest_killing_spree": 0
+      },
+      "oro": 8267,
+      "cs": 17,
+      "nivel": 13,
+      "daño_campeones": 6989,
+      "daño_recibido_campeones": 1582,
+      "soporte": {
+        "daño_mitigado": 1054,
+        "control_adversarios": 147
+      },
+      "estructuras": {
+        "torres": 0,
+        "derribos_torres": 6,
+        "inhibidores": 0,
+        "derribos_inhibidores": 1
+      },
+      "vision": {
+        "score": 30,
+        "wards_colocados": 20,
+        "wards_destruidos": 1,
+        "pinkwards_comprados": 2,
+        "wards_detector": 1
+      },
+      "pings": 38,
+      "runas": {
+        "primaria": {
+          "estilo_id": 8200,
+          "keystone_id": 8214,
+          "runa_1_id": 8226,
+          "runa_2_id": 8210,
+          "runa_3_id": 8237
+        },
+        "secundaria": {
+          "estilo_id": 8400,
+          "runa_1_id": 8463,
+          "runa_2_id": 8453
+        },
+        "fragmentos": {
+          "ofensiva_id": 5007,
+          "flexible_id": 5008,
+          "defensiva_id": 5001
+        }
+      },
+      "objetos": {
+        "slots": [
+          {
+            "slot": 0,
+            "id": 3870
+          },
+          {
+            "slot": 1,
+            "id": 3222
+          },
+          {
+            "slot": 2,
+            "id": 1029
+          },
+          {
+            "slot": 3,
+            "id": 1082
+          },
+          {
+            "slot": 4,
+            "id": 3504
+          },
+          {
+            "slot": 5,
+            "id": 3067
+          },
+          {
+            "slot": 6,
+            "id": 3364
+          }
+        ]
+      },
+      "hechizos": {
+        "hechizo_1_id": 3,
+        "hechizo_2_id": 7,
+        "casts_1": 3,
+        "casts_2": 3
+      },
+      "monstruos": {
+        "dragones": 0,
+        "barones": 0,
+        "heraldos": 0,
+        "void_grubs": 0,
+        "elder_dragons": 0,
+        "objetivos_robados": 0,
+        "asistencias_robo": 0
+      },
+      "gameplay": {
+        "mayor_daño_habilidad": 405,
+        "mayor_daño_ataque": 64,
+        "mayor_critico": 33,
+        "tiempo_vivo_mas_largo": 696,
+        "tiempo_muerto": 25
+      }
+    },
+    {
+      "nombre": "Meuleur Teigneux",
+      "tag": "EUW",
+      "riot_id": "Meuleur Teigneux#EUW",
+      "puuid": "0ddb757c-0940-5add-97f5-c5ad1894b0c4",
+      "campeon": "Renekton",
+      "posicion": "TOP",
+      "equipo": 200,
+      "resultado": "Lose",
+      "kda": {
+        "kills": 3,
+        "muertes": 6,
+        "asistencias": 4,
+        "double_kills": 0,
+        "triple_kills": 0,
+        "quadra_kills": 0,
+        "penta_kills": 0,
+        "largest_killing_spree": 0
+      },
+      "oro": 9894,
+      "cs": 217,
+      "nivel": 16,
+      "daño_campeones": 17037,
+      "daño_recibido_campeones": 27176,
+      "soporte": {
+        "daño_mitigado": 27885,
+        "control_adversarios": 24
+      },
+      "estructuras": {
+        "torres": 0,
+        "derribos_torres": 0,
+        "inhibidores": 0,
+        "derribos_inhibidores": 0
+      },
+      "vision": {
+        "score": 10,
+        "wards_colocados": 4,
+        "wards_destruidos": 0,
+        "pinkwards_comprados": 0,
+        "wards_detector": 0
+      },
+      "pings": 50,
+      "runas": {
+        "primaria": {
+          "estilo_id": 8000,
+          "keystone_id": 8010,
+          "runa_1_id": 9111,
+          "runa_2_id": 9104,
+          "runa_3_id": 8299
+        },
+        "secundaria": {
+          "estilo_id": 8400,
+          "runa_1_id": 8473,
+          "runa_2_id": 8242
+        },
+        "fragmentos": {
+          "ofensiva_id": 5008,
+          "flexible_id": 5008,
+          "defensiva_id": 5001
+        }
+      },
+      "objetos": {
+        "slots": [
+          {
+            "slot": 0,
+            "id": 1055
+          },
+          {
+            "slot": 1,
+            "id": 6692
+          },
+          {
+            "slot": 2,
+            "id": 3071
+          },
+          {
+            "slot": 3,
+            "id": 3047
+          },
+          {
+            "slot": 4,
+            "id": 3133
+          },
+          {
+            "slot": 5,
+            "id": 0
+          },
+          {
+            "slot": 6,
+            "id": 3340
+          }
+        ]
+      },
+      "hechizos": {
+        "hechizo_1_id": 4,
+        "hechizo_2_id": 14,
+        "casts_1": 2,
+        "casts_2": 4
+      },
+      "monstruos": {
+        "dragones": 0,
+        "barones": 0,
+        "heraldos": 0,
+        "void_grubs": 0,
+        "elder_dragons": 0,
+        "objetivos_robados": 0,
+        "asistencias_robo": 0
+      },
+      "gameplay": {
+        "mayor_daño_habilidad": 460,
+        "mayor_daño_ataque": 1049,
+        "mayor_critico": 0,
+        "tiempo_vivo_mas_largo": 504,
+        "tiempo_muerto": 201
+      }
+    },
+    {
+      "nombre": "Heinben",
+      "tag": "EUW",
+      "riot_id": "Heinben#EUW",
+      "puuid": "614bfcb7-332b-5927-8379-d3a8f3a8781c",
+      "campeon": "Zed",
+      "posicion": "JUNGLE",
+      "equipo": 200,
+      "resultado": "Lose",
+      "kda": {
+        "kills": 5,
+        "muertes": 7,
+        "asistencias": 7,
+        "double_kills": 0,
+        "triple_kills": 0,
+        "quadra_kills": 0,
+        "penta_kills": 0,
+        "largest_killing_spree": 3
+      },
+      "oro": 11511,
+      "cs": 168,
+      "nivel": 14,
+      "daño_campeones": 15342,
+      "daño_recibido_campeones": 15850,
+      "soporte": {
+        "daño_mitigado": 9974,
+        "control_adversarios": 32
+      },
+      "estructuras": {
+        "torres": 0,
+        "derribos_torres": 0,
+        "inhibidores": 0,
+        "derribos_inhibidores": 0
+      },
+      "vision": {
+        "score": 12,
+        "wards_colocados": 1,
+        "wards_destruidos": 4,
+        "pinkwards_comprados": 0,
+        "wards_detector": 0
+      },
+      "pings": 12,
+      "runas": {
+        "primaria": {
+          "estilo_id": 8300,
+          "keystone_id": 8369,
+          "runa_1_id": 8321,
+          "runa_2_id": 8313,
+          "runa_3_id": 8347
+        },
+        "secundaria": {
+          "estilo_id": 8000,
+          "runa_1_id": 8009,
+          "runa_2_id": 8017
+        },
+        "fragmentos": {
+          "ofensiva_id": 5008,
+          "flexible_id": 5008,
+          "defensiva_id": 5001
+        }
+      },
+      "objetos": {
+        "slots": [
+          {
+            "slot": 0,
+            "id": 6699
+          },
+          {
+            "slot": 1,
+            "id": 2520
+          },
+          {
+            "slot": 2,
+            "id": 1001
+          },
+          {
+            "slot": 3,
+            "id": 6696
+          },
+          {
+            "slot": 4,
+            "id": 3035
+          },
+          {
+            "slot": 5,
+            "id": 1036
+          },
+          {
+            "slot": 6,
+            "id": 3364
+          }
+        ]
+      },
+      "hechizos": {
+        "hechizo_1_id": 11,
+        "hechizo_2_id": 4,
+        "casts_1": 13,
+        "casts_2": 3
+      },
+      "monstruos": {
+        "dragones": 0,
+        "barones": 0,
+        "heraldos": 0,
+        "void_grubs": 1,
+        "elder_dragons": 0,
+        "objetivos_robados": 0,
+        "asistencias_robo": 0
+      },
+      "gameplay": {
+        "mayor_daño_habilidad": 1400,
+        "mayor_daño_ataque": 334,
+        "mayor_critico": 0,
+        "tiempo_vivo_mas_largo": 490,
+        "tiempo_muerto": 166
+      }
+    },
+    {
+      "nombre": "Hysbel",
+      "tag": "EUW",
+      "riot_id": "Hysbel#EUW",
+      "puuid": "6af18b9e-a577-587e-a071-9a208de37c65",
+      "campeon": "Akali",
+      "posicion": "MIDDLE",
+      "equipo": 200,
+      "resultado": "Lose",
+      "kda": {
+        "kills": 1,
+        "muertes": 10,
+        "asistencias": 6,
+        "double_kills": 0,
+        "triple_kills": 0,
+        "quadra_kills": 0,
+        "penta_kills": 0,
+        "largest_killing_spree": 0
+      },
+      "oro": 6727,
+      "cs": 130,
+      "nivel": 12,
+      "daño_campeones": 15083,
+      "daño_recibido_campeones": 21556,
+      "soporte": {
+        "daño_mitigado": 14050,
+        "control_adversarios": 20
+      },
+      "estructuras": {
+        "torres": 0,
+        "derribos_torres": 0,
+        "inhibidores": 0,
+        "derribos_inhibidores": 0
+      },
+      "vision": {
+        "score": 14,
+        "wards_colocados": 7,
+        "wards_destruidos": 0,
+        "pinkwards_comprados": 0,
+        "wards_detector": 0
+      },
+      "pings": 11,
+      "runas": {
+        "primaria": {
+          "estilo_id": 8100,
+          "keystone_id": 8112,
+          "runa_1_id": 8143,
+          "runa_2_id": 8140,
+          "runa_3_id": 8106
+        },
+        "secundaria": {
+          "estilo_id": 8400,
+          "runa_1_id": 8444,
+          "runa_2_id": 8451
+        },
+        "fragmentos": {
+          "ofensiva_id": 5008,
+          "flexible_id": 5008,
+          "defensiva_id": 5001
+        }
+      },
+      "objetos": {
+        "slots": [
+          {
+            "slot": 0,
+            "id": 3175
+          },
+          {
+            "slot": 1,
+            "id": 1058
+          },
+          {
+            "slot": 2,
+            "id": 1082
+          },
+          {
+            "slot": 3,
+            "id": 0
+          },
+          {
+            "slot": 4,
+            "id": 3146
+          },
+          {
+            "slot": 5,
+            "id": 1033
+          },
+          {
+            "slot": 6,
+            "id": 3340
+          }
+        ]
+      },
+      "hechizos": {
+        "hechizo_1_id": 14,
+        "hechizo_2_id": 4,
+        "casts_1": 6,
+        "casts_2": 5
+      },
+      "monstruos": {
+        "dragones": 0,
+        "barones": 0,
+        "heraldos": 0,
+        "void_grubs": 0,
+        "elder_dragons": 0,
+        "objetivos_robados": 0,
+        "asistencias_robo": 0
+      },
+      "gameplay": {
+        "mayor_daño_habilidad": 349,
+        "mayor_daño_ataque": 1049,
+        "mayor_critico": 0,
+        "tiempo_vivo_mas_largo": 250,
+        "tiempo_muerto": 229
+      }
+    },
+    {
+      "nombre": "Jonibaba71",
+      "tag": "2277",
+      "riot_id": "Jonibaba71#2277",
+      "puuid": "9585ff77-5346-5a11-bd54-c46b0c07507d",
+      "campeon": "Twitch",
+      "posicion": "BOTTOM",
+      "equipo": 200,
+      "resultado": "Lose",
+      "kda": {
+        "kills": 7,
+        "muertes": 6,
+        "asistencias": 1,
+        "double_kills": 1,
+        "triple_kills": 0,
+        "quadra_kills": 0,
+        "penta_kills": 0,
+        "largest_killing_spree": 4
+      },
+      "oro": 9915,
+      "cs": 180,
+      "nivel": 13,
+      "daño_campeones": 11726,
+      "daño_recibido_campeones": 14274,
+      "soporte": {
+        "daño_mitigado": 6789,
+        "control_adversarios": 57
+      },
+      "estructuras": {
+        "torres": 0,
+        "derribos_torres": 0,
+        "inhibidores": 0,
+        "derribos_inhibidores": 0
+      },
+      "vision": {
+        "score": 9,
+        "wards_colocados": 6,
+        "wards_destruidos": 1,
+        "pinkwards_comprados": 0,
+        "wards_detector": 0
+      },
+      "pings": 13,
+      "runas": {
+        "primaria": {
+          "estilo_id": 8000,
+          "keystone_id": 8008,
+          "runa_1_id": 8009,
+          "runa_2_id": 9104,
+          "runa_3_id": 8017
+        },
+        "secundaria": {
+          "estilo_id": 8200,
+          "runa_1_id": 8224,
+          "runa_2_id": 8236
+        },
+        "fragmentos": {
+          "ofensiva_id": 5005,
+          "flexible_id": 5008,
+          "defensiva_id": 5011
+        }
+      },
+      "objetos": {
+        "slots": [
+          {
+            "slot": 0,
+            "id": 1086
+          },
+          {
+            "slot": 1,
+            "id": 2031
+          },
+          {
+            "slot": 2,
+            "id": 2512
+          },
+          {
+            "slot": 3,
+            "id": 6676
+          },
+          {
+            "slot": 4,
+            "id": 3035
+          },
+          {
+            "slot": 5,
+            "id": 1018
+          },
+          {
+            "slot": 6,
+            "id": 3363
+          }
+        ]
+      },
+      "hechizos": {
+        "hechizo_1_id": 4,
+        "hechizo_2_id": 21,
+        "casts_1": 3,
+        "casts_2": 3
+      },
+      "monstruos": {
+        "dragones": 0,
+        "barones": 0,
+        "heraldos": 0,
+        "void_grubs": 0,
+        "elder_dragons": 0,
+        "objetivos_robados": 0,
+        "asistencias_robo": 0
+      },
+      "gameplay": {
+        "mayor_daño_habilidad": 475,
+        "mayor_daño_ataque": 379,
+        "mayor_critico": 449,
+        "tiempo_vivo_mas_largo": 407,
+        "tiempo_muerto": 158
+      }
+    },
+    {
+      "nombre": "BigNikEnergy",
+      "tag": "VEINY",
+      "riot_id": "BigNikEnergy#VEINY",
+      "puuid": "4d9c510c-fd9f-559f-8698-0f889bc341c2",
+      "campeon": "Leona",
+      "posicion": "UTILITY",
+      "equipo": 200,
+      "resultado": "Lose",
+      "kda": {
+        "kills": 3,
+        "muertes": 4,
+        "asistencias": 11,
+        "double_kills": 0,
+        "triple_kills": 0,
+        "quadra_kills": 0,
+        "penta_kills": 0,
+        "largest_killing_spree": 2
+      },
+      "oro": 7609,
+      "cs": 37,
+      "nivel": 13,
+      "daño_campeones": 7812,
+      "daño_recibido_campeones": 16623,
+      "soporte": {
+        "daño_mitigado": 20594,
+        "control_adversarios": 81
+      },
+      "estructuras": {
+        "torres": 0,
+        "derribos_torres": 0,
+        "inhibidores": 0,
+        "derribos_inhibidores": 0
+      },
+      "vision": {
+        "score": 74,
+        "wards_colocados": 26,
+        "wards_destruidos": 10,
+        "pinkwards_comprados": 7,
+        "wards_detector": 4
+      },
+      "pings": 16,
+      "runas": {
+        "primaria": {
+          "estilo_id": 8400,
+          "keystone_id": 8439,
+          "runa_1_id": 8463,
+          "runa_2_id": 8444,
+          "runa_3_id": 8451
+        },
+        "secundaria": {
+          "estilo_id": 8000,
+          "runa_1_id": 9111,
+          "runa_2_id": 9105
+        },
+        "fragmentos": {
+          "ofensiva_id": 5007,
+          "flexible_id": 5010,
+          "defensiva_id": 5011
+        }
+      },
+      "objetos": {
+        "slots": [
+          {
+            "slot": 0,
+            "id": 3190
+          },
+          {
+            "slot": 1,
+            "id": 3047
+          },
+          {
+            "slot": 2,
+            "id": 3877
+          },
+          {
+            "slot": 3,
+            "id": 2524
+          },
+          {
+            "slot": 4,
+            "id": 1028
+          },
+          {
+            "slot": 5,
+            "id": 0
+          },
+          {
+            "slot": 6,
+            "id": 3364
+          }
+        ]
+      },
+      "hechizos": {
+        "hechizo_1_id": 4,
+        "hechizo_2_id": 14,
+        "casts_1": 2,
+        "casts_2": 4
+      },
+      "monstruos": {
+        "dragones": 0,
+        "barones": 0,
+        "heraldos": 0,
+        "void_grubs": 0,
+        "elder_dragons": 0,
+        "objetivos_robados": 0,
+        "asistencias_robo": 0
+      },
+      "gameplay": {
+        "mayor_daño_habilidad": 309,
+        "mayor_daño_ataque": 86,
+        "mayor_critico": 0,
+        "tiempo_vivo_mas_largo": 600,
+        "tiempo_muerto": 94
+      }
+    }
+  ],
+  "nota": "Los campos timeline/eventos/first_blood no se inventan: statsJson no los contiene. Los IDs de campeones, objetos, runas y hechizos deben resolverse contra datos de LoL (p.ej. Data Dragon)."
+}
