@@ -6,9 +6,13 @@ PostgreSQL/Drizzle coherentes con el SQL original, migraciones con snapshots, se
 
 ## Entrega 2 — API de negocio e Ingesta ROFL (Completada parcialmente)
 
+
 - **Completado:** Consola de ingesta React 19 (`apps/web`), WebSocket Gateway con streaming directo a disco, control de contrapresión, y parseo dinámico de archivos ROFL (resiliencia de cabecera y exit codes POSIX).
 - **Completado:** Mapeo de equipos y jugadores mediante `discord_user_id`, reglas de incomparecencia (5 jugadores), matching elástico de jornada semanal, unicidad por `external_game_id`, y persistencia atómica multi-tabla.
 - Discord OAuth con state ligado al navegador, sesión segura y autorización contra el rol persistido; viewer/admin.
+
+- **Implementado:** Discord OAuth con state ligado al navegador, sesión PostgreSQL y autorización contra el rol persistido; viewer/admin. Configuración y contrato en [autenticación](../authentication.md).
+
 - Gestión de equipos y jugadores, altas/bajas de plantilla con fechas y auditoría.
 - Perfiles y estadísticas agregadas a partir de info/stats/runas/build; filtro por temporada/división.
 - Administración de series y resultados con transacciones y validación Bo1/Bo3/Bo5.

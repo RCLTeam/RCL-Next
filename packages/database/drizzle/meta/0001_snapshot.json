@@ -1,6 +1,6 @@
 {
-  "id": "d739a417-6c3f-4c95-8c53-1fa90b6e78ed",
-  "prevId": "00000000-0000-0000-0000-000000000000",
+  "id": "101846e3-d552-4b4f-a497-36fe9ac2145f",
+  "prevId": "365e2e66-3e17-4902-8baa-bafc1a5f9065",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -105,8 +105,8 @@
         }
       },
       "foreignKeys": {
-        "audit_logs_actor_discord_user_id_discord_users_discord_id_fk": {
-          "name": "audit_logs_actor_discord_user_id_discord_users_discord_id_fk",
+        "audit_logs_actor_discord_user_id_fkey": {
+          "name": "audit_logs_actor_discord_user_id_fkey",
           "tableFrom": "audit_logs",
           "tableTo": "discord_users",
           "columnsFrom": [
@@ -116,6 +116,74 @@
             "discord_id"
           ],
           "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.auth_sessions": {
+      "name": "auth_sessions",
+      "schema": "",
+      "columns": {
+        "token_hash": {
+          "name": "token_hash",
+          "type": "varchar(64)",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "discord_user_id": {
+          "name": "discord_user_id",
+          "type": "varchar(32)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "auth_sessions_expires_at_idx": {
+          "name": "auth_sessions_expires_at_idx",
+          "columns": [
+            {
+              "expression": "expires_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "auth_sessions_discord_user_id_discord_users_discord_id_fk": {
+          "name": "auth_sessions_discord_user_id_discord_users_discord_id_fk",
+          "tableFrom": "auth_sessions",
+          "tableTo": "discord_users",
+          "columnsFrom": [
+            "discord_user_id"
+          ],
+          "columnsTo": [
+            "discord_id"
+          ],
+          "onDelete": "cascade",
           "onUpdate": "no action"
         }
       },
@@ -340,8 +408,8 @@
         }
       },
       "foreignKeys": {
-        "match_games_matches_id_matches_id_fk": {
-          "name": "match_games_matches_id_matches_id_fk",
+        "match_games_matches_id_fkey": {
+          "name": "match_games_matches_id_fkey",
           "tableFrom": "match_games",
           "tableTo": "matches",
           "columnsFrom": [
@@ -353,8 +421,8 @@
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
-        "match_games_blue_team_id_teams_id_fk": {
-          "name": "match_games_blue_team_id_teams_id_fk",
+        "match_games_blue_team_id_fkey": {
+          "name": "match_games_blue_team_id_fkey",
           "tableFrom": "match_games",
           "tableTo": "teams",
           "columnsFrom": [
@@ -366,8 +434,8 @@
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
-        "match_games_red_team_id_teams_id_fk": {
-          "name": "match_games_red_team_id_teams_id_fk",
+        "match_games_red_team_id_fkey": {
+          "name": "match_games_red_team_id_fkey",
           "tableFrom": "match_games",
           "tableTo": "teams",
           "columnsFrom": [
@@ -379,8 +447,8 @@
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
-        "match_games_winner_team_id_teams_id_fk": {
-          "name": "match_games_winner_team_id_teams_id_fk",
+        "match_games_winner_team_id_fkey": {
+          "name": "match_games_winner_team_id_fkey",
           "tableFrom": "match_games",
           "tableTo": "teams",
           "columnsFrom": [
@@ -616,8 +684,8 @@
         }
       },
       "foreignKeys": {
-        "matches_id_season_division_seasons_divisions_id_fk": {
-          "name": "matches_id_season_division_seasons_divisions_id_fk",
+        "matches_id_season_division_fkey": {
+          "name": "matches_id_season_division_fkey",
           "tableFrom": "matches",
           "tableTo": "seasons_divisions",
           "columnsFrom": [
@@ -629,8 +697,8 @@
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
-        "matches_team1_id_teams_id_fk": {
-          "name": "matches_team1_id_teams_id_fk",
+        "matches_team1_id_fkey": {
+          "name": "matches_team1_id_fkey",
           "tableFrom": "matches",
           "tableTo": "teams",
           "columnsFrom": [
@@ -642,8 +710,8 @@
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
-        "matches_team2_id_teams_id_fk": {
-          "name": "matches_team2_id_teams_id_fk",
+        "matches_team2_id_fkey": {
+          "name": "matches_team2_id_fkey",
           "tableFrom": "matches",
           "tableTo": "teams",
           "columnsFrom": [
@@ -655,8 +723,8 @@
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
-        "matches_winner_team_id_teams_id_fk": {
-          "name": "matches_winner_team_id_teams_id_fk",
+        "matches_winner_team_id_fkey": {
+          "name": "matches_winner_team_id_fkey",
           "tableFrom": "matches",
           "tableTo": "teams",
           "columnsFrom": [
@@ -718,71 +786,29 @@
       },
       "isRLSEnabled": false
     },
-    "public.pickem_bonus_answers": {
-      "name": "pickem_bonus_answers",
+    "public.oauth_states": {
+      "name": "oauth_states",
       "schema": "",
       "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
+        "token_hash": {
+          "name": "token_hash",
+          "type": "varchar(64)",
           "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "discord_user_id": {
-          "name": "discord_user_id",
-          "type": "varchar(32)",
-          "primaryKey": false,
           "notNull": true
         },
-        "question_id": {
-          "name": "question_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "answer": {
-          "name": "answer",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "created_at": {
-          "name": "created_at",
+        "expires_at": {
+          "name": "expires_at",
           "type": "timestamp with time zone",
           "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
+          "notNull": true
         }
       },
       "indexes": {
-        "pickem_bonus_answers_question_id_idx": {
-          "name": "pickem_bonus_answers_question_id_idx",
+        "oauth_states_expires_at_idx": {
+          "name": "oauth_states_expires_at_idx",
           "columns": [
             {
-              "expression": "question_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "pickem_bonus_answers_discord_user_id_idx": {
-          "name": "pickem_bonus_answers_discord_user_id_idx",
-          "columns": [
-            {
-              "expression": "discord_user_id",
+              "expression": "expires_at",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -794,272 +820,9 @@
           "with": {}
         }
       },
-      "foreignKeys": {
-        "pickem_bonus_answers_discord_user_id_discord_users_discord_id_fk": {
-          "name": "pickem_bonus_answers_discord_user_id_discord_users_discord_id_fk",
-          "tableFrom": "pickem_bonus_answers",
-          "tableTo": "discord_users",
-          "columnsFrom": [
-            "discord_user_id"
-          ],
-          "columnsTo": [
-            "discord_id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "pickem_bonus_answers_question_id_pickem_bonus_questions_id_fk": {
-          "name": "pickem_bonus_answers_question_id_pickem_bonus_questions_id_fk",
-          "tableFrom": "pickem_bonus_answers",
-          "tableTo": "pickem_bonus_questions",
-          "columnsFrom": [
-            "question_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "pickem_bonus_answers_user_question_key": {
-          "name": "pickem_bonus_answers_user_question_key",
-          "nullsNotDistinct": false,
-          "columns": [
-            "discord_user_id",
-            "question_id"
-          ]
-        }
-      },
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.pickem_bonus_questions": {
-      "name": "pickem_bonus_questions",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "season_name": {
-          "name": "season_name",
-          "type": "varchar(120)",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "prompt": {
-          "name": "prompt",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "question_type": {
-          "name": "question_type",
-          "type": "pickem_question_type",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "locks_at": {
-          "name": "locks_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "correct_answer": {
-          "name": "correct_answer",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {
-        "pickem_bonus_questions_season_name_idx": {
-          "name": "pickem_bonus_questions_season_name_idx",
-          "columns": [
-            {
-              "expression": "season_name",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "pickem_bonus_questions_season_name_seasons_name_fk": {
-          "name": "pickem_bonus_questions_season_name_seasons_name_fk",
-          "tableFrom": "pickem_bonus_questions",
-          "tableTo": "seasons",
-          "columnsFrom": [
-            "season_name"
-          ],
-          "columnsTo": [
-            "name"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
+      "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.pickem_predictions": {
-      "name": "pickem_predictions",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "discord_user_id": {
-          "name": "discord_user_id",
-          "type": "varchar(32)",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "match_id": {
-          "name": "match_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "selected_team_id": {
-          "name": "selected_team_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {
-        "pickem_predictions_match_id_idx": {
-          "name": "pickem_predictions_match_id_idx",
-          "columns": [
-            {
-              "expression": "match_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "pickem_predictions_discord_user_id_idx": {
-          "name": "pickem_predictions_discord_user_id_idx",
-          "columns": [
-            {
-              "expression": "discord_user_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "pickem_predictions_discord_user_id_discord_users_discord_id_fk": {
-          "name": "pickem_predictions_discord_user_id_discord_users_discord_id_fk",
-          "tableFrom": "pickem_predictions",
-          "tableTo": "discord_users",
-          "columnsFrom": [
-            "discord_user_id"
-          ],
-          "columnsTo": [
-            "discord_id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "pickem_predictions_match_id_matches_id_fk": {
-          "name": "pickem_predictions_match_id_matches_id_fk",
-          "tableFrom": "pickem_predictions",
-          "tableTo": "matches",
-          "columnsFrom": [
-            "match_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "pickem_predictions_selected_team_id_teams_id_fk": {
-          "name": "pickem_predictions_selected_team_id_teams_id_fk",
-          "tableFrom": "pickem_predictions",
-          "tableTo": "teams",
-          "columnsFrom": [
-            "selected_team_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "restrict",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "pickem_predictions_user_match_key": {
-          "name": "pickem_predictions_user_match_key",
-          "nullsNotDistinct": false,
-          "columns": [
-            "discord_user_id",
-            "match_id"
-          ]
-        }
-      },
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -1152,8 +915,8 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "player_game_build_id_player_game_info_id_fk": {
-          "name": "player_game_build_id_player_game_info_id_fk",
+        "player_game_build_id_fkey": {
+          "name": "player_game_build_id_fkey",
           "tableFrom": "player_game_build",
           "tableTo": "player_game_info",
           "columnsFrom": [
@@ -1283,8 +1046,8 @@
         }
       },
       "foreignKeys": {
-        "player_game_info_match_game_id_match_games_id_fk": {
-          "name": "player_game_info_match_game_id_match_games_id_fk",
+        "player_game_info_match_game_id_fkey": {
+          "name": "player_game_info_match_game_id_fkey",
           "tableFrom": "player_game_info",
           "tableTo": "match_games",
           "columnsFrom": [
@@ -1296,8 +1059,8 @@
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
-        "player_game_info_player_id_players_id_fk": {
-          "name": "player_game_info_player_id_players_id_fk",
+        "player_game_info_player_id_fkey": {
+          "name": "player_game_info_player_id_fkey",
           "tableFrom": "player_game_info",
           "tableTo": "players",
           "columnsFrom": [
@@ -1309,8 +1072,8 @@
           "onDelete": "restrict",
           "onUpdate": "no action"
         },
-        "player_game_info_team_id_teams_id_fk": {
-          "name": "player_game_info_team_id_teams_id_fk",
+        "player_game_info_team_id_fkey": {
+          "name": "player_game_info_team_id_fkey",
           "tableFrom": "player_game_info",
           "tableTo": "teams",
           "columnsFrom": [
@@ -1431,8 +1194,8 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "player_game_runes_id_player_game_info_id_fk": {
-          "name": "player_game_runes_id_player_game_info_id_fk",
+        "player_game_runes_id_fkey": {
+          "name": "player_game_runes_id_fkey",
           "tableFrom": "player_game_runes",
           "tableTo": "player_game_info",
           "columnsFrom": [
@@ -1724,8 +1487,8 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "player_game_stats_id_player_game_info_id_fk": {
-          "name": "player_game_stats_id_player_game_info_id_fk",
+        "player_game_stats_id_fkey": {
+          "name": "player_game_stats_id_fkey",
           "tableFrom": "player_game_stats",
           "tableTo": "player_game_info",
           "columnsFrom": [
@@ -1838,8 +1601,8 @@
         }
       },
       "foreignKeys": {
-        "players_discord_user_id_discord_users_discord_id_fk": {
-          "name": "players_discord_user_id_discord_users_discord_id_fk",
+        "players_discord_user_id_fkey": {
+          "name": "players_discord_user_id_fkey",
           "tableFrom": "players",
           "tableTo": "discord_users",
           "columnsFrom": [
@@ -1863,6 +1626,305 @@
           ]
         }
       },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.predictions": {
+      "name": "predictions",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "discord_user_id": {
+          "name": "discord_user_id",
+          "type": "varchar(32)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "match_id": {
+          "name": "match_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "selected_team_id": {
+          "name": "selected_team_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "predictions_match_id_idx": {
+          "name": "predictions_match_id_idx",
+          "columns": [
+            {
+              "expression": "match_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "predictions_discord_user_id_idx": {
+          "name": "predictions_discord_user_id_idx",
+          "columns": [
+            {
+              "expression": "discord_user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "predictions_discord_user_id_fkey": {
+          "name": "predictions_discord_user_id_fkey",
+          "tableFrom": "predictions",
+          "tableTo": "discord_users",
+          "columnsFrom": [
+            "discord_user_id"
+          ],
+          "columnsTo": [
+            "discord_id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "predictions_match_id_fkey": {
+          "name": "predictions_match_id_fkey",
+          "tableFrom": "predictions",
+          "tableTo": "matches",
+          "columnsFrom": [
+            "match_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "predictions_selected_team_id_fkey": {
+          "name": "predictions_selected_team_id_fkey",
+          "tableFrom": "predictions",
+          "tableTo": "teams",
+          "columnsFrom": [
+            "selected_team_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "predictions_user_match_key": {
+          "name": "predictions_user_match_key",
+          "nullsNotDistinct": false,
+          "columns": [
+            "discord_user_id",
+            "match_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.roster_movements": {
+      "name": "roster_movements",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "team_id": {
+          "name": "team_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "discord_user_id": {
+          "name": "discord_user_id",
+          "type": "varchar(32)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "action": {
+          "name": "action",
+          "type": "roster_movement_action",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "role": {
+          "name": "role",
+          "type": "roster_role",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "actor_id": {
+          "name": "actor_id",
+          "type": "varchar(32)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "roster_movements_team_id_idx": {
+          "name": "roster_movements_team_id_idx",
+          "columns": [
+            {
+              "expression": "team_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "roster_movements_discord_user_id_idx": {
+          "name": "roster_movements_discord_user_id_idx",
+          "columns": [
+            {
+              "expression": "discord_user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "roster_movements_actor_id_idx": {
+          "name": "roster_movements_actor_id_idx",
+          "columns": [
+            {
+              "expression": "actor_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "roster_movements_created_at_idx": {
+          "name": "roster_movements_created_at_idx",
+          "columns": [
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "roster_movements_team_id_fkey": {
+          "name": "roster_movements_team_id_fkey",
+          "tableFrom": "roster_movements",
+          "tableTo": "teams",
+          "columnsFrom": [
+            "team_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "roster_movements_discord_user_id_fkey": {
+          "name": "roster_movements_discord_user_id_fkey",
+          "tableFrom": "roster_movements",
+          "tableTo": "discord_users",
+          "columnsFrom": [
+            "discord_user_id"
+          ],
+          "columnsTo": [
+            "discord_id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "roster_movements_actor_id_fkey": {
+          "name": "roster_movements_actor_id_fkey",
+          "tableFrom": "roster_movements",
+          "tableTo": "discord_users",
+          "columnsFrom": [
+            "actor_id"
+          ],
+          "columnsTo": [
+            "discord_id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -1936,8 +1998,8 @@
         }
       },
       "foreignKeys": {
-        "rounds_id_season_division_seasons_divisions_id_fk": {
-          "name": "rounds_id_season_division_seasons_divisions_id_fk",
+        "rounds_id_season_division_fkey": {
+          "name": "rounds_id_season_division_fkey",
           "tableFrom": "rounds",
           "tableTo": "seasons_divisions",
           "columnsFrom": [
@@ -1951,8 +2013,8 @@
         }
       },
       "compositePrimaryKeys": {
-        "rounds_id_id_season_division_pk": {
-          "name": "rounds_id_id_season_division_pk",
+        "rounds_pkey": {
+          "name": "rounds_pkey",
           "columns": [
             "id",
             "id_season_division"
@@ -2109,8 +2171,8 @@
         }
       },
       "foreignKeys": {
-        "seasons_divisions_season_name_seasons_name_fk": {
-          "name": "seasons_divisions_season_name_seasons_name_fk",
+        "seasons_divisions_season_name_fkey": {
+          "name": "seasons_divisions_season_name_fkey",
           "tableFrom": "seasons_divisions",
           "tableTo": "seasons",
           "columnsFrom": [
@@ -2122,8 +2184,8 @@
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
-        "seasons_divisions_division_name_divisions_name_fk": {
-          "name": "seasons_divisions_division_name_divisions_name_fk",
+        "seasons_divisions_division_name_fkey": {
+          "name": "seasons_divisions_division_name_fkey",
           "tableFrom": "seasons_divisions",
           "tableTo": "divisions",
           "columnsFrom": [
@@ -2180,19 +2242,6 @@
           "primaryKey": false,
           "notNull": true,
           "default": false
-        },
-        "starts_on": {
-          "name": "starts_on",
-          "type": "date",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "CURRENT_DATE"
-        },
-        "ends_on": {
-          "name": "ends_on",
-          "type": "date",
-          "primaryKey": false,
-          "notNull": false
         },
         "created_at": {
           "name": "created_at",
@@ -2258,8 +2307,8 @@
         }
       },
       "foreignKeys": {
-        "team_memberships_team_id_teams_id_fk": {
-          "name": "team_memberships_team_id_teams_id_fk",
+        "team_memberships_team_id_fkey": {
+          "name": "team_memberships_team_id_fkey",
           "tableFrom": "team_memberships",
           "tableTo": "teams",
           "columnsFrom": [
@@ -2271,8 +2320,8 @@
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
-        "team_memberships_discord_user_id_discord_users_discord_id_fk": {
-          "name": "team_memberships_discord_user_id_discord_users_discord_id_fk",
+        "team_memberships_discord_user_id_fkey": {
+          "name": "team_memberships_discord_user_id_fkey",
           "tableFrom": "team_memberships",
           "tableTo": "discord_users",
           "columnsFrom": [
@@ -2286,8 +2335,8 @@
         }
       },
       "compositePrimaryKeys": {
-        "team_memberships_team_id_discord_user_id_pk": {
-          "name": "team_memberships_team_id_discord_user_id_pk",
+        "team_memberships_pkey": {
+          "name": "team_memberships_pkey",
           "columns": [
             "team_id",
             "discord_user_id"
@@ -2297,10 +2346,6 @@
       "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {
-        "team_memberships_dates_check": {
-          "name": "team_memberships_dates_check",
-          "value": "\"ends_on\" IS NULL OR \"ends_on\" >= \"starts_on\""
-        },
         "team_memberships_captain_role_check": {
           "name": "team_memberships_captain_role_check",
           "value": "\"is_captain\" = false OR \"role\" IN ('top', 'jungle', 'mid', 'adc', 'support')"
@@ -2389,8 +2434,8 @@
         }
       },
       "foreignKeys": {
-        "teams_season_division_id_seasons_divisions_id_fk": {
-          "name": "teams_season_division_id_seasons_divisions_id_fk",
+        "teams_season_division_id_fkey": {
+          "name": "teams_season_division_id_fkey",
           "tableFrom": "teams",
           "tableTo": "seasons_divisions",
           "columnsFrom": [
@@ -2447,15 +2492,15 @@
         "forfeit"
       ]
     },
-    "public.pickem_question_type": {
-      "name": "pickem_question_type",
+    "public.roster_movement_action": {
+      "name": "roster_movement_action",
       "schema": "public",
       "values": [
-        "team",
-        "player",
-        "champion",
-        "number",
-        "text"
+        "joined",
+        "left",
+        "promoted_to_captain",
+        "demoted_from_captain",
+        "role_changed"
       ]
     },
     "public.roster_role": {

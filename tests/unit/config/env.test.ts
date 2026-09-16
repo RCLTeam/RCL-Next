@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { loadEnvironment } from '../../../apps/api/src/config/env.js';
+import { parseEnvironment } from '../../../apps/api/src/config/env.js';
 
-describe('loadEnvironment', () => {
+describe('parseEnvironment', () => {
   let initialEnv: NodeJS.ProcessEnv;
 
   beforeEach(() => {
@@ -19,7 +19,7 @@ describe('loadEnvironment', () => {
     process.env.DATABASE_URL = 'postgres://user:pass@localhost:5432/testdb';
 
     const expectedNodeEnv = process.env.NODE_ENV ?? 'development';
-    const config = loadEnvironment();
+    const config = parseEnvironment(process.env);
 
     expect(config.DATABASE_URL).toBe('postgres://user:pass@localhost:5432/testdb');
     expect(config.PORT).toBe(3001);
@@ -35,7 +35,7 @@ describe('loadEnvironment', () => {
     Reflect.deleteProperty(process.env, 'CORS_ORIGIN');
     process.env.DATABASE_URL = 'postgres://user:pass@localhost:5432/testdb';
 
-    const config = loadEnvironment();
+    const config = parseEnvironment(process.env);
 
     expect(config.NODE_ENV).toBe('development');
     expect(config.PORT).toBe(3001);
@@ -48,7 +48,7 @@ describe('loadEnvironment', () => {
     process.env.PORT = '4000';
     process.env.NODE_ENV = 'production';
 
-    const config = loadEnvironment();
+    const config = parseEnvironment(process.env);
 
     expect(config.PORT).toBe(4000);
     expect(config.NODE_ENV).toBe('production');
@@ -58,24 +58,24 @@ describe('loadEnvironment', () => {
   it('throws an error when DATABASE_URL is missing', () => {
     Reflect.deleteProperty(process.env, 'DATABASE_URL');
 
-    expect(() => loadEnvironment()).toThrow('Invalid environment: DATABASE_URL');
+    expect(() => parseEnvironment(process.env)).toThrow('Invalid environment: DATABASE_URL');
   });
 
   it('throws an error when DATABASE_URL has a non-postgres scheme', () => {
     process.env.DATABASE_URL = 'http://invalid';
-    expect(() => loadEnvironment()).toThrow('Invalid environment: DATABASE_URL');
+    expect(() => parseEnvironment(process.env)).toThrow('Invalid environment: DATABASE_URL');
 
     process.env.DATABASE_URL = 'mysql://user:pass@localhost:3306/testdb';
-    expect(() => loadEnvironment()).toThrow('Invalid environment: DATABASE_URL');
+    expect(() => parseEnvironment(process.env)).toThrow('Invalid environment: DATABASE_URL');
   });
 
   it('throws an error when PORT is invalid', () => {
     process.env.DATABASE_URL = 'postgres://user:pass@localhost:5432/testdb';
 
     process.env.PORT = '99999';
-    expect(() => loadEnvironment()).toThrow('Invalid environment: PORT');
+    expect(() => parseEnvironment(process.env)).toThrow('Invalid environment: PORT');
 
     process.env.PORT = '-1';
-    expect(() => loadEnvironment()).toThrow('Invalid environment: PORT');
+    expect(() => parseEnvironment(process.env)).toThrow('Invalid environment: PORT');
   });
 });
