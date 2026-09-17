@@ -12,7 +12,23 @@ REPO_ROOT = os.path.abspath(os.path.join(PARSER_DIR, "..", ".."))
 sys.path.insert(0, PARSER_DIR)
 sys.path.insert(0, REPO_ROOT)
 
-from roflParser import MAX_METADATA_SIZE, main, parse_rofl
+from roflParser import (
+    EXIT_CORRUPT_METADATA,
+    EXIT_FILE_NOT_FOUND,
+    EXIT_GENERIC_ERROR,
+    EXIT_INVALID_MAGIC_HEADER,
+    EXIT_INVALID_PAYLOAD_LENGTH,
+    EXIT_OUTPUT_WRITE_ERROR,
+    EXIT_SUCCESS,
+    MAX_METADATA_SIZE,
+    CorruptMetadataError,
+    InvalidMagicHeaderError,
+    InvalidPayloadLengthError,
+    OutputWriteError,
+    RoflFileNotFoundError,
+    main,
+    parse_rofl,
+)
 
 FIXTURE_PATH = os.path.join(PARSER_DIR, "data", "EUW1-7982902321.rofl")
 EXPECTED_RESULT_PATH = os.path.join(PARSER_DIR, "result", "EUW1-7982902321_estadisticas.json")
@@ -129,12 +145,73 @@ class TestRoflParser(unittest.TestCase):
                 os.remove(tmp_path)
 
     def test_cli_main_file_not_found(self):
-        """Verifica que main() retorne código 1 cuando el archivo no existe."""
+        """Verifica que main() retorne código 10 cuando el archivo no existe."""
         with io.StringIO() as captured_stderr:
             with unittest.mock.patch("sys.stderr", captured_stderr):
                 exit_code = main(["non_existent_file_path.rofl"])
-                self.assertEqual(exit_code, 1)
+                self.assertEqual(exit_code, EXIT_FILE_NOT_FOUND)
                 self.assertIn("Error: El archivo no existe o no es válido", captured_stderr.getvalue())
+
+    def test_cli_main_invalid_magic_header(self):
+        """Verifica que main() retorne código 11 cuando la cabecera no es b'RIOT'."""
+        with tempfile.NamedTemporaryFile(suffix=".rofl", delete=False) as tmp:
+            tmp.write(b"NOT_A_VALID_ROFL_FILE_CONTENT_AT_ALL")
+            tmp_path = tmp.name
+
+        try:
+            with io.StringIO() as captured_stderr:
+                with unittest.mock.patch("sys.stderr", captured_stderr):
+                    exit_code = main([tmp_path, "-q"])
+                    self.assertEqual(exit_code, EXIT_INVALID_MAGIC_HEADER)
+                    self.assertIn("Cabecera ROFL no reconocida", captured_stderr.getvalue())
+        finally:
+            if os.path.exists(tmp_path):
+                os.remove(tmp_path)
+
+    def test_cli_main_invalid_payload_length(self):
+        """Verifica que main() retorne código 12 cuando la longitud del payload es inválida."""
+        with tempfile.NamedTemporaryFile(suffix=".rofl", delete=False) as tmp:
+            tmp.write(b"RIOT" + b"\x00" * 10 + (0).to_bytes(4, byteorder="little"))
+            tmp_path = tmp.name
+
+        try:
+            with io.StringIO() as captured_stderr:
+                with unittest.mock.patch("sys.stderr", captured_stderr):
+                    exit_code = main([tmp_path, "-q"])
+                    self.assertEqual(exit_code, EXIT_INVALID_PAYLOAD_LENGTH)
+                    self.assertIn("Longitud de metadata inválida", captured_stderr.getvalue())
+        finally:
+            if os.path.exists(tmp_path):
+                os.remove(tmp_path)
+
+    def test_cli_main_corrupt_metadata(self):
+        """Verifica que main() retorne código 13 cuando la metadata JSON está corrupta."""
+        corrupt_payload = b"{not_valid_json"
+        payload_len = len(corrupt_payload)
+        with tempfile.NamedTemporaryFile(suffix=".rofl", delete=False) as tmp:
+            tmp.write(b"RIOT" + b"\x00" * 4 + corrupt_payload + payload_len.to_bytes(4, byteorder="little"))
+            tmp_path = tmp.name
+
+        try:
+            with io.StringIO() as captured_stderr:
+                with unittest.mock.patch("sys.stderr", captured_stderr):
+                    exit_code = main([tmp_path, "-q"])
+                    self.assertEqual(exit_code, EXIT_CORRUPT_METADATA)
+                    self.assertIn("Metadata corrupta", captured_stderr.getvalue())
+        finally:
+            if os.path.exists(tmp_path):
+                os.remove(tmp_path)
+
+    def test_cli_main_output_write_error(self):
+        """Verifica que main() retorne código 14 cuando no se puede escribir el archivo de salida."""
+        with tempfile.NamedTemporaryFile(suffix=".json") as tmp:
+            invalid_out = os.path.join(tmp.name, "subdir_does_not_exist", "output.json")
+
+        with io.StringIO() as captured_stderr:
+            with unittest.mock.patch("sys.stderr", captured_stderr):
+                with unittest.mock.patch("builtins.open", side_effect=[open(FIXTURE_PATH, "rb"), OSError("Disk full")]):
+                    exit_code = main([FIXTURE_PATH, "-o", invalid_out, "-q"])
+                    self.assertEqual(exit_code, EXIT_OUTPUT_WRITE_ERROR)
 
 
 if __name__ == "__main__":

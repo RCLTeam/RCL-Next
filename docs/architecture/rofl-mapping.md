@@ -72,7 +72,7 @@ Los metadatos globales del archivo de repetición (fuente, `game_length_raw`, ch
 | `gameplay.tiempo_vivo_mas_largo` | `longest_time_living` | INTEGER NULLABLE, CHECK >= 0 |
 | `gameplay.tiempo_muerto` | `time_spent_dead` | INTEGER NULLABLE, CHECK >= 0 |
 
-Las métricas avanzadas son campos enteros nullables con restricciones de comprobación `CHECK` para impedir números negativos. Un valor `NULL` preserva la ausencia de dicho dato en el origen, mientras que `0` representa un valor explícito registrado. El campo `is_mvp` es un valor booleano (por defecto `false`) cuya asignación depende de la organización arbitral de la liga y no se computa automáticamente desde el archivo de repetición.
+Las métricas avanzadas no provistas en el archivo se resuelven por defecto a `0` durante su persistencia en base de datos (a excepción de `vision_score`, que preserva el valor `NULL` para denotar su ausencia). Todas estas métricas son campos enteros con restricciones de comprobación `CHECK` para impedir números negativos. El campo `is_mvp` es un valor booleano (por defecto `false`) cuya asignación depende de la organización arbitral de la liga y no se computa automáticamente desde el archivo de repetición.
 
 ---
 
@@ -120,5 +120,5 @@ La suite de pruebas automatizadas en `tests/unit/database/roflStats.test.ts` apl
   La función `player()` en `apps/parser/roflParser.py` extrae y devuelve explícitamente el campo `'resultado'` (`'Win'` o `'Lose'`), calculado a partir de la propiedad booleana `WIN` (`"resultado": "Win" if b(p.get("WIN")) else "Lose"`). Para los detalles técnicos del motor de extracción por seek inverso y las pruebas unitarias automatizadas del parser, consultar [Arquitectura del Extractor de Repeticiones ROFL](rofl-parser.md).
 * **Múltiples Cuentas por Usuario:**
   El PUUID de Riot no actúa como identificador único global del participante en este modelo. Un mismo usuario de Discord puede tener asociadas múltiples cuentas de juego (`players`), identificándose la principal mediante la columna `players.is_main`.
-* **Desacoplamiento del Ingestor:**
-  El esquema relacional está completamente preparado para recibir volcados de repeticiones de juego. La vinculación automática entre los jugadores del archivo ROFL y las plantillas oficiales de los equipos federados se implementará en la fase de servicios de importación.
+* **Ingesta y Persistencia Atómica:**
+  La resolución automática de jugadores, la vinculación a equipos mediante el `discord_user_id` de la plantilla activa, y la persistencia atómica multi-tabla (1:5) están completamente implementadas en `PostgresRoflUploadRepository`. El sistema garantiza el cierre transaccional unificado de cabeceras, estadísticas, runas y builds por cada participante en la partida.

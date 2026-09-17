@@ -12,6 +12,38 @@ OUTPUT_SUFFIX: str = "_estadisticas.json"
 MAGIC_HEADER: bytes = b"RIOT"
 MAX_METADATA_SIZE: int = 10 * 1024 * 1024  # 10 MB
 
+EXIT_SUCCESS: int = 0
+EXIT_GENERIC_ERROR: int = 1
+EXIT_FILE_NOT_FOUND: int = 10
+EXIT_INVALID_MAGIC_HEADER: int = 11
+EXIT_INVALID_PAYLOAD_LENGTH: int = 12
+EXIT_CORRUPT_METADATA: int = 13
+EXIT_OUTPUT_WRITE_ERROR: int = 14
+
+
+class RoflParserError(Exception):
+    exit_code: int = EXIT_GENERIC_ERROR
+
+
+class RoflFileNotFoundError(FileNotFoundError, RoflParserError):
+    exit_code: int = EXIT_FILE_NOT_FOUND
+
+
+class InvalidMagicHeaderError(ValueError, RoflParserError):
+    exit_code: int = EXIT_INVALID_MAGIC_HEADER
+
+
+class InvalidPayloadLengthError(ValueError, RoflParserError):
+    exit_code: int = EXIT_INVALID_PAYLOAD_LENGTH
+
+
+class CorruptMetadataError(ValueError, RoflParserError):
+    exit_code: int = EXIT_CORRUPT_METADATA
+
+
+class OutputWriteError(OSError, RoflParserError):
+    exit_code: int = EXIT_OUTPUT_WRITE_ERROR
+
 
 def i(v: Any, default: int = 0) -> int:
     try:
@@ -46,38 +78,46 @@ def first(d: Dict[str, Any], *keys: str, default: Any = None) -> Any:
 
 
 def read_rofl(path: Union[str, os.PathLike]) -> Dict[str, Any]:
-    with open(path, "rb") as f:
-        header = f.read(4)
-        if header != MAGIC_HEADER:
-            raise ValueError(
-                f"Cabecera ROFL no reconocida: se esperaba {MAGIC_HEADER!r}, obtenido {header!r}"
-            )
+    try:
+        with open(path, "rb") as f:
+            header = f.read(4)
+            if header != MAGIC_HEADER:
+                raise InvalidMagicHeaderError(
+                    f"Cabecera ROFL no reconocida: se esperaba {MAGIC_HEADER!r}, obtenido {header!r}"
+                )
 
-        f.seek(0, os.SEEK_END)
-        total_size = f.tell()
-        if total_size < 8:
-            raise ValueError("Archivo ROFL demasiado pequeño")
+            f.seek(0, os.SEEK_END)
+            total_size = f.tell()
+            if total_size < 8:
+                raise InvalidPayloadLengthError("Archivo ROFL demasiado pequeño")
 
-        f.seek(-4, os.SEEK_END)
-        tail = f.read(4)
-        if len(tail) != 4:
-            raise ValueError("No se pudo leer el trailer de metadata")
+            f.seek(-4, os.SEEK_END)
+            tail = f.read(4)
+            if len(tail) != 4:
+                raise InvalidPayloadLengthError("No se pudo leer el trailer de metadata")
 
-        (n,) = struct.unpack("<I", tail)
-        if n <= 0 or n > MAX_METADATA_SIZE:
-            raise ValueError(f"Longitud de metadata inválida: {n}")
+            (n,) = struct.unpack("<I", tail)
+            if n <= 0 or n > MAX_METADATA_SIZE:
+                raise InvalidPayloadLengthError(f"Longitud de metadata inválida: {n}")
 
-        if total_size < 4 + n + 4:
-            raise ValueError("Longitud de metadata inválida: excede el tamaño del archivo")
+            if total_size < 4 + n + 4:
+                raise InvalidPayloadLengthError("Longitud de metadata inválida: excede el tamaño del archivo")
 
-        f.seek(-4 - n, os.SEEK_END)
-        payload = f.read(n)
-        if len(payload) != n:
-            raise ValueError("No se pudieron leer todos los bytes de metadata")
+            f.seek(-4 - n, os.SEEK_END)
+            payload = f.read(n)
+            if len(payload) != n:
+                raise InvalidPayloadLengthError("No se pudieron leer todos los bytes de metadata")
+    except (FileNotFoundError, IsADirectoryError) as e:
+        raise RoflFileNotFoundError(f"El archivo no existe o no es válido: {path}") from e
 
-    meta = json.loads(payload.decode("utf-8"))
+    try:
+        decoded_payload = payload.decode("utf-8")
+        meta = json.loads(decoded_payload)
+    except Exception as e:
+        raise CorruptMetadataError(f"Metadata corrupta o no parseable: {e}") from e
+
     if not isinstance(meta, dict):
-        raise ValueError("Metadata inválida")
+        raise CorruptMetadataError("Metadata inválida")
 
     return meta
 
@@ -262,11 +302,15 @@ def parse_rofl(
 
     stats_json_str = meta.get("statsJson")
     if not stats_json_str:
-        raise ValueError("No se encontró statsJson")
+        raise CorruptMetadataError("No se encontró statsJson")
 
-    raw = json.loads(stats_json_str)
+    try:
+        raw = json.loads(stats_json_str)
+    except Exception as e:
+        raise CorruptMetadataError(f"statsJson corrupto o no parseable: {e}") from e
+
     if not isinstance(raw, list) or not raw:
-        raise ValueError("No se encontró statsJson")
+        raise CorruptMetadataError("No se encontró statsJson")
 
     players = [
         player(x)
@@ -351,21 +395,24 @@ def parse_rofl(
     else:
         outpath = os.fspath(output_path)
 
-    outdir = os.path.dirname(outpath)
-    if outdir and not os.path.exists(outdir):
-        os.makedirs(outdir, exist_ok=True)
+    try:
+        outdir = os.path.dirname(outpath)
+        if outdir and not os.path.exists(outdir):
+            os.makedirs(outdir, exist_ok=True)
 
-    with open(
-        outpath,
-        "w",
-        encoding="utf-8",
-    ) as f:
-        json.dump(
-            out,
-            f,
-            ensure_ascii=False,
-            indent=2,
-        )
+        with open(
+            outpath,
+            "w",
+            encoding="utf-8",
+        ) as f:
+            json.dump(
+                out,
+                f,
+                ensure_ascii=False,
+                indent=2,
+            )
+    except OSError as e:
+        raise OutputWriteError(f"Error al escribir el archivo de salida '{outpath}': {e}") from e
 
     if not quiet:
         print(f"Estadísticas extraídas exitosamente: {outpath}")
@@ -402,14 +449,17 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     if not os.path.isfile(args.path):
         sys.stderr.write(f"Error: El archivo no existe o no es válido: {args.path}\n")
-        return 1
+        return EXIT_FILE_NOT_FOUND
 
     try:
         parse_rofl(args.path, output_path=args.output, quiet=args.quiet)
-        return 0
+        return EXIT_SUCCESS
+    except RoflParserError as e:
+        sys.stderr.write(f"Error al procesar el archivo: {e}\n")
+        return e.exit_code
     except Exception as e:
         sys.stderr.write(f"Error al procesar el archivo: {e}\n")
-        return 1
+        return EXIT_GENERIC_ERROR
 
 
 if __name__ == "__main__":
