@@ -7,9 +7,9 @@ Fecha: 14 de septiembre de 2026.
 | pnpm build | Paquetes database y API compilados en `dist` |
 | pnpm typecheck | TypeScript estricto validado en raíz (`tsc -p tsconfig.json`) y workspaces |
 | biome check . | 0 errores de linter, formato y orden de imports en 33 archivos |
-| vitest run / pnpm test | 6 suites de prueba y 11 tests principales ejecutados al 100% en verde |
+| vitest run / pnpm test | 13 suites de prueba y 61 tests principales ejecutados al 100% en verde |
 | pnpm check | Pipeline unificado (`typecheck` + `biome check` + `vitest run`) exitoso |
-| python3 -m unittest discover -s apps/parser/tests -p "test_*.py" | 7 tests ejecutados al 100% en verde (integridad binaria ROFL, cabecera y esquema) |
+| python3 -m unittest discover -s apps/parser/tests -p "test_*.py" | 11 tests ejecutados al 100% en verde (integridad binaria ROFL, cabecera y esquema) |
 | pnpm db:generate | Generador de migraciones Drizzle sobre el baseline consolidado `0000_initial_schema.sql` |
 | drizzle-kit check | Historial de migraciones válido |
 | git diff --check | Sin errores de whitespace |
@@ -80,3 +80,12 @@ Comprende 7 casos de prueba ejecutados en milisegundos sin dependencias externas
 7. **`test_cli_main_file_not_found`**: Verifica que la CLI gestione rutas inexistentes devolviendo código de salida 1 y mensaje de error en `sys.stderr`.
 
 La suite completa de pruebas de TypeScript se ejecuta de forma determinista y sin dependencias de red mediante PostgreSQL embebido en memoria (`PGlite`), validando esquemas reales y datos sintéticos en menos de dos segundos. No se ha validado todavía una conexión TCP con PostgreSQL 17 ni ejecutado Docker Compose, porque faltan esas herramientas en el entorno. No forman parte de esta entrega autenticación Discord, endpoints de escritura, importación ROFL, perfiles detallados, UI Pick'em ni frontend React (descritos en `architecture/roadmap.md`).
+
+## Suites Adicionales (Ingesta y Frontend)
+7. **`tests/e2e/roflWebSocketEndToEnd.test.ts`**: Flujo completo de ingesta streaming, parseo y base de datos PGlite.
+8. **`tests/unit/services/roflUploadWebSocket.test.ts`**: Gestión de concurrencia y streaming de fragmentos.
+9. **`tests/unit/database/roflUploadRepository.test.ts`**: Persistencia atómica de 5 tablas.
+10. **`tests/unit/services/roflUploadValidation.test.ts`**: Detección de smurfs y equipos incompletos.
+11. **`tests/unit/env.test.ts`**: Validación estricta de variables de entorno Zod.
+12. **`apps/web/src/hooks/useRoflUploadWs.test.ts`**: Máquina de estados de conexión cliente React.
+13. **`apps/web/src/App.test.tsx`**: Renderizado de terminal, stepper y telemetría.

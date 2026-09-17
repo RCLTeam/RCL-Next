@@ -59,6 +59,23 @@ Se mantienen los nombres de los DTO: Season.id contiene name; Division.code cont
 
 Las colecciones de competición se limitan por división y devuelven el conjunto completo, sin paginación en esta fase. El servicio depende de CompetitionRepository; únicamente la implementación PostgreSQL importa Drizzle. Los controladores usan Zod. Express 5 propaga los rechazos asíncronos al middleware central.
 
-No hay autenticación ni rutas POST/PUT/PATCH de negocio en esta primera entrega. La API es pública y de solo lectura. Ningún endpoint de administración admite tokens de desarrollo, usuarios falsos ni claves hardcodeadas. Todos los usuarios ficticios del seed tienen rol viewer.
+No hay autenticación en las rutas REST actuales. Ningún endpoint de administración admite tokens de desarrollo, usuarios falsos ni claves hardcodeadas. Todos los usuarios ficticios del seed tienen rol viewer.
 
 La configuración de CORS acepta el origen definido en CORS_ORIGIN. El servidor local escucha en 127.0.0.1; una futura imagen de contenedor deberá configurar HOST=0.0.0.0. Los detalles SQL y credenciales no se devuelven en errores.
+
+### WebSocket Ingestion Gateway: `/ws/rofl-upload`
+
+- **URL:** `ws://<host>:<port>/ws/rofl-upload`
+- **Wire protocol:**
+  - Client start frame: `{ type: "start", filename: "<string>" }`
+  - Direct binary streaming chunks (64–128 KB) enviadas como datos binarios (ArrayBuffer/Blob).
+  - Client finish frame: `{ type: "finish" }`
+- **Backpressure management:** El servidor llama a `ws.pause()` cuando el buffer del stream de escritura (write stream buffer) se llena, y reanuda el consumo con `ws.resume()` al recibir el evento `'drain'`.
+- **Server events:**
+  - `started`: Confirmación de inicio.
+  - `queue`: Posición en la cola de procesamiento (`position`, `total`).
+  - `stage`: Fase actual (`decompressing`, `parsing`, `validating`, `persisting`, `completed`).
+  - `progress`: Progreso porcentual y mensajes (`percent`, `message`).
+  - `warning`, `anomaly`: Avisos y anomalías detectadas.
+  - `success`, `error`: Finalización exitosa o error crítico.
+- **Cleanup:** Limpieza determinista de descriptores y flujos ante la desconexión del socket (`ws.on('close')`).

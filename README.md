@@ -55,6 +55,10 @@ La clasificación DEMO muestra Lobos con una victoria y Cuervos con una derrota.
 ## Estructura implementada
 
 ```text
+apps/web/
+  src/                           Cliente React 19 (Vite)
+  src/hooks/                     Máquina de estado WebSocket (`useRoflUploadWs.ts`)
+  src/components/                Componentes UI (Dropzone, Stepper, Terminal)
 apps/api/
   src/config/                    Carga y validación de entorno
   src/modules/competition/
@@ -94,7 +98,7 @@ docs/
   verification.md                     Resultados y censo de pruebas del monorepo
 ```
 
-El frontend futuro irá en `apps/web`; aún no se ha creado. No se incorporan bots o servicios adicionales en esta fase.
+La consola web de administración (React 19) se encuentra en `apps/web`. No se incorporan bots o servicios adicionales en esta fase.
 
 ## Verificación
 

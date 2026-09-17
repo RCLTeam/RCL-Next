@@ -160,3 +160,47 @@ python3 -m unittest discover -s apps/parser/tests -p "test_*.py"
 # Ejecución directa del archivo de test
 python3 -m unittest apps/parser/tests/test_roflParser.py
 ```
+
+## 6. Integración y Respuestas
+
+### 6.1 Códigos de Salida POSIX Estructurados
+El script actúa de forma robusta como un worker en background; la aplicación (Node) monitoriza los siguientes códigos de salida:
+- **0**: Éxito total.
+- **10**: Archivo no encontrado o ruta inválida.
+- **11**: Cabecera mágica inválida (distinta de `b"RIOT"`). Indica un archivo que no es ROFL legítimo. (Usado por el gateway para salto no fatal).
+- **12**: Longitud de carga útil inválida o truncada.
+- **13**: Metadatos JSON corruptos (deserialización fallida).
+- **14**: Error de escritura del archivo de salida (permisos, espacio en disco).
+- **1**: Error genérico no controlado (bug en el script o falta severa de memoria).
+
+### 6.2 Sobre de Salida JSON
+El formato de salida está fuertemente estructurado bajo un contrato (envelope) predecible y versionado:
+```json
+{
+  "version": 2,
+  "fuente": {
+    "archivo_original": "EUW1-7982902321.rofl",
+    "tamano_bytes": 13456789
+  },
+  "rofl": {
+    "version_cliente": "14.18.618.1062",
+    "longitud_juego": 1845000,
+    "ultimo_chunk": 105,
+    "ultimo_keyframe": 26
+  },
+  "partida": {
+    "id": "7982902321",
+    "duracion": 1845,
+    "duracion_formateada": "30:45",
+    "equipo_ganador": 100,
+    "version_juego": "14.18.618.1062"
+  },
+  "equipos": {
+    "100": { "victoria": true, "resumen": {}, "objetivos": {}, "jugadores": [] },
+    "200": { "victoria": false, "resumen": {}, "objetivos": {}, "jugadores": [] }
+  },
+  "jugadores": [
+    { /* 75 claves canónicas */ }
+  ]
+}
+```
