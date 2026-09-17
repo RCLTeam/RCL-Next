@@ -1,6 +1,6 @@
 # Esquema Relacional de Base de Datos
 
-Documentación del modelo de datos PostgreSQL de Rebel Crown Legacy (RCL), sincronizado entre `packages/database/src/schema.ts` y las migraciones `0000_initial_schema.sql` y `0001_discord_auth.sql`.
+Documentación del modelo de datos PostgreSQL de Rebel Crown Legacy (RCL), sincronizado entre `packages/database/src/schema.ts` y el esquema inicial único `0000_initial_schema.sql`, que incluye la autenticación Discord.
 
 Para el contexto de diseño, operaciones y mapeo de partidas:
 - [**Modelo y Decisiones Arquitectónicas**](database.md): Decisiones de diseño, desempate y garantías relacionales.
