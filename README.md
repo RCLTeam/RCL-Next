@@ -1,6 +1,14 @@
-# Rebel Crown Legacy — primera entrega: datos y backend
+# Rebel Crown Legacy
 
+<<<<<<< Updated upstream
 Base de la refactorización en TypeScript, Express y PostgreSQL con Drizzle. Esta entrega está centrada en el esquema, las migraciones, los datos de prueba y una API de consulta comprobable. Las siguientes etapas son autenticación Discord, administración, perfiles/estadísticas, Pick'em y React.
+=======
+Base de la refactorización en TypeScript, Express y PostgreSQL con Drizzle. Incluye esquema, migraciones, datos de prueba, API de consulta y autenticación Discord con sesiones PostgreSQL. Incluye también el cliente React y la subida de repeticiones ROFL. Las siguientes etapas se detallan en [el roadmap](docs/architecture/roadmap.md).
+
+## Inicio de sesión con Discord
+
+Configura `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET` y `DISCORD_REDIRECT_URI` en `.env`, aplica `pnpm db:migrate`, arranca `pnpm dev:api` y `pnpm dev:web` en terminales separadas y abre `http://localhost:5173`. La cabecera incluye **Entrar con Discord**, el usuario conectado y el cierre de sesión. Consulta [la guía de autenticación](docs/authentication.md) para registrar el callback y probar el acceso. Sin credenciales, la API pública sigue disponible y las rutas de autenticación devuelven 503.
+>>>>>>> Stashed changes
 
 ## Dónde está la base de datos
 
@@ -8,20 +16,19 @@ Base de la refactorización en TypeScript, Express y PostgreSQL con Drizzle. Est
 - SQL original conservado: `docs/reference/0000_initial_schema.original.sql`.
 - Modelo tipado: `packages/database/src/schema.ts`.
 - Datos sintéticos: `packages/database/seed/demo.sql`.
-- PostgreSQL local: servicio `postgres` de `compose.yaml`, puerto 5432, base `rcl`.
-- Los registros se guardan en el volumen Docker `postgres_data`, no dentro del archivo SQL.
+- Conexión PostgreSQL: configurada mediante `DATABASE_URL` en `.env`.
+- Los registros se guardan en la instancia PostgreSQL; el archivo SQL define la estructura.
 
-No se ha creado un servidor PostgreSQL en este equipo: Docker y psql no están disponibles en el entorno de ejecución. Las pruebas usan PostgreSQL embebido (PGlite), temporal y sin puerto TCP. No es una instancia de producción ni sustituye la comprobación del servidor de destino.
+Las pruebas automatizadas usan PostgreSQL embebido (PGlite), temporal y sin puerto TCP. Para ejecutar la aplicación necesitas una instancia PostgreSQL propia.
 
 ## Puesta en marcha (PowerShell, desde RCL Next)
 
-Necesitas Node.js 22 o superior, pnpm 11 y Docker Desktop con contenedores Linux. También puedes usar una instalación propia de PostgreSQL 17 y cambiar DATABASE_URL.
+Necesitas Node.js 22 o superior, pnpm 11 y PostgreSQL 17. Crea una base de desarrollo y configura su conexión en DATABASE_URL antes de ejecutar los comandos de base de datos.
 
 ```powershell
 # Solo si todavía no existe .env; conserva tus credenciales actuales.
 if (-not (Test-Path .env)) { Copy-Item .env.example .env }
 pnpm install --frozen-lockfile
-docker compose up -d --wait postgres
 pnpm db:migrate
 pnpm db:seed
 pnpm db:check
@@ -32,13 +39,7 @@ El seed requiere `ALLOW_DEMO_SEED=true` y rechaza `NODE_ENV=production`. Crea un
 
 ## Cómo ver las tablas y los registros
 
-Con PostgreSQL arrancado, puedes ejecutar `pnpm db:studio` y abrir la dirección que muestre Drizzle. Otra opción es Adminer:
-
-```powershell
-docker compose --profile tools up -d adminer
-```
-
-Abre http://localhost:8080 y selecciona PostgreSQL. Servidor: `postgres`; usuario: `rcl`; contraseña local: `rcl_dev_password`; base: `rcl`. Adminer es opcional. Para DBeaver/pgAdmin desde Windows, el servidor es `localhost` y el puerto `5432`.
+Con PostgreSQL arrancado, ejecuta `pnpm db:studio` y abre la dirección que muestre Drizzle. También puedes conectar DBeaver o pgAdmin usando los datos de DATABASE_URL.
 
 ## Comprobar la API
 
@@ -55,6 +56,7 @@ La clasificación DEMO muestra Lobos con una victoria y Cuervos con una derrota.
 ## Estructura implementada
 
 ```text
+<<<<<<< Updated upstream
 apps/web/
   src/                           Cliente React 19 (Vite)
   src/hooks/                     Máquina de estado WebSocket (`useRoflUploadWs.ts`)
@@ -84,21 +86,62 @@ packages/database/
   src/check.ts                   Conexión y listado de tablas
   drizzle/                       Migraciones SQL, journal y snapshots
   seed/demo.sql                  Datos de prueba
+=======
+apps/
+  web/src/
+    features/auth/               Sesión Discord y controles de acceso
+    features/rofl-upload/        Componentes, hooks, páginas y estado de subida
+    App.tsx                      Composición de la interfaz
+    *.test.tsx                   Pruebas junto al código que verifican
+  api/src/
+    config/                      Entorno y sus pruebas
+    modules/auth/                OAuth Discord, sesiones y autorización
+    modules/competition/         Rutas, controladores, servicios y repositorios
+    modules/rofl-upload/          Procesamiento, validación, persistencia y WebSocket
+    shared/                      Errores y utilidades HTTP
+    app.ts                       Composición e inyección de dependencias
+    server.ts                    Conexión, arranque y cierre controlado
+  parser/
+    roflParser.py                Extractor CLI de repeticiones LoL (.rofl)
+    tests/                       Pruebas Python
+    data/                        Ejemplo ROFL utilizado por las pruebas
+    result/                      Ejemplo JSON utilizado por las pruebas
+packages/
+  contracts/src/
+    auth.ts                      Tipo público de usuario autenticado
+    rofl-upload.ts               Mensajes WebSocket, anomalías y resumen del lote
+    index.ts                     Exportaciones públicas de @rcl/contracts
+  database/
+    src/                         Esquema Drizzle, conexión y comandos de base de datos
+    drizzle/                     Migraciones SQL, journal y snapshots
+    seed/demo.sql                Datos sintéticos de desarrollo y pruebas
+>>>>>>> Stashed changes
 tests/
-  unit/                          Pruebas unitarias (servicios, base de datos)
-  integration/                   Pruebas de integración HTTP y de base de datos con PGlite
+  integration/                   Pruebas HTTP, WebSocket, parser y PGlite
+  support/                       Adaptador node:test para Vitest
 docs/
-  architecture/database.md            Decisiones de diseño y correcciones del modelo
-  architecture/database-schema.md     Diagrama ER de 17 tablas, enums y restricciones
-  architecture/database-operations.md Concurrencia, advisory locks, pool y comandos
-  architecture/rofl-parser.md         Arquitectura del parser ROFL, streaming y seek inverso
-  architecture/rofl-mapping.md        Mapeo de estadísticas JSON a tablas relacionales
-  architecture/roadmap.md             Mapa funcional y siguientes etapas
-  api.md                              Contrato de los endpoints implementados
-  verification.md                     Resultados y censo de pruebas del monorepo
+  architecture/                  Diseño, modelo de datos, parser y roadmap
+  reference/                     SQL original conservado
+  api.md                         Contrato de los endpoints
+  authentication.md              Configuración de Discord
+scripts/                         Herramientas de desarrollo local
 ```
 
-La consola web de administración (React 19) se encuentra en `apps/web`. No se incorporan bots o servicios adicionales en esta fase.
+Las pruebas unitarias y de módulo viven junto al código que verifican. Consulta [CONTRIBUTING.md](CONTRIBUTING.md) para elegir dónde añadir archivos y qué convenciones seguir.
+
+El frontend React 19 se encuentra en `apps/web`. Incluye el portal público y la consola de administración. No se incorporan bots o servicios adicionales en esta fase.
+
+## Páginas del frontend
+
+La estructura visual parte de `../Maqueta/`, con cada apartado en una página independiente: `/` (Inicio), `/ligas`, `/calendario`, `/clasificacion`, `/equipos`, `/jugadores`, `/fantasy` y `/playoffs`. La cabecera, el menú móvil, el acceso Discord y el pie son compartidos. La consola mantiene su URL `/admin/rofl/upload` y el protocolo WebSocket existente.
+
+`features/site/pages/` contiene Inicio, Ligas, Jugadores y Fantasy; `features/competition/pages/` contiene Calendario, Clasificación, Equipos y Playoffs. `features/site/navigation.tsx` define las rutas y los enlaces internos; las páginas admiten navegación con historial y carga directa. La selección de temporada/división se conserva al navegar entre páginas públicas. `features/competition/` consulta los endpoints existentes de lectura, cancela solicitudes obsoletas y muestra estados de carga, error y vacío.
+
+Jugadores, Fantasy, el quinteto de la jornada, editorial y coronas presentan su estructura visual con estados pendientes: todavía no existe una API para esas funciones. No se copian resultados ficticios de la maqueta. Los logos y las imágenes de marca disponibles se sirven desde `public/brand/`; las fuentes y fondos `/_blob/` ausentes de la copia se sustituyen por tipografías del sistema y fondos CSS.
+
+En producción, el servidor del frontend debe resolver las rutas de página a `index.html` (fallback de SPA) y reenviar `/api` y `/ws/rofl-upload` a la API. Vite ya resuelve las páginas y los proxies durante el desarrollo. No se han cambiado contratos, migraciones ni endpoints del backend.
+
+Las siete páginas interiores usan `features/site/components/PageLayout.tsx` para compartir cabecera, descripción, barra de controles y espaciado del contenido. `CompetitionFilters.tsx` mantiene los selectores de temporada y división en la misma posición. Los anchos, márgenes y alturas de controles se definen en las variables de `site.css`; los formatos específicos (tablas, equipos y cruces) se colocan dentro de esa estructura común.
 
 ## Verificación
 
@@ -109,14 +152,18 @@ python3 -m unittest discover -s apps/parser/tests -p "test_*.py"
 ```
 
 El pipeline de validación comprueba la salud integral del proyecto:
-1. `pnpm typecheck`: compila `@rcl/database` para emitir los tipos y artefactos en `dist`, comprueba los tipos de las suites de prueba en `tests/` mediante `tsc -p tsconfig.json` y valida con TypeScript estricto (`tsc --noEmit`) cada paquete del workspace.
+1. `pnpm typecheck`: compila `@rcl/database` y `@rcl/contracts` para emitir los tipos y artefactos en `dist`, comprueba los tipos de las suites de prueba en `tests/` mediante `tsc -p tsconfig.json` y valida con TypeScript estricto (`tsc --noEmit`) cada paquete del workspace.
 2. `biome check .`: valida reglas de linter, formato y ordenación de imports en todo el repositorio.
-3. `vitest run`: ejecuta la totalidad de las suites de prueba centralizadas en `tests/`.
+3. `vitest run`: ejecuta las suites colocadas junto al código en `apps/` y `packages/`, además de las de `tests/integration/`.
 4. `python3 -m unittest discover -s apps/parser/tests -p "test_*.py"`: ejecuta la batería de pruebas unitarias del extractor ROFL en `apps/parser/tests/`, validando la lectura por seek inverso, comprobación de cabecera mágica `b"RIOT"`, cotas de metadatos y fidelidad del esquema JSON.
 
-Los paquetes que consumen código de `@rcl/database` (como `@rcl/api` y los tests de integración) acceden a las exportaciones tipadas a través de su carpeta `dist`. Por este motivo, se requiere compilar previamente la base de datos (`pnpm --filter @rcl/database build` o `pnpm build`) antes de ejecutar pruebas o arrancar los servicios en modo producción (`pnpm --filter @rcl/api start`).
+Los paquetes compartidos (`@rcl/database` y `@rcl/contracts`) exponen sus artefactos compilados desde `dist`. Ejecuta `pnpm build:packages` antes de invocar Vitest directamente, o `pnpm check` para compilar los paquetes y ejecutar toda la validación TypeScript. Para producción, `pnpm build` compila el workspace en orden de dependencias y `pnpm --filter @rcl/api start` arranca la API. Su compilación excluye los archivos de pruebas mediante `apps/api/tsconfig.build.json`.
 
+<<<<<<< Updated upstream
 Las pruebas no requieren una base de datos externa ni variables en `.env`: ejecutan las migraciones reales y el seed sobre PostgreSQL embebido en memoria (`@electric-sql/pglite`), verificando las 17 tablas mediante Drizzle y recorriendo el flujo HTTP → controlador → servicio → repositorio → base de datos. PGlite proporciona aislamiento determinista e instantáneo para tests locales y CI sin dependencias de red. Para entornos de desarrollo integrados y producción, se utiliza el servidor PostgreSQL 17 desplegado mediante Docker Compose (`compose.yaml`). Las migraciones de base de datos se gestionan mediante `pnpm db:generate`, sobre el baseline consolidado en `0000_initial_schema.sql`.
+=======
+Las pruebas no requieren una base de datos externa ni variables en `.env`: ejecutan las migraciones reales y el seed sobre PostgreSQL embebido en memoria (`@electric-sql/pglite`), verificando las 19 tablas mediante Drizzle y recorriendo el flujo HTTP → controlador → servicio → repositorio → base de datos. PGlite proporciona aislamiento determinista e instantáneo para tests locales y CI sin dependencias de red. Para ejecutar la aplicación se utiliza una instancia PostgreSQL 17 configurada mediante DATABASE_URL. Las migraciones de base de datos se gestionan mediante `pnpm db:generate`, sobre el esquema inicial único `0000_initial_schema.sql`, que ya incluye las tablas de autenticación.
+>>>>>>> Stashed changes
 
 ## Migraciones e historial
 
