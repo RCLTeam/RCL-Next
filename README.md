@@ -1,14 +1,10 @@
 # Rebel Crown Legacy
 
-<<<<<<< Updated upstream
-Base de la refactorización en TypeScript, Express y PostgreSQL con Drizzle. Esta entrega está centrada en el esquema, las migraciones, los datos de prueba y una API de consulta comprobable. Las siguientes etapas son autenticación Discord, administración, perfiles/estadísticas, Pick'em y React.
-=======
 Base de la refactorización en TypeScript, Express y PostgreSQL con Drizzle. Incluye esquema, migraciones, datos de prueba, API de consulta y autenticación Discord con sesiones PostgreSQL. Incluye también el cliente React y la subida de repeticiones ROFL. Las siguientes etapas se detallan en [el roadmap](docs/architecture/roadmap.md).
 
 ## Inicio de sesión con Discord
 
 Configura `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET` y `DISCORD_REDIRECT_URI` en `.env`, aplica `pnpm db:migrate`, arranca `pnpm dev:api` y `pnpm dev:web` en terminales separadas y abre `http://localhost:5173`. La cabecera incluye **Entrar con Discord**, el usuario conectado y el cierre de sesión. Consulta [la guía de autenticación](docs/authentication.md) para registrar el callback y probar el acceso. Sin credenciales, la API pública sigue disponible y las rutas de autenticación devuelven 503.
->>>>>>> Stashed changes
 
 ## Dónde está la base de datos
 
@@ -56,41 +52,21 @@ La clasificación DEMO muestra Lobos con una victoria y Cuervos con una derrota.
 ## Estructura implementada
 
 ```text
-<<<<<<< Updated upstream
-apps/web/
-  src/                           Cliente React 19 (Vite)
-  src/hooks/                     Máquina de estado WebSocket (`useRoflUploadWs.ts`)
-  src/components/                Componentes UI (Dropzone, Stepper, Terminal)
-apps/api/
-  src/config/                    Carga y validación de entorno
-  src/modules/competition/
-    competition.repository.ts    Puerto de acceso a datos
-    postgres-competition.repository.ts  Consultas Drizzle
-    competition.service.ts       Reglas de clasificación y consultas
-    competition.controller.ts    Validación de parámetros / respuesta HTTP
-    competition.router.ts        Rutas REST
-  src/shared/                    Errores centralizados
-  src/app.ts                     Composición e inyección de dependencias
-  src/server.ts                  Conexión, arranque y cierre controlado
-apps/parser/
-  roflParser.py                  Extractor CLI optimizado y API de repeticiones LoL (.rofl) con seek inverso
-  tests/test_roflParser.py       Suite de pruebas unitarias automatizadas (unittest)
-  data/                          Archivos .rofl de entrada
-  result/                        Reportes generados en formato JSON
-packages/database/
-  src/schema.ts                  Las 17 tablas del modelo
-  src/index.ts                   Factoría Drizzle + pool PostgreSQL
-  src/environment.ts             Ruta única de .env
-  src/migrate.ts                 Runner con control de historial
-  src/seed.ts                    Seed transaccional y repetible
-  src/check.ts                   Conexión y listado de tablas
-  drizzle/                       Migraciones SQL, journal y snapshots
-  seed/demo.sql                  Datos de prueba
-=======
 apps/
   web/src/
-    features/auth/               Sesión Discord y controles de acceso
-    features/rofl-upload/        Componentes, hooks, páginas y estado de subida
+    features/site/
+      pages/<pagina>/            Página, components/ exclusivos y CSS propio
+      pages/admin/               Admin, panel ROFL, componentes, hooks y tipos
+      shared/components/         Cabecera, pie, layout, filtros y vistas comunes
+      shared/resources/          Catálogo de recursos y datos comunes
+      shared/assets/             Imágenes, fuentes y licencias
+      shared/styles/             Tokens, fuentes y estilos comunes
+      shared/auth/               Sesión Discord y controles de acceso
+      shared/competition/        Cliente API, tipos y hook de competición
+      tests/                     Pruebas que cubren varias páginas
+      navigation.tsx             Rutas y enlaces internos
+      LeaguePortal.tsx           Composición de páginas públicas
+      site.css                   Entrada de estilos compartidos
     App.tsx                      Composición de la interfaz
     *.test.tsx                   Pruebas junto al código que verifican
   api/src/
@@ -115,7 +91,6 @@ packages/
     src/                         Esquema Drizzle, conexión y comandos de base de datos
     drizzle/                     Migraciones SQL, journal y snapshots
     seed/demo.sql                Datos sintéticos de desarrollo y pruebas
->>>>>>> Stashed changes
 tests/
   integration/                   Pruebas HTTP, WebSocket, parser y PGlite
   support/                       Adaptador node:test para Vitest
@@ -133,15 +108,21 @@ El frontend React 19 se encuentra en `apps/web`. Incluye el portal público y la
 
 ## Páginas del frontend
 
-La estructura visual parte de `../Maqueta/`, con cada apartado en una página independiente: `/` (Inicio), `/ligas`, `/calendario`, `/clasificacion`, `/equipos`, `/jugadores`, `/fantasy` y `/playoffs`. La cabecera, el menú móvil, el acceso Discord y el pie son compartidos. La consola mantiene su URL `/admin/rofl/upload` y el protocolo WebSocket existente.
+La estructura visual parte de `../Maqueta/`. Cada página vive en `apps/web/src/features/site/pages/<pagina>/` con su archivo `*Page.tsx`, sus componentes exclusivos en `components/` y su CSS. Las carpetas son `home`, `leagues`, `calendar`, `standings`, `teams`, `players`, `champions`, `fantasy`, `predictions`, `crystal-ball`, `playoffs` y `admin`; `not-found` contiene la página 404 y su CSS, sin componentes adicionales innecesarios.
 
-`features/site/pages/` contiene Inicio, Ligas, Jugadores y Fantasy; `features/competition/pages/` contiene Calendario, Clasificación, Equipos y Playoffs. `features/site/navigation.tsx` define las rutas y los enlaces internos; las páginas admiten navegación con historial y carga directa. La selección de temporada/división se conserva al navegar entre páginas públicas. `features/competition/` consulta los endpoints existentes de lectura, cancela solicitudes obsoletas y muestra estados de carga, error y vacío.
+Las rutas siguen siendo `/`, `/ligas`, `/calendario`, `/clasificacion`, `/equipos`, `/jugadores`, `/campeones`, `/fantasy`, `/predicciones`, `/bola-cristal` y `/playoffs`. `/admin` es la última página del menú y contiene la consola ROFL. `/admin/rofl/upload` se conserva como alias compatible, con Admin activo en la cabecera. Ambas aceptan una barra final. Las páginas admiten historial y carga directa; los enlaces internos están definidos en `site/navigation.tsx`.
 
-Jugadores, Fantasy, el quinteto de la jornada, editorial y coronas presentan su estructura visual con estados pendientes: todavía no existe una API para esas funciones. No se copian resultados ficticios de la maqueta. Los logos y las imágenes de marca disponibles se sirven desde `public/brand/`; las fuentes y fondos `/_blob/` ausentes de la copia se sustituyen por tipografías del sistema y fondos CSS.
+`site/shared/` concentra lo reutilizable: componentes de cabecera, pie, layout y filtros; autenticación Discord; cliente API, tipos y hook de competición; recursos, imágenes, fuentes y licencias. `shared/resources/assets.ts` exporta las imágenes mediante imports de Vite, para que la compilación resuelva sus URLs. Los roles están en `shared/resources/player-roles.ts`. Los colores, familias tipográficas y espaciados están centralizados en `shared/styles/tokens.css`; los estilos comunes están en `common.css` y las fuentes en `fonts.css`. `site.css` solo importa estos estilos compartidos. Cada página importa su propio CSS, incluidos sus ajustes responsive.
 
-En producción, el servidor del frontend debe resolver las rutas de página a `index.html` (fallback de SPA) y reenviar `/api` y `/ws/rofl-upload` a la API. Vite ya resuelve las páginas y los proxies durante el desarrollo. No se han cambiado contratos, migraciones ni endpoints del backend.
+El contenedor conserva el ancho completo y los mismos márgenes interiores. La selección de temporada y división se conserva al navegar entre páginas públicas. El hook de competición cancela solicitudes obsoletas y muestra estados de carga, error y vacío. Predicciones utiliza los partidos programados del calendario real; las funciones aún sin API muestran estados pendientes, sin inventar resultados o porcentajes.
 
-Las siete páginas interiores usan `features/site/components/PageLayout.tsx` para compartir cabecera, descripción, barra de controles y espaciado del contenido. `CompetitionFilters.tsx` mantiene los selectores de temporada y división en la misma posición. Los anchos, márgenes y alturas de controles se definen en las variables de `site.css`; los formatos específicos (tablas, equipos y cruces) se colocan dentro de esa estructura común.
+Admin conserva los componentes de subida, los hooks, los tipos y las pruebas del protocolo WebSocket en su propia carpeta. Sus estilos fijos están en `admin.css`; los valores dinámicos de progreso y estado siguen en los componentes y utilizan los mismos tokens de color. El traslado no cambia los contratos de mensajes ni los endpoints.
+
+La paleta y la jerarquía tipográfica siguen `Maqueta/Guía de Marca RCL_files/saved_resource.html`: Manuka Condensed Black (900) para titulares; Manuka Bold (700) para subtítulos y cifras; PP Fraktion Sans Light/Bold (300/700) para cuerpo y controles; PP Fraktion Mono Regular/Bold (400/700) para metadatos y estadísticas. `tokens.css` centraliza todos los colores, incluidos victoria, derrota y avisos; los fondos y transparencias derivan de esos tokens. El texto principal usa Parchment White, nunca blanco puro.
+
+Los siete archivos de fuente aportados en `Maqueta/` se sirven desde `shared/assets/fonts/manuka/` y `shared/assets/fonts/fraktion/`, con sus pesos declarados en `fonts.css` y sus avisos de licencia junto a los archivos. Vite incluye las fuentes en la compilación, sin depender de instalaciones locales ni de servicios externos. Bebas Neue, Inter y la fuente monoespaciada del sistema cubren los caracteres que falten en las fuentes proporcionadas. Los paquetes aportados indican `Personal Use Only` y Manuka se distribuye como `TestManuka`; para publicar con otra licencia hay que sustituirlos por los archivos autorizados conservando los nombres y pesos. Los fondos `/_blob/` siguen ausentes de la copia de la maqueta.
+
+Al añadir una página, crea su carpeta, importa su CSS y regístrala en `navigation.tsx` y `LeaguePortal.tsx` (o en `App.tsx` para vistas fuera del portal). Los componentes usados por más de una página deben vivir en `shared/components/`, sin importar módulos de una página concreta. En producción, el servidor debe resolver las rutas de página a `index.html` y reenviar `/api` y `/ws/rofl-upload` a la API; Vite ya lo resuelve en desarrollo.
 
 ## Verificación
 
@@ -159,11 +140,7 @@ El pipeline de validación comprueba la salud integral del proyecto:
 
 Los paquetes compartidos (`@rcl/database` y `@rcl/contracts`) exponen sus artefactos compilados desde `dist`. Ejecuta `pnpm build:packages` antes de invocar Vitest directamente, o `pnpm check` para compilar los paquetes y ejecutar toda la validación TypeScript. Para producción, `pnpm build` compila el workspace en orden de dependencias y `pnpm --filter @rcl/api start` arranca la API. Su compilación excluye los archivos de pruebas mediante `apps/api/tsconfig.build.json`.
 
-<<<<<<< Updated upstream
-Las pruebas no requieren una base de datos externa ni variables en `.env`: ejecutan las migraciones reales y el seed sobre PostgreSQL embebido en memoria (`@electric-sql/pglite`), verificando las 17 tablas mediante Drizzle y recorriendo el flujo HTTP → controlador → servicio → repositorio → base de datos. PGlite proporciona aislamiento determinista e instantáneo para tests locales y CI sin dependencias de red. Para entornos de desarrollo integrados y producción, se utiliza el servidor PostgreSQL 17 desplegado mediante Docker Compose (`compose.yaml`). Las migraciones de base de datos se gestionan mediante `pnpm db:generate`, sobre el baseline consolidado en `0000_initial_schema.sql`.
-=======
 Las pruebas no requieren una base de datos externa ni variables en `.env`: ejecutan las migraciones reales y el seed sobre PostgreSQL embebido en memoria (`@electric-sql/pglite`), verificando las 19 tablas mediante Drizzle y recorriendo el flujo HTTP → controlador → servicio → repositorio → base de datos. PGlite proporciona aislamiento determinista e instantáneo para tests locales y CI sin dependencias de red. Para ejecutar la aplicación se utiliza una instancia PostgreSQL 17 configurada mediante DATABASE_URL. Las migraciones de base de datos se gestionan mediante `pnpm db:generate`, sobre el esquema inicial único `0000_initial_schema.sql`, que ya incluye las tablas de autenticación.
->>>>>>> Stashed changes
 
 ## Migraciones e historial
 

@@ -1,0 +1,542 @@
+/* Page-specific styles: admin. */
+.rcl-site .admin-content { width: 100%; min-height: 65vh; padding: 40px var(--page-gutter); }
+@media (max-width: 650px) {
+  .rcl-site .admin-content { padding: 24px var(--page-gutter); }
+}
+
+/* AnomalyAlerts */
+.rcl-site .admin-anomaly-alerts-container {
+  margin-bottom: 1.5rem;
+}
+.rcl-site .admin-anomaly-alerts-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+.rcl-site .admin-anomaly-alerts-icon {
+  width: 22px;
+  height: 22px;
+  stroke: var(--amber);
+  fill: none;
+  flex-shrink: 0;
+}
+.rcl-site .admin-anomaly-alerts-title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--amber);
+}
+.rcl-site .admin-anomaly-alerts-subtitle {
+  margin: 0.25rem 0 0 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+.rcl-site .admin-anomaly-alerts-anomaly-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+}
+.rcl-site .admin-anomaly-alerts-card {
+  background-color: var(--panel);
+  border: 1px solid color-mix(in srgb, var(--amber) 30%, transparent);
+  border-left: 4px solid var(--amber);
+  border-radius: 8px;
+  padding: 1.25rem;
+}
+.rcl-site .admin-anomaly-alerts-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 0.75rem;
+}
+.rcl-site .admin-anomaly-alerts-game-file {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text);
+  font-family: var(--mono);
+}
+.rcl-site .admin-anomaly-alerts-discord-tag {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+.rcl-site .admin-anomaly-alerts-discord-user {
+  font-weight: 700;
+  color: var(--amber);
+}
+.rcl-site .admin-anomaly-alerts-accounts-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.rcl-site .admin-anomaly-alerts-account-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: var(--panel);
+  padding: 0.4rem 0.75rem;
+  border-radius: 4px;
+  font-size: 0.82rem;
+  border: 1px solid var(--line);
+}
+.rcl-site .admin-anomaly-alerts-account-name {
+  color: var(--text);
+  font-weight: 700;
+}
+.rcl-site .admin-anomaly-alerts-champion-badge {
+  background-color: color-mix(in srgb, var(--purple) 25%, transparent);
+  border: 1px solid color-mix(in srgb, var(--purple) 50%, transparent);
+  color: var(--text);
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+/* BatchSummaryCard */
+.rcl-site .admin-batch-summary-card-card {
+  background-color: var(--panel);
+  border: 1px solid color-mix(in srgb, var(--win) 40%, transparent);
+  border-top: 4px solid var(--win);
+  border-radius: 12px;
+  padding: 2rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--void) 30%, transparent);
+}
+.rcl-site .admin-batch-summary-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+.rcl-site .admin-batch-summary-card-title-group {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.rcl-site .admin-batch-summary-card-icon {
+  width: 28px;
+  height: 28px;
+  stroke: var(--win);
+  fill: none;
+}
+.rcl-site .admin-batch-summary-card-title {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--text);
+}
+.rcl-site .admin-batch-summary-card-subtitle {
+  margin: 0.25rem 0 0 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+.rcl-site .admin-batch-summary-card-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+.rcl-site .admin-batch-summary-card-stat-box {
+  background-color: var(--panel-raised);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 1.25rem;
+  text-align: center;
+}
+.rcl-site .admin-batch-summary-card-stat-value {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--lime);
+  line-height: 1.2;
+}
+.rcl-site .admin-batch-summary-card-stat-label {
+  margin-top: 0.35rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.rcl-site .admin-batch-summary-card-duplicates-section {
+  background-color: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+}
+.rcl-site .admin-batch-summary-card-duplicates-title {
+  margin: 0 0 0.5rem 0;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text);
+}
+.rcl-site .admin-batch-summary-card-duplicates-list {
+  margin: 0;
+  padding-left: 1.25rem;
+  font-size: 0.8rem;
+  color: var(--muted);
+  font-family: var(--mono);
+}
+.rcl-site .admin-batch-summary-card-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+}
+.rcl-site .admin-batch-summary-card-reset-button {
+  background-color: var(--purple);
+  color: var(--text);
+  border: none;
+  border-radius: 6px;
+  padding: 0.65rem 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* MissingPlayersAlert */
+.rcl-site .admin-missing-players-alert-card {
+  background-color: color-mix(in srgb, var(--crimson) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--crimson) 40%, transparent);
+  border-left: 4px solid var(--crimson);
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+.rcl-site .admin-missing-players-alert-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+.rcl-site .admin-missing-players-alert-icon {
+  width: 24px;
+  height: 24px;
+  stroke: var(--crimson);
+  fill: none;
+  flex-shrink: 0;
+}
+.rcl-site .admin-missing-players-alert-title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--crimson);
+}
+.rcl-site .admin-missing-players-alert-description {
+  margin: 0 0 1rem 0;
+  font-size: 0.9rem;
+  color: var(--text);
+  line-height: 1.5;
+}
+.rcl-site .admin-missing-players-alert-tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+.rcl-site .admin-missing-players-alert-player-tag {
+  background-color: color-mix(in srgb, var(--crimson) 20%, transparent);
+  border: 1px solid color-mix(in srgb, var(--crimson) 50%, transparent);
+  color: var(--crimson);
+  font-weight: 700;
+  font-size: 0.85rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 4px;
+  font-family: var(--mono);
+}
+.rcl-site .admin-missing-players-alert-action-note {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+/* RoflDropzone */
+.rcl-site .admin-rofl-dropzone-container {
+  border: 2px dashed color-mix(in srgb, var(--purple) 45%, transparent);
+  border-radius: 12px;
+  padding: 3rem 2rem;
+  text-align: center;
+  background-color: var(--panel);
+  transition: all 0.2s ease-in-out;
+  cursor: pointer;
+  outline: none;
+  position: relative;
+  user-select: none;
+}
+.rcl-site .admin-rofl-dropzone-container-drag-over {
+  border: 2px dashed var(--lime);
+  background-color: color-mix(in srgb, var(--lime) 5%, transparent);
+  box-shadow: 0 0 20px color-mix(in srgb, var(--lime) 20%, transparent);
+}
+.rcl-site .admin-rofl-dropzone-container-disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  border-color: var(--stone);
+}
+.rcl-site .admin-rofl-dropzone-icon-wrapper {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 1.25rem;
+  border-radius: 50%;
+  background-color: color-mix(in srgb, var(--purple) 20%, transparent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid color-mix(in srgb, var(--purple) 40%, transparent);
+}
+.rcl-site .admin-rofl-dropzone-icon-svg {
+  width: 32px;
+  height: 32px;
+  stroke: var(--lime);
+  fill: none;
+}
+.rcl-site .admin-rofl-dropzone-title {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text);
+}
+.rcl-site .admin-rofl-dropzone-description {
+  margin: 0 0 1.25rem 0;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+.rcl-site .admin-rofl-dropzone-badge-group {
+  display: inline-flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+.rcl-site .admin-rofl-dropzone-format-badge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  padding: 0.25rem 0.6rem;
+  border-radius: 4px;
+  background-color: var(--panel-raised);
+  color: var(--lime);
+  border: 1px solid color-mix(in srgb, var(--lime) 25%, transparent);
+}
+.rcl-site .admin-rofl-dropzone-hidden-input {
+  display: none;
+}
+.rcl-site .admin-rofl-dropzone-container { width: 100%; font: inherit; color: inherit; }
+
+/* RoflUploadPanel */
+.rcl-site .admin-rofl-upload-panel-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  width: 100%;
+}
+.rcl-site .admin-rofl-upload-panel-header-card {
+  background-color: var(--panel);
+  border: 1px solid color-mix(in srgb, var(--purple) 40%, transparent);
+  border-left: 4px solid var(--lime);
+  border-radius: 8px;
+  padding: 1.5rem 2rem;
+}
+.rcl-site .admin-rofl-upload-panel-title {
+  margin: 0;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.02em;
+}
+.rcl-site .admin-rofl-upload-panel-subtitle {
+  margin-top: 0.5rem;
+  margin-bottom: 0;
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+.rcl-site .admin-rofl-upload-panel-error-banner {
+  background-color: color-mix(in srgb, var(--crimson) 10%, transparent);
+  border: 1px solid var(--crimson);
+  border-radius: 8px;
+  padding: 1.25rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.rcl-site .admin-rofl-upload-panel-error-text {
+  margin: 0;
+  color: var(--crimson);
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+.rcl-site .admin-rofl-upload-panel-retry-button {
+  background-color: var(--crimson);
+  color: var(--text);
+  border: none;
+  border-radius: 6px;
+  padding: 0.5rem 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+/* UploadStepper */
+.rcl-site .admin-upload-stepper-container {
+  background-color: var(--panel);
+  border: 1px solid color-mix(in srgb, var(--purple) 30%, transparent);
+  border-radius: 12px;
+  padding: 1.75rem;
+  margin-bottom: 1.5rem;
+}
+.rcl-site .admin-upload-stepper-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+.rcl-site .admin-upload-stepper-file-title {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text);
+}
+.rcl-site .admin-upload-stepper-stage-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.rcl-site .admin-upload-stepper-queue-alert {
+  background-color: color-mix(in srgb, var(--lime) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--lime) 40%, transparent);
+  border-radius: 8px;
+  padding: 0.85rem 1.25rem;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--lime);
+}
+.rcl-site .admin-upload-stepper-queue-text {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+.rcl-site .admin-upload-stepper-queue-badge {
+  background-color: var(--lime);
+  color: var(--void);
+  padding: 0.2rem 0.6rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+.rcl-site .admin-upload-stepper-stepper-track {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+  margin-bottom: 2rem;
+}
+.rcl-site .admin-upload-stepper-step-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  z-index: 2;
+  flex: 1;
+}
+.rcl-site .admin-upload-stepper-step-circle {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  transition: all 0.3s ease;
+}
+.rcl-site .admin-upload-stepper-step-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-align: center;
+  transition: color 0.3s ease;
+}
+.rcl-site .admin-upload-stepper-progress-bar-wrapper {
+  background-color: var(--panel-raised);
+  border-radius: 9999px;
+  height: 8px;
+  overflow: hidden;
+  margin-bottom: 1.5rem;
+}
+.rcl-site .admin-upload-stepper-progress-bar-fill {
+  height: 100%;
+  background-color: var(--lime);
+  transition: width 0.3s ease-out;
+}
+.rcl-site .admin-upload-stepper-terminal-wrapper {
+  background-color: var(--void);
+  border: 1px solid var(--panel-raised);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.rcl-site .admin-upload-stepper-terminal-header {
+  background-color: var(--panel);
+  padding: 0.5rem 1rem;
+  border-bottom: 1px solid var(--panel-raised);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.75rem;
+  color: var(--muted);
+  font-family: var(--mono);
+}
+.rcl-site .admin-upload-stepper-terminal-dots {
+  display: flex;
+  gap: 6px;
+}
+.rcl-site .admin-upload-stepper-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+.rcl-site .admin-upload-stepper-terminal-body {
+  padding: 1rem;
+  max-height: 220px;
+  overflow-y: auto;
+  font-family: var(--mono);
+  font-weight: 400;
+  font-size: 0.8rem;
+  line-height: 1.6;
+  color: var(--text);
+}
+.rcl-site .admin-upload-stepper-log-line {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 0.25rem;
+}
+.rcl-site .admin-upload-stepper-log-index {
+  color: var(--stone);
+  user-select: none;
+  min-width: 24px;
+  text-align: right;
+}
+
+.rcl-site .admin-heading { margin-bottom: 24px; }
+.rcl-site .admin-heading h1 { font: 900 clamp(48px, 7vw, 84px)/0.95 var(--display); margin: 0; text-transform: uppercase; }
+
+.rcl-site .admin-batch-summary-card-stat-value,
+.rcl-site .admin-upload-stepper-stage-badge,
+.rcl-site .admin-upload-stepper-queue-badge,
+.rcl-site .admin-upload-stepper-step-circle { font-family: var(--mono); font-weight: 700; }
+.rcl-site .admin-rofl-dropzone-description { font-family: var(--body-f); font-weight: 300; }

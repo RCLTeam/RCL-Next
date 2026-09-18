@@ -3,13 +3,13 @@ import { test } from 'node:test';
 import React from 'react';
 import { renderToString } from 'react-dom/server';
 import { App } from './App.js';
-import { AnomalyAlerts } from './features/rofl-upload/components/AnomalyAlerts.js';
-import { BatchSummaryCard } from './features/rofl-upload/components/BatchSummaryCard.js';
-import { MissingPlayersAlert } from './features/rofl-upload/components/MissingPlayersAlert.js';
-import { RoflDropzone } from './features/rofl-upload/components/RoflDropzone.js';
-import { UploadStepper } from './features/rofl-upload/components/UploadStepper.js';
-import { RoflUploadPage } from './features/rofl-upload/pages/RoflUploadPage.js';
 import { siteRoutes } from './features/site/navigation.js';
+import { AnomalyAlerts } from './features/site/pages/admin/components/AnomalyAlerts.js';
+import { BatchSummaryCard } from './features/site/pages/admin/components/BatchSummaryCard.js';
+import { MissingPlayersAlert } from './features/site/pages/admin/components/MissingPlayersAlert.js';
+import { RoflDropzone } from './features/site/pages/admin/components/RoflDropzone.js';
+import { RoflUploadPanel } from './features/site/pages/admin/components/RoflUploadPanel.js';
+import { UploadStepper } from './features/site/pages/admin/components/UploadStepper.js';
 
 test('App renders admin rofl upload view on route /admin/rofl/upload with dropzone and admin console', () => {
   const html = renderToString(React.createElement(App, { initialPath: '/admin/rofl/upload' }));
@@ -30,7 +30,7 @@ test('Home links to separate pages and retains access to replay upload', () => {
   for (const route of siteRoutes) {
     assert.match(html, new RegExp(`href="${route.path}"`));
   }
-  assert.match(html, /href="\/admin\/rofl\/upload"/);
+  assert.match(html, /href="\/admin"/);
   assert.match(html, /Cuenta de Discord/);
   assert.match(html, /LA CORONA/);
   assert.doesNotMatch(html, /Dropzone for ROFL and ZIP files/);
@@ -58,6 +58,23 @@ test('Each public route renders only its own page, including direct links and tr
 test('Replay upload also works with a trailing slash', () => {
   const html = renderToString(React.createElement(App, { initialPath: '/admin/rofl/upload/' }));
   assert.match(html, /Dropzone for ROFL and ZIP files/);
+});
+
+test('Admin is the last navigation page and both admin URLs preserve replay upload', () => {
+  for (const path of ['/admin', '/admin/', '/admin/rofl/upload', '/admin/rofl/upload/']) {
+    const html = renderToString(React.createElement(App, { initialPath: path }));
+    const navigation = html.match(/<nav\b[^>]*id="site-navigation"[^>]*>([\s\S]*?)<\/nav>/)?.[1];
+    assert.ok(navigation);
+    const links = [...navigation.matchAll(/<a\b[^>]*>[\s\S]*?<\/a>/g)];
+    const adminLink = links.at(-1)?.[0] ?? '';
+    assert.match(adminLink, /href="\/admin"/);
+    assert.match(adminLink, /aria-current="page"/);
+    assert.match(adminLink, />Admin<\/a>/);
+    assert.match(html, /id="admin"/);
+    assert.match(html, /Dropzone for ROFL and ZIP files/);
+    assert.equal((html.match(/<h1[ >]/g) ?? []).length, 1);
+    assert.doesNotMatch(html, /404 — Not Found/);
+  }
 });
 
 test('RoflDropzone renders accessible drop target and format badges', () => {
@@ -140,8 +157,8 @@ test('BatchSummaryCard renders processed statistics and skipped duplicates', () 
   assert.match(html, /Upload Another Batch/i);
 });
 
-test('RoflUploadPage renders complete initial console with dropzone', () => {
-  const html = renderToString(React.createElement(RoflUploadPage));
+test('RoflUploadPanel renders complete initial console with dropzone', () => {
+  const html = renderToString(React.createElement(RoflUploadPanel));
   assert.match(html, /ROFL Replay Upload/i);
   assert.match(html, /Administrative batch ingestion workspace/i);
   assert.match(html, /Dropzone for ROFL and ZIP files/i);
