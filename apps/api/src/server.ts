@@ -1,7 +1,10 @@
 import http from 'node:http';
-import { createDatabase, seasons } from '@rcl/database';
+import { authSessions, createDatabase, oauthStates, seasons } from '@rcl/database';
 import { createApp } from './app.js';
 import { loadEnvironment } from './config/env.js';
+import { AuthService } from './modules/auth/auth.service.js';
+import { DiscordOAuthClient } from './modules/auth/discord.client.js';
+import { PostgresAuthRepository } from './modules/auth/postgres-auth.repository.js';
 import { PostgresCompetitionRepository } from './modules/competition/postgres-competition.repository.js';
 import { PostgresRoflUploadRepository } from './modules/rofl-upload/persistence/postgresRoflUpload.repository.js';
 import { attachRoflUploadGateway } from './modules/rofl-upload/websocket/roflUploadGateway.js';
@@ -11,6 +14,10 @@ const connection = createDatabase(env.DATABASE_URL);
 connection.pool.on('error', () => console.error('An idle PostgreSQL connection failed.'));
 async function checkDatabase() {
   await connection.db.select({ name: seasons.name }).from(seasons).limit(1);
+  if (env.DISCORD_CLIENT_ID) {
+    await connection.db.select({ tokenHash: authSessions.tokenHash }).from(authSessions).limit(1);
+    await connection.db.select({ tokenHash: oauthStates.tokenHash }).from(oauthStates).limit(1);
+  }
 }
 try {
   await checkDatabase();
@@ -24,7 +31,23 @@ try {
 const app = createApp({
   repository: new PostgresCompetitionRepository(connection.db),
   checkDatabase,
-  corsOrigin: env.CORS_ORIGIN
+  corsOrigin: env.CORS_ORIGIN,
+  ...(env.DISCORD_CLIENT_ID
+    ? {
+        auth: {
+          service: new AuthService(
+            new PostgresAuthRepository(connection.db),
+            new DiscordOAuthClient({
+              clientId: env.DISCORD_CLIENT_ID,
+              clientSecret: env.DISCORD_CLIENT_SECRET,
+              redirectUri: env.DISCORD_REDIRECT_URI
+            })
+          ),
+          secureCookies: new URL(env.DISCORD_REDIRECT_URI).protocol === 'https:',
+          frontendOrigin: env.CORS_ORIGIN
+        }
+      }
+    : {})
 });
 const server = http.createServer(app);
 const roflUploadRepo = new PostgresRoflUploadRepository(connection.db);

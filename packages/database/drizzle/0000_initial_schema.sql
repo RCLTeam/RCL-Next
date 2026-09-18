@@ -14,6 +14,19 @@ CREATE TABLE "discord_users" (
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
+CREATE TABLE "auth_sessions" (
+	"token_hash" varchar(64) PRIMARY KEY NOT NULL,
+	"discord_user_id" varchar(32) NOT NULL,
+	"expires_at" timestamp with time zone NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "auth_sessions_discord_user_id_discord_users_discord_id_fk" FOREIGN KEY ("discord_user_id") REFERENCES "public"."discord_users"("discord_id") ON DELETE cascade ON UPDATE no action
+);
+--> statement-breakpoint
+CREATE TABLE "oauth_states" (
+	"token_hash" varchar(64) PRIMARY KEY NOT NULL,
+	"expires_at" timestamp with time zone NOT NULL
+);
+--> statement-breakpoint
 CREATE TABLE "audit_logs" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"actor_discord_user_id" varchar(32) REFERENCES "public"."discord_users"("discord_id") ON DELETE set null ON UPDATE no action,
@@ -295,6 +308,8 @@ CREATE TABLE "predictions" (
 --> statement-breakpoint
 CREATE INDEX "audit_logs_entity_idx" ON "audit_logs" USING btree ("entity_type", "entity_id");--> statement-breakpoint
 CREATE INDEX "audit_logs_actor_discord_user_id_idx" ON "audit_logs" USING btree ("actor_discord_user_id");--> statement-breakpoint
+CREATE INDEX "auth_sessions_expires_at_idx" ON "auth_sessions" USING btree ("expires_at");--> statement-breakpoint
+CREATE INDEX "oauth_states_expires_at_idx" ON "oauth_states" USING btree ("expires_at");--> statement-breakpoint
 CREATE UNIQUE INDEX "seasons_one_active_key" ON "seasons" USING btree ("is_active") WHERE "seasons"."is_active" = true;--> statement-breakpoint
 CREATE INDEX "seasons_divisions_season_name_idx" ON "seasons_divisions" USING btree ("season_name");--> statement-breakpoint
 CREATE INDEX "seasons_divisions_division_name_idx" ON "seasons_divisions" USING btree ("division_name");--> statement-breakpoint
