@@ -6,11 +6,12 @@
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "start": "node dist/server.js",
-    "build": "tsc",
+    "build": "tsc -p tsconfig.build.json",
     "test": "pnpm --filter rcl test",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@rcl/contracts": "workspace:*",
     "@rcl/database": "workspace:*",
     "adm-zip": "^0.6.1",
     "cors": "^2.8.5",

@@ -114,7 +114,7 @@ Los slots de inventario se indexan por la posición fija del slot (0 a 6), no po
 
 ## Verificación y Alcance de Pruebas
 
-La suite de pruebas automatizadas en `tests/unit/database/roflStats.test.ts` aplica la migración consolidada del esquema, carga los datos del fixture y comprueba que las estadísticas del archivo real `apps/parser/result/EUW1-7982902321_estadisticas.json` se persisten e hidratan sin pérdidas en PostgreSQL embebido (PGlite).
+La suite de pruebas automatizadas en `tests/integration/rofl-stats.test.ts` aplica la migración consolidada del esquema, carga los datos del fixture y comprueba que las estadísticas del archivo real `apps/parser/result/EUW1-7982902321_estadisticas.json` se persisten e hidratan sin pérdidas en PostgreSQL embebido (PGlite).
 
 * **Comportamiento del Parser Python (`roflParser.py`):**
   La función `player()` en `apps/parser/roflParser.py` extrae y devuelve explícitamente el campo `'resultado'` (`'Win'` o `'Lose'`), calculado a partir de la propiedad booleana `WIN` (`"resultado": "Win" if b(p.get("WIN")) else "Lose"`). Para los detalles técnicos del motor de extracción por seek inverso y las pruebas unitarias automatizadas del parser, consultar [Arquitectura del Extractor de Repeticiones ROFL](rofl-parser.md).

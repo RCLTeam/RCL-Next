@@ -9,6 +9,7 @@ import { MissingPlayersAlert } from './features/rofl-upload/components/MissingPl
 import { RoflDropzone } from './features/rofl-upload/components/RoflDropzone.js';
 import { UploadStepper } from './features/rofl-upload/components/UploadStepper.js';
 import { RoflUploadPage } from './features/rofl-upload/pages/RoflUploadPage.js';
+import { siteRoutes } from './features/site/navigation.js';
 
 test('App renders admin rofl upload view on route /admin/rofl/upload with dropzone and admin console', () => {
   const html = renderToString(React.createElement(App, { initialPath: '/admin/rofl/upload' }));
@@ -22,6 +23,41 @@ test('App renders admin rofl upload view on route /admin/rofl/upload with dropzo
 test('App renders 404 view on unknown route', () => {
   const html = renderToString(React.createElement(App, { initialPath: '/unknown/route' }));
   assert.match(html, /404 — Not Found/i);
+});
+
+test('Home links to separate pages and retains access to replay upload', () => {
+  const html = renderToString(React.createElement(App, { initialPath: '/' }));
+  for (const route of siteRoutes) {
+    assert.match(html, new RegExp(`href="${route.path}"`));
+  }
+  assert.match(html, /href="\/admin\/rofl\/upload"/);
+  assert.match(html, /Cuenta de Discord/);
+  assert.match(html, /LA CORONA/);
+  assert.doesNotMatch(html, /Dropzone for ROFL and ZIP files/);
+});
+
+test('Each public route renders only its own page, including direct links and trailing slashes', () => {
+  for (const route of siteRoutes) {
+    for (const path of new Set([route.path, `${route.path.replace(/\/$/, '')}/`])) {
+      const html = renderToString(React.createElement(App, { initialPath: path }));
+      assert.match(html, new RegExp(`id="${route.id}"`));
+      assert.equal((html.match(/<h1[ >]/g) ?? []).length, 1);
+      assert.ok(
+        (html.match(/<a\b[^>]*>/g) ?? []).some(
+          (tag) => tag.includes(`href="${route.path}"`) && tag.includes('aria-current="page"')
+        )
+      );
+      for (const other of siteRoutes.filter((item) => item.id !== route.id)) {
+        assert.doesNotMatch(html, new RegExp(`id="${other.id}"`));
+      }
+      assert.doesNotMatch(html, /404 — Not Found/);
+    }
+  }
+});
+
+test('Replay upload also works with a trailing slash', () => {
+  const html = renderToString(React.createElement(App, { initialPath: '/admin/rofl/upload/' }));
+  assert.match(html, /Dropzone for ROFL and ZIP files/);
 });
 
 test('RoflDropzone renders accessible drop target and format badges', () => {

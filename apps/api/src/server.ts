@@ -3,8 +3,8 @@ import { createDatabase, seasons } from '@rcl/database';
 import { createApp } from './app.js';
 import { loadEnvironment } from './config/env.js';
 import { PostgresCompetitionRepository } from './modules/competition/postgres-competition.repository.js';
-import { PostgresRoflUploadRepository } from './modules/rofl-upload/persistence/postgresRoflUpload.repository.js';
-import { attachRoflUploadGateway } from './modules/rofl-upload/websocket/roflUploadGateway.js';
+import { PostgresRoflUploadRepository } from './modules/rofl-upload/persistence/postgres-rofl-upload.repository.js';
+import { attachRoflUploadGateway } from './modules/rofl-upload/websocket/rofl-upload.gateway.js';
 
 const env = loadEnvironment();
 const connection = createDatabase(env.DATABASE_URL);

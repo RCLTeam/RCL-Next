@@ -4,6 +4,11 @@
   box-sizing: border-box;
 }
 
+/* Keep the available width stable when navigating between short and long pages. */
+html {
+  scrollbar-gutter: stable;
+}
+
 html,
 body {
   margin: 0;

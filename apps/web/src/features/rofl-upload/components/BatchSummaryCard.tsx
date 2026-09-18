@@ -1,5 +1,5 @@
+import type { BatchUploadSummary } from '@rcl/contracts';
 import React, { type CSSProperties } from 'react';
-import type { BatchUploadSummary } from '../types/upload.types.js';
 
 export interface BatchSummaryCardProps {
   summary: BatchUploadSummary;

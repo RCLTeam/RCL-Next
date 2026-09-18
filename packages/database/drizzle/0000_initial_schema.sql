@@ -14,6 +14,22 @@ CREATE TABLE "discord_users" (
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
+<<<<<<< Updated upstream
+=======
+CREATE TABLE "auth_sessions" (
+	"token_hash" varchar(64) PRIMARY KEY NOT NULL,
+	"discord_user_id" varchar(32) NOT NULL,
+	"expires_at" timestamp with time zone NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "auth_sessions_discord_user_id_discord_users_discord_id_fk" FOREIGN KEY ("discord_user_id") REFERENCES "public"."discord_users"("discord_id") ON DELETE cascade ON UPDATE no action
+);
+--> statement-breakpoint
+CREATE TABLE "oauth_states" (
+	"token_hash" varchar(64) PRIMARY KEY NOT NULL,
+	"expires_at" timestamp with time zone NOT NULL
+);
+--> statement-breakpoint
+>>>>>>> Stashed changes
 CREATE TABLE "audit_logs" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"actor_discord_user_id" varchar(32) REFERENCES "public"."discord_users"("discord_id") ON DELETE set null ON UPDATE no action,

@@ -1,5 +1,5 @@
+import type { MultiAccountAnomaly } from '@rcl/contracts';
 import React, { type CSSProperties } from 'react';
-import type { MultiAccountAnomaly } from '../types/upload.types.js';
 
 export interface AnomalyAlertsProps {
   anomalies: MultiAccountAnomaly[];

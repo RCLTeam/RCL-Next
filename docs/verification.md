@@ -1,4 +1,29 @@
+<<<<<<< Updated upstream
 # Verificación de la primera entrega
+=======
+# Verificación
+
+## Frontend Discord y entorno local — 17 de septiembre de 2026
+
+- `pnpm typecheck`: correcto en raíz, API, base de datos y frontend.
+- `pnpm test`: 93 pruebas en 17 archivos, todas correctas. Incluye 12 pruebas del cliente HTTP y los controles de sesión del frontend.
+- `pnpm --filter @rcl/web build`: compilación de producción correcta.
+- PostgreSQL 17.11 portable preparado en `.local/postgres`, con acceso solo desde 127.0.0.1. Esquema inicial aplicado a la base local `rcl`.
+- Corregida la sintaxis de la clave foránea inline de `auth_sessions` y la selección del ejecutable Python en Windows para desbloquear las pruebas locales.
+- API y frontend arrancados en los puertos 3001 y 5173. El navegador muestra el error de sesión y permite reintentar cuando Discord no está configurado.
+- El consentimiento real de Discord queda pendiente de completar las credenciales locales. Las pruebas automatizadas del proveedor usan respuestas simuladas.
+
+## Autenticación Discord — 16 de septiembre de 2026
+
+- `pnpm typecheck`: correcto en raíz y workspaces.
+- `biome check .`: correcto, 42 archivos comprobados.
+- `pnpm test`: 37 pruebas en 10 archivos, todas correctas. Incluye 12 pruebas de integración de autenticación, 4 de configuración Discord y 4 de errores del proveedor.
+- PostgreSQL embebido ejecuta el esquema inicial consolidado, comprueba las 19 tablas y valida el consumo único del estado OAuth, cookies, rotación/revocación/caducidad de sesiones, permisos y borrado en cascada. La autenticación se integró en ese esquema el 17 de septiembre de 2026, manteniendo una sola entrada en el journal.
+- Las respuestas externas de Discord están simuladas. No se ha efectuado el consentimiento real ni aplicado la migración en una instancia PostgreSQL externa.
+- Las pruebas de configuración utilizan `parseEnvironment` directamente para evitar depender del `.env` del equipo. No se añadieron dependencias.
+
+## Primera entrega (registro histórico)
+>>>>>>> Stashed changes
 
 Fecha: 14 de septiembre de 2026.
 

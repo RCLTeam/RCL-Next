@@ -103,18 +103,18 @@ El proyecto desacopla los entornos de prueba local de los entornos de desarrollo
 ### 1. PGlite (Pruebas Unitarias y de Integración)
 * **Paquete:** `@electric-sql/pglite`
 * **Naturaleza:** PostgreSQL real compilado a WebAssembly (WASM), ejecutado en memoria dentro del propio proceso de Node.js / Vitest.
-* **Uso:** Todas las pruebas automatizadas de `tests/unit/` y `tests/integration/` arrancan sobre PGlite.
+* **Uso:** Las pruebas de integración de base de datos en `tests/integration/` utilizan PGlite. Las pruebas unitarias y de módulo se colocan junto al código que verifican.
 * **Ventajas:**
   - Aislamiento total: cada prueba o suite puede desplegar un clúster limpio sin persistencia residual.
   - Velocidad instantánea: cero sobrecarga de red o arranque de contenedores Docker.
   - Cero dependencias externas: la suite se ejecuta de forma autónoma en CI y máquinas locales sin necesidad de demonios de base de datos ni sockets TCP.
   - Compatibilidad completa con Drizzle ORM y migraciones SQL estándar.
 
-### 2. Docker Compose (Desarrollo y Producción)
-* **Archivo:** `compose.yaml` (servicio `postgres`, PostgreSQL 17 en Alpine).
-* **Volumen persistente:** `postgres_data` montado en `/var/lib/postgresql/data`.
-* **Puerto:** `5432:5432`.
-* **Uso:** Entornos donde se requiere persistencia real, inspección mediante Drizzle Studio o Adminer, y ejecución de la API completa (`pnpm dev:api` o `pnpm start`).
+### 2. PostgreSQL persistente
+* **Versión:** PostgreSQL 17.
+* **Conexión:** Cada entorno configura su instancia mediante `DATABASE_URL` en `.env`.
+* **Uso:** Persistencia real, inspección mediante Drizzle Studio y ejecución de la API completa con `pnpm dev:api`.
+* **Configuración local:** Los archivos personales de Docker y los datos de la instancia quedan fuera del control de versiones.
 
 ---
 
