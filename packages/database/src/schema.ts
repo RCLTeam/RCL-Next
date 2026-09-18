@@ -59,6 +59,20 @@ export const discordUsers = pgTable('discord_users', {
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
 });
 
+export const authSessions = pgTable('auth_sessions', {
+  tokenHash: varchar('token_hash', { length: 64 }).primaryKey(),
+  discordUserId: varchar('discord_user_id', { length: 32 })
+    .notNull()
+    .references(() => discordUsers.discordId, { onDelete: 'cascade' }),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
+});
+
+export const oauthStates = pgTable('oauth_states', {
+  tokenHash: varchar('token_hash', { length: 64 }).primaryKey(),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull()
+});
+
 export const auditLogs = pgTable(
   'audit_logs',
   {

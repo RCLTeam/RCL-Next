@@ -1,0 +1,15 @@
+/* Page-specific styles: teams. */
+.rcl-site .team-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px; }
+.rcl-site .team-card { border: 1px solid var(--line); border-left: 3px solid var(--purple); background: var(--panel); }
+.rcl-site .team-card-art { display: grid; place-items: center; height: 160px; background: radial-gradient(ellipse, color-mix(in srgb, var(--purple) 20%, var(--panel)), var(--panel)); }
+.rcl-site .team-card-art .team-badge { width: 80px; height: 80px; font-size: 22px; }
+.rcl-site .team-card-body { padding: 24px; }
+.rcl-site .team-card h3 { font: 700 28px var(--display2); text-transform: uppercase; margin: 12px 0 18px; }
+.rcl-site .team-tag { font: 11px var(--mono); color: var(--lime); }
+.rcl-site .page-content .team-card {
+  background-color: var(--panel);
+  border-color: var(--line);
+  border-radius: 0;
+}
+.rcl-site .team-card { transition: transform 180ms, border-color 180ms; }
+.rcl-site .team-card:hover { transform: translateY(-5px); border-color: var(--lime); }

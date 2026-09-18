@@ -1,6 +1,7 @@
 import cors from 'cors';
 import express from 'express';
 import helmet from 'helmet';
+import { type AuthOptions, authRouter } from './modules/auth/auth.router.js';
 import { CompetitionController } from './modules/competition/competition.controller.js';
 import type { CompetitionRepository } from './modules/competition/competition.repository.js';
 import { competitionRouter } from './modules/competition/competition.router.js';
@@ -11,12 +12,22 @@ export function createApp(options: {
   repository: CompetitionRepository;
   checkDatabase: () => Promise<void>;
   corsOrigin: string;
+  auth?: AuthOptions;
 }): express.Express {
   const app = express();
   app.disable('x-powered-by');
   app.use(helmet());
-  app.use(cors({ origin: options.corsOrigin }));
+  app.use(cors({ origin: options.corsOrigin, credentials: true }));
   app.use(express.json({ limit: '1mb' }));
+  if (options.auth) {
+    app.use('/api/v1/auth', authRouter(options.auth));
+  } else {
+    app.use('/api/v1/auth', (_req, res) => {
+      res.status(503).json({
+        error: { code: 'AUTH_NOT_CONFIGURED', message: 'Discord sign-in is not configured.' }
+      });
+    });
+  }
   app.get('/health/live', (_req, res) => {
     res.json({ data: { status: 'ok' } });
   });

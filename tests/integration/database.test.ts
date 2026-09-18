@@ -37,9 +37,9 @@ test('PostgreSQL migrations, fixtures and relational constraints', async (t) => 
     assert.equal((await db.select().from(schema.playerGameInfo)).length, 10);
     assert.equal((await db.select().from(schema.seasons))[0]?.isActive, false);
   });
-  await t.test('all 17 ORM tables map to executable SQL', async () => {
+  await t.test('all 19 ORM tables map to executable SQL', async () => {
     const tables = Object.values(schema).filter((value) => is(value, Table));
-    assert.equal(tables.length, 17);
+    assert.equal(tables.length, 19);
     for (const table of tables) await db.select().from(table).limit(1);
   });
   await t.test('SQL columns, foreign keys, checks and indexes match Drizzle metadata', async () => {

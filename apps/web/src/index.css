@@ -15,8 +15,8 @@ body {
   padding: 0;
   width: 100%;
   min-height: 100%;
-  background-color: #0B0E14;
-  color: #F1F5F9;
+  background-color: var(--void);
+  color: var(--text);
 }
 
 #root {

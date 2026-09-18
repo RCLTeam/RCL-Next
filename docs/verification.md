@@ -1,6 +1,3 @@
-<<<<<<< Updated upstream
-# Verificación de la primera entrega
-=======
 # Verificación
 
 ## Frontend Discord y entorno local — 17 de septiembre de 2026
@@ -23,7 +20,6 @@
 - Las pruebas de configuración utilizan `parseEnvironment` directamente para evitar depender del `.env` del equipo. No se añadieron dependencias.
 
 ## Primera entrega (registro histórico)
->>>>>>> Stashed changes
 
 Fecha: 14 de septiembre de 2026.
 

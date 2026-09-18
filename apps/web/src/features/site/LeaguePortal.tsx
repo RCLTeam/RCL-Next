@@ -1,21 +1,21 @@
 import React from 'react';
-import { useCompetition } from '../competition/hooks/useCompetition.js';
-import { CalendarPage } from '../competition/pages/CalendarPage.js';
-import { PlayoffsPage } from '../competition/pages/PlayoffsPage.js';
-import { StandingsPage } from '../competition/pages/StandingsPage.js';
-import { TeamsPage } from '../competition/pages/TeamsPage.js';
-import { DivisionSwitch } from './components/CompetitionViews.js';
-import { SiteLayout } from './components/SiteLayout.js';
 import type { SitePath } from './navigation.js';
-import { ChampionsPage } from './pages/ChampionsPage.js';
-import { CrystalBallPage } from './pages/CrystalBallPage.js';
-import { FantasyPage } from './pages/FantasyPage.js';
-import { HomePage } from './pages/HomePage.js';
-import { LeaguesPage } from './pages/LeaguesPage.js';
-import { PlayersPage } from './pages/PlayersPage.js';
-import { PredictionsPage } from './pages/PredictionsPage.js';
+import { CalendarPage } from './pages/calendar/CalendarPage.js';
+import { ChampionsPage } from './pages/champions/ChampionsPage.js';
+import { CrystalBallPage } from './pages/crystal-ball/CrystalBallPage.js';
+import { FantasyPage } from './pages/fantasy/FantasyPage.js';
+import { HomePage } from './pages/home/HomePage.js';
+import { LeaguesPage } from './pages/leagues/LeaguesPage.js';
+import { PlayersPage } from './pages/players/PlayersPage.js';
+import { PlayoffsPage } from './pages/playoffs/PlayoffsPage.js';
+import { PredictionsPage } from './pages/predictions/PredictionsPage.js';
+import { StandingsPage } from './pages/standings/StandingsPage.js';
+import { TeamsPage } from './pages/teams/TeamsPage.js';
+import { useCompetition } from './shared/competition/hooks/useCompetition.js';
+import { DivisionSwitch } from './shared/components/CompetitionViews.js';
+import { SiteLayout } from './shared/components/SiteLayout.js';
 
-export function LeaguePortal({ path }: { path: SitePath }) {
+export function LeaguePortal({ path }: { path: Exclude<SitePath, '/admin'> }) {
   const competition = useCompetition();
   return (
     <SiteLayout

@@ -1,0 +1,29 @@
+/* Source: Maqueta/Guía de Marca RCL_files/saved_resource.html. */
+:root {
+  --page-gutter: clamp(24px, 5vw, 64px);
+  --page-spacing: clamp(56px, 7vw, 96px);
+  --control-height: 44px;
+  --void: #0a0a0a;
+  --panel: #141414;
+  --panel-raised: #1c1c1c;
+  --paper: #141210;
+  --text: #f2f2f2;
+  --muted: #9c9890;
+  --lime: #f4ff3a;
+  --purple: #7b2cff;
+  --line: #242424;
+  --stone: #3a3a3a;
+  --crimson: #e8483c;
+  --cobalt: #4c8dff;
+  --amber: #f2a93c;
+  --teal: #35d0c0;
+  --win: #46c26e;
+  --purple-hover: color-mix(in srgb, var(--purple) 85%, var(--void));
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  --squiggle: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 10'%3E%3Cpath d='M1 6 Q6 1 11 6 T21 6 T31 6 T41 6' stroke='%23F4FF3A' stroke-width='2.4' fill='none'/%3E%3C/svg%3E");
+  /* Brand families first; bundled fallbacks cover any missing characters. */
+  --display: 'Manuka Condensed', 'Bebas Neue', Impact, 'Arial Narrow', sans-serif;
+  --display2: 'Manuka', 'Bebas Neue', Impact, 'Arial Narrow', sans-serif;
+  --body-f: 'PP Fraktion Sans', 'Inter', 'Helvetica Neue', Arial, sans-serif;
+  --mono: 'PP Fraktion Mono', 'Consolas', 'Courier New', monospace;
+}
