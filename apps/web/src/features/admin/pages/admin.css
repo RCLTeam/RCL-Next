@@ -1,0 +1,26 @@
+/* Page-specific styles: admin. Base styles, states and responsive rules stay with their component. */
+
+/* Page layout and heading */
+
+.rcl-site .admin-content {
+  width: 100%;
+  min-height: 65vh;
+  padding: 40px var(--page-gutter);
+}
+
+@media (max-width: 650px) {
+  .rcl-site .admin-content {
+    padding: 24px var(--page-gutter);
+  }
+}
+
+.rcl-site .admin-heading {
+  margin-bottom: 24px;
+}
+
+.rcl-site .admin-heading h1 {
+  font: 900 clamp(48px, 7vw, 84px)/0.95 var(--display);
+  margin: 0;
+  text-transform: uppercase;
+}
+

@@ -17,6 +17,19 @@
 
 Agrupa por funcionalidad antes de crear carpetas técnicas globales. Extrae elementos compartidos cuando tengan consumidores reales en varias funcionalidades.
 
+### Localizar y editar el frontend
+
+Agrupa por funcionalidad y mantén el código y los estilos junto a sus consumidores:
+
+- En CSS, cada bloque corresponde a un componente o sección visual: reglas base, elementos internos, estados y ajustes responsive. Coloca las media queries junto al bloque al que afectan; evita añadir correcciones sueltas al final del archivo. Al consolidar reglas, conserva la especificidad y la precedencia de los breakpoints.
+- Los estilos de cabecera, navegación y pie están en `features/site/components/`; filtros, estados y tarjetas de competición en `features/competition/components/`. `site/site.css` compone los estilos compartidos conservando su precedencia. Los estilos de cuenta están en `features/auth/components/auth.css`; cada página mantiene su CSS en `features/<funcionalidad>/pages/`.
+- Para cambiar el indicador de página seleccionada, edita `features/site/components/site-navigation.css`: contiene `[aria-current='page']`, hover y onda de escritorio. `SiteNavigation`, dentro de `features/site/components/SiteLayout.tsx`, asigna el atributo. Las rutas públicas están en `features/site/navigation.tsx` y el dibujo de la onda es `--squiggle` en `shared/styles/tokens.css`.
+- En los archivos React con varias responsabilidades visuales, usa funciones locales con nombres claros y mantén su estado y helpers junto a su consumidor. `SiteLayout.tsx` reúne la composición general, `SeasonHud`, `SiteHeader`, `SiteNavigation` y `SiteFooter` sin crear archivos adicionales.
+
+## Alcance de los PR
+
+Separa los cambios de layout frontend de extracciones de contratos, cambios de compilación del monorepo y renombrados de API. Si una vista necesita una modificación de backend, prepara primero un PR independiente y basa el frontend en él. El paquete `@rcl/contracts` y `build:packages` ya forman parte del historial actual y son dependencias de la autenticación y del protocolo ROFL; retirarlos requiere una separación de historial coordinada, no eliminar sus consumidores.
+
 ## Organización de las pruebas
 
 - Las pruebas de una función, componente o módulo se colocan junto al código, con el sufijo `.test.ts` o `.test.tsx`.
@@ -31,6 +44,8 @@ Ejecuta `pnpm check` para comprobar tipos, formato y pruebas TypeScript; `pnpm b
 Antes de ejecutar Vitest directamente en un checkout nuevo, ejecuta `pnpm build:packages` para generar las exportaciones de los paquetes compartidos. Los comandos `dev:api`, `dev:web` y `typecheck` compilan sus paquetes necesarios automáticamente.
 
 ## Base de datos
+
+El flujo local requiere Docker con Compose: `pnpm db:local:start` ejecuta `docker compose up -d --wait postgres`; `pnpm db:local:status` muestra su estado y `pnpm db:local:stop` detiene el servicio conservando el volumen. Estos comandos son iguales en Windows, Linux y macOS y usan `compose.yaml`. Después se aplican migraciones y seed con los comandos habituales.
 
 Las tablas `match_games` y `player_game_stats` representan hechos históricos. Los totales de clasificación, KDA, win rate y picks se derivarán desde ahí mediante consultas o vistas. Esto evita incoherencias de contadores que había en el sistema anterior.
 

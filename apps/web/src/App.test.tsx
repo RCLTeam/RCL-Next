@@ -4,20 +4,11 @@ import React from 'react';
 import { renderToString } from 'react-dom/server';
 import { App } from './App.js';
 import { siteRoutes } from './features/site/navigation.js';
-import { AnomalyAlerts } from './features/site/pages/admin/components/AnomalyAlerts.js';
-import { BatchSummaryCard } from './features/site/pages/admin/components/BatchSummaryCard.js';
-import { MissingPlayersAlert } from './features/site/pages/admin/components/MissingPlayersAlert.js';
-import { RoflDropzone } from './features/site/pages/admin/components/RoflDropzone.js';
-import { RoflUploadPanel } from './features/site/pages/admin/components/RoflUploadPanel.js';
-import { UploadStepper } from './features/site/pages/admin/components/UploadStepper.js';
 
-test('App renders admin rofl upload view on route /admin/rofl/upload with dropzone and admin console', () => {
+test('App blocks replay upload until the session has been verified', () => {
   const html = renderToString(React.createElement(App, { initialPath: '/admin/rofl/upload' }));
-  assert.match(html, /ROFL Replay Upload/i);
-  assert.match(html, /Administrative batch ingestion workspace/i);
-  assert.match(html, /Dropzone for ROFL and ZIP files/i);
-  assert.match(html, /\.ROFL \(Single Replay\)/i);
-  assert.match(html, /\.ZIP \(Batch Archive\)/i);
+  assert.match(html, /Comprobando acceso/);
+  assert.doesNotMatch(html, /Dropzone for ROFL and ZIP files/i);
 });
 
 test('App renders 404 view on unknown route', () => {
@@ -25,12 +16,12 @@ test('App renders 404 view on unknown route', () => {
   assert.match(html, /404 — Not Found/i);
 });
 
-test('Home links to separate pages and retains access to replay upload', () => {
+test('Home links to public pages without exposing administration', () => {
   const html = renderToString(React.createElement(App, { initialPath: '/' }));
   for (const route of siteRoutes) {
     assert.match(html, new RegExp(`href="${route.path}"`));
   }
-  assert.match(html, /href="\/admin"/);
+  assert.doesNotMatch(html, /href="\/admin"/);
   assert.match(html, /Cuenta de Discord/);
   assert.match(html, /LA CORONA/);
   assert.doesNotMatch(html, /Dropzone for ROFL and ZIP files/);
@@ -55,111 +46,16 @@ test('Each public route renders only its own page, including direct links and tr
   }
 });
 
-test('Replay upload also works with a trailing slash', () => {
-  const html = renderToString(React.createElement(App, { initialPath: '/admin/rofl/upload/' }));
-  assert.match(html, /Dropzone for ROFL and ZIP files/);
-});
-
-test('Admin is the last navigation page and both admin URLs preserve replay upload', () => {
+test('Both admin URLs and their trailing slash aliases are guarded and absent from public navigation', () => {
   for (const path of ['/admin', '/admin/', '/admin/rofl/upload', '/admin/rofl/upload/']) {
     const html = renderToString(React.createElement(App, { initialPath: path }));
     const navigation = html.match(/<nav\b[^>]*id="site-navigation"[^>]*>([\s\S]*?)<\/nav>/)?.[1];
     assert.ok(navigation);
-    const links = [...navigation.matchAll(/<a\b[^>]*>[\s\S]*?<\/a>/g)];
-    const adminLink = links.at(-1)?.[0] ?? '';
-    assert.match(adminLink, /href="\/admin"/);
-    assert.match(adminLink, /aria-current="page"/);
-    assert.match(adminLink, />Admin<\/a>/);
+    assert.doesNotMatch(navigation, /href="\/admin"/);
     assert.match(html, /id="admin"/);
-    assert.match(html, /Dropzone for ROFL and ZIP files/);
+    assert.match(html, /Comprobando acceso/);
+    assert.doesNotMatch(html, /Dropzone for ROFL and ZIP files/);
     assert.equal((html.match(/<h1[ >]/g) ?? []).length, 1);
     assert.doesNotMatch(html, /404 — Not Found/);
   }
-});
-
-test('RoflDropzone renders accessible drop target and format badges', () => {
-  const html = renderToString(React.createElement(RoflDropzone, { onFileSelected: () => {} }));
-  assert.match(html, /Dropzone for ROFL and ZIP files/i);
-  assert.match(html, /\.ROFL \(Single Replay\)/i);
-  assert.match(html, /\.ZIP \(Batch Archive\)/i);
-  assert.match(html, /Select or drop League of Legends replays/i);
-});
-
-test('UploadStepper renders queue state and live terminal logs', () => {
-  const html = renderToString(
-    React.createElement(UploadStepper, {
-      stage: 'queue',
-      progress: 30,
-      queuePosition: 2,
-      queueTotal: 4,
-      terminalLogs: ['[QUEUE] In decompression queue (Position 2 of 4)', '[UPLOAD] Finished chunk'],
-      fileName: 'replays_week_1.zip'
-    })
-  );
-  assert.match(html, /replays_week_1\.zip/i);
-  assert.match(html, /Decompression Queue Active/i);
-  assert.match(html, /Position 2 of 4/i);
-  assert.match(html, /Live Ingestion Console/i);
-  assert.match(html, /In decompression queue/i);
-});
-
-test('MissingPlayersAlert renders unregistered player list and warnings', () => {
-  const html = renderToString(
-    React.createElement(MissingPlayersAlert, {
-      missingPlayers: ['Faker#T1', 'Chovy#GEN'],
-      errorMessage: 'Validation failed: The following summoners are not registered'
-    })
-  );
-  assert.match(html, /Validation Aborted: Unregistered Players Detected/i);
-  assert.match(html, /Faker#T1/i);
-  assert.match(html, /Chovy#GEN/i);
-});
-
-test('AnomalyAlerts renders multi-account warning cards', () => {
-  const html = renderToString(
-    React.createElement(AnomalyAlerts, {
-      anomalies: [
-        {
-          gameFile: 'EUW1-100.rofl',
-          discordUserId: 'disc-42',
-          discordUsername: 'GamerOne',
-          accounts: [
-            { account: 'Main#EUW', champion: 'Ahri' },
-            { account: 'Smurf#EUW', champion: 'Zed' }
-          ]
-        }
-      ]
-    })
-  );
-  assert.match(html, /Multi-Account Detection Warnings/i);
-  assert.match(html, /EUW1-100\.rofl/i);
-  assert.match(html, /GamerOne/i);
-  assert.match(html, /Main#EUW/i);
-  assert.match(html, /Ahri/i);
-});
-
-test('BatchSummaryCard renders processed statistics and skipped duplicates', () => {
-  const html = renderToString(
-    React.createElement(BatchSummaryCard, {
-      summary: {
-        processedGames: 4,
-        detectedDiscordUsersCount: 10,
-        detectedPlayersCount: 10,
-        anomalies: [],
-        skippedDuplicates: ['MATCH-DUP-99']
-      },
-      onReset: () => {}
-    })
-  );
-  assert.match(html, /Batch Ingestion Complete/i);
-  assert.match(html, />4</);
-  assert.match(html, /MATCH-DUP-99/i);
-  assert.match(html, /Upload Another Batch/i);
-});
-
-test('RoflUploadPanel renders complete initial console with dropzone', () => {
-  const html = renderToString(React.createElement(RoflUploadPanel));
-  assert.match(html, /ROFL Replay Upload/i);
-  assert.match(html, /Administrative batch ingestion workspace/i);
-  assert.match(html, /Dropzone for ROFL and ZIP files/i);
 });

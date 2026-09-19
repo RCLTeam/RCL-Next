@@ -1,0 +1,19 @@
+/* Page-specific styles: standings. Base styles, states and responsive rules stay with their component. */
+
+/* standings page and components */
+.rcl-site .standings-table .rank {
+  font: 700 24px var(--display2);
+  color: var(--muted);
+}
+
+.rcl-site .standings-table .wins {
+  color: var(--win);
+}
+
+.rcl-site .standings-table .losses {
+  color: var(--crimson);
+}
+
+.rcl-site #clasificacion .table-scroll {
+  background: var(--paper);
+}

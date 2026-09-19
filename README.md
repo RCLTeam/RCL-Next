@@ -54,19 +54,19 @@ La clasificación DEMO muestra Lobos con una victoria y Cuervos con una derrota.
 ```text
 apps/
   web/src/
-    features/site/
-      pages/<pagina>/            Página, components/ exclusivos y CSS propio
-      pages/admin/               Admin, panel ROFL, componentes, hooks y tipos
-      shared/components/         Cabecera, pie, layout, filtros y vistas comunes
-      shared/resources/          Catálogo de recursos y datos comunes
-      shared/assets/             Imágenes, fuentes y licencias
-      shared/styles/             Tokens, fuentes y estilos comunes
-      shared/auth/               Sesión Discord y controles de acceso
-      shared/competition/        Cliente API, tipos y hook de competición
-      tests/                     Pruebas que cubren varias páginas
-      navigation.tsx             Rutas y enlaces internos
-      LeaguePortal.tsx           Composición de páginas públicas
-      site.css                   Entrada de estilos compartidos
+    features/
+      <funcionalidad>/pages/      Página y CSS propio
+      <funcionalidad>/components/ Componentes exclusivos de la funcionalidad
+      admin/pages/               Página de administración protegida
+      rofl-upload/               Componentes, hooks y tipos de subida ROFL
+      auth/                      Sesión compartida, controles y guarda de acceso
+      competition/               Cliente API, tipos, hooks, filtros y vistas comunes
+      site/                      Composición pública, navegación y estilos del sitio
+    shared/
+      components/                Layout reutilizable
+      resources/                 Catálogo de imágenes y roles de jugador
+      assets/                    Imágenes, fuentes y licencias
+      styles/                    Base, tokens, fuentes y primitivas visuales
     App.tsx                      Composición de la interfaz
     *.test.tsx                   Pruebas junto al código que verifican
   api/src/
@@ -108,21 +108,21 @@ El frontend React 19 se encuentra en `apps/web`. Incluye el portal público y la
 
 ## Páginas del frontend
 
-La estructura visual parte de `../Maqueta/`. Cada página vive en `apps/web/src/features/site/pages/<pagina>/` con su archivo `*Page.tsx`, sus componentes exclusivos en `components/` y su CSS. Las carpetas son `home`, `leagues`, `calendar`, `standings`, `teams`, `players`, `champions`, `fantasy`, `predictions`, `crystal-ball`, `playoffs` y `admin`; `not-found` contiene la página 404 y su CSS, sin componentes adicionales innecesarios.
+La estructura visual parte de `../Maqueta/`. Cada funcionalidad vive en `apps/web/src/features/<funcionalidad>/`: `pages/` contiene su página y CSS; `components/` sus componentes exclusivos. Los módulos de página son `home`, `leagues`, `calendar`, `standings`, `teams`, `players`, `champions`, `fantasy`, `predictions`, `crystal-ball`, `playoffs`, `admin` y `not-found`.
 
-Las rutas siguen siendo `/`, `/ligas`, `/calendario`, `/clasificacion`, `/equipos`, `/jugadores`, `/campeones`, `/fantasy`, `/predicciones`, `/bola-cristal` y `/playoffs`. `/admin` es la última página del menú y contiene la consola ROFL. `/admin/rofl/upload` se conserva como alias compatible, con Admin activo en la cabecera. Ambas aceptan una barra final. Las páginas admiten historial y carga directa; los enlaces internos están definidos en `site/navigation.tsx`.
+Las rutas públicas son `/`, `/ligas`, `/calendario`, `/clasificacion`, `/equipos`, `/jugadores`, `/campeones`, `/fantasy`, `/predicciones`, `/bola-cristal` y `/playoffs`. `/admin` y su alias `/admin/rofl/upload` aceptan barra final y están protegidos por `RequireAdmin`. Solo se monta el panel ROFL tras verificar una sesión con rol `admin`; carga, error, sesión anónima, otros roles y cierre de sesión bloquean el panel. Administración se enlaza desde los controles de cuenta del administrador y no aparece en el menú principal. El contrato actual solo admite `viewer` y `admin`; incorporar `organizer` exige ampliar contrato y esquema en un cambio de backend independiente.
 
-`site/shared/` concentra lo reutilizable: componentes de cabecera, pie, layout y filtros; autenticación Discord; cliente API, tipos y hook de competición; recursos, imágenes, fuentes y licencias. `shared/resources/assets.ts` exporta las imágenes mediante imports de Vite, para que la compilación resuelva sus URLs. Los roles están en `shared/resources/player-roles.ts`. Los colores, familias tipográficas y espaciados están centralizados en `shared/styles/tokens.css`; los estilos comunes están en `common.css` y las fuentes en `fonts.css`. `site.css` solo importa estos estilos compartidos. Cada página importa su propio CSS, incluidos sus ajustes responsive.
+`features/auth/` comparte una única sesión entre cabecera y guarda mediante `AuthProvider`. `features/competition/` reúne API, tipos, hooks y componentes de competición. `features/site/` compone el portal, la navegación y el marco visual. `shared/` contiene únicamente recursos y primitivas reutilizables. Los colores y fuentes están en `shared/styles/tokens.css` y `fonts.css`. Los estilos de navegación, cabecera, pie, filtros y tarjetas están junto a sus componentes; `site/site.css` conserva el orden de carga de los estilos compartidos. Cada página importa su propio CSS y sus ajustes responsive. La imagen `shared/assets/brand/rebellion.webp` conserva sus dimensiones de 1254 × 1254 y está comprimida con calidad 85 para la web.
 
 El contenedor conserva el ancho completo y los mismos márgenes interiores. La selección de temporada y división se conserva al navegar entre páginas públicas. El hook de competición cancela solicitudes obsoletas y muestra estados de carga, error y vacío. Predicciones utiliza los partidos programados del calendario real; las funciones aún sin API muestran estados pendientes, sin inventar resultados o porcentajes.
 
-Admin conserva los componentes de subida, los hooks, los tipos y las pruebas del protocolo WebSocket en su propia carpeta. Sus estilos fijos están en `admin.css`; los valores dinámicos de progreso y estado siguen en los componentes y utilizan los mismos tokens de color. El traslado no cambia los contratos de mensajes ni los endpoints.
+El módulo `features/rofl-upload/` conserva componentes, hooks, tipos y pruebas del protocolo WebSocket. `features/admin/pages/admin.css` define el contenedor; `features/rofl-upload/components/rofl-upload.css` define la consola. El traslado no cambia contratos ni endpoints.
 
 La paleta y la jerarquía tipográfica siguen `Maqueta/Guía de Marca RCL_files/saved_resource.html`: Manuka Condensed Black (900) para titulares; Manuka Bold (700) para subtítulos y cifras; PP Fraktion Sans Light/Bold (300/700) para cuerpo y controles; PP Fraktion Mono Regular/Bold (400/700) para metadatos y estadísticas. `tokens.css` centraliza todos los colores, incluidos victoria, derrota y avisos; los fondos y transparencias derivan de esos tokens. El texto principal usa Parchment White, nunca blanco puro.
 
 Los siete archivos de fuente aportados en `Maqueta/` se sirven desde `shared/assets/fonts/manuka/` y `shared/assets/fonts/fraktion/`, con sus pesos declarados en `fonts.css` y sus avisos de licencia junto a los archivos. Vite incluye las fuentes en la compilación, sin depender de instalaciones locales ni de servicios externos. Bebas Neue, Inter y la fuente monoespaciada del sistema cubren los caracteres que falten en las fuentes proporcionadas. Los paquetes aportados indican `Personal Use Only` y Manuka se distribuye como `TestManuka`; para publicar con otra licencia hay que sustituirlos por los archivos autorizados conservando los nombres y pesos. Los fondos `/_blob/` siguen ausentes de la copia de la maqueta.
 
-Al añadir una página, crea su carpeta, importa su CSS y regístrala en `navigation.tsx` y `LeaguePortal.tsx` (o en `App.tsx` para vistas fuera del portal). Los componentes usados por más de una página deben vivir en `shared/components/`, sin importar módulos de una página concreta. En producción, el servidor debe resolver las rutas de página a `index.html` y reenviar `/api` y `/ws/rofl-upload` a la API; Vite ya lo resuelve en desarrollo.
+Al añadir una página, crea `features/<funcionalidad>/pages/`, importa su CSS y regístrala en `navigation.tsx` y `LeaguePortal.tsx` (o en `App.tsx` para vistas fuera del portal). Los componentes compartidos de un dominio viven en su funcionalidad; las primitivas transversales van en `shared/components/`. En producción, el servidor debe resolver las rutas de página a `index.html` y reenviar `/api` y `/ws/rofl-upload` a la API; Vite ya lo resuelve en desarrollo.
 
 ## Verificación
 

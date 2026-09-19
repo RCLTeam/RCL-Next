@@ -1,0 +1,85 @@
+/* Section headings and typography */
+
+.rcl-site .section {
+  padding: clamp(44px, 6vw, 84px) var(--page-gutter);
+  border-bottom: 1px solid var(--line);
+}
+
+.rcl-site .section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 32px;
+}
+
+.rcl-site .section-heading h1 {
+  font: 900 clamp(44px, 5vw, 74px)/1 var(--display);
+  text-transform: uppercase;
+  margin-bottom: 0;
+}
+
+.rcl-site .section-cross {
+  font: 80px/1 var(--mono);
+  color: var(--lime);
+  transform: rotate(8deg);
+}
+
+.rcl-site .eyebrow {
+  display: block;
+  font: 700 11px/1.7 var(--mono);
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  margin-bottom: 24px;
+}
+
+.rcl-site .eyebrow::before {
+  content: '';
+  display: inline-block;
+  width: 28px;
+  height: 3px;
+  margin-right: 12px;
+  background: var(--lime);
+  vertical-align: middle;
+}
+
+.rcl-site .meta {
+  color: var(--muted);
+  font: 11px/1.6 var(--mono);
+  text-transform: uppercase;
+  letter-spacing: 0.035em;
+}
+
+.rcl-site .section-intro {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.7;
+  max-width: 650px;
+  margin-bottom: 28px;
+}
+
+.rcl-site .paper {
+  position: relative;
+  background: var(--paper);
+}
+
+.rcl-site .paper .eyebrow::before {
+  background: var(--purple);
+}
+
+@media (max-width: 650px) {
+  .rcl-site .section-cross {
+    font-size: 52px;
+  }
+
+  .rcl-site .section-heading h1 {
+    font-size: 42px;
+  }
+
+  .rcl-site .eyebrow {
+    font-size: 9px;
+    letter-spacing: 0.09em;
+  }
+}
+

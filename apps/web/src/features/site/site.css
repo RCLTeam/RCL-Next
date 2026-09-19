@@ -1,4 +1,20 @@
-/* Shared design resources. Each page imports its own stylesheet. */
-@import './shared/styles/fonts.css';
-@import './shared/styles/tokens.css';
-@import './shared/styles/common.css';
+/* Shared stylesheet composition. Rule order preserves the existing cascade. */
+@import '../../shared/styles/fonts.css';
+@import '../../shared/styles/tokens.css';
+@import '../../shared/styles/base.css';
+@import './components/season-hud.css';
+@import './components/site-header.css';
+@import './components/site-navigation.css';
+@import '../../shared/styles/actions.css';
+@import '../../shared/styles/typography.css';
+@import '../../shared/components/page-layout.css';
+@import '../competition/components/competition-filters.css';
+@import '../competition/components/data-state.css';
+@import '../../shared/styles/badges.css';
+@import '../leagues/components/league-cards.css';
+@import '../competition/components/team-badge.css';
+@import '../competition/components/match-card.css';
+@import '../../shared/styles/tables.css';
+@import '../players/components/ranking-panel.css';
+@import './components/site-footer.css';
+@import '../../shared/styles/reduced-motion.css';

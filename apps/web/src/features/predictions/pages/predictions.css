@@ -1,0 +1,87 @@
+/* Page-specific styles: predictions. Base styles, states and responsive rules stay with their component. */
+
+/* Page heading */
+
+.rcl-site #predicciones .section-cross {
+  color: var(--purple);
+}
+
+/* Prediction rules */
+
+.rcl-site .prediction-rules {
+  display: flex;
+  flex-wrap: wrap;
+  gap: clamp(24px,4vw,50px);
+  padding: 24px 28px;
+  border: 1px solid var(--stone);
+  background: var(--panel);
+}
+
+.rcl-site .prediction-rules b {
+  display: block;
+  font: 700 30px var(--display2);
+  color: var(--lime);
+  margin-bottom: 8px;
+}
+
+.rcl-site .prediction-rules span {
+  font: 11px/1.6 var(--mono);
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* PredictionCard and grid */
+
+.rcl-site .prediction-meta {
+  font: 11px/1.6 var(--mono);
+  text-transform: uppercase;
+  color: var(--muted);
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+
+.rcl-site .prediction-grid {
+  display: grid;
+  grid-template-columns: repeat(2,minmax(0,1fr));
+  gap: 18px;
+}
+
+.rcl-site .prediction-card {
+  padding: 22px;
+  background: var(--panel);
+  border: 1px solid var(--stone);
+  border-top: 3px solid var(--purple);
+}
+
+.rcl-site .prediction-teams {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 22px;
+}
+
+.rcl-site .prediction-teams > span {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+  font-size: 14px;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.rcl-site .prediction-teams > span:last-child {
+  flex-direction: row-reverse;
+  text-align: right;
+}
+
+@media (max-width: 950px) {
+  .rcl-site .prediction-grid {
+    grid-template-columns: 1fr;
+  }
+}
