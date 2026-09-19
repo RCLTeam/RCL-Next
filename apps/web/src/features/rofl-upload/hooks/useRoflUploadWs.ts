@@ -1,5 +1,6 @@
+import type { WsClientMessage, WsServerEvent } from '@rcl/contracts';
 import { useCallback, useEffect, useReducer, useRef } from 'react';
-import type { MultiAccountAnomaly, UploadAction, UploadState } from '../types/upload.types.js';
+import type { UploadAction, UploadState } from '../types/upload.types.js';
 
 export const initialUploadState: UploadState = {
   stage: 'idle',
@@ -298,7 +299,9 @@ export function useRoflUploadWs(options?: UseRoflUploadWsOptions): UseRoflUpload
       let terminalStateReached = false;
 
       socket.onopen = () => {
-        socket.send(JSON.stringify({ type: 'start', filename: file.name }));
+        socket.send(
+          JSON.stringify({ type: 'start', filename: file.name } satisfies WsClientMessage)
+        );
       };
 
       socket.onmessage = async (event) => {
@@ -307,7 +310,7 @@ export function useRoflUploadWs(options?: UseRoflUploadWsOptions): UseRoflUpload
             typeof event.data === 'string'
               ? event.data
               : new TextDecoder('utf8').decode(event.data);
-          const payload = JSON.parse(rawText);
+          const payload = JSON.parse(rawText) as WsServerEvent;
 
           switch (payload.type) {
             case 'started': {
@@ -342,7 +345,7 @@ export function useRoflUploadWs(options?: UseRoflUploadWsOptions): UseRoflUpload
               }
 
               if (socket.readyState === WebSocket.OPEN) {
-                socket.send(JSON.stringify({ type: 'finish' }));
+                socket.send(JSON.stringify({ type: 'finish' } satisfies WsClientMessage));
               }
               break;
             }
@@ -383,7 +386,7 @@ export function useRoflUploadWs(options?: UseRoflUploadWsOptions): UseRoflUpload
               flushLogs();
               dispatch({
                 type: 'anomaly',
-                anomaly: payload.anomaly as MultiAccountAnomaly
+                anomaly: payload.anomaly
               });
               break;
             }

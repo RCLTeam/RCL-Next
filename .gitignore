@@ -13,3 +13,20 @@ __pycache__/
 
 # Local PostgreSQL data (Docker volume bind mount, if ever used)
 postgres-data/
+
+# Portable development tools, database files and local process logs
+.local/
+
+# Personal Docker setup and local environment notes
+/compose.yaml
+/compose.yml
+/compose.*.yaml
+/compose.*.yml
+/docker-compose*.yaml
+/docker-compose*.yml
+/Dockerfile
+/Dockerfile.*
+/.dockerignore
+/docker/
+/docs/local-development.md
+/docs/verification.md

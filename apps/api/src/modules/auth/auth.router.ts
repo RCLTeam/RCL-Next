@@ -1,6 +1,6 @@
+import type { AuthUser } from '@rcl/contracts';
 import { type CookieOptions, type Request, type RequestHandler, Router } from 'express';
 import { AppError } from '../../shared/app-error.js';
-import type { AuthUser } from './auth.repository.js';
 import { type AuthService, SESSION_LIFETIME_MS, STATE_LIFETIME_MS } from './auth.service.js';
 
 export interface AuthOptions {

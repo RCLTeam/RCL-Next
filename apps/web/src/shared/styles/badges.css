@@ -1,0 +1,21 @@
+/* Badges and availability */
+
+.rcl-site .role-chip {
+  display: inline-block;
+  padding: 5px 9px;
+  border: 1px solid color-mix(in srgb, var(--lime) 30%, transparent);
+  color: var(--lime);
+  font: 700 10px var(--mono);
+  text-transform: uppercase;
+  background: color-mix(in srgb, var(--lime) 7%, transparent);
+}
+
+.rcl-site .availability {
+  color: var(--lime);
+  background: color-mix(in srgb, var(--lime) 7%, transparent);
+  border: 1px solid color-mix(in srgb, var(--lime) 30%, transparent);
+  padding: 10px 14px;
+  font: 11px var(--mono);
+  text-transform: uppercase;
+}
+

@@ -1,0 +1,50 @@
+/* Season HUD — SiteLayout */
+
+.rcl-site .hud-season {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-transform: uppercase;
+}
+
+.rcl-site .hud-season i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--purple);
+  flex-shrink: 0;
+}
+
+.rcl-site .hud-season i.is-live {
+  background: var(--crimson);
+}
+
+.rcl-site .hud-bar {
+  height: 30px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 var(--page-gutter);
+  border-bottom: 1px solid var(--line);
+  font: 10px var(--mono);
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  gap: 16px;
+  width: 100%;
+}
+
+.rcl-site .hud-motto {
+  color: var(--lime);
+}
+
+@media (max-width: 650px) {
+  .rcl-site .hud-bar {
+    padding: 0 var(--page-gutter);
+    font-size: 9px;
+  }
+
+  .rcl-site .hud-motto {
+    display: none;
+  }
+}
+
