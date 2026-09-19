@@ -308,6 +308,8 @@ CREATE TABLE "predictions" (
 --> statement-breakpoint
 CREATE INDEX "audit_logs_entity_idx" ON "audit_logs" USING btree ("entity_type", "entity_id");--> statement-breakpoint
 CREATE INDEX "audit_logs_actor_discord_user_id_idx" ON "audit_logs" USING btree ("actor_discord_user_id");--> statement-breakpoint
+CREATE INDEX "auth_sessions_expires_at_idx" ON "auth_sessions" USING btree ("expires_at");--> statement-breakpoint
+CREATE INDEX "oauth_states_expires_at_idx" ON "oauth_states" USING btree ("expires_at");--> statement-breakpoint
 CREATE UNIQUE INDEX "seasons_one_active_key" ON "seasons" USING btree ("is_active") WHERE "seasons"."is_active" = true;--> statement-breakpoint
 CREATE INDEX "seasons_divisions_season_name_idx" ON "seasons_divisions" USING btree ("season_name");--> statement-breakpoint
 CREATE INDEX "seasons_divisions_division_name_idx" ON "seasons_divisions" USING btree ("division_name");--> statement-breakpoint
