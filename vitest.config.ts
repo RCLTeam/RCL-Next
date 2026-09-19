@@ -4,14 +4,19 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig({
   resolve: {
     alias: {
-      'node:test': fileURLToPath(new URL('./tests/support/node-test-shim.ts', import.meta.url))
+      'node:test': fileURLToPath(new URL('./tests/support/node-test-shim.ts', import.meta.url)),
+      'react-dom/server': fileURLToPath(
+        new URL('./apps/web/node_modules/react-dom/server.node.js', import.meta.url)
+      ),
+      'react-dom': fileURLToPath(new URL('./apps/web/node_modules/react-dom', import.meta.url)),
+      react: fileURLToPath(new URL('./apps/web/node_modules/react', import.meta.url))
     }
   },
   test: {
     globals: true,
     environment: 'node',
     include: [
-      'tests/**/*.{test,spec}.ts',
+      'tests/**/*.{test,spec}.{ts,tsx}',
       'apps/*/src/**/*.{test,spec}.{ts,tsx}',
       'packages/*/src/**/*.{test,spec}.ts'
     ],
