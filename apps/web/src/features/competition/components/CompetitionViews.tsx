@@ -1,4 +1,12 @@
 import React, { type ReactNode, useState } from 'react';
+import './competition-filters.css';
+import './data-state.css';
+import './team-badge.css';
+import './match-card.css';
+import {
+  type DataStateProps,
+  DataState as SharedDataState
+} from '../../../shared/components/DataState.js';
 import { safeStreamUrl } from '../api/competition-api.js';
 import type { Competition } from '../hooks/useCompetition.js';
 import type { CollectionState, Match, Team } from '../types/competition.types.js';
@@ -32,34 +40,11 @@ export function resolveCompetitionState<T>(
 }
 
 export function DataState<T>({
-  state,
-  empty,
-  retry,
-  children
-}: {
-  state: CollectionState<T>;
-  empty: string;
-  retry: () => void;
-  children: ReactNode;
-}) {
-  if (state.status === 'loading')
-    return <output className="empty-state">Cargando competición…</output>;
-  if (state.status === 'error')
-    return (
-      <div className="empty-state error-state" role="alert">
-        <p>No se pudo cargar la competición.</p>
-        <button className="btn-ghost" type="button" onClick={retry}>
-          Reintentar
-        </button>
-      </div>
-    );
-  if (state.data.length === 0)
-    return (
-      <div className="empty-state">
-        <p>{empty}</p>
-      </div>
-    );
-  return <>{children}</>;
+  loadingMessage = 'Cargando competición…',
+  errorMessage = 'No se pudo cargar la competición.',
+  ...props
+}: DataStateProps<T>) {
+  return <SharedDataState loadingMessage={loadingMessage} errorMessage={errorMessage} {...props} />;
 }
 
 export function TeamBadge({ team }: { team: Team | undefined }) {

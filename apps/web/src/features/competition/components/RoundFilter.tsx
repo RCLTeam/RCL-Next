@@ -1,5 +1,6 @@
 import React from 'react';
-import type { Round } from '../../competition/types/competition.types.js';
+import './competition-filters.css';
+import type { Round } from '../types/competition.types.js';
 
 export function RoundFilter({
   rounds,
