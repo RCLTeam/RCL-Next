@@ -1,0 +1,12 @@
+/* Ranking panels */
+
+.rcl-site .ranking-panel {
+  padding: 28px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+}
+
+.rcl-site .ranking-panel p {
+  margin-bottom: 0;
+}
+

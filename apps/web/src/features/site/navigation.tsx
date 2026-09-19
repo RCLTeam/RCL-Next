@@ -11,8 +11,7 @@ export const siteRoutes = [
   { path: '/fantasy', id: 'fantasy', title: 'Fantasy' },
   { path: '/predicciones', id: 'predicciones', title: 'Predicciones' },
   { path: '/bola-cristal', id: 'bola-cristal', title: 'Bola de Cristal' },
-  { path: '/playoffs', id: 'playoffs', title: 'Playoffs' },
-  { path: '/admin', id: 'admin', title: 'Admin' }
+  { path: '/playoffs', id: 'playoffs', title: 'Playoffs' }
 ] as const;
 
 export type SitePath = (typeof siteRoutes)[number]['path'];

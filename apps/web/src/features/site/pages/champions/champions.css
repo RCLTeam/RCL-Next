@@ -1,9 +1,0 @@
-/* Page-specific styles: champions. */
-.rcl-site #campeones .section-cross { color: var(--purple); }
-.rcl-site .champion-panel { padding: 28px; border: 1px solid var(--line); }
-.rcl-site .page-content .champion-panel .table-scroll { border: 0; background: transparent; }
-.rcl-site .champion-table th:not(:nth-child(2)) { text-align: center; }
-.rcl-site .champion-table .table-empty { padding-block: 60px; white-space: normal; text-align: center; color: var(--muted); line-height: 1.7; }
-@media (max-width: 650px) {
-  .rcl-site .champion-panel { padding: 16px; }
-}

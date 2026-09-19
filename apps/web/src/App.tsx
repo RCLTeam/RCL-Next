@@ -1,9 +1,10 @@
 import React from 'react';
+import { AdminPage } from './features/admin/pages/AdminPage.js';
+import { AuthProvider } from './features/auth/components/AuthProvider.js';
+import { NotFoundPage } from './features/not-found/pages/NotFoundPage.js';
 import { LeaguePortal } from './features/site/LeaguePortal.js';
+import { SiteLayout } from './features/site/components/SiteLayout.js';
 import { NavigationContext, siteRoutes } from './features/site/navigation.js';
-import { AdminPage } from './features/site/pages/admin/AdminPage.js';
-import { NotFoundPage } from './features/site/pages/not-found/NotFoundPage.js';
-import { SiteLayout } from './features/site/shared/components/SiteLayout.js';
 import './features/site/site.css';
 
 export interface AppProps {
@@ -24,8 +25,8 @@ export function App({ initialPath, wsUrl }: AppProps) {
   const path = requestedPath === '/admin/rofl/upload' ? '/admin' : requestedPath;
   const route = siteRoutes.find((item) => item.path === path);
   React.useEffect(() => {
-    document.title = `${route?.title ?? 'Página no encontrada'} · Rebel Crown Legacy`;
-  }, [route]);
+    document.title = `${path === '/admin' ? 'Admin' : (route?.title ?? 'Página no encontrada')} · Rebel Crown Legacy`;
+  }, [route, path]);
   const navigate = (nextPath: string) => {
     if (nextPath !== window.location.pathname) window.history.pushState({}, '', nextPath);
     setCurrentPath(nextPath);
@@ -33,14 +34,16 @@ export function App({ initialPath, wsUrl }: AppProps) {
     document.getElementById('main-content')?.focus({ preventScroll: true });
   };
   return (
-    <NavigationContext.Provider value={{ path, navigate }}>
-      {route && route.path !== '/admin' ? (
-        <LeaguePortal path={route.path} />
-      ) : (
-        <SiteLayout>
-          {path === '/admin' ? <AdminPage wsUrl={wsUrl} /> : <NotFoundPage />}
-        </SiteLayout>
-      )}
-    </NavigationContext.Provider>
+    <AuthProvider>
+      <NavigationContext.Provider value={{ path, navigate }}>
+        {route ? (
+          <LeaguePortal path={route.path} />
+        ) : (
+          <SiteLayout>
+            {path === '/admin' ? <AdminPage wsUrl={wsUrl} /> : <NotFoundPage />}
+          </SiteLayout>
+        )}
+      </NavigationContext.Provider>
+    </AuthProvider>
   );
 }

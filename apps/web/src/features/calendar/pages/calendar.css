@@ -1,0 +1,7 @@
+/* Page-specific styles: calendar. Base styles, states and responsive rules stay with their component. */
+
+/* calendar page and components */
+.rcl-site .match-list {
+  display: grid;
+  gap: 10px;
+}

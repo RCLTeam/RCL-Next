@@ -1,0 +1,18 @@
+/* Page-specific styles: not-found. Base styles, states and responsive rules stay with their component. */
+
+/* not-found page and components */
+.rcl-site .not-found-page {
+  width: 100%;
+  min-height: 65vh;
+  padding: 40px var(--page-gutter);
+}
+
+@media (max-width: 650px) {
+  .rcl-site .not-found-page {
+    padding: 24px var(--page-gutter);
+  }
+}
+
+.rcl-site .not-found .btn-primary {
+  margin-right: 14px;
+}

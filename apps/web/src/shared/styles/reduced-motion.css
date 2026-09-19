@@ -1,0 +1,11 @@
+/* Reduced motion */
+
+@media (prefers-reduced-motion: reduce) {
+  .rcl-site *,
+  .rcl-site *::before,
+  .rcl-site *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}

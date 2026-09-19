@@ -1,0 +1,71 @@
+/* Footer — SiteLayout */
+
+.rcl-site .site-footer img {
+  object-fit: contain;
+}
+
+.rcl-site .site-footer {
+  padding: 60px var(--page-gutter) 32px;
+  background: linear-gradient(var(--void), var(--panel));
+  width: 100%;
+}
+
+.rcl-site .footer-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 32px;
+  padding-bottom: 34px;
+  border-bottom: 1px solid var(--line);
+}
+
+.rcl-site .footer-top .meta {
+  margin: 20px 0 0;
+}
+
+.rcl-site .footer-links {
+  display: flex;
+  gap: 70px;
+}
+
+.rcl-site .footer-links > div {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.rcl-site .footer-links h2 {
+  font: 11px var(--mono);
+  color: var(--muted);
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.rcl-site .footer-links a {
+  font-size: 13px;
+  color: var(--lime);
+}
+
+.rcl-site .footer-links a:hover {
+  text-decoration: underline;
+}
+
+.rcl-site .footer-bottom {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  margin-top: 24px;
+  font: 10px/1.7 var(--mono);
+  color: var(--muted);
+}
+
+@media (max-width: 650px) {
+  .rcl-site .footer-top,
+  .rcl-site .footer-bottom {
+    flex-direction: column;
+  }
+
+  .rcl-site .footer-links {
+    gap: 40px;
+  }
+}
+

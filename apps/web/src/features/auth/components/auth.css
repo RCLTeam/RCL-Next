@@ -1,0 +1,146 @@
+/* Account layout */
+.auth-controls,
+.auth-identity {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.auth-controls {
+  flex-wrap: wrap;
+  max-width: 100%;
+  font-size: 0.85rem;
+}
+
+@media (max-width: 650px) {
+  .rcl-site .auth-controls {
+    font-size: 12px;
+  }
+}
+
+/* Button base, focus and disabled states */
+.auth-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 42px;
+  padding: 0.6rem 1rem;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  font: inherit;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.auth-button:focus-visible {
+  outline: 3px solid var(--lime);
+  outline-offset: 3px;
+}
+
+.auth-button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+@media (max-width: 650px) {
+  .rcl-site .auth-button {
+    padding: 8px 12px;
+  }
+}
+
+.rcl-site .auth-button {
+  min-height: var(--control-height);
+}
+
+/* Discord login and navbar variant */
+.auth-login {
+  background: var(--purple);
+  color: var(--text);
+}
+
+.auth-login:hover {
+  background: var(--purple-hover);
+}
+
+.rcl-site .auth-login {
+  background: var(--purple);
+  border-radius: 0;
+  color: var(--text);
+}
+
+.rcl-site .auth-login:hover {
+  background: var(--purple-hover);
+}
+
+.rcl-site .nav-account .auth-login {
+  background: var(--purple);
+  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+  font: 700 12px var(--body-f);
+  text-transform: uppercase;
+}
+
+.rcl-site .nav-account .auth-login:hover {
+  background: var(--purple-hover);
+}
+
+/* Logout and retry button */
+.auth-logout {
+  background: transparent;
+  border-color: var(--muted);
+  color: var(--text);
+}
+
+.auth-logout:hover:not(:disabled) {
+  background: var(--panel-raised);
+}
+
+.rcl-site .auth-logout {
+  border-radius: 0;
+}
+
+/* Avatar */
+.auth-avatar {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--purple) 25%, var(--panel));
+  color: var(--lime);
+  font-weight: 700;
+  flex-shrink: 0;
+  border: 2px solid var(--lime);
+  outline: 2px solid var(--panel);
+  outline-offset: -4px;
+}
+
+img.auth-avatar {
+  display: block;
+  object-fit: cover;
+}
+
+/* User identity and feedback */
+.auth-user {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.auth-name {
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 700;
+}
+
+.auth-hint {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.auth-error {
+  color: var(--crimson);
+  max-width: 260px;
+}

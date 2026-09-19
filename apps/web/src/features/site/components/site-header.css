@@ -1,0 +1,161 @@
+/* Header layout and mobile menu — SiteLayout */
+
+.rcl-site .site-header {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  background: color-mix(in srgb, var(--void) 97%, transparent);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--line);
+}
+
+.rcl-site .nav-top {
+  min-height: 68px;
+  padding: 10px var(--page-gutter);
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  width: 100%;
+}
+
+.rcl-site .brand {
+  flex-shrink: 0;
+  display: flex;
+}
+
+.rcl-site .brand img {
+  object-fit: contain;
+}
+
+.rcl-site .nav-account {
+  margin-left: auto;
+  min-width: 0;
+}
+
+.rcl-site .nav-bottom {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  align-items: center;
+  padding: 0 var(--page-gutter) 14px;
+  width: 100%;
+}
+
+.rcl-site .nav-tools {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 20px;
+}
+
+.rcl-site .menu-toggle {
+  display: none;
+}
+
+@media (max-width: 1150px) {
+  .rcl-site .nav-bottom {
+    flex-wrap: wrap;
+  }
+
+  .rcl-site .nav-tools {
+    justify-content: flex-start;
+  }
+}
+
+@media (min-width: 951px) {
+  .rcl-site .site-header {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0 28px;
+    padding: 0 var(--page-gutter);
+  }
+
+  .rcl-site .nav-top,
+  .rcl-site .nav-bottom {
+    display: contents;
+  }
+
+  .rcl-site .brand {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .rcl-site .nav-account {
+    grid-column: 3;
+    grid-row: 1;
+    max-width: 320px;
+    padding-block: 10px;
+  }
+
+  .rcl-site .nav-tools {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    padding-block: 6px;
+    border-top: 1px solid var(--line);
+    justify-content: space-between;
+  }
+
+  .rcl-site .nav-tools .admin-link {
+    margin-left: auto;
+  }
+}
+
+@media (max-width: 950px) {
+  .rcl-site .nav-top {
+    flex-wrap: wrap;
+  }
+
+  .rcl-site .menu-toggle {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: transparent;
+    color: var(--text);
+    border: 1px solid var(--stone);
+    padding: 10px 12px;
+    font: 700 11px var(--body-f);
+  }
+
+  .rcl-site .nav-bottom {
+    display: none;
+    max-height: 60vh;
+    overflow-y: auto;
+  }
+
+  .rcl-site .nav-bottom.is-open {
+    display: flex;
+    flex-wrap: wrap;
+  }
+
+  .rcl-site .nav-tools {
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 650px) {
+  .rcl-site .nav-top {
+    padding: 12px var(--page-gutter);
+    gap: 12px;
+  }
+
+  .rcl-site .brand img {
+    width: 70px;
+    height: 30px;
+  }
+
+  .rcl-site .nav-account {
+    order: 3;
+    flex-basis: 100%;
+  }
+
+  .rcl-site .menu-toggle {
+    margin-left: auto;
+    text-transform: uppercase;
+  }
+
+  .rcl-site .nav-bottom {
+    padding: 12px var(--page-gutter) 20px;
+  }
+}
+
