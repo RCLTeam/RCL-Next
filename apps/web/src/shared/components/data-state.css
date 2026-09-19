@@ -1,0 +1,60 @@
+/* Loading, empty and error states — DataState */
+
+.rcl-site .empty-state {
+  padding: 36px 24px;
+  color: var(--muted);
+  background: var(--panel);
+  border: 1px dashed var(--stone);
+  line-height: 1.7;
+  font-size: 14px;
+}
+
+.rcl-site .empty-state p:last-child {
+  margin-bottom: 0;
+}
+
+.rcl-site .error-state {
+  border-color: var(--crimson);
+}
+
+.rcl-site .status-note {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.rcl-site .status-note button {
+  background: transparent;
+  color: var(--lime);
+  border: 0;
+  text-decoration: underline;
+}
+
+.rcl-site output.empty-state {
+  display: block;
+}
+
+.rcl-site .page-content .empty-state {
+  min-height: 160px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 16px;
+  border-style: solid;
+  border-color: var(--line);
+  padding: 28px;
+}
+
+.rcl-site .page-content .empty-state p {
+  margin: 0;
+}
+
+.rcl-site .page-content .error-state {
+  border-color: var(--crimson);
+}
+
+@media (max-width: 650px) {
+  .rcl-site .page-content .empty-state {
+    padding: 20px;
+  }
+}
