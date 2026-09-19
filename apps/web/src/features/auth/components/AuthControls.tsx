@@ -1,5 +1,5 @@
 import React from 'react';
-import { SiteLink } from '../../site/navigation.js';
+import { SiteLink } from '../../../shared/components/SiteLink.js';
 import { discordLoginUrl } from '../api/auth-api.js';
 import { type AuthState, canAccessAdmin, useAuth } from './AuthProvider.js';
 import './auth.css';
