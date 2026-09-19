@@ -43,7 +43,8 @@ export function SiteLayout({
             aria-controls="site-navigation"
             onClick={() => setMenuOpen(!menuOpen)}
           >
-            {menuOpen ? 'Cerrar' : 'Menú'} <span aria-hidden="true">{menuOpen ? '×' : '☰'}</span>
+            <span>{menuOpen ? 'Cerrar' : 'Menú'}</span>
+            <span aria-hidden="true">{menuOpen ? '✕' : '☰'}</span>
           </button>
         </div>
         <div className={`nav-bottom ${menuOpen ? 'is-open' : ''}`}>
@@ -77,26 +78,45 @@ export function SiteLayout({
           </div>
           <div className="footer-links">
             <div>
-              <h2>Competición</h2>
-              <SiteLink href="/ligas">Ligas RCL</SiteLink>
-              <SiteLink href="/calendario">Calendario</SiteLink>
-              <SiteLink href="/clasificacion">Clasificación</SiteLink>
-              <SiteLink href="/playoffs">Playoffs</SiteLink>
+              <h2>Contatos</h2>
+              {/* TODO FORMULARIO PARA ENVIAR A EMAIL */}
             </div>
             <div>
               <h2>Comunidad</h2>
-              <SiteLink href="/equipos">Equipos</SiteLink>
-              <SiteLink href="/jugadores">Jugadores</SiteLink>
-              <SiteLink href="/campeones">Campeones</SiteLink>
-              <SiteLink href="/fantasy">Fantasy RCL</SiteLink>
-              <SiteLink href="/predicciones">Predicciones</SiteLink>
-              <SiteLink href="/bola-cristal">Bola de Cristal</SiteLink>
-              <SiteLink href="/admin">Admin · ROFL Upload</SiteLink>
+              <SiteLink
+                href="https://discord.gg/sjBAv2kZ7"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Discord
+              </SiteLink>
+              <SiteLink 
+                href="https://x.com/RCL_LoL" 
+                target="_blank" 
+                rel="noopener noreferrer"
+              >
+                Twitter
+              </SiteLink>
+              <SiteLink
+                href="https://www.youtube.com/channel/UCpoM0WwxycsHxOw4QecxzOA"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Youtube
+              </SiteLink>
+              <SiteLink
+                href="https://www.twitch.tv/rcl_lol"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Twitch
+              </SiteLink>
             </div>
           </div>
         </div>
         <div className="footer-bottom">
-          <span>© {new Date().getFullYear()} REBEL CROWN LEGACY</span>
+          <span> {new Date().getFullYear()} REBEL CROWN LEGACY</span>
+          <span>© GUILLERMO-JAVIER MARTÍNEZ NAVARRO TIENE LOS DERECHOS RESERVADOS.</span>
           <span>RCL NO ESTÁ AFILIADA A RIOT GAMES.</span>
         </div>
       </footer>
