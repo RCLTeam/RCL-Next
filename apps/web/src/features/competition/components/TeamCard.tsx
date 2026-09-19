@@ -1,6 +1,6 @@
 import React from 'react';
-import { TeamBadge } from '../../competition/components/CompetitionViews.js';
-import type { Team } from '../../competition/types/competition.types.js';
+import type { Team } from '../types/competition.types.js';
+import { TeamBadge } from './CompetitionViews.js';
 
 export function TeamCard({ team, divisionName }: { team: Team; divisionName: string | undefined }) {
   return (

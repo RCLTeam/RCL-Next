@@ -1,6 +1,6 @@
 import React from 'react';
-import { TeamBadge } from '../../competition/components/CompetitionViews.js';
-import type { Standing } from '../../competition/types/competition.types.js';
+import type { Standing } from '../types/competition.types.js';
+import { TeamBadge } from './CompetitionViews.js';
 
 export function StandingsTable({ rows }: { rows: Standing[] }) {
   return (
