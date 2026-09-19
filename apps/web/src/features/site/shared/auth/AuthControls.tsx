@@ -37,9 +37,19 @@ export function AuthControlsView({
       {state.status === 'authenticated' && (
         <>
           <div className="auth-identity">
-            <span className="auth-avatar" aria-hidden="true">
-              {(state.user.globalName || state.user.username).slice(0, 2).toUpperCase()}
-            </span>
+            {state.user.avatarHash ? (
+              <img
+                className="auth-avatar"
+                src={`https://cdn.discordapp.com/avatars/${state.user.discordId}/${state.user.avatarHash}.${
+                  state.user.avatarHash.startsWith('a_') ? 'gif' : 'png'
+                }`}
+                alt={state.user.globalName || state.user.username}
+              />
+            ) : (
+              <span className="auth-avatar" aria-hidden="true">
+                {(state.user.globalName || state.user.username).slice(0, 2).toUpperCase()}
+              </span>
+            )}
             <div className="auth-user">
               <span className="auth-name">{state.user.globalName || state.user.username}</span>
               <span className="auth-hint">

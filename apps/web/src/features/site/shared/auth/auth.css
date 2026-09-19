@@ -65,6 +65,15 @@
   color: var(--lime);
   font-weight: 700;
   flex-shrink: 0;
+
+  border: 2px solid var(--lime);
+  outline: 2px solid var(--panel);
+  outline-offset: -4px;
+}
+
+img.auth-avatar {
+  display: block;        
+  object-fit: cover;
 }
 
 .auth-user {

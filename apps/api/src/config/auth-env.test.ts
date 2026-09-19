@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { parseEnvironment } from './env.js';
 
-
 const database = { DATABASE_URL: 'postgres://localhost/rcl' };
 const configured = {
   ...database,
