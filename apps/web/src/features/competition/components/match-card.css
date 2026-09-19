@@ -1,0 +1,114 @@
+/* Match card — MatchCard */
+
+.rcl-site .match-row {
+  display: grid;
+  grid-template-columns: 80px minmax(0, 1fr) 140px 108px;
+  align-items: center;
+  gap: 18px;
+  padding: 22px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--purple);
+}
+
+.rcl-site .match-row.is-live {
+  border-color: var(--crimson);
+}
+
+.rcl-site .match-date {
+  color: var(--muted);
+  font: 11px/1.6 var(--mono);
+  text-transform: uppercase;
+}
+
+.rcl-site .match-date strong {
+  display: block;
+  color: var(--text);
+  font-size: 17px;
+}
+
+.rcl-site .match-teams {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 16px;
+}
+
+.rcl-site .match-teams > span {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.rcl-site .match-teams > span:last-child {
+  justify-content: flex-end;
+  text-align: right;
+}
+
+.rcl-site .match-score {
+  font: 700 28px var(--display2);
+  white-space: nowrap;
+}
+
+.rcl-site .match-meta {
+  display: grid;
+  gap: 7px;
+  font: 10px/1.5 var(--mono);
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+@media (max-width: 1150px) {
+  .rcl-site .match-row {
+    grid-template-columns: 70px minmax(0, 1fr);
+  }
+
+  .rcl-site .match-meta {
+    grid-column: 2;
+  }
+
+  .rcl-site .match-row > .text-link,
+  .rcl-site .match-row > .meta {
+    grid-column: 2;
+  }
+}
+
+@media (max-width: 650px) {
+  .rcl-site .match-row {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    padding: 18px;
+    gap: 18px;
+  }
+
+  .rcl-site .match-date strong {
+    display: inline;
+    margin-left: 12px;
+  }
+
+  .rcl-site .match-teams {
+    gap: 10px;
+  }
+
+  .rcl-site .match-teams > span {
+    flex-direction: column;
+    text-align: center;
+    font-size: 12px;
+  }
+
+  .rcl-site .match-teams > span:last-child {
+    flex-direction: column-reverse;
+    text-align: center;
+  }
+
+  .rcl-site .match-meta {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+  }
+}
+

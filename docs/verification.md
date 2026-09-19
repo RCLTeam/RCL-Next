@@ -1,5 +1,15 @@
 # Verificación
 
+## Frontend Discord y entorno local — 17 de septiembre de 2026
+
+- `pnpm typecheck`: correcto en raíz, API, base de datos y frontend.
+- `pnpm test`: 93 pruebas en 17 archivos, todas correctas. Incluye 12 pruebas del cliente HTTP y los controles de sesión del frontend.
+- `pnpm --filter @rcl/web build`: compilación de producción correcta.
+- PostgreSQL 17.11 portable preparado en `.local/postgres`, con acceso solo desde 127.0.0.1. Esquema inicial aplicado a la base local `rcl`.
+- Corregida la sintaxis de la clave foránea inline de `auth_sessions` y la selección del ejecutable Python en Windows para desbloquear las pruebas locales.
+- API y frontend arrancados en los puertos 3001 y 5173. El navegador muestra el error de sesión y permite reintentar cuando Discord no está configurado.
+- El consentimiento real de Discord queda pendiente de completar las credenciales locales. Las pruebas automatizadas del proveedor usan respuestas simuladas.
+
 ## Autenticación Discord — 16 de septiembre de 2026
 
 - `pnpm typecheck`: correcto en raíz y workspaces.

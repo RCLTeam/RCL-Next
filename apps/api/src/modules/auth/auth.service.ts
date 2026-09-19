@@ -1,6 +1,7 @@
 import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
+import type { AuthUser } from '@rcl/contracts';
 import { AppError } from '../../shared/app-error.js';
-import type { AuthRepository, AuthUser } from './auth.repository.js';
+import type { AuthRepository } from './auth.repository.js';
 import type { DiscordClient } from './discord.client.js';
 
 export const STATE_LIFETIME_MS = 10 * 60 * 1000;

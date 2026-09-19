@@ -18,7 +18,7 @@ CORS_ORIGIN=http://localhost:5173
 4. Ejecuta `pnpm db:migrate` y `pnpm dev:api`.
 5. Abre `http://localhost:3001/api/v1/auth/discord`. Al aceptar, volverás a `CORS_ORIGIN` con la sesión iniciada. Desde el mismo navegador puedes consultar `http://localhost:3001/api/v1/auth/me`.
 
-`apps/web` todavía no existe: la redirección requiere que haya una página sirviéndose en `CORS_ORIGIN`. Para probar únicamente el backend puedes configurar temporalmente `CORS_ORIGIN=http://localhost:3001`, completar el login y abrir `/api/v1/auth/me`; la raíz de la API devolverá 404 tras la redirección, pero la sesión ya estará creada.
+El frontend `apps/web` incluye **Entrar con Discord** en la cabecera, muestra el usuario conectado y permite cerrar sesión. Con PostgreSQL disponible en `DATABASE_URL` y la API arrancada mediante `pnpm dev:api`, ejecuta `pnpm dev:web` en otra terminal y abre `http://localhost:5173`.
 
 Usa `localhost` tanto para la API como para el frontend local; no mezcles `localhost` y `127.0.0.1`. En producción se exige HTTPS en ambas URLs. Usa el mismo sitio (por ejemplo `rcl.example.com` y `api.example.com`) para que las cookies `SameSite=Lax` viajen en las consultas del frontend. `CORS_ORIGIN` es un origen sin ruta ni barra final.
 
@@ -62,3 +62,9 @@ No se concede `admin` a partir de parámetros, datos enviados por el navegador o
 El esquema inicial `0000_initial_schema.sql` incluye las 19 tablas, con un único snapshot y una entrada en el journal. `discord_users` es la tabla existente de identidad y permisos; la autenticación la reutiliza. `auth_sessions` guarda las sesiones y `oauth_states` los estados temporales de autorización, sin duplicar usuarios. Ambas están integradas en el esquema inicial, con índices de caducidad y borrado de sesiones en cascada al eliminar el usuario. No hay una migración incremental de autenticación porque la base todavía no está en producción.
 
 Las pruebas HTTP ejecutan el esquema inicial en PGlite y simulan únicamente las respuestas externas de Discord. Verifican cookies, intercambio de código, protección de estado, consumo concurrente, sesiones, roles, logout y errores sin filtración de secretos. Para comprobar el consentimiento real en Discord se necesitan las credenciales y una base PostgreSQL configurada.
+
+## Acceso al frontend administrativo
+
+`AuthProvider` consulta `/api/v1/auth/me` y comparte el resultado con los controles de cuenta y `RequireAdmin`. Las rutas `/admin` y `/admin/rofl/upload`, con o sin barra final, muestran la consola únicamente con una sesión verificada de rol `admin`. Las sesiones anónimas reciben un enlace a Discord; los demás roles reciben una denegación; un fallo de sesión ofrece reintento. El panel se desmonta durante el cierre de sesión y permanece bloqueado después de cerrarla. El enlace administrativo solo aparece entre los controles de una cuenta administradora.
+
+Esta guarda protege la navegación y el montaje del frontend. El gateway `/ws/rofl-upload` existente no valida sesión ni rol; autorizar su handshake, comprobar el origen y revocar conexiones requiere un cambio independiente de backend con pruebas de integración. No debe considerarse cerrado ese acceso directo por haber protegido la página. `organizer` no existe en el contrato ni en el enum de roles actuales.

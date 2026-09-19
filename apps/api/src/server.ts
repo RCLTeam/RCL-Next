@@ -6,8 +6,8 @@ import { AuthService } from './modules/auth/auth.service.js';
 import { DiscordOAuthClient } from './modules/auth/discord.client.js';
 import { PostgresAuthRepository } from './modules/auth/postgres-auth.repository.js';
 import { PostgresCompetitionRepository } from './modules/competition/postgres-competition.repository.js';
-import { PostgresRoflUploadRepository } from './modules/rofl-upload/persistence/postgresRoflUpload.repository.js';
-import { attachRoflUploadGateway } from './modules/rofl-upload/websocket/roflUploadGateway.js';
+import { PostgresRoflUploadRepository } from './modules/rofl-upload/persistence/postgres-rofl-upload.repository.js';
+import { attachRoflUploadGateway } from './modules/rofl-upload/websocket/rofl-upload.gateway.js';
 
 const env = loadEnvironment();
 const connection = createDatabase(env.DATABASE_URL);

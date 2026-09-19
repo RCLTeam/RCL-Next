@@ -1,0 +1,68 @@
+/* Tables — StandingsTable / ChampionsTable */
+
+.rcl-site .table-scroll {
+  overflow-x: auto;
+}
+
+.rcl-site .standings-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.rcl-site .standings-table thead th {
+  font: 700 10px var(--mono);
+  text-transform: uppercase;
+  color: var(--muted);
+  border-bottom: 2px solid var(--muted);
+  padding: 16px 14px;
+}
+
+.rcl-site .standings-table td,
+.rcl-site .standings-table tbody th {
+  padding: 16px 14px;
+  border-bottom: 1px solid var(--line);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.rcl-site .standings-table td {
+  font-family: var(--mono);
+  font-weight: 700;
+}
+
+.rcl-site .standings-table td.table-empty {
+  font-family: var(--body-f);
+  font-weight: 300;
+}
+
+.rcl-site .standings-table tbody th {
+  font-family: var(--body-f);
+  font-weight: 700;
+}
+
+.rcl-site .standings-table tbody tr:hover {
+  background: color-mix(in srgb, var(--text) 3%, transparent);
+}
+
+.rcl-site .team-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.rcl-site .page-content .table-scroll {
+  border: 1px solid var(--line);
+  background: var(--panel);
+}
+
+.rcl-site .page-content .standings-table thead th {
+  border-bottom: 1px solid var(--line);
+  padding-block: 18px;
+}
+
+.rcl-site .page-content .standings-table tr:last-child > * {
+  border-bottom: 0;
+}
+

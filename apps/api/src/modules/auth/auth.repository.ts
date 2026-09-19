@@ -1,12 +1,10 @@
+import type { AuthUser } from '@rcl/contracts';
+
 export interface DiscordProfile {
   discordId: string;
   username: string;
   globalName: string | null;
   avatarHash: string | null;
-}
-
-export interface AuthUser extends DiscordProfile {
-  role: 'viewer' | 'admin';
 }
 
 export interface AuthRepository {
