@@ -10,6 +10,10 @@ export class AppError extends Error {
     this.code = code;
     this.details = details;
   }
+
+  public get status(): number {
+    return this.statusCode;
+  }
 }
 
 export const notFound = (resource: string): AppError =>

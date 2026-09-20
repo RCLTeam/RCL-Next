@@ -215,6 +215,44 @@ export async function processBatchFiles(
     const zip = new AdmZip(options.sourceFilePath);
     const entries = zip.getEntries();
 
+    const MAX_FILES = 10;
+    const MAX_SINGLE_FILE_BYTES = 50 * 1024 * 1024; // 50MB
+    const MAX_TOTAL_UNCOMPRESSED_BYTES = 300 * 1024 * 1024; // 300MB
+    const MAX_COMPRESSION_RATIO = 100;
+
+    const roflEntries = entries.filter(
+      (entry) => !entry.isDirectory && entry.entryName.toLowerCase().endsWith('.rofl')
+    );
+
+    if (roflEntries.length > MAX_FILES) {
+      throw new Error(
+        `Zip archive contains too many files (${roflEntries.length}). Maximum allowed is ${MAX_FILES}.`
+      );
+    }
+
+    let projectedTotal = 0;
+    for (const entry of roflEntries) {
+      const uncompressed = entry.header.size;
+      const compressed = entry.header.compressedSize;
+
+      if (uncompressed > MAX_SINGLE_FILE_BYTES) {
+        throw new Error(
+          `File '${entry.entryName}' exceeds maximum size of 50MB (projected: ${Math.round(uncompressed / 1024 / 1024)}MB)`
+        );
+      }
+
+      if (compressed > 0 && uncompressed / compressed > MAX_COMPRESSION_RATIO) {
+        throw new Error(
+          `File '${entry.entryName}' exceeds maximum compression ratio (${MAX_COMPRESSION_RATIO}:1)`
+        );
+      }
+
+      projectedTotal += uncompressed;
+      if (projectedTotal > MAX_TOTAL_UNCOMPRESSED_BYTES) {
+        throw new Error('Total uncompressed size of archive exceeds 300MB');
+      }
+    }
+
     for (const entry of entries) {
       if (entry.isDirectory) continue;
 
