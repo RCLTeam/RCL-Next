@@ -12,7 +12,14 @@ export function safeStreamUrl(value: string | null): string | undefined {
   if (!value) return undefined;
   try {
     const url = new URL(value);
-    return url.protocol === 'https:' || url.protocol === 'http:' ? url.href : undefined;
+    if (url.protocol === 'https:') return url.href;
+    if (
+      url.protocol === 'http:' &&
+      (url.hostname === 'localhost' || url.hostname === '127.0.0.1')
+    ) {
+      return url.href;
+    }
+    return undefined;
   } catch {
     return undefined;
   }

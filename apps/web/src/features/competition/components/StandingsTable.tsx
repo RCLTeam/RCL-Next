@@ -27,14 +27,14 @@ export function StandingsTable({ rows }: { rows: Standing[] }) {
                   {row.team.name}
                 </span>
               </th>
-              <td>{row.played}</td>
-              <td className="wins">{row.wins}</td>
-              <td className="losses">{row.losses}</td>
-              <td>{row.mapsWon}</td>
-              <td>{row.mapsLost}</td>
+              <td>{row.played ?? 0}</td>
+              <td className="wins">{row.wins ?? 0}</td>
+              <td className="losses">{row.losses ?? 0}</td>
+              <td>{row.mapsWon ?? 0}</td>
+              <td>{row.mapsLost ?? 0}</td>
               <td>
-                {row.mapDifference > 0 ? '+' : ''}
-                {row.mapDifference}
+                {(row.mapDifference ?? 0) > 0 ? '+' : ''}
+                {row.mapDifference ?? 0}
               </td>
             </tr>
           ))}
