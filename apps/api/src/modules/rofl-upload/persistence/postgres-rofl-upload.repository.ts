@@ -298,6 +298,28 @@ export class PostgresRoflUploadRepository implements RoflUploadRepository {
 
         const matchId = matchResult.matchId;
 
+        // Lock match row early before computing game numbers or inserting games
+        if (!matchStateMap.has(matchId)) {
+          const [matchRow] = await tx
+            .select()
+            .from(matches)
+            .where(eq(matches.id, matchId))
+            .for('update');
+          if (!matchRow) {
+            throw new Error(`Match ${matchId} not found in database`);
+          }
+          if (matchRow.status === 'completed') {
+            throw new Error(`Match ${matchId} is already completed/closed`);
+          }
+          matchStateMap.set(matchId, {
+            team1Id: matchRow.team1Id,
+            team2Id: matchRow.team2Id,
+            bestOf: matchRow.bestOf,
+            team1Score: matchRow.team1Score,
+            team2Score: matchRow.team2Score
+          });
+        }
+
         // Manage game number sequence within match
         if (!gameNumberMap.has(matchId)) {
           const existingMatchGames = await tx
@@ -399,20 +421,6 @@ export class PostgresRoflUploadRepository implements RoflUploadRepository {
         }
 
         // Update match scores and completion status
-        if (!matchStateMap.has(matchId)) {
-          const [matchRow] = await tx.select().from(matches).where(eq(matches.id, matchId));
-          if (!matchRow) {
-            throw new Error(`Match ${matchId} not found in database`);
-          }
-          matchStateMap.set(matchId, {
-            team1Id: matchRow.team1Id,
-            team2Id: matchRow.team2Id,
-            bestOf: matchRow.bestOf,
-            team1Score: matchRow.team1Score,
-            team2Score: matchRow.team2Score
-          });
-        }
-
         const state = matchStateMap.get(matchId);
         if (!state) {
           throw new Error(`Match state not found for match ${matchId}`);
