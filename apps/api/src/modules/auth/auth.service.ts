@@ -26,10 +26,16 @@ export class AuthService {
   }
 
   async validateState(state: unknown, cookie: string | undefined) {
+    const stateBuf = typeof state === 'string' ? Buffer.from(state) : null;
+    const cookieBuf = typeof cookie === 'string' ? Buffer.from(cookie) : null;
+
     if (
       !validToken(state) ||
       !validToken(cookie) ||
-      !timingSafeEqual(Buffer.from(state), Buffer.from(cookie)) ||
+      !stateBuf ||
+      !cookieBuf ||
+      stateBuf.length !== cookieBuf.length ||
+      !timingSafeEqual(stateBuf, cookieBuf) ||
       !(await this.repository.consumeState(hash(state), new Date()))
     ) {
       throw new AppError(

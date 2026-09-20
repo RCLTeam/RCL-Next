@@ -6,6 +6,7 @@ import os from 'node:os';
 import path from 'node:path';
 import type { BatchUploadSummary, WsClientMessage, WsServerEvent } from '@rcl/contracts';
 import { type RawData, WebSocket, WebSocketServer } from 'ws';
+import type { AuthService } from '../../auth/auth.service.js';
 import type { RoflUploadRepository } from '../persistence/rofl-upload.repository.js';
 import { executePythonParser } from '../processing/execute-python-parser.js';
 import { cleanupTempDir, processBatchFiles } from '../processing/process-batch-files.js';
@@ -19,6 +20,24 @@ export interface RoflUploadGatewayOptions {
   pythonScriptPath?: string | undefined;
   pythonExecutable?: string | undefined;
   concurrency?: number | undefined;
+  authService?: AuthService | undefined;
+  sessionCookieName?: string | undefined;
+}
+
+function extractSessionToken(
+  cookieHeader: string | undefined,
+  cookieName = 'rcl_session'
+): string | null {
+  if (!cookieHeader) return null;
+  const cookies = cookieHeader.split(';');
+  for (const cookie of cookies) {
+    const [rawKey, ...rest] = cookie.trim().split('=');
+    const key = rawKey?.trim();
+    if (key === cookieName || key === `__Host-${cookieName}`) {
+      return rest.join('=').trim() || null;
+    }
+  }
+  return null;
 }
 
 export function attachRoflUploadGateway(
@@ -41,12 +60,30 @@ export function attachRoflUploadGateway(
     originalClose(cb);
   };
 
-  wss.on('connection', (ws: WebSocket) => {
+  wss.on('connection', async (ws: WebSocket, req: http.IncomingMessage) => {
+    if (options?.authService) {
+      const sessionToken = extractSessionToken(req.headers.cookie, options.sessionCookieName);
+      if (!sessionToken) {
+        ws.close(4001, 'Unauthorized: Missing session cookie');
+        return;
+      }
+      const user = await options.authService.currentUser(sessionToken).catch(() => null);
+      if (!user) {
+        ws.close(4001, 'Unauthorized: Invalid or expired session');
+        return;
+      }
+      if (user.role !== 'admin') {
+        ws.close(4003, 'Forbidden: Admin role required');
+        return;
+      }
+    }
     let state: 'idle' | 'uploading' | 'processing' | 'closed' = 'idle';
     let sessionDir: string | null = null;
     let batchTempDir: string | null = null;
     let fileWriteStream: fsSync.WriteStream | null = null;
     let safeFileName: string | null = null;
+    let receivedBytes = 0;
+    const MAX_UPLOAD_BYTES = 50 * 1024 * 1024; // 50MB
     const abortController = new AbortController();
 
     function safeSend(message: WsServerEvent): void {
@@ -88,6 +125,19 @@ export function attachRoflUploadGateway(
           : Array.isArray(data)
             ? Buffer.concat(data)
             : Buffer.from(data as ArrayBuffer);
+
+        receivedBytes += buffer.length;
+        if (receivedBytes > MAX_UPLOAD_BYTES) {
+          safeSend({
+            type: 'error',
+            message: 'File exceeds maximum upload size (50MB)'
+          });
+          await cleanupResources();
+          state = 'closed';
+          ws.close(1009, 'Message too big');
+          return;
+        }
+
         const canWrite = fileWriteStream.write(buffer);
         if (!canWrite) {
           ws.pause();
@@ -139,6 +189,7 @@ export function attachRoflUploadGateway(
           fileWriteStream.on('error', (err) => {
             safeSend({ type: 'error', message: `Disk write error: ${err.message}` });
           });
+          receivedBytes = 0;
           state = 'uploading';
           safeSend({ type: 'started', filename: safeFileName });
         } catch (err) {

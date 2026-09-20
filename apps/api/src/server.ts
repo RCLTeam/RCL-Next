@@ -28,21 +28,25 @@ try {
   );
   process.exit(1);
 }
+const authService = env.DISCORD_CLIENT_ID
+  ? new AuthService(
+      new PostgresAuthRepository(connection.db),
+      new DiscordOAuthClient({
+        clientId: env.DISCORD_CLIENT_ID,
+        clientSecret: env.DISCORD_CLIENT_SECRET,
+        redirectUri: env.DISCORD_REDIRECT_URI
+      })
+    )
+  : undefined;
+
 const app = createApp({
   repository: new PostgresCompetitionRepository(connection.db),
   checkDatabase,
   corsOrigin: env.CORS_ORIGIN,
-  ...(env.DISCORD_CLIENT_ID
+  ...(authService
     ? {
         auth: {
-          service: new AuthService(
-            new PostgresAuthRepository(connection.db),
-            new DiscordOAuthClient({
-              clientId: env.DISCORD_CLIENT_ID,
-              clientSecret: env.DISCORD_CLIENT_SECRET,
-              redirectUri: env.DISCORD_REDIRECT_URI
-            })
-          ),
+          service: authService,
           secureCookies: new URL(env.DISCORD_REDIRECT_URI).protocol === 'https:',
           frontendOrigin: env.CORS_ORIGIN
         }
@@ -51,7 +55,7 @@ const app = createApp({
 });
 const server = http.createServer(app);
 const roflUploadRepo = new PostgresRoflUploadRepository(connection.db);
-const roflUploadGateway = attachRoflUploadGateway(server, roflUploadRepo);
+const roflUploadGateway = attachRoflUploadGateway(server, roflUploadRepo, { authService });
 
 server.listen(env.PORT, env.HOST, () => {
   console.info(`RCL API: http://${env.HOST}:${env.PORT}/api/v1/seasons`);
