@@ -1,7 +1,10 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { BatchUploadSummary, MultiAccountAnomaly } from '@rcl/contracts';
-import { initialUploadState, uploadReducer } from './useRoflUploadWs.js';
+import {
+  initialUploadState,
+  uploadReducer
+} from '../../apps/web/src/features/rofl-upload/hooks/useRoflUploadWs.js';
 
 test('uploadReducer starts upload and transitions to uploading stage', () => {
   const state = uploadReducer(initialUploadState, {
@@ -152,4 +155,68 @@ test('uploadReducer handles batch logs and reset', () => {
     type: 'reset'
   });
   assert.deepEqual(resetState, initialUploadState);
+});
+
+test('uploadReducer handles specific connection_lost messages for 4001 and 4003', () => {
+  const state4001 = uploadReducer(initialUploadState, {
+    type: 'connection_lost',
+    code: 4001,
+    reason: 'Unauthorized'
+  });
+  assert.equal(state4001.status, 'error');
+  assert.ok(
+    state4001.errorMessage?.includes('sesión') || state4001.errorMessage?.includes('inicia sesión')
+  );
+  assert.ok(state4001.terminalLogs.some((l) => l.includes('4001') && l.includes('Unauthorized')));
+
+  const state4003 = uploadReducer(initialUploadState, {
+    type: 'connection_lost',
+    code: 4003,
+    reason: 'Forbidden'
+  });
+  assert.equal(state4003.status, 'error');
+  assert.ok(
+    state4003.errorMessage?.includes('administrador') ||
+      state4003.errorMessage?.includes('permisos')
+  );
+  assert.ok(state4003.terminalLogs.some((l) => l.includes('4003') && l.includes('Forbidden')));
+});
+
+test('uploadReducer handles specific connection_lost message for 1009 and default codes', () => {
+  const state1009 = uploadReducer(initialUploadState, {
+    type: 'connection_lost',
+    code: 1009,
+    reason: 'Message too big'
+  });
+  assert.equal(state1009.status, 'error');
+  assert.equal(state1009.errorMessage, 'El archivo supera el tamaño máximo permitido (50MB).');
+  assert.ok(
+    state1009.terminalLogs.some(
+      (l) => l.includes('code: 1009') && l.includes('El archivo supera el tamaño máximo permitido')
+    )
+  );
+
+  const stateDefault = uploadReducer(initialUploadState, {
+    type: 'connection_lost',
+    code: 1006
+  });
+  assert.equal(stateDefault.status, 'error');
+  assert.equal(stateDefault.errorMessage, 'Conexión cerrada inesperadamente con el servidor.');
+  assert.ok(
+    stateDefault.terminalLogs.some(
+      (l) => l.includes('code: 1006') && l.includes('Conexión cerrada inesperadamente')
+    )
+  );
+});
+
+test('uploadReducer handles upload timeout error', () => {
+  const state = uploadReducer(initialUploadState, {
+    type: 'error',
+    message: 'Upload backpressure timeout: network stalled for over 15 seconds'
+  });
+  assert.equal(state.status, 'error');
+  assert.equal(
+    state.errorMessage,
+    'Upload backpressure timeout: network stalled for over 15 seconds'
+  );
 });
