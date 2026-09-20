@@ -1,0 +1,18 @@
+/* Core system styles */
+@import '../../shared/styles/tokens.css';
+@import '../../shared/styles/fonts.css';
+@import '../../shared/styles/base.css';
+@import '../../shared/styles/typography.css';
+@import '../../shared/styles/actions.css';
+@import '../../shared/styles/badges.css';
+@import '../../shared/styles/tables.css';
+@import '../../shared/styles/reduced-motion.css';
+
+/* Shared Layout Component */
+@import '../../shared/components/page-layout.css';
+
+/* Shell Components */
+@import './season-hud.css';
+@import './site-header.css';
+@import './site-navigation.css';
+@import './site-footer.css';

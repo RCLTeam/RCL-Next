@@ -1,11 +1,11 @@
 import React from 'react';
-import { AdminPage } from './features/admin/pages/AdminPage.js';
 import { AuthProvider } from './features/auth/components/AuthProvider.js';
-import { NotFoundPage } from './features/not-found/pages/NotFoundPage.js';
-import { LeaguePortal } from './features/site/LeaguePortal.js';
-import { SiteLayout } from './features/site/components/SiteLayout.js';
-import { NavigationContext, siteRoutes } from './features/site/navigation.js';
-import './features/site/site.css';
+import { NavigationContext, siteRoutes } from './shared/navigation.js';
+import { LeaguePortal } from './site/layout/LeaguePortal.js';
+import { SiteLayout } from './site/layout/SiteLayout.js';
+import './site/layout/site.css';
+import { AdminPage } from './site/pages/admin/AdminPage.js';
+import { NotFoundPage } from './site/pages/not-found/NotFoundPage.js';
 
 export interface AppProps {
   initialPath?: string | undefined;
