@@ -1,6 +1,15 @@
 import type { WsClientMessage, WsServerEvent } from '@rcl/contracts';
 import { useCallback, useEffect, useReducer, useRef } from 'react';
-import type { UploadAction, UploadState } from '../types/upload.types.js';
+import type { UploadAction as BaseUploadAction, UploadState } from '../types/upload.types.js';
+
+export type UploadAction =
+  | Exclude<BaseUploadAction, { type: 'connection_lost' }>
+  | {
+      type: 'connection_lost';
+      message?: string | undefined;
+      code?: number | undefined;
+      reason?: string | undefined;
+    };
 
 export const initialUploadState: UploadState = {
   stage: 'idle',
@@ -128,13 +137,28 @@ export function uploadReducer(state: UploadState, action: UploadAction): UploadS
     }
 
     case 'connection_lost': {
-      const fallbackMsg = action.message ?? 'Conexión interrumpida, por favor reintente';
+      let customMessage = action.message ?? 'Conexión interrumpida, por favor reintente';
+      if (action.code === 4001) {
+        customMessage = 'Sesión expirada o no autenticada. Por favor, inicia sesión nuevamente.';
+      } else if (action.code === 4003) {
+        customMessage = 'Acceso denegado: se requieren permisos de administrador.';
+      } else if (action.code === 1009) {
+        customMessage = 'El archivo supera el tamaño máximo permitido (50MB).';
+      } else if (action.code != null) {
+        customMessage = 'Conexión cerrada inesperadamente con el servidor.';
+      }
+
+      const logDetails =
+        action.code != null
+          ? `[ERROR] WebSocket connection closed (code: ${action.code}, reason: ${action.reason || 'None'}): ${customMessage}`
+          : `[ERROR] ${customMessage}`;
+
       return {
         ...state,
         stage: 'error',
         status: 'error',
-        errorMessage: fallbackMsg,
-        terminalLogs: [...state.terminalLogs, `[ERROR] ${fallbackMsg}`]
+        errorMessage: customMessage,
+        terminalLogs: [...state.terminalLogs, logDetails]
       };
     }
 
@@ -321,31 +345,53 @@ export function useRoflUploadWs(options?: UseRoflUploadWsOptions): UseRoflUpload
               let offset = 0;
               const totalSize = file.size;
 
-              while (offset < totalSize && socket.readyState === WebSocket.OPEN) {
-                const end = Math.min(offset + chunkSize, totalSize);
-                const slice = file.slice(offset, end);
-                const arrayBuffer = await slice.arrayBuffer();
+              try {
+                while (offset < totalSize && socket.readyState === WebSocket.OPEN) {
+                  const end = Math.min(offset + chunkSize, totalSize);
+                  const slice = file.slice(offset, end);
+                  const arrayBuffer = await slice.arrayBuffer();
 
-                // Respect WebSocket buffer backpressure
-                while (socket.readyState === WebSocket.OPEN && socket.bufferedAmount > 256 * 1024) {
-                  await new Promise((resolve) => setTimeout(resolve, 10));
+                  // Respect WebSocket buffer backpressure
+                  const backpressureStart = Date.now();
+                  while (
+                    socket.readyState === WebSocket.OPEN &&
+                    socket.bufferedAmount > 256 * 1024
+                  ) {
+                    if (Date.now() - backpressureStart > 15000) {
+                      throw new Error(
+                        'Upload backpressure timeout: network stalled for over 15 seconds'
+                      );
+                    }
+                    await new Promise((resolve) => setTimeout(resolve, 10));
+                  }
+
+                  if (socket.readyState !== WebSocket.OPEN) {
+                    break;
+                  }
+
+                  socket.send(arrayBuffer);
+                  offset = end;
+
+                  const uploadPercent = Math.min(99, Math.round((offset / totalSize) * 100));
+                  queueLog(
+                    `[UPLOAD] Streaming chunks: ${uploadPercent}% (${Math.round(offset / 1024)} KB / ${Math.round(totalSize / 1024)} KB)`
+                  );
                 }
 
-                if (socket.readyState !== WebSocket.OPEN) {
-                  break;
+                if (socket.readyState === WebSocket.OPEN) {
+                  socket.send(JSON.stringify({ type: 'finish' } satisfies WsClientMessage));
                 }
-
-                socket.send(arrayBuffer);
-                offset = end;
-
-                const uploadPercent = Math.min(99, Math.round((offset / totalSize) * 100));
-                queueLog(
-                  `[UPLOAD] Streaming chunks: ${uploadPercent}% (${Math.round(offset / 1024)} KB / ${Math.round(totalSize / 1024)} KB)`
-                );
-              }
-
-              if (socket.readyState === WebSocket.OPEN) {
-                socket.send(JSON.stringify({ type: 'finish' } satisfies WsClientMessage));
+              } catch (streamErr) {
+                flushLogs();
+                terminalStateReached = true;
+                isUploadingRef.current = false;
+                const errMsg = streamErr instanceof Error ? streamErr.message : String(streamErr);
+                dispatch({ type: 'error', message: errMsg });
+                try {
+                  socket.close(1000, 'Upload error');
+                } catch {
+                  // Ignore socket close failure
+                }
               }
               break;
             }
@@ -423,7 +469,9 @@ export function useRoflUploadWs(options?: UseRoflUploadWsOptions): UseRoflUpload
         if (!terminalStateReached && event.code !== 1000) {
           dispatch({
             type: 'connection_lost',
-            message: 'Conexión interrumpida, por favor reintente'
+            code: event.code,
+            reason: event.reason || undefined,
+            message: event.reason || undefined
           });
         }
       };

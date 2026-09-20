@@ -22,6 +22,7 @@ export interface ExecutePythonParserOptions {
   pythonScriptPath?: string | undefined;
   pythonExecutable?: string | undefined;
   concurrency?: number | undefined;
+  timeoutMs?: number | undefined;
 }
 
 export interface ExecutePythonParserResult {
@@ -96,9 +97,22 @@ export async function executePythonParser(
       const outputPath = path.join(outDir, `${baseName}_estadisticas.json`);
 
       let isNonRoflSkipped = false;
+      const timeout = options.timeoutMs ?? 45000;
+      const maxBuffer = 10 * 1024 * 1024; // 10MB
       try {
-        await execFileAsync(pythonExecutable, [scriptPath, roflPath, '-o', outputPath, '-q']);
+        await execFileAsync(pythonExecutable, [scriptPath, roflPath, '-o', outputPath, '-q'], {
+          timeout,
+          maxBuffer
+        });
       } catch (err: unknown) {
+        const isKilled = (err as { killed?: boolean })?.killed;
+        const signal = (err as { signal?: string })?.signal;
+        if (isKilled || signal === 'SIGTERM') {
+          throw new Error(
+            `Execution timed out after ${timeout / 1000} seconds parsing ROFL file '${path.basename(roflPath)}'`
+          );
+        }
+
         const exitCode = extractExitCode(err);
         if (exitCode === EXIT_CODE_INVALID_MAGIC_HEADER) {
           isNonRoflSkipped = true;
