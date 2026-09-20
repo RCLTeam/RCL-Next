@@ -99,7 +99,6 @@ docs/
   reference/                     SQL original conservado
   api.md                         Contrato de los endpoints
   authentication.md              Configuración de Discord
-scripts/                         Herramientas de desarrollo local
 ```
 
 Las pruebas unitarias y de módulo viven junto al código que verifican. Consulta [CONTRIBUTING.md](CONTRIBUTING.md) para elegir dónde añadir archivos y qué convenciones seguir.

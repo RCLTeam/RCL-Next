@@ -114,7 +114,6 @@ El proyecto desacopla los entornos de prueba local de los entornos de desarrollo
 * **Versión:** PostgreSQL 17.
 * **Conexión:** Cada entorno configura su instancia mediante `DATABASE_URL` en `.env`.
 * **Uso:** Persistencia real, inspección mediante Drizzle Studio y ejecución de la API completa con `pnpm dev:api`.
-* **Configuración local:** Los archivos personales de Docker y los datos de la instancia quedan fuera del control de versiones.
 
 ---
 
