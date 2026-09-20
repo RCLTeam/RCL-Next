@@ -45,7 +45,7 @@ Antes de ejecutar Vitest directamente en un checkout nuevo, ejecuta `pnpm build:
 
 ## Base de datos
 
-El flujo local requiere Docker con Compose: `pnpm db:local:start` ejecuta `docker compose up -d --wait postgres`; `pnpm db:local:status` muestra su estado y `pnpm db:local:stop` detiene el servicio conservando el volumen. Estos comandos son iguales en Windows, Linux y macOS y usan `compose.yaml`. Después se aplican migraciones y seed con los comandos habituales.
+El proyecto requiere una instancia PostgreSQL accesible mediante `DATABASE_URL`. Configura la conexión usando `.env.example` como referencia y ejecuta `pnpm db:migrate` y `pnpm db:check`. El seed opcional se ejecuta con `pnpm db:seed` y requiere `ALLOW_DEMO_SEED=true` en un entorno de desarrollo o pruebas.
 
 Las tablas `match_games` y `player_game_stats` representan hechos históricos. Los totales de clasificación, KDA, win rate y picks se derivarán desde ahí mediante consultas o vistas. Esto evita incoherencias de contadores que había en el sistema anterior.
 
