@@ -2,6 +2,12 @@
 
 Base de la refactorización en TypeScript, Express y PostgreSQL con Drizzle. Incluye esquema, migraciones, datos de prueba, API de consulta y autenticación Discord con sesiones PostgreSQL. Incluye también el cliente React y la subida de repeticiones ROFL. Las siguientes etapas se detallan en [el roadmap](docs/architecture/roadmap.md).
 
+## Administración
+
+El panel `/admin` tiene dos subpáginas: **ROFL Upload** (`/admin/rofl/upload`) y **CRUD Operations** (`/admin/crud`). En esta última, un selector permite gestionar temporadas, divisiones, competiciones, equipos, miembros Discord, cuentas de jugadores, plantillas, jornadas y encuentros. Requiere una sesión con rol `admin`.
+
+Los cambios se guardan en PostgreSQL con auditoría y validación. Los borrados con registros dependientes se bloquean; los resultados con mapas importados se protegen. No se necesitan migraciones adicionales. Consulta [la guía de administración](docs/administration.md).
+
 ## Inicio de sesión con Discord
 
 Configura `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET` y `DISCORD_REDIRECT_URI` en `.env`, aplica `pnpm db:migrate`, arranca `pnpm dev:api` y `pnpm dev:web` en terminales separadas y abre `http://localhost:5173`. La cabecera incluye **Entrar con Discord**, el usuario conectado y el cierre de sesión. Consulta [la guía de autenticación](docs/authentication.md) para registrar el callback y probar el acceso. Sin credenciales, la API pública sigue disponible y las rutas de autenticación devuelven 503.
@@ -31,7 +37,7 @@ pnpm db:check
 pnpm dev:api
 ```
 
-El seed requiere `ALLOW_DEMO_SEED=true` y rechaza `NODE_ENV=production`. Crea una temporada DEMO **inactiva**, dos divisiones vinculadas mediante seasons_divisions, cuatro equipos, veinte cuentas principales y sus miembros Discord, tres jornadas/series y un mapa con diez snapshots completos. Incluye 21 usuarios Discord ficticios (todos viewer) y un pronóstico; ya no hay tablas de bonus. Repetirlo no borra datos ni modifica filas existentes. Sus fechas de 2050 y nombres DEMO son deliberadamente ficticios.
+El seed requiere `ALLOW_DEMO_SEED=true` y rechaza `NODE_ENV=production`. Crea una temporada DEMO, dos divisiones vinculadas mediante seasons_divisions, cuatro equipos, veinte cuentas principales y sus miembros Discord, tres jornadas/series y un mapa con diez snapshots completos. Incluye 21 usuarios Discord ficticios (todos viewer) y un pronóstico; ya no hay tablas de bonus. Repetirlo no borra datos ni modifica filas existentes. Sus fechas de 2050 y nombres DEMO son deliberadamente ficticios.
 
 ## Cómo ver las tablas y los registros
 
@@ -47,7 +53,7 @@ Invoke-RestMethod "http://localhost:3001/api/v1/seasons/$seasonName/divisions"
 Invoke-RestMethod http://localhost:3001/api/v1/divisions/20000000-0000-4000-8000-000000000001/standings
 ```
 
-La clasificación DEMO muestra Lobos con una victoria y Cuervos con una derrota. El catálogo de temporadas incluye la DEMO aunque no esté activa. No hay fallback a datos simulados en la API: si PostgreSQL o las migraciones faltan, el arranque falla con una indicación concreta. Readiness devuelve 503 si se pierde la conexión.
+La clasificación DEMO muestra Lobos con una victoria y Cuervos con una derrota. El catálogo incluye todas las temporadas, ordenadas por fecha de inicio descendente (sin fecha al final) y nombre. No existe un estado activo de temporada. No hay fallback a datos simulados en la API: si PostgreSQL o las migraciones faltan, el arranque falla con una indicación concreta. Readiness devuelve 503 si se pierde la conexión.
 
 ## Estructura implementada
 
@@ -57,7 +63,7 @@ apps/
     features/
       <funcionalidad>/pages/      Página y CSS propio
       <funcionalidad>/components/ Componentes exclusivos de la funcionalidad
-      admin/pages/               Página de administración protegida
+      crud-operations/           Cliente HTTP, formularios y listados CRUD
       rofl-upload/               Componentes, hooks y tipos de subida ROFL
       auth/                      Sesión compartida, controles y guarda de acceso
       competition/               Cliente API, tipos, hooks, filtros y vistas comunes
@@ -115,7 +121,7 @@ Las rutas públicas son `/`, `/ligas`, `/calendario`, `/clasificacion`, `/equipo
 
 El contenedor conserva el ancho completo y los mismos márgenes interiores. La selección de temporada y división se conserva al navegar entre páginas públicas. El hook de competición cancela solicitudes obsoletas y muestra estados de carga, error y vacío. Predicciones utiliza los partidos programados del calendario real; las funciones aún sin API muestran estados pendientes, sin inventar resultados o porcentajes.
 
-El módulo `features/rofl-upload/` conserva componentes, hooks, tipos y pruebas del protocolo WebSocket. `features/admin/pages/admin.css` define el contenedor; `features/rofl-upload/components/rofl-upload.css` define la consola. El traslado no cambia contratos ni endpoints.
+El módulo `features/rofl-upload/` conserva componentes, hooks, tipos y pruebas del protocolo WebSocket. `site/pages/admin/admin.css` define el contenedor; `features/rofl-upload/components/rofl-upload.css` define la consola. `features/crud-operations/` reúne la gestión CRUD. El traslado no cambia contratos ni endpoints.
 
 La paleta y la jerarquía tipográfica siguen `Maqueta/Guía de Marca RCL_files/saved_resource.html`: Manuka Condensed Black (900) para titulares; Manuka Bold (700) para subtítulos y cifras; PP Fraktion Sans Light/Bold (300/700) para cuerpo y controles; PP Fraktion Mono Regular/Bold (400/700) para metadatos y estadísticas. `tokens.css` centraliza todos los colores, incluidos victoria, derrota y avisos; los fondos y transparencias derivan de esos tokens. El texto principal usa Parchment White, nunca blanco puro.
 

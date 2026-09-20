@@ -2,11 +2,29 @@
 
 Prefijo: `/api/v1`. Respuestas correctas: `{ "data": ... }`. Errores: `{ "error": { "code": "...", "message": "..." } }`; validación añade details.
 
+## Administración
+
+Todas las rutas `/api/v1/crud-operations` requieren sesión `admin` y responden con `Cache-Control: no-store`. POST, PUT y DELETE exigen `Origin` igual al frontend configurado.
+
+| Método | Ruta | Cuerpo / respuesta |
+| --- | --- | --- |
+| GET | /crud-operations/resources | Catálogo de entidades y campos editables, sin metadatos SQL |
+| GET | /crud-operations/:resource?search=texto&offset=0 | `{ data: { records, hasMore } }`, páginas de 50 y orden por clave |
+| POST | /crud-operations/:resource | Campos editables; devuelve 201 y registro creado |
+| PUT | /crud-operations/:resource | `{ key, version, values }`; reemplaza los campos editables y devuelve 200 |
+| DELETE | /crud-operations/:resource | `{ key, version }`; devuelve 204 sin cuerpo |
+
+Entidades admitidas: `seasons`, `divisions`, `competitions`, `teams`, `users`, `players`, `memberships`, `rounds`, `matches`. `key` es un objeto con las claves indicadas por el catálogo (incluidas ambas columnas en claves compuestas). `version` conserva exactamente el `updatedAt` recibido. UUID, timestamps automáticos y privilegios no son campos de escritura. Los campos opcionales vacíos se envían como `null`. Los listados pueden añadir campos `nombreDelCampoLabel` para mostrar relaciones legibles.
+
+Validación estricta de cuerpo y consulta: 422. Registro/entidad inexistente: 404. Sesión ausente/caducada: 401. Rol u origen incorrecto: 403. Dependencias, duplicados, cambios obsoletos o resultados protegidos: 409. Administración sin configurar: 503. Los fallos no exponen SQL ni credenciales. Véanse [los flujos y restricciones](administration.md).
+
+## Consulta pública
+
 | Método | Ruta | Respuesta |
 | --- | --- | --- |
 | GET | /health/live | Proceso vivo, fuera del prefijo |
 | GET | /health/ready | Consulta real a seasons; 503 si falla, fuera del prefijo |
-| GET | /api/v1/seasons | Todas las temporadas; activas primero |
+| GET | /api/v1/seasons | Fecha de inicio descendente, fechas nulas al final y nombre ascendente para desempatar; sin `isActive` |
 | GET | /api/v1/seasons/:seasonId/divisions | Divisiones ordenadas |
 | GET | /api/v1/divisions/:divisionId/teams | Equipos de esa división |
 | GET | /api/v1/divisions/:divisionId/rounds | Jornadas y fases |

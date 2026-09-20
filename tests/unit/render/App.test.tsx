@@ -47,7 +47,14 @@ test('Each public route renders only its own page, including direct links and tr
 });
 
 test('Both admin URLs and their trailing slash aliases are guarded and absent from public navigation', () => {
-  for (const path of ['/admin', '/admin/', '/admin/rofl/upload', '/admin/rofl/upload/']) {
+  for (const path of [
+    '/admin',
+    '/admin/',
+    '/admin/rofl/upload',
+    '/admin/rofl/upload/',
+    '/admin/crud',
+    '/admin/crud/'
+  ]) {
     const html = renderToString(React.createElement(App, { initialPath: path }));
     const navigation = html.match(/<nav\b[^>]*id="site-navigation"[^>]*>([\s\S]*?)<\/nav>/)?.[1];
     assert.ok(navigation);

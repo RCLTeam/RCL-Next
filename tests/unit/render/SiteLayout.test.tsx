@@ -24,7 +24,7 @@ describe('SiteLayout', () => {
 
   it('renders season HUD with active match when live', () => {
     const mockCompetition = {
-      season: { id: 's1', name: 'Temporada Invierno', isActive: true },
+      season: { id: 's1', name: 'Temporada Invierno' },
       calendar: {
         data: [
           {

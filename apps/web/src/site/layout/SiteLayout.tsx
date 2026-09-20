@@ -1,5 +1,6 @@
 import React, { type ReactNode, useContext, useState } from 'react';
 import { AuthControls } from '../../features/auth/components/AuthControls.js';
+import { canAccessAdmin, useAuth } from '../../features/auth/components/AuthProvider.js';
 import type { Competition } from '../../features/competition/hooks/useCompetition.js';
 import { SiteLink } from '../../shared/components/SiteLink.js';
 import { NavigationContext, siteRoutes } from '../../shared/navigation.js';
@@ -78,6 +79,7 @@ function SiteHeader({ leagueSwitch }: { leagueSwitch: ReactNode }) {
 // aria-current drives the selected-link indicator in site-navigation.css.
 function SiteNavigation({ onNavigate }: { onNavigate: () => void }) {
   const { path } = useContext(NavigationContext);
+  const { state, signingOut } = useAuth();
   return (
     <nav id="site-navigation" aria-label="Navegación principal">
       {siteRoutes.map((route) => (
@@ -90,6 +92,15 @@ function SiteNavigation({ onNavigate }: { onNavigate: () => void }) {
           {route.title}
         </SiteLink>
       ))}
+      {canAccessAdmin(state) && !signingOut && (
+        <SiteLink
+          href="/admin"
+          aria-current={path === '/admin' || path.startsWith('/admin/') ? 'page' : undefined}
+          onClick={onNavigate}
+        >
+          Administración
+        </SiteLink>
+      )}
     </nav>
   );
 }

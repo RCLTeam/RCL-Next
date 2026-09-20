@@ -49,7 +49,6 @@ erDiagram
         varchar name PK
         date starts_on
         date ends_on
-        boolean is_active
         timestamp created_at
         timestamp updated_at
     }
@@ -425,14 +424,6 @@ El modelo delega en el motor relacional la validación de restricciones invarian
 
 ### 2. Índices Únicos Parciales (Partial Unique Indexes)
 
-* **`seasons_one_active_key`**:
-  ```sql
-  CREATE UNIQUE INDEX "seasons_one_active_key" 
-  ON "seasons" ("is_active") 
-  WHERE ("seasons"."is_active" = true);
-  ```
-  **Garantía:** Solo puede existir una temporada con `is_active = true` de forma simultánea en todo el sistema. Previene carreras de concurrencia a nivel de base de datos sin depender de bloqueos o comprobaciones en capa de aplicación.
-
 * **`team_memberships_unique_captain`**:
   ```sql
   CREATE UNIQUE INDEX "team_memberships_unique_captain" 
@@ -479,9 +470,8 @@ El modelo delega en el motor relacional la validación de restricciones invarian
   - `name`: `varchar(120)` PRIMARY KEY.
   - `starts_on`: `date` (opcional).
   - `ends_on`: `date` (opcional).
-  - `is_active`: `boolean` NOT NULL DEFAULT `false`.
   - `created_at` / `updated_at`: `timestamp with time zone` NOT NULL DEFAULT `now()`.
-* **Restricciones:** `seasons_dates_check`, `seasons_one_active_key`.
+* **Restricciones:** `seasons_dates_check`. No hay indicador de temporada activa.
 
 ### 2. `divisions`
 * **Descripción:** Divisiones de la liga (ej. Primera, Segunda).

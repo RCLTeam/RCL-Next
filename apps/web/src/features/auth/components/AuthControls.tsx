@@ -1,7 +1,6 @@
 import React from 'react';
-import { SiteLink } from '../../../shared/components/SiteLink.js';
 import { discordLoginUrl } from '../api/auth-api.js';
-import { type AuthState, canAccessAdmin, useAuth } from './AuthProvider.js';
+import { type AuthState, useAuth } from './AuthProvider.js';
 import './auth.css';
 
 interface AuthControlsViewProps {
@@ -54,11 +53,6 @@ export function AuthControlsView({
               </span>
             </div>
           </div>
-          {canAccessAdmin(state) && !signingOut && (
-            <SiteLink className="auth-button" href="/admin">
-              Administración
-            </SiteLink>
-          )}
           <button
             className="auth-button auth-logout"
             type="button"
