@@ -13,7 +13,7 @@ try {
   console.table(tables.rows);
 } catch {
   console.error(
-    'PostgreSQL check failed. Start the server (docker compose up -d --wait postgres) and verify DATABASE_URL in the root .env.'
+    'PostgreSQL check failed. Verify that the server is running and DATABASE_URL is configured correctly.'
   );
   process.exitCode = 1;
 } finally {
