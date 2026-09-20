@@ -24,3 +24,18 @@
   text-transform: uppercase;
 }
 
+.rcl-site .admin-navigation { display: flex; flex-wrap: wrap; gap: 8px; border-bottom: 1px solid var(--stone); margin-bottom: 32px; }
+.rcl-site .admin-navigation a { color: var(--muted); text-decoration: none; padding: 14px 20px; border-bottom: 3px solid transparent; font-weight: 700; }
+.rcl-site .admin-navigation a:hover, .rcl-site .admin-navigation a[aria-current='page'] { color: var(--lime); border-bottom-color: var(--lime); }
+.rcl-site .admin-navigation a:focus-visible, .rcl-site .admin-overview a:focus-visible { outline: 2px solid var(--lime); outline-offset: 3px; }
+.rcl-site .admin-overview { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+.rcl-site .admin-overview > a { display: block; padding: 32px; border: 1px solid var(--stone); background: var(--panel); text-decoration: none; color: var(--text); }
+.rcl-site .admin-overview > a:hover { border-color: var(--lime); }
+.rcl-site .admin-overview h2 { font: 700 44px/1 var(--display2); margin: 18px 0; }
+.rcl-site .admin-overview p { color: var(--muted); line-height: 1.6; margin-bottom: 28px; }
+.rcl-site .admin-overview > a > span:last-child { color: var(--lime); }
+@media (max-width: 750px) { .rcl-site .admin-overview { grid-template-columns: 1fr; } }
+.rcl-site .crud-operations-resource-selector { display: grid; gap: 10px; margin-bottom: 32px; max-width: 420px; }
+.rcl-site .crud-operations-resource-selector label { font: 400 12px var(--mono); text-transform: uppercase; color: var(--muted); }
+.rcl-site .crud-operations-resource-selector select { width: 100%; min-height: 48px; background: var(--panel); border: 1px solid var(--stone); color: var(--text); font: inherit; padding: 12px; color-scheme: dark; }
+.rcl-site .crud-operations-resource-selector select:focus-visible { outline: 2px solid var(--lime); outline-offset: 3px; }

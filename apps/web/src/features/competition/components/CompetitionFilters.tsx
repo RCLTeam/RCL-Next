@@ -22,7 +22,6 @@ export function CompetitionFilters({
           {competition.seasons.data.map((season) => (
             <option key={season.id} value={season.id}>
               {season.name}
-              {season.isActive ? '' : ' · Archivo'}
             </option>
           ))}
         </select>

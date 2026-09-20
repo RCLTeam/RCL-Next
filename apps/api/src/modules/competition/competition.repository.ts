@@ -3,7 +3,6 @@ export interface Season {
   name: string;
   startsOn: string | null;
   endsOn: string | null;
-  isActive: boolean;
 }
 export interface Division {
   id: string;

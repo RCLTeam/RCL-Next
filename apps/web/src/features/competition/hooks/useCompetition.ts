@@ -43,10 +43,7 @@ export function useCompetition() {
   const [seasonChoice, setSeasonChoice] = useState('');
   const [divisionChoice, setDivisionChoice] = useState('');
   const seasons = useCollection<Season>('seasons', revision);
-  const season =
-    seasons.data.find((item) => item.id === seasonChoice) ??
-    seasons.data.find((item) => item.isActive) ??
-    seasons.data[0];
+  const season = seasons.data.find((item) => item.id === seasonChoice) ?? seasons.data[0];
   const divisions = useCollection<Division>(
     season ? `seasons/${encodeURIComponent(season.id)}/divisions` : null,
     revision

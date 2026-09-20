@@ -18,13 +18,13 @@ const admin: AuthUser = {
   role: 'admin'
 };
 
-function renderSession(state: AuthState, signingOut = false) {
+function renderSession(state: AuthState, signingOut = false, path = '/admin') {
   return renderToString(
     <AuthContext.Provider
       value={{ state, signingOut, logoutError: false, retry: () => {}, logout: async () => {} }}
     >
       <SiteLayout>
-        <AdminPage />
+        <AdminPage path={path} />
       </SiteLayout>
     </AuthContext.Provider>
   );
@@ -47,13 +47,29 @@ describe('administration access', () => {
     }
   );
 
-  it('mounts replay upload for a verified administrator and keeps admin out of public navigation', () => {
-    const html = renderSession({ status: 'authenticated', user: admin });
+  it('mounts replay upload for a verified administrator and places admin last in navigation', () => {
+    const html = renderSession(
+      { status: 'authenticated', user: admin },
+      false,
+      '/admin/rofl/upload'
+    );
     expect(html).toContain('Dropzone for ROFL and ZIP files');
     expect(html).toContain('href="/admin"');
     const navigation = html.match(/<nav\b[^>]*id="site-navigation"[^>]*>([\s\S]*?)<\/nav>/)?.[1];
     expect(navigation).toBeDefined();
-    expect(navigation).not.toContain('href="/admin"');
+    expect(navigation).toMatch(/<a\b[^>]*href="\/admin"[^>]*>Administración<\/a>$/);
+    expect(html.match(/href="\/admin"/g)).toHaveLength(1);
+  });
+
+  it('offers exactly two admin subpages and keeps CRUD entities inside their panel', () => {
+    const html = renderSession({ status: 'authenticated', user: admin });
+    expect(html).toContain('href="/admin/rofl/upload"');
+    expect(html).toContain('href="/admin/crud"');
+    expect(html).not.toContain('Dropzone for ROFL and ZIP files');
+    expect(html).not.toContain('href="/admin/teams"');
+    const crud = renderSession({ status: 'authenticated', user: admin }, false, '/admin/crud');
+    expect(crud).toContain('Cargando administración');
+    expect(crud).not.toContain('Dropzone for ROFL and ZIP files');
   });
 
   it('blocks the upload console and account link while logout is pending', () => {

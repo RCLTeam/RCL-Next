@@ -13,9 +13,9 @@ PostgreSQL/Drizzle coherentes con el SQL original, migraciones con snapshots, se
 
 - **Implementado:** Discord OAuth con state ligado al navegador, sesión PostgreSQL y autorización contra el rol persistido; viewer/admin. Configuración y contrato en [autenticación](../authentication.md).
 
-- Gestión de equipos y jugadores, altas/bajas de plantilla con fechas y auditoría.
+- **Implementado:** CRUD de temporadas, divisiones, competiciones, equipos, miembros Discord, jugadores, plantillas, jornadas y encuentros con auditoría y control de concurrencia. Admin ofrece ROFL Upload y CRUD Operations como dos subpáginas; las entidades se seleccionan dentro de CRUD Operations. Véase [administración](../administration.md).
 - Perfiles y estadísticas agregadas a partir de info/stats/runas/build; filtro por temporada/división.
-- Administración de series y resultados con transacciones y validación Bo1/Bo3/Bo5.
+- **Implementado:** Administración de series y resultados manuales con transacciones y validación Bo1/Bo3/Bo5. Los resultados con mapas importados permanecen bajo el flujo ROFL.
 - Pick'em: selección de ganador, cierre transaccional por jornada/partido, bonus validados y preguntas sin filtrar la respuesta correcta.
 - Pruebas de autenticación, permisos, carreras al cerrar pronósticos e importaciones repetidas.
 

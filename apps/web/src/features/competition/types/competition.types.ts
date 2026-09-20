@@ -2,7 +2,6 @@
 export interface Season {
   id: string;
   name: string;
-  isActive: boolean;
 }
 export interface Division {
   id: string;

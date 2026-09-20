@@ -38,8 +38,8 @@ const match: Match = {
 
 function fixture(): Competition {
   return {
-    seasons: { status: 'ready', data: [{ id: 'S1', name: 'Temporada 1', isActive: true }] },
-    season: { id: 'S1', name: 'Temporada 1', isActive: true },
+    seasons: { status: 'ready', data: [{ id: 'S1', name: 'Temporada 1' }] },
+    season: { id: 'S1', name: 'Temporada 1' },
     divisions: {
       status: 'ready',
       data: [{ id: 'D1', seasonId: 'S1', code: 'premier', name: 'Premier', sortOrder: 1 }]

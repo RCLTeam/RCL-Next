@@ -39,7 +39,7 @@ const match: Match = {
   streamUrl: null
 };
 function repository(): CompetitionRepository {
-  const season = { id: seasonId, name: 'Demo', startsOn: null, endsOn: null, isActive: false };
+  const season = { id: seasonId, name: 'Demo', startsOn: null, endsOn: null };
   const division = { id: divisionId, seasonId, code: 'premier', name: 'Premier', sortOrder: 1 };
   return {
     seasons: async () => [season],
@@ -102,7 +102,8 @@ test('public season and division endpoints', async () => {
 test('validation, missing resources and unsupported routes use stable errors', async () => {
   await request(app).get('/api/v1/divisions/not-a-uuid/teams').expect(422);
   await request(app).get(`/api/v1/divisions/${homeId}/teams`).expect(404);
-  await request(app).get('/api/v1/admin/matches').expect(404);
+  const disabledAdmin = await request(app).get('/api/v1/crud-operations/matches').expect(503);
+  assert.equal(disabledAdmin.body.error.code, 'CRUD_OPERATIONS_NOT_CONFIGURED');
   await request(app).get(`/api/v1/divisions/${divisionId}/calendar?roundId=99`).expect(404);
   const unexpectedRes = await request(app)
     .get(`/api/v1/divisions/${divisionId}/calendar?unexpected=1`)

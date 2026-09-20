@@ -12,14 +12,13 @@ export class PostgresCompetitionRepository implements CompetitionRepository {
     id: seasons.name,
     name: seasons.name,
     startsOn: seasons.startsOn,
-    endsOn: seasons.endsOn,
-    isActive: seasons.isActive
+    endsOn: seasons.endsOn
   };
   seasons() {
     return this.db
       .select(this.seasonSelection)
       .from(seasons)
-      .orderBy(desc(seasons.isActive), desc(seasons.startsOn), asc(seasons.name));
+      .orderBy(sql`${seasons.startsOn} DESC NULLS LAST`, asc(seasons.name));
   }
   async season(name: string) {
     return (

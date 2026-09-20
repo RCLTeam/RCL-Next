@@ -41,7 +41,7 @@ Respecto a la especificación inicial preliminar, se aplicaron correcciones arqu
 | Claves UUID independientes generadas con `DEFAULT` en tablas hijas | El `id` de cada tabla hija coincide exactamente con el `id` de su registro padre en `player_game_info`. |
 | Índices y restricciones `UNIQUE` de `stats` referenciaban columnas inexistentes en esa tabla | Se reubicaron en `player_game_info`, donde residen `match_game_id`, `player_id` y `team_id`. |
 | Triggers sintácticamente incorrectos (`BEFORE UPDATE ON *`) | Se crearon triggers individuales específicos por tabla para invocar `set_updated_at()`, incluyendo `audit_logs`. |
-| Validación de temporada activa mediante trigger con `SELECT` previo (vulnerable a condiciones de carrera concurrentes) | Reemplazado por índice único parcial `seasons_one_active_key` a nivel de catálogo de PostgreSQL. |
+| Validación de temporada activa mediante trigger | Eliminada junto con `seasons.is_active`. Las temporadas se seleccionan por fecha de inicio, sin estado activo. |
 | Desalineación de `schema.ts` respecto al modelo relacional | ORM tipado 100% alineado con `0000_initial_schema.sql` y snapshots de migraciones. |
 | Ausencia de campos de visión y estadísticas de repetición | Inclusión de `vision_score` y 33 métricas avanzadas ROFL con validaciones de no negatividad (`CHECK`). |
 

@@ -1,7 +1,7 @@
 -- Synthetic fixtures only. Execute the entire script in one transaction.
 -- Stable IDs + ON CONFLICT DO NOTHING make reruns additive, never destructive.
-INSERT INTO seasons (name, starts_on, ends_on, is_active) VALUES
-  ('Temporada DEMO — datos ficticios', '2050-01-01', '2050-12-31', false)
+INSERT INTO seasons (name, starts_on, ends_on) VALUES
+  ('Temporada DEMO — datos ficticios', '2050-01-01', '2050-12-31')
 ON CONFLICT (name) DO NOTHING;
 
 INSERT INTO divisions (name, sort_order) VALUES

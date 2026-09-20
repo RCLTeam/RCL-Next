@@ -35,7 +35,7 @@ test('PostgreSQL migrations, fixtures and relational constraints', async (t) => 
     assert.equal((await db.select().from(schema.players)).length, 20);
     assert.equal((await db.select().from(schema.teams)).length, 4);
     assert.equal((await db.select().from(schema.playerGameInfo)).length, 10);
-    assert.equal((await db.select().from(schema.seasons))[0]?.isActive, false);
+    assert.equal('isActive' in ((await db.select().from(schema.seasons))[0] ?? {}), false);
   });
   await t.test('all 19 ORM tables map to executable SQL', async () => {
     const tables = Object.values(schema).filter((value) => is(value, Table));
@@ -178,13 +178,20 @@ test('PostgreSQL migrations, fixtures and relational constraints', async (t) => 
     await assert.rejects(client.query('DELETE FROM player_game_build WHERE id=$1', [infoId]));
     assert.equal((await db.select().from(schema.playerGameBuild)).length, 10);
   });
-  await t.test('single active season is enforced by a unique index', async () => {
-    await client.exec("INSERT INTO seasons (name, is_active) VALUES ('Active test', true)");
-    await assert.rejects(
-      client.exec("INSERT INTO seasons (name, is_active) VALUES ('Another active', true)")
-    );
-    await client.exec("DELETE FROM seasons WHERE name='Active test'");
-  });
+  await t.test(
+    'seasons have no active flag or unique active index while teams retain their flag',
+    async () => {
+      const column = await client.query(
+        "SELECT column_name FROM information_schema.columns WHERE table_name='seasons' AND column_name='is_active'"
+      );
+      const index = await client.query(
+        "SELECT indexname FROM pg_indexes WHERE tablename='seasons' AND indexname='seasons_one_active_key'"
+      );
+      assert.equal(column.rows.length, 0);
+      assert.equal(index.rows.length, 0);
+      assert.equal((await db.select().from(schema.teams))[0]?.isActive, true);
+    }
+  );
   await t.test('updated_at changes without application intervention', async () => {
     await client.query("UPDATE teams SET updated_at='2000-01-01' WHERE id=$1", [teamId]);
     const result = await client.query<{ recent: boolean }>(
