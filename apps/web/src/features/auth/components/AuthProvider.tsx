@@ -27,8 +27,7 @@ export function useAuth() {
 }
 
 export function canAccessAdmin(state: AuthState): boolean {
-  // The current server contract defines viewer and admin; unknown roles fail closed.
-  return state.status === 'authenticated' && state.user.role === 'admin';
+  return state.status === 'authenticated' && ['admin', 'owner'].includes(state.user.role);
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {

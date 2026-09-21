@@ -13,6 +13,22 @@ const user: AuthUser = {
 afterEach(() => vi.unstubAllGlobals());
 
 describe('Discord session API', () => {
+  it.each(['viewer', 'admin', 'owner'] as const)('accepts the persisted %s role', async (role) => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(new Response(JSON.stringify({ data: { ...user, role } })))
+    );
+    await expect(getSession()).resolves.toEqual({ ...user, role });
+  });
+  it('rejects an unknown role', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi
+        .fn()
+        .mockResolvedValue(new Response(JSON.stringify({ data: { ...user, role: 'superadmin' } })))
+    );
+    await expect(getSession()).rejects.toThrow('no es válida');
+  });
   it('recognizes 401 as signed out and sends cookies', async () => {
     const fetcher = vi.fn().mockResolvedValue(new Response(null, { status: 401 }));
     vi.stubGlobal('fetch', fetcher);

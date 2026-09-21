@@ -70,7 +70,6 @@ function SiteHeader({ leagueSwitch }: { leagueSwitch: ReactNode }) {
       </div>
       <div className={`nav-bottom ${menuOpen ? 'is-open' : ''}`}>
         <SiteNavigation onNavigate={() => setMenuOpen(false)} />
-        {leagueSwitch && <div className="nav-tools">{leagueSwitch}</div>}
       </div>
     </header>
   );

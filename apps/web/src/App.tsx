@@ -23,10 +23,16 @@ export function App({ initialPath, wsUrl }: AppProps) {
   }, []);
   const requestedPath = currentPath.replace(/\/$/, '') || '/';
   const path = requestedPath;
-  const isAdmin = ['/admin', '/admin/rofl/upload', '/admin/crud'].includes(path);
+  const isAdmin = [
+    '/admin',
+    '/admin/rofl/upload',
+    '/admin/crud',
+    '/admin/member-roles',
+    '/admin/database-transfer'
+  ].includes(path);
   const route = siteRoutes.find((item) => item.path === path);
   React.useEffect(() => {
-    document.title = `${isAdmin ? (path === '/admin/crud' ? 'CRUD Operations · Admin' : path === '/admin/rofl/upload' ? 'ROFL Upload · Admin' : 'Admin') : (route?.title ?? 'Página no encontrada')} · Rebel Crown Legacy`;
+    document.title = `${isAdmin ? (path === '/admin/database-transfer' ? 'Database Transfer · Admin' : path === '/admin/member-roles' ? 'Gestión de roles · Admin' : path === '/admin/crud' ? 'CRUD Operations · Admin' : path === '/admin/rofl/upload' ? 'ROFL Upload · Admin' : 'Admin') : (route?.title ?? 'Página no encontrada')} · Rebel Crown Legacy`;
   }, [route, path, isAdmin]);
   const navigate = (nextPath: string) => {
     if (nextPath !== window.location.pathname) window.history.pushState({}, '', nextPath);

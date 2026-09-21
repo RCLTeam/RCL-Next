@@ -186,7 +186,7 @@ function ReferenceField({
     setLoading(true);
     setError('');
     const timer = window.setTimeout(() => {
-      getCrudRecords(field.reference ?? '', search, offset, controller.signal)
+      getCrudRecords(`references/${field.reference ?? ''}`, search, offset, controller.signal)
         .then((result) => {
           setRows((previous) => (offset ? [...previous, ...result.records] : result.records));
           setHasMore(result.hasMore);

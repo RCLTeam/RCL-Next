@@ -61,22 +61,25 @@ export function attachRoflUploadGateway(
   };
 
   wss.on('connection', async (ws: WebSocket, req: http.IncomingMessage) => {
-    if (options?.authService) {
-      const sessionToken = extractSessionToken(req.headers.cookie, options.sessionCookieName);
+    const sessionToken = extractSessionToken(req.headers.cookie, options?.sessionCookieName);
+    async function authorize(): Promise<boolean> {
+      if (!options?.authService) return true;
       if (!sessionToken) {
         ws.close(4001, 'Unauthorized: Missing session cookie');
-        return;
+        return false;
       }
       const user = await options.authService.currentUser(sessionToken).catch(() => null);
       if (!user) {
         ws.close(4001, 'Unauthorized: Invalid or expired session');
-        return;
+        return false;
       }
-      if (user.role !== 'admin') {
+      if (user.role !== 'admin' && user.role !== 'owner') {
         ws.close(4003, 'Forbidden: Admin role required');
-        return;
+        return false;
       }
+      return true;
     }
+    if (!(await authorize())) return;
     let state: 'idle' | 'uploading' | 'processing' | 'closed' = 'idle';
     let sessionDir: string | null = null;
     let batchTempDir: string | null = null;
@@ -226,6 +229,7 @@ export function attachRoflUploadGateway(
 
         try {
           // Step 1: processBatchFiles with decompression queue positional updates for .zip
+          if (!(await authorize())) return;
           safeSend({ type: 'stage', stage: 'decompressing' });
           safeSend({
             type: 'progress',
@@ -334,6 +338,7 @@ export function attachRoflUploadGateway(
             }
           }
 
+          if (!(await authorize())) return;
           const batchInsertResult = await repository.executeBatchInsert(
             games,
             playerCache,

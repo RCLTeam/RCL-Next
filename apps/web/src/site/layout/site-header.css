@@ -41,13 +41,6 @@
   width: 100%;
 }
 
-.rcl-site .nav-tools {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 20px;
-}
-
 .rcl-site .menu-toggle {
   display: none;
 }
@@ -55,10 +48,6 @@
 @media (max-width: 1150px) {
   .rcl-site .nav-bottom {
     flex-wrap: wrap;
-  }
-
-  .rcl-site .nav-tools {
-    justify-content: flex-start;
   }
 }
 
@@ -87,18 +76,6 @@
     max-width: 320px;
     padding-block: 10px;
   }
-
-  .rcl-site .nav-tools {
-    grid-column: 1 / -1;
-    grid-row: 2;
-    padding-block: 6px;
-    border-top: 1px solid var(--line);
-    justify-content: space-between;
-  }
-
-  .rcl-site .nav-tools .admin-link {
-    margin-left: auto;
-  }
 }
 
 @media (max-width: 950px) {
@@ -125,10 +102,6 @@
 
   .rcl-site .nav-bottom.is-open {
     display: flex;
-    flex-wrap: wrap;
-  }
-
-  .rcl-site .nav-tools {
     flex-wrap: wrap;
   }
 }

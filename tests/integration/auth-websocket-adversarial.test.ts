@@ -3,6 +3,7 @@ import http from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { fileURLToPath } from 'node:url';
 import { PGlite } from '@electric-sql/pglite';
+import { eq } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/pglite';
 import { migrate } from 'drizzle-orm/pglite/migrator';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -70,6 +71,54 @@ describe('Adversarial Security Verification', () => {
   }
 
   describe('WebSocket Gateway Auth Gate', () => {
+    it('accepts owners and rechecks a revoked role before processing an open upload', async () => {
+      const token = '9'.repeat(64);
+      await db
+        .insert(schema.discordUsers)
+        .values({ discordId: 'owner1', username: 'owner1', role: 'owner' });
+      await new PostgresAuthRepository(db).createSession(
+        { discordId: 'owner1', username: 'owner1', globalName: null, avatarHash: null },
+        hash(token),
+        new Date(Date.now() + 60000)
+      );
+      const ws = new WebSocket(`ws://127.0.0.1:${port}/ws/rofl-upload`, {
+        headers: { cookie: `rcl_session=${token}` }
+      });
+      try {
+        await new Promise<void>((resolve, reject) => {
+          const timer = setInterval(() => {
+            if (ws.readyState === WebSocket.OPEN)
+              ws.send(JSON.stringify({ type: 'start', filename: 'owner.rofl' }));
+          }, 20);
+          const timeout = setTimeout(() => {
+            clearInterval(timer);
+            reject(new Error('Upload did not start'));
+          }, 2000);
+          ws.on('message', (data) => {
+            if (JSON.parse(data.toString()).type === 'started') {
+              clearInterval(timer);
+              clearTimeout(timeout);
+              resolve();
+            }
+          });
+          ws.once('close', () => {
+            clearInterval(timer);
+            clearTimeout(timeout);
+            reject(new Error('Owner was rejected'));
+          });
+          ws.once('error', reject);
+        });
+        await db
+          .update(schema.discordUsers)
+          .set({ role: 'viewer' })
+          .where(eq(schema.discordUsers.discordId, 'owner1'));
+        const closed = waitForClose(ws);
+        ws.send(JSON.stringify({ type: 'finish' }));
+        expect((await closed).code).toBe(4003);
+      } finally {
+        ws.terminate();
+      }
+    });
     it('closes with 4001 if no cookie is provided', async () => {
       const ws = new WebSocket(`ws://127.0.0.1:${port}/ws/rofl-upload`);
       const { code } = await waitForClose(ws);

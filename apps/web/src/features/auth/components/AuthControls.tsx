@@ -49,7 +49,11 @@ export function AuthControlsView({
             <div className="auth-user">
               <span className="auth-name">{state.user.globalName || state.user.username}</span>
               <span className="auth-hint">
-                {state.user.role === 'admin' ? 'Administrador' : 'Miembro'}
+                {state.user.role === 'owner'
+                  ? 'Owner'
+                  : state.user.role === 'admin'
+                    ? 'Administrador'
+                    : 'Miembro'}
               </span>
             </div>
           </div>

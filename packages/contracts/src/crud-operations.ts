@@ -24,3 +24,14 @@ export interface CrudPageResult {
   records: CrudRecord[];
   hasMore: boolean;
 }
+export interface CrudDeleteImpact {
+  table: string;
+  action: 'delete' | 'set-null' | 'blocked';
+  count: number;
+  examples: CrudRecord[];
+}
+export interface CrudDeletePreview {
+  confirmation: string;
+  allowed: boolean;
+  impacts: CrudDeleteImpact[];
+}

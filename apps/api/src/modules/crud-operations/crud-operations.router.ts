@@ -10,10 +10,22 @@ export function crudOperationsRouter(service: CrudOperationsService, auth: AuthO
   });
   router.use(requireAuth(auth, 'admin'));
   router.get('/resources', (_req, res) => res.json({ data: service.resources() }));
+  router.get('/references/:resource', async (req, res) =>
+    res.json({ data: await service.list(String(req.params.resource), req.query, true) })
+  );
   router.get('/:resource', async (req, res) =>
     res.json({ data: await service.list(String(req.params.resource), req.query) })
   );
   router.use(requireTrustedOrigin(auth.frontendOrigin));
+  router.post('/:resource/delete-preview', requireAuth(auth, 'owner'), async (req, res) => {
+    res.json({
+      data: await service.previewDelete(
+        String(req.params.resource),
+        req.body,
+        String(res.locals.user.discordId)
+      )
+    });
+  });
   for (const [method, action] of [
     ['post', 'create'],
     ['put', 'update'],
