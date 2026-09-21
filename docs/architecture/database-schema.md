@@ -284,7 +284,7 @@ El esquema define 6 enumeraciones PostgreSQL nativas (`CREATE TYPE ... AS ENUM`)
 
 ### 1. `app_role`
 * **Tipo:** `"public"."app_role"`
-* **Valores permitidos:** `'viewer'`, `'admin'`
+* **Valores permitidos:** `'viewer'`, `'admin'`, `'owner'`
 * **Columna de aplicación:** `discord_users.role` (valor por defecto: `'viewer'`)
 * **Propósito:** Controla el nivel de acceso en la plataforma. Diferencia a los usuarios espectadores estándar de los administradores que gestionan competiciones, actas arbitrales y configuraciones globales.
 

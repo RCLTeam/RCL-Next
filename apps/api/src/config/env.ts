@@ -12,6 +12,7 @@ export function parseEnvironment(environment: NodeJS.ProcessEnv) {
         .refine((value) => /^postgres(ql)?:/.test(value)),
       PORT: z.coerce.number().int().min(1).max(65535).default(3001),
       HOST: z.string().default('127.0.0.1'),
+      POSTGRES_BIN_DIR: z.string().default(''),
       CORS_ORIGIN: z.string().url().default('http://localhost:5173'),
       DISCORD_CLIENT_ID: z.string().default(''),
       DISCORD_CLIENT_SECRET: z.string().default(''),

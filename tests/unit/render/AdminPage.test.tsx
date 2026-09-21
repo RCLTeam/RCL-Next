@@ -7,6 +7,7 @@ import {
   AuthContext,
   type AuthState
 } from '../../../apps/web/src/features/auth/components/AuthProvider.js';
+import { MemberRolesTable } from '../../../apps/web/src/features/member-roles/components/MemberRolesPanel.js';
 import { SiteLayout } from '../../../apps/web/src/site/layout/SiteLayout.js';
 import { AdminPage } from '../../../apps/web/src/site/pages/admin/AdminPage.js';
 
@@ -31,6 +32,34 @@ function renderSession(state: AuthState, signingOut = false, path = '/admin') {
 }
 
 describe('administration access', () => {
+  it.each(['admin', 'owner'] as const)(
+    'shows member roles to %s and restricts editing to owners',
+    (role) => {
+      const html = renderSession(
+        { status: 'authenticated', user: { ...admin, role } },
+        false,
+        '/admin/member-roles'
+      );
+      expect(html).toContain('Cargando miembros');
+      expect(html).toContain('Gestión de roles');
+      const table = renderToString(
+        <MemberRolesTable
+          members={[admin]}
+          canManage={role === 'owner'}
+          disabled={false}
+          onChange={() => {}}
+        />
+      );
+      expect(table).toContain(admin.username);
+      if (role === 'owner') {
+        expect(table).toContain('<select');
+        expect(table).toContain('value="owner"');
+      } else {
+        expect(table).not.toContain('<select');
+        expect(table).not.toContain('Cambiar rol');
+      }
+    }
+  );
   it.each([
     [{ status: 'loading' }, 'Comprobando acceso'],
     [{ status: 'anonymous' }, 'Inicia sesión'],
@@ -61,10 +90,12 @@ describe('administration access', () => {
     expect(html.match(/href="\/admin"/g)).toHaveLength(1);
   });
 
-  it('offers exactly two admin subpages and keeps CRUD entities inside their panel', () => {
+  it('offers four admin subpages and keeps CRUD entities inside their panel', () => {
     const html = renderSession({ status: 'authenticated', user: admin });
     expect(html).toContain('href="/admin/rofl/upload"');
     expect(html).toContain('href="/admin/crud"');
+    expect(html).toContain('href="/admin/member-roles"');
+    expect(html).toContain('href="/admin/database-transfer"');
     expect(html).not.toContain('Dropzone for ROFL and ZIP files');
     expect(html).not.toContain('href="/admin/teams"');
     const crud = renderSession({ status: 'authenticated', user: admin }, false, '/admin/crud');
@@ -93,7 +124,7 @@ describe('administration access', () => {
   it('rejects unknown roles even if a malformed user bypasses session parsing', () => {
     const html = renderSession({
       status: 'authenticated',
-      user: { ...admin, role: 'owner' } as unknown as AuthUser
+      user: { ...admin, role: 'unknown' } as unknown as AuthUser
     });
     expect(html).toContain('No tienes permisos');
     expect(html).not.toContain('Dropzone for ROFL and ZIP files');

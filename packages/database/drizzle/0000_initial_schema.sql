@@ -1,4 +1,4 @@
-CREATE TYPE "public"."app_role" AS ENUM('viewer', 'admin');--> statement-breakpoint
+CREATE TYPE "public"."app_role" AS ENUM('viewer', 'admin', 'owner');--> statement-breakpoint
 CREATE TYPE "public"."game_side" AS ENUM('blue', 'red');--> statement-breakpoint
 CREATE TYPE "public"."stage" AS ENUM('regular', 'playoff');--> statement-breakpoint
 CREATE TYPE "public"."match_status" AS ENUM('scheduled', 'live', 'completed', 'cancelled', 'forfeit');--> statement-breakpoint

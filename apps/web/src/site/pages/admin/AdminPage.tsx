@@ -1,6 +1,8 @@
 import React from 'react';
 import { RequireAdmin } from '../../../features/auth/components/RequireAdmin.js';
 import { CrudOperationsPanel } from '../../../features/crud-operations/components/CrudOperationsPanel.js';
+import { DatabaseTransferPanel } from '../../../features/database-transfer/components/DatabaseTransferPanel.js';
+import { MemberRolesPanel } from '../../../features/member-roles/components/MemberRolesPanel.js';
 import { RoflUploadPanel } from '../../../features/rofl-upload/components/RoflUploadPanel.js';
 import { SiteLink } from '../../../shared/components/SiteLink.js';
 import './admin.css';
@@ -26,11 +28,27 @@ export function AdminPage({
           <SiteLink href="/admin/crud" aria-current={path === '/admin/crud' ? 'page' : undefined}>
             CRUD Operations
           </SiteLink>
+          <SiteLink
+            href="/admin/member-roles"
+            aria-current={path === '/admin/member-roles' ? 'page' : undefined}
+          >
+            Roles Management
+          </SiteLink>
+          <SiteLink
+            href="/admin/database-transfer"
+            aria-current={path === '/admin/database-transfer' ? 'page' : undefined}
+          >
+            Database Transfer
+          </SiteLink>
         </nav>
         {path === '/admin/rofl/upload' ? (
           <RoflUploadPanel wsUrl={wsUrl} />
         ) : path === '/admin/crud' ? (
           <CrudOperationsPanel />
+        ) : path === '/admin/member-roles' ? (
+          <MemberRolesPanel />
+        ) : path === '/admin/database-transfer' ? (
+          <DatabaseTransferPanel />
         ) : (
           <div className="admin-overview">
             <SiteLink href="/admin/rofl/upload">
@@ -46,6 +64,21 @@ export function AdminPage({
                 Consulta, crea, edita y elimina los datos de la competición desde un único lugar.
               </p>
               <span>Gestionar datos →</span>
+            </SiteLink>
+            <SiteLink href="/admin/member-roles">
+              <span className="eyebrow">Miembros</span>
+              <h2>Roles Management</h2>
+              <p>
+                Consulta los miembros y sus permisos de acceso. Los owners pueden gestionar sus
+                roles.
+              </p>
+              <span>Ver miembros →</span>
+            </SiteLink>
+            <SiteLink href="/admin/database-transfer">
+              <span className="eyebrow">Copias de seguridad</span>
+              <h2>Database Transfer</h2>
+              <p>Exporta un backup PostgreSQL. Los owners también pueden importar una copia.</p>
+              <span>Importar o exportar →</span>
             </SiteLink>
           </div>
         )}

@@ -2,6 +2,19 @@ import type { CrudField, CrudResource } from '@rcl/contracts';
 import { z } from 'zod';
 
 export type ResourceDefinition = CrudResource;
+// Existing Discord identities are only available as references for players and rosters.
+export const crudReferences: ResourceDefinition[] = [
+  {
+    name: 'users',
+    label: 'Miembros de Discord',
+    description: '',
+    keys: ['discordId'],
+    fields: [
+      { name: 'username', label: 'Usuario', type: 'text' },
+      { name: 'globalName', label: 'Nombre visible', type: 'text' }
+    ]
+  }
+];
 const text = (name: string, label: string, maxLength: number, required = false): CrudField => ({
   name,
   label,
@@ -88,18 +101,6 @@ export const crudResources: ResourceDefinition[] = [
     ]
   },
   {
-    name: 'users',
-    label: 'Miembros',
-    description:
-      'Identidades Discord para vincular cuentas y plantillas. Los permisos de acceso se administran por separado.',
-    keys: ['discordId'],
-    fields: [
-      fixed(text('discordId', 'ID de Discord', 32, true)),
-      text('username', 'Usuario', 64, true),
-      text('globalName', 'Nombre visible', 64)
-    ]
-  },
-  {
     name: 'players',
     label: 'Jugadores',
     description: 'Cuentas Riot y su vínculo con Discord para identificar las repeticiones.',
@@ -141,33 +142,6 @@ export const crudResources: ResourceDefinition[] = [
       options('stage', 'Fase', ['regular', 'playoff'], 'regular'),
       text('name', 'Nombre', 120),
       date('startsAt', 'Fecha de inicio')
-    ]
-  },
-  {
-    name: 'matches',
-    label: 'Encuentros',
-    description:
-      'Calendario, emisiones y resultados manuales. Los resultados con mapas importados se mantienen desde ROFL.',
-    keys: ['id'],
-    fields: [
-      ref('idSeasonDivision', 'Competición', 'competitions'),
-      { name: 'idRound', label: 'Jornada', type: 'select', reference: 'rounds' },
-      ref('team1Id', 'Equipo local', 'teams'),
-      ref('team2Id', 'Equipo visitante', 'teams'),
-      { ...number('bestOf', 'Mejor de', 1, 5, 1), options: ['1', '3', '5'] },
-      options(
-        'status',
-        'Estado',
-        ['scheduled', 'live', 'completed', 'cancelled', 'forfeit'],
-        'scheduled'
-      ),
-      date('scheduledAt', 'Fecha programada'),
-      date('finishedAt', 'Fecha de finalización'),
-      ref('winnerTeamId', 'Ganador', 'teams', false),
-      number('team1Score', 'Mapas local', 0, 3),
-      number('team2Score', 'Mapas visitante', 0, 3),
-      { name: 'streamUrl', label: 'URL de emisión', type: 'url' },
-      text('notes', 'Notas', 5000)
     ]
   }
 ];

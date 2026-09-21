@@ -1,4 +1,4 @@
-import type { CrudPageResult, CrudRecord, CrudResource } from '@rcl/contracts';
+import type { CrudDeletePreview, CrudPageResult, CrudRecord, CrudResource } from '@rcl/contracts';
 
 async function crudRequest<T>(path: string, init: RequestInit = {}): Promise<T> {
   const response = await fetch(`/api/v1/crud-operations/${path}`, {
@@ -11,6 +11,10 @@ async function crudRequest<T>(path: string, init: RequestInit = {}): Promise<T> 
   if (!response.ok) {
     if (response.status === 401) throw new Error('La sesión ha caducado. Vuelve a iniciar sesión.');
     if (response.status === 403) throw new Error('No tienes permiso para realizar esta operación.');
+    if (body.error?.code === 'DELETE_PREVIEW_CHANGED')
+      throw new Error(
+        'Los datos afectados han cambiado. Cancela y vuelve a revisar la eliminación.'
+      );
     const details = body.error?.details?.fieldErrors as Record<string, string[]> | undefined;
     const fields = details ? Object.keys(details).join(', ') : '';
     throw new Error(
@@ -44,11 +48,27 @@ export function saveCrudRecord(
     )
   });
 }
-export function deleteCrudRecord(resource: CrudResource, record: CrudRecord) {
+export function previewCrudDelete(resource: CrudResource, record: CrudRecord, signal: AbortSignal) {
+  return crudRequest<CrudDeletePreview>(`${resource.name}/delete-preview`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    signal,
+    body: JSON.stringify({ key: recordKey(resource, record), version: record.updatedAt })
+  });
+}
+export function deleteCrudRecord(
+  resource: CrudResource,
+  record: CrudRecord,
+  cascadeConfirmation?: string
+) {
   return crudRequest<void>(resource.name, {
     method: 'DELETE',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ key: recordKey(resource, record), version: record.updatedAt })
+    body: JSON.stringify({
+      key: recordKey(resource, record),
+      version: record.updatedAt,
+      cascadeConfirmation
+    })
   });
 }
 export const recordKey = (resource: CrudResource, record: CrudRecord): CrudRecord =>

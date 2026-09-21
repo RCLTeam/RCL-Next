@@ -31,3 +31,13 @@
 .rcl-site .crud-operations-error p, .rcl-site .crud-operations-field [role='alert'] { color: var(--crimson); }
 .rcl-site .crud-operations-data .crud-operations-success { color: var(--win); border-left: 3px solid var(--win); padding: 12px; }
 .rcl-site .crud-operations-danger { background: var(--crimson); color: var(--text); }
+
+.rcl-site .crud-operations-delete-dialog { width: min(960px, calc(100vw - 32px)); max-height: calc(100dvh - 48px); overflow: auto; padding: 28px; border: 1px solid var(--crimson); background: var(--panel); color: var(--text); }
+.rcl-site .crud-operations-delete-dialog::backdrop { background: rgb(0 0 0 / 75%); }
+.rcl-site .crud-operations-delete-dialog h3 { margin-top: 0; }
+.rcl-site .crud-operations-delete-dialog [role='alert'] { color: var(--crimson); }
+.rcl-site .crud-operations-delete-dialog .crud-operations-actions { justify-content: flex-end; margin-top: 24px; }
+.rcl-site .crud-operations-delete-confirm { display: flex; align-items: flex-start; gap: 12px; margin-top: 24px; }
+.rcl-site .crud-operations-delete-confirm input { flex-shrink: 0; }
+.rcl-site .crud-operations-delete-dialog td { overflow-wrap: anywhere; }
+@media (max-width: 650px) { .rcl-site .crud-operations-delete-dialog { padding: 16px; } }

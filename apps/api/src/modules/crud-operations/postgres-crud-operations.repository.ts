@@ -1,5 +1,5 @@
 import type { CrudRecord, CrudValue } from '@rcl/contracts';
-import { auditLogs, matchGames, matches, predictions, rosterMovements, teams } from '@rcl/database';
+import { auditLogs, rosterMovements, teams } from '@rcl/database';
 import * as schema from '@rcl/database/schema';
 import { and, asc, eq, getTableColumns, is, or, sql } from 'drizzle-orm';
 import {
@@ -10,7 +10,16 @@ import {
 } from 'drizzle-orm/pg-core';
 import { AppError, notFound } from '../../shared/app-error.js';
 import type { CrudMutation, CrudOperationsRepository } from './crud-operations.repository.js';
-import { type ResourceDefinition, crudResources } from './crud-operations.resources.js';
+import {
+  type ResourceDefinition,
+  crudReferences,
+  crudResources
+} from './crud-operations.resources.js';
+import {
+  buildDeletePlan,
+  deletePlannedDependents,
+  lockDeletePlan
+} from './postgres-crud-delete-plan.js';
 
 type Database = PgDatabase<PgQueryResultHKT, typeof schema>;
 type StoredResource = ResourceDefinition & { table: PgTable };
@@ -22,8 +31,7 @@ const resourceTables: Record<string, PgTable> = {
   users: schema.discordUsers,
   players: schema.players,
   memberships: schema.teamMemberships,
-  rounds: schema.rounds,
-  matches: schema.matches
+  rounds: schema.rounds
 };
 function storedResource(resource: ResourceDefinition): StoredResource {
   const table = resourceTables[resource.name];
@@ -95,49 +103,6 @@ async function validateRelations(
   ) {
     await assertNoDependents(db, resource.table, before);
   }
-  if (resource.name !== 'matches') return;
-  const teamRows = await db
-    .select()
-    .from(teams)
-    .where(or(eq(teams.id, String(next.team1Id)), eq(teams.id, String(next.team2Id))))
-    .orderBy(asc(teams.id))
-    .for('share');
-  if (
-    teamRows.length !== 2 ||
-    teamRows.some((team) => team.seasonDivisionId !== next.idSeasonDivision)
-  ) {
-    throw conflict('Both teams must belong to the selected competition.');
-  }
-  if (!before) return;
-  const imported = await db
-    .select({ id: matchGames.id })
-    .from(matchGames)
-    .where(eq(matchGames.matchesId, String(before.id)))
-    .limit(1);
-  const resultFields = [
-    'idSeasonDivision',
-    'team1Id',
-    'team2Id',
-    'bestOf',
-    'status',
-    'winnerTeamId',
-    'team1Score',
-    'team2Score',
-    'finishedAt'
-  ];
-  if (imported.length && resultFields.some((field) => next[field] !== before[field])) {
-    throw conflict(
-      'Imported maps own this match result. Only calendar, round, stream and notes can be edited.'
-    );
-  }
-  if (['team1Id', 'team2Id'].some((field) => next[field] !== before[field])) {
-    const votes = await db
-      .select({ id: predictions.id })
-      .from(predictions)
-      .where(eq(predictions.matchId, String(before.id)))
-      .limit(1);
-    if (votes.length) throw conflict('Teams cannot change while predictions exist.');
-  }
 }
 
 async function recordMovement(
@@ -167,6 +132,23 @@ async function recordMovement(
 export class PostgresCrudOperationsRepository implements CrudOperationsRepository {
   constructor(private readonly db: Database) {}
 
+  async previewDelete(descriptor: ResourceDefinition, mutation: CrudMutation) {
+    const resource = storedResource(descriptor);
+    return this.db.transaction(async (tx) => {
+      await lockDeletePlan(tx, mutation.actorId);
+      const [before] = records(
+        await tx
+          .select(selection(resource.table))
+          .from(resource.table)
+          .where(condition(resource.table, mutation.key))
+      );
+      if (!before) throw notFound('Record');
+      if (before.updatedAt !== mutation.version)
+        throw conflict('This record changed. Reload it before deleting.');
+      return (await buildDeletePlan(tx, resource.table, before)).preview;
+    });
+  }
+
   async list(descriptor: ResourceDefinition, offset: number, search: string) {
     const resource = storedResource(descriptor);
     const projection = Object.fromEntries(
@@ -188,7 +170,9 @@ export class PostgresCrudOperationsRepository implements CrudOperationsRepositor
     );
     const page = result.slice(0, 50);
     for (const field of resource.fields) {
-      const reference = crudResources.find((entry) => entry.name === field.reference);
+      const reference = [...crudResources, ...crudReferences].find(
+        (entry) => entry.name === field.reference
+      );
       if (!reference || !page.length) continue;
       const target = storedResource(reference);
       const key = target.keys[0];
@@ -223,9 +207,13 @@ export class PostgresCrudOperationsRepository implements CrudOperationsRepositor
   }
 
   async mutate(descriptor: ResourceDefinition, mutation: CrudMutation) {
+    if (!crudResources.some((resource) => resource.name === descriptor.name))
+      throw notFound('CRUD resource');
     const resource = storedResource(descriptor);
     try {
       return await this.db.transaction(async (tx) => {
+        if (mutation.cascadeConfirmation) await lockDeletePlan(tx, mutation.actorId);
+        let cascade: Awaited<ReturnType<typeof buildDeletePlan>> | undefined;
         let before: CrudRecord | undefined;
         if (mutation.action !== 'create') {
           [before] = records(
@@ -239,9 +227,20 @@ export class PostgresCrudOperationsRepository implements CrudOperationsRepositor
           if (before.updatedAt !== mutation.version)
             throw conflict('This record changed. Reload it before saving.');
         }
-        if (mutation.action === 'delete' && before)
-          await assertNoDependents(tx, resource.table, before);
-        else await validateRelations(tx, resource, { ...before, ...mutation.values }, before);
+        if (mutation.action === 'delete' && before) {
+          if (mutation.cascadeConfirmation) {
+            cascade = await buildDeletePlan(tx, resource.table, before);
+            if (cascade.preview.confirmation !== mutation.cascadeConfirmation)
+              throw new AppError(
+                409,
+                'DELETE_PREVIEW_CHANGED',
+                'Related data changed. Review a new deletion preview.'
+              );
+            if (!cascade.preview.allowed)
+              throw conflict('Protected references prevent this deletion.');
+            await deletePlannedDependents(tx, resource.table, cascade.deleted);
+          } else await assertNoDependents(tx, resource.table, before);
+        } else await validateRelations(tx, resource, { ...before, ...mutation.values }, before);
         const values: Record<string, CrudValue | Date> = { ...mutation.values };
         for (const field of resource.fields) {
           if (field.type === 'datetime' && typeof values[field.name] === 'string')
@@ -271,7 +270,7 @@ export class PostgresCrudOperationsRepository implements CrudOperationsRepositor
           action: `admin.${mutation.action}`,
           entityType: resource.name,
           entityId: typeof after.id === 'string' ? after.id : null,
-          before: before ?? null,
+          before: cascade ? { record: before, cascade: cascade.preview } : (before ?? null),
           after: mutation.action === 'delete' ? null : after
         });
         if (resource.name === 'memberships') await recordMovement(tx, mutation, before, after);

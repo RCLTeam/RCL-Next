@@ -53,9 +53,9 @@ Los errores se devuelven como `{ error: { code, message } }`. Un estado inválid
 - El nuevo login revoca la sesión anterior del mismo navegador dentro de la transacción de creación; otras sesiones del usuario permanecen activas. Logout revoca únicamente la sesión actual.
 - Las rutas de autenticación no se cachean y omiten el referente. Las sesiones y estados caducados se limpian al iniciar nuevos flujos; siempre se rechazan por fecha aunque no se hayan eliminado aún.
 - Se actualizan username, globalName y avatarHash al iniciar sesión. Los usuarios nuevos reciben `viewer`; el login conserva el rol existente y no vincula automáticamente jugadores o equipos.
-- `requireAuth(options)` protege futuras rutas; `requireAuth(options, 'admin')` exige el rol persistido. Se consulta PostgreSQL en cada petición, por lo que los cambios de permisos y las revocaciones tienen efecto inmediato. `requireTrustedOrigin(CORS_ORIGIN)` debe acompañar a las futuras operaciones que muten datos mediante cookies.
+- `requireAuth(options)` exige sesión; `requireAuth(options, 'admin')` admite admin u owner, y `requireAuth(options, 'owner')` exige owner. PostgreSQL se consulta en cada petición, por lo que los permisos y las revocaciones tienen efecto inmediato. `requireTrustedOrigin(CORS_ORIGIN)` protege las operaciones que mutan datos mediante cookies.
 
-No se concede `admin` a partir de parámetros, datos enviados por el navegador o roles del servidor Discord. Su gestión queda para la administración de la aplicación.
+No se conceden privilegios a partir del login o los roles del servidor Discord. Solo el módulo protegido de gestión de roles permite cambiar `viewer`, `admin` u `owner`. El owner inicial queda sin asignar.
 
 ## Migración y pruebas
 
@@ -65,6 +65,6 @@ Las pruebas HTTP ejecutan el esquema inicial en PGlite y simulan únicamente las
 
 ## Acceso al frontend administrativo
 
-`AuthProvider` consulta `/api/v1/auth/me` y comparte el resultado con los controles de cuenta y `RequireAdmin`. Las rutas `/admin` y `/admin/rofl/upload`, con o sin barra final, muestran la consola únicamente con una sesión verificada de rol `admin`. Las sesiones anónimas reciben un enlace a Discord; los demás roles reciben una denegación; un fallo de sesión ofrece reintento. El panel se desmonta durante el cierre de sesión y permanece bloqueado después de cerrarla. El enlace administrativo solo aparece entre los controles de una cuenta administradora.
+`AuthProvider` consulta `/api/v1/auth/me` y comparte el resultado con los controles de cuenta y `RequireAdmin`. Las rutas `/admin`, `/admin/rofl/upload`, `/admin/crud` y `/admin/member-roles`, con o sin barra final, muestran la consola únicamente con una sesión verificada de rol `admin` u `owner`. Las sesiones anónimas reciben un enlace a Discord; los demás roles reciben una denegación; un fallo de sesión ofrece reintento. El panel se desmonta durante el cierre de sesión y permanece bloqueado después de cerrarla. El enlace administrativo aparece en la navegación para admin y owner.
 
-Esta guarda protege la navegación y el montaje del frontend. El gateway `/ws/rofl-upload` existente no valida sesión ni rol; autorizar su handshake, comprobar el origen y revocar conexiones requiere un cambio independiente de backend con pruebas de integración. No debe considerarse cerrado ese acceso directo por haber protegido la página. `organizer` no existe en el contrato ni en el enum de roles actuales.
+Esta guarda protege la navegación y el montaje del frontend. La API aplica los permisos en cada petición. El gateway `/ws/rofl-upload` valida la sesión y exige admin u owner al conectar, antes de procesar y antes de persistir una importación. `organizer` no existe en el contrato ni en el enum actuales.

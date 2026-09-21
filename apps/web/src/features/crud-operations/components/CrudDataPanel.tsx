@@ -1,16 +1,19 @@
 import type { CrudPageResult, CrudRecord, CrudResource } from '@rcl/contracts';
 import React, { useEffect, useRef, useState } from 'react';
+import { useAuth } from '../../auth/components/AuthProvider.js';
 import {
-  deleteCrudRecord,
   getCrudRecords,
   recordKey,
   recordLabel,
   saveCrudRecord
 } from '../api/crud-operations-api.js';
+import { CrudDeleteDialog } from './CrudDeleteDialog.js';
 import { CrudRecordForm } from './CrudRecordForm.js';
 import './crud-operations.css';
 
 export function CrudDataPanel({ resource }: { resource: CrudResource }) {
+  const { state } = useAuth();
+  const owner = state.status === 'authenticated' && state.user.role === 'owner';
   const [search, setSearch] = useState('');
   const [offset, setOffset] = useState(0);
   const [revision, setRevision] = useState(0);
@@ -54,8 +57,8 @@ export function CrudDataPanel({ resource }: { resource: CrudResource }) {
     };
   }, [resource.name, search, offset, revision]);
   useEffect(() => {
-    if (editor || deleting) editorRef.current?.focus();
-  }, [editor, deleting]);
+    if (editor) editorRef.current?.focus();
+  }, [editor]);
   async function mutate(action: () => Promise<unknown>, message: string) {
     if (busy) return;
     setBusy(true);
@@ -79,6 +82,20 @@ export function CrudDataPanel({ resource }: { resource: CrudResource }) {
   const columns = resource.fields.slice(0, 5);
   return (
     <section className="crud-operations-data" aria-label={resource.label}>
+      {deleting && (
+        <CrudDeleteDialog
+          resource={resource}
+          record={deleting}
+          owner={owner}
+          onCancel={() => setDeleting(null)}
+          onDeleted={() => {
+            setDeleting(null);
+            setNotice('Registro y datos confirmados eliminados.');
+            setRevision((value) => value + 1);
+            if (data?.records.length === 1 && offset) setOffset(offset - 50);
+          }}
+        />
+      )}
       <div className="crud-operations-data-heading">
         <div>
           <h2>{resource.label}</h2>
@@ -114,7 +131,7 @@ export function CrudDataPanel({ resource }: { resource: CrudResource }) {
           </button>
         </div>
       )}
-      {(editor || deleting) && (
+      {editor && (
         <div ref={editorRef} tabIndex={-1}>
           {editor && (
             <CrudRecordForm
@@ -130,35 +147,6 @@ export function CrudDataPanel({ resource }: { resource: CrudResource }) {
                 )
               }
             />
-          )}
-          {deleting && (
-            <section className="crud-operations-editor" aria-label="Confirmar eliminación">
-              <h3>Eliminar {recordLabel(deleting)}</h3>
-              <p>
-                Esta acción no se puede deshacer. Si tiene datos relacionados, la eliminación se
-                bloqueará.
-              </p>
-              <div className="crud-operations-actions">
-                <button
-                  type="button"
-                  className="btn-primary crud-operations-danger"
-                  disabled={busy}
-                  onClick={() =>
-                    void mutate(() => deleteCrudRecord(resource, deleting), 'Registro eliminado.')
-                  }
-                >
-                  {busy ? 'Eliminando…' : 'Confirmar eliminación'}
-                </button>
-                <button
-                  type="button"
-                  className="btn-ghost"
-                  disabled={busy}
-                  onClick={() => setDeleting(null)}
-                >
-                  Cancelar
-                </button>
-              </div>
-            </section>
           )}
         </div>
       )}
