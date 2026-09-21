@@ -56,6 +56,8 @@ Las pruebas HTTP/PGlite de permisos, cambios, auditoría y paginación están en
 
 ## Borrado en cascada para owner
 
+Si un administrador intenta eliminar un registro con referencias, el pop-up conserva el bloqueo y muestra todas las entidades directamente relacionadas, únicamente mediante etiquetas públicas y cantidades. La API no consulta ni devuelve ejemplos, claves, nombres de registros ni nombres internos de tablas. No cuenta dos veces un registro que referencia la entidad mediante varias claves foráneas. Esta información no concede permisos de borrado en cascada.
+
 Al pulsar **Eliminar**, el owner recibe una previsualización con las tablas, el número exacto de filas y hasta cinco ejemplos de claves por tabla. También se distinguen las filas que solo se desvincularán (`SET NULL`) y las referencias protegidas que bloquean el borrado. Para confirmar debe marcar la casilla de aceptación. Cancelar o cerrar el diálogo no elimina nada.
 
 La API vuelve a comprobar el rol persistido y recalcula el alcance dentro de la transacción de borrado. La confirmación identifica el contenido revisado: si cambia el registro o cualquiera de sus dependencias, debe abrirse otra previsualización. El recorrido sigue únicamente relaciones `CASCADE`; no convierte `RESTRICT` ni restricciones de nulabilidad en cascadas. Las claves compuestas y las filas alcanzadas por más de una relación se contabilizan una sola vez.

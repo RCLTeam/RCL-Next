@@ -1,4 +1,4 @@
-import type { CrudRecord, CrudValue } from '@rcl/contracts';
+import type { CrudDeleteDependency, CrudRecord, CrudValue } from '@rcl/contracts';
 import { auditLogs, rosterMovements, teams } from '@rcl/database';
 import * as schema from '@rcl/database/schema';
 import { and, asc, eq, getTableColumns, is, or, sql } from 'drizzle-orm';
@@ -62,8 +62,10 @@ const project = (resource: ResourceDefinition, record: CrudRecord): CrudRecord =
 // Inspect the existing FK definitions so the admin cannot accidentally invoke ON DELETE CASCADE.
 async function assertNoDependents(db: Database, table: PgTable, row: CrudRecord) {
   const sourceColumns = getTableColumns(table);
+  const dependencies: CrudDeleteDependency[] = [];
   for (const dependent of Object.values(schema)) {
     if (!is(dependent, PgTable)) continue;
+    const conditions = [];
     for (const fk of getTableConfig(dependent).foreignKeys) {
       const reference = fk.reference();
       if (reference.foreignTable !== table) continue;
@@ -72,15 +74,41 @@ async function assertNoDependents(db: Database, table: PgTable, row: CrudRecord)
         const property = Object.keys(sourceColumns).find((key) => sourceColumns[key] === source);
         return eq(column, row[property ?? '']);
       });
-      const found = await db
-        .select({ exists: sql`1` })
-        .from(dependent)
-        .where(and(...checks))
-        .limit(1);
-      if (found.length)
-        throw conflict('This record has related data. Remove or reassign it first.');
+      conditions.push(and(...checks));
     }
+    if (!conditions.length) continue;
+    const config = getTableConfig(dependent);
+    // Only aggregate counts leave the database; never fetch related row contents here.
+    const [found] = await db
+      .select({ count: sql<number>`count(*)`.mapWith(Number) })
+      .from(dependent)
+      .where(or(...conditions));
+    if (!found?.count) continue;
+    const descriptor = crudResources.find(
+      (resource) => resourceTables[resource.name] === dependent
+    );
+    const labels: Record<string, string> = {
+      matches: 'Encuentros',
+      match_games: 'Partidas',
+      player_game_info: 'Participaciones en partidas',
+      player_game_stats: 'Estadísticas de partidas',
+      player_game_build: 'Equipamiento de partidas',
+      player_game_runes: 'Runas de partidas',
+      predictions: 'Predicciones',
+      roster_movements: 'Historial de plantillas'
+    };
+    dependencies.push({
+      label: descriptor?.label ?? labels[config.name] ?? 'Otros datos relacionados',
+      count: found.count
+    });
   }
+  if (dependencies.length)
+    throw new AppError(
+      409,
+      'RELATED_RECORDS',
+      'This record has related data. Remove or reassign it first.',
+      { dependencies }
+    );
 }
 
 async function validateRelations(

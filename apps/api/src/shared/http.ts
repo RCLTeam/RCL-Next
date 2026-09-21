@@ -10,7 +10,13 @@ export const errorHandler: ErrorRequestHandler = (error: unknown, _req, res, _ne
     return;
   }
   if (error instanceof AppError) {
-    res.status(error.statusCode).json({ error: { code: error.code, message: error.message } });
+    res.status(error.statusCode).json({
+      error: {
+        code: error.code,
+        message: error.message,
+        ...(error.code === 'RELATED_RECORDS' ? { details: error.details } : {})
+      }
+    });
     return;
   }
   const status =

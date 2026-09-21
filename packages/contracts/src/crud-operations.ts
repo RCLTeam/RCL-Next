@@ -35,3 +35,7 @@ export interface CrudDeletePreview {
   allowed: boolean;
   impacts: CrudDeleteImpact[];
 }
+export interface CrudDeleteDependency {
+  label: string;
+  count: number;
+}

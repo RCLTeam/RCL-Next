@@ -26,6 +26,8 @@ La previsualización requiere sesión owner y `Origin` de confianza. `impacts` c
 
 Una confirmación obsoleta devuelve 409 `DELETE_PREVIEW_CHANGED`; permisos retirados devuelven 403. Se rechazan cascadas de más de 10000 filas con 422 `DELETE_TOO_LARGE`. Los conflictos de bloqueo devuelven 409 y requieren reintento. El alcance se recalcula bajo bloqueo, se deduplican las dependencias y se confirma junto con la auditoría en una única transacción. No se borran automáticamente referencias `RESTRICT`. Encuentros, estadísticas e historial de plantilla pueden eliminarse como dependientes de una cascada confirmada, aunque no tengan CRUD individual.
 
+Un borrado ordinario bloqueado por referencias devuelve 409 `RELATED_RECORDS` con `error.details.dependencies`: una lista de `{ label, count }`. Incluye todas las entidades directamente relacionadas, solo su etiqueta pública y el total de filas distintas de cada entidad. El frontend muestra esta lista en el diálogo de eliminación. No incluye claves, identificadores, nombres de registros, muestras ni nombres internos de tablas ni permite borrar en cascada a los administradores.
+
 ## Roles de miembros
 
 | Método | Ruta | Permiso y contrato |
