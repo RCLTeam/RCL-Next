@@ -2,7 +2,11 @@ import type { CrudDeletePreview, CrudResource } from '@rcl/contracts';
 import React from 'react';
 import { renderToString } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
-import { CrudDeleteDialog, CrudDeleteImpactTable } from './CrudDeleteDialog.js';
+import {
+  CrudDeleteDependencies,
+  CrudDeleteDialog,
+  CrudDeleteImpactTable
+} from './CrudDeleteDialog.js';
 
 const resource: CrudResource = {
   name: 'seasons',
@@ -12,6 +16,29 @@ const resource: CrudResource = {
   fields: []
 };
 describe('CRUD deletion confirmation', () => {
+  it('shows only entity types and counts for a blocked ordinary deletion', () => {
+    const html = renderToString(
+      <CrudDeleteDependencies
+        dependencies={[
+          { label: 'Encuentros', count: 7 },
+          {
+            label: 'Plantillas',
+            count: 1
+          }
+        ]}
+      />
+    );
+    for (const text of [
+      'Entidades relacionadas que impiden eliminar',
+      'Encuentros',
+      'Plantillas',
+      '>7<'
+    ])
+      expect(html).toContain(text);
+    expect(html).not.toContain('filas que se eliminarán');
+    expect(html).not.toContain('Ejemplos');
+    expect(html).not.toContain('Identificadores');
+  });
   it('renders a modal and disables owner confirmation until the preview is reviewed', () => {
     const html = renderToString(
       <CrudDeleteDialog

@@ -1,6 +1,16 @@
-import type { CrudDeletePreview, CrudRecord, CrudResource } from '@rcl/contracts';
+import type {
+  CrudDeleteDependency,
+  CrudDeletePreview,
+  CrudRecord,
+  CrudResource
+} from '@rcl/contracts';
 import React, { useEffect, useRef, useState } from 'react';
-import { deleteCrudRecord, previewCrudDelete, recordLabel } from '../api/crud-operations-api.js';
+import {
+  CrudDependenciesError,
+  deleteCrudRecord,
+  previewCrudDelete,
+  recordLabel
+} from '../api/crud-operations-api.js';
 
 export function CrudDeleteDialog({
   resource,
@@ -18,6 +28,7 @@ export function CrudDeleteDialog({
   const dialog = useRef<HTMLDialogElement>(null);
   const [preview, setPreview] = useState<CrudDeletePreview | null>(null);
   const [error, setError] = useState('');
+  const [dependencies, setDependencies] = useState<CrudDeleteDependency[]>([]);
   const [busy, setBusy] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
   const pending = useRef(false);
@@ -34,6 +45,7 @@ export function CrudDeleteDialog({
   useEffect(() => {
     const controller = new AbortController();
     setPreview(null);
+    setDependencies([]);
     setError('');
     setConfirmed(false);
     if (owner)
@@ -54,12 +66,14 @@ export function CrudDeleteDialog({
     pending.current = true;
     setBusy(true);
     setError('');
+    setDependencies([]);
     try {
       await deleteCrudRecord(resource, record, owner ? preview?.confirmation : undefined);
       if (mounted.current) onDeleted();
     } catch (error) {
       if (mounted.current) {
         setError(error instanceof Error ? error.message : 'No se pudo eliminar.');
+        if (error instanceof CrudDependenciesError) setDependencies(error.dependencies);
         setConfirmed(false);
         if (owner) setPreview(null);
       }
@@ -87,6 +101,7 @@ export function CrudDeleteDialog({
           : 'Si tiene datos relacionados, la eliminación se bloqueará. Solo un owner puede borrar en cascada.'}
       </p>
       {error && <p role="alert">{error}</p>}
+      {dependencies.length > 0 && <CrudDeleteDependencies dependencies={dependencies} />}
       {owner && !preview && !error && <output>Calculando filas afectadas…</output>}
       {owner && preview && (
         <>
@@ -126,6 +141,30 @@ export function CrudDeleteDialog({
         </button>
       </div>
     </dialog>
+  );
+}
+
+export function CrudDeleteDependencies({ dependencies }: { dependencies: CrudDeleteDependency[] }) {
+  return (
+    <div className="crud-operations-table-scroll">
+      <table>
+        <caption>Entidades relacionadas que impiden eliminar</caption>
+        <thead>
+          <tr>
+            <th scope="col">Entidad</th>
+            <th scope="col">Registros relacionados</th>
+          </tr>
+        </thead>
+        <tbody>
+          {dependencies.map((dependency) => (
+            <tr key={dependency.label}>
+              <td>{dependency.label}</td>
+              <td>{dependency.count}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }
 

@@ -1,4 +1,18 @@
-import type { CrudDeletePreview, CrudPageResult, CrudRecord, CrudResource } from '@rcl/contracts';
+import type {
+  CrudDeleteDependency,
+  CrudDeletePreview,
+  CrudPageResult,
+  CrudRecord,
+  CrudResource
+} from '@rcl/contracts';
+
+export class CrudDependenciesError extends Error {
+  constructor(public readonly dependencies: CrudDeleteDependency[]) {
+    super(
+      'Existen entidades relacionadas que impiden esta operación. Elimina o reasigna esas referencias antes de intentarlo de nuevo.'
+    );
+  }
+}
 
 async function crudRequest<T>(path: string, init: RequestInit = {}): Promise<T> {
   const response = await fetch(`/api/v1/crud-operations/${path}`, {
@@ -11,6 +25,8 @@ async function crudRequest<T>(path: string, init: RequestInit = {}): Promise<T> 
   if (!response.ok) {
     if (response.status === 401) throw new Error('La sesión ha caducado. Vuelve a iniciar sesión.');
     if (response.status === 403) throw new Error('No tienes permiso para realizar esta operación.');
+    if (body.error?.code === 'RELATED_RECORDS' && Array.isArray(body.error?.details?.dependencies))
+      throw new CrudDependenciesError(body.error.details.dependencies as CrudDeleteDependency[]);
     if (body.error?.code === 'DELETE_PREVIEW_CHANGED')
       throw new Error(
         'Los datos afectados han cambiado. Cancela y vuelve a revisar la eliminación.'

@@ -248,7 +248,10 @@ describe('admin CRUD with HTTP sessions and PostgreSQL constraints', () => {
   });
 
   it('blocks cascading deletes of records referenced by existing matches', async () => {
-    const [row] = await db.insert(schema.matches).values(matchValues).returning();
+    const [row] = await db
+      .insert(schema.matches)
+      .values({ ...matchValues, winnerTeamId: team1 })
+      .returning();
     if (!row) throw new Error('Missing match fixture');
     await db
       .insert(schema.matchGames)
@@ -266,9 +269,61 @@ describe('admin CRUD with HTTP sessions and PostgreSQL constraints', () => {
         .expect(200);
       const record = list.body.data.records[0];
       expect(record).toBeTruthy();
-      await send('delete', String(name), deleteBody(String(name), record)).expect(409);
+      const blocked = await send('delete', String(name), deleteBody(String(name), record)).expect(
+        409
+      );
+      expect(blocked.body.error.code).toBe('RELATED_RECORDS');
+      expect(blocked.body.error.details.dependencies.length).toBeGreaterThan(0);
+      if (name === 'teams') {
+        expect(blocked.body.error.details.dependencies).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({
+              label: 'Encuentros',
+              count: 1
+            }),
+            { label: 'Partidas', count: 1 },
+            { label: 'Historial de plantillas', count: 3 }
+          ])
+        );
+        expect(JSON.stringify(blocked.body.error.details)).not.toContain('relatedCount');
+        expect(JSON.stringify(blocked.body.error.details)).not.toContain('tokenHash');
+        expect(JSON.stringify(blocked.body.error.details)).not.toContain(row.id);
+      }
+      for (const dependency of blocked.body.error.details.dependencies)
+        expect(Object.keys(dependency).sort()).toEqual(['count', 'label']);
     }
     expect(await db.select().from(schema.matchGames)).toHaveLength(1);
+  });
+
+  it('reports only public entity labels and counts without exposing related records', async () => {
+    const season = await create('seasons', { name: 'Referenced season' });
+    for (let index = 0; index < 6; index++) {
+      const divisionName = `Related division ${index}`;
+      await db.insert(schema.divisions).values({ name: divisionName });
+      await db
+        .insert(schema.seasonsDivisions)
+        .values({ seasonName: 'Referenced season', divisionName });
+    }
+    const response = await send('delete', 'seasons', deleteBody('seasons', season)).expect(409);
+    const dependencies = response.body.error.details.dependencies;
+    expect(dependencies).toHaveLength(1);
+    expect(dependencies[0]).toEqual({ label: 'Competiciones', count: 6 });
+    const payload = JSON.stringify(response.body);
+    for (const sensitive of [
+      'Referenced season',
+      'Related division',
+      'seasonName',
+      'divisionName',
+      'seasons_divisions',
+      'examples'
+    ])
+      expect(payload).not.toContain(sensitive);
+    expect(
+      await db
+        .select()
+        .from(schema.seasonsDivisions)
+        .where(eq(schema.seasonsDivisions.seasonName, 'Referenced season'))
+    ).toHaveLength(6);
   });
 
   it('enforces dates, URLs and player references and rejects the removed season flag', async () => {

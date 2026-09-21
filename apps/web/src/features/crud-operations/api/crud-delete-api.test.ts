@@ -1,6 +1,10 @@
 import type { CrudResource } from '@rcl/contracts';
 import { afterEach, expect, it, vi } from 'vitest';
-import { deleteCrudRecord, previewCrudDelete } from './crud-operations-api.js';
+import {
+  CrudDependenciesError,
+  deleteCrudRecord,
+  previewCrudDelete
+} from './crud-operations-api.js';
 const resource: CrudResource = {
   name: 'rounds',
   label: 'Jornadas',
@@ -14,6 +18,23 @@ const record = {
   updatedAt: '2026-09-21T12:00:00.000001Z'
 };
 afterEach(() => vi.unstubAllGlobals());
+it('keeps the dependency list returned by a blocked deletion', async () => {
+  const dependencies = [{ label: 'Encuentros', count: 2 }];
+  vi.stubGlobal(
+    'fetch',
+    vi
+      .fn()
+      .mockResolvedValue(
+        new Response(
+          JSON.stringify({ error: { code: 'RELATED_RECORDS', details: { dependencies } } }),
+          { status: 409 }
+        )
+      )
+  );
+  const error = await deleteCrudRecord(resource, record).catch((error: unknown) => error);
+  expect(error).toBeInstanceOf(CrudDependenciesError);
+  expect(error).toMatchObject({ dependencies });
+});
 it('requests a preview without deleting and sends the reviewed token only on confirmation', async () => {
   const fetcher = vi
     .fn()
