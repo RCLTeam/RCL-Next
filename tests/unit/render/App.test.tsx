@@ -5,6 +5,26 @@ import { renderToString } from 'react-dom/server';
 import { App } from '../../../apps/web/src/App.js';
 import { siteRoutes } from '../../../apps/web/src/shared/navigation.js';
 
+test('Team detail direct links render their own page and keep Teams selected', () => {
+  for (const path of [
+    '/equipos/30000000-0000-4000-8000-000000000001',
+    '/equipos/lobos',
+    '/equipos/lobos/',
+    '/equipos/30000000-0000-4000-8000-000000000001/'
+  ]) {
+    const html = renderToString(React.createElement(App, { initialPath: path }));
+    assert.match(html, /id="equipo"/);
+    assert.match(html, /Cargando equipo/);
+    assert.match(html, /Volver a equipos/);
+    assert.doesNotMatch(html, /404 — Not Found/);
+    assert.ok(
+      (html.match(/<a\b[^>]*>/g) ?? []).some(
+        (tag) => tag.includes('href="/equipos"') && tag.includes('aria-current="page"')
+      )
+    );
+  }
+});
+
 test('App blocks replay upload until the session has been verified', () => {
   const html = renderToString(React.createElement(App, { initialPath: '/admin/rofl/upload' }));
   assert.match(html, /Comprobando acceso/);

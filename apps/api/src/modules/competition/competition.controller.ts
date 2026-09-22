@@ -4,6 +4,45 @@ import type { CompetitionService } from './competition.service.js';
 
 export class CompetitionController {
   constructor(private readonly service: CompetitionService) {}
+  matchDetail: RequestHandler = async (req, res) => {
+    res.json({
+      data: await this.service.matchDetail(
+        z
+          .string()
+          .min(1)
+          .max(400)
+          .regex(/^[\p{L}\p{N}-]+$/u)
+          .parse(req.params.matchId)
+      )
+    });
+  };
+  players: RequestHandler = async (_req, res) => {
+    res.json({ data: await this.service.players() });
+  };
+  playerDetail: RequestHandler = async (req, res) => {
+    res.json({
+      data: await this.service.playerDetail(
+        z
+          .string()
+          .min(1)
+          .max(400)
+          .regex(/^[\p{L}\p{N}-]+$/u)
+          .parse(req.params.playerId)
+      )
+    });
+  };
+  teamDetail: RequestHandler = async (req, res) => {
+    res.json({
+      data: await this.service.teamDetail(
+        z
+          .string()
+          .min(1)
+          .max(400)
+          .regex(/^[\p{L}\p{N}-]+$/u)
+          .parse(req.params.teamId)
+      )
+    });
+  };
   seasons: RequestHandler = async (_req, res) => {
     res.json({ data: await this.service.seasons() });
   };

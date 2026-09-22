@@ -31,9 +31,15 @@ export function App({ initialPath, wsUrl }: AppProps) {
     '/admin/database-transfer'
   ].includes(path);
   const route = siteRoutes.find((item) => item.path === path);
+  const teamId = /^\/equipos\/([^/]+)$/.exec(path)?.[1];
+  const playerId = /^\/jugadores\/([^/]+)$/.exec(path)?.[1];
+  const matchId = /^\/partidos\/([^/]+)$/.exec(path)?.[1];
   React.useEffect(() => {
     document.title = `${isAdmin ? (path === '/admin/database-transfer' ? 'Database Transfer · Admin' : path === '/admin/member-roles' ? 'Gestión de roles · Admin' : path === '/admin/crud' ? 'CRUD Operations · Admin' : path === '/admin/rofl/upload' ? 'ROFL Upload · Admin' : 'Admin') : (route?.title ?? 'Página no encontrada')} · Rebel Crown Legacy`;
-  }, [route, path, isAdmin]);
+    if (teamId) document.title = 'Equipo · Rebel Crown Legacy';
+    if (playerId) document.title = 'Jugador · Rebel Crown Legacy';
+    if (matchId) document.title = 'Partido · Rebel Crown Legacy';
+  }, [route, path, isAdmin, teamId, playerId, matchId]);
   const navigate = (nextPath: string) => {
     if (nextPath !== window.location.pathname) window.history.pushState({}, '', nextPath);
     setCurrentPath(nextPath);
@@ -43,8 +49,13 @@ export function App({ initialPath, wsUrl }: AppProps) {
   return (
     <AuthProvider>
       <NavigationContext.Provider value={{ path, navigate }}>
-        {route ? (
-          <LeaguePortal path={route.path} />
+        {route || teamId || playerId || matchId ? (
+          <LeaguePortal
+            path={route?.path ?? (matchId ? '/calendario' : playerId ? '/jugadores' : '/equipos')}
+            teamId={teamId}
+            playerId={playerId}
+            matchId={matchId}
+          />
         ) : (
           <SiteLayout>
             {isAdmin ? <AdminPage path={path} wsUrl={wsUrl} /> : <NotFoundPage />}

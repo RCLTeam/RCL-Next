@@ -42,6 +42,13 @@ function repository(): CompetitionRepository {
   const season = { id: seasonId, name: 'Demo', startsOn: null, endsOn: null };
   const division = { id: divisionId, seasonId, code: 'premier', name: 'Premier', sortOrder: 1 };
   return {
+    players: async () => [],
+    playerDetail: async () => undefined,
+    matchDirectory: async () => [],
+    match: async () => undefined,
+    matchGames: async () => [],
+    teamDirectory: async () => [],
+    teamDetail: async () => undefined,
     seasons: async () => [season],
     season: async (id) => (id === seasonId ? season : undefined),
     divisions: async () => [division],

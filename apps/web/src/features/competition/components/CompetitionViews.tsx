@@ -1,4 +1,5 @@
 import React, { type ReactNode, useState } from 'react';
+import { SiteLink } from '../../../shared/components/SiteLink.js';
 import './competition-filters.css';
 import './data-state.css';
 import './team-badge.css';
@@ -114,13 +115,24 @@ export function MatchCard({ match }: { match: Match }) {
           BO{match.bestOf} · {matchStatus[match.status]}
         </span>
       </div>
-      {stream ? (
-        <a className="text-link" href={stream} target="_blank" rel="noreferrer">
-          Ver emisión ↗
-        </a>
-      ) : (
-        <span className="meta">Sin emisión</span>
-      )}
+      <div className="match-actions">
+        {['completed', 'forfeit'].includes(match.status) && (
+          <SiteLink
+            className="text-link match-detail-link"
+            href={`/partidos/${encodeURIComponent(match.slug ?? match.id)}`}
+            aria-label={`Ver partido ${match.homeTeam?.name ?? ''} contra ${match.awayTeam?.name ?? ''}`}
+          >
+            Ver partido →
+          </SiteLink>
+        )}
+        {stream ? (
+          <a className="text-link match-stream-link" href={stream} target="_blank" rel="noreferrer">
+            Ver emisión ↗
+          </a>
+        ) : (
+          <span className="meta">Sin emisión</span>
+        )}
+      </div>
     </article>
   );
 }

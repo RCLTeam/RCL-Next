@@ -11,10 +11,57 @@ export interface Division {
   sortOrder: number;
 }
 export interface Team {
+  slug?: string | undefined;
   id: string;
   name: string;
   shortName: string | null;
   logoUrl: string | null;
+}
+export interface TeamMember {
+  playerSlug?: string | undefined;
+  playerId?: string | null;
+  id: string;
+  name: string;
+  role:
+    | 'top'
+    | 'jungle'
+    | 'mid'
+    | 'adc'
+    | 'support'
+    | 'substitute'
+    | 'coach'
+    | 'staff'
+    | 'partners';
+  isCaptain: boolean;
+  gameName: string | null;
+  riotTag: string | null;
+  countryCode: string | null;
+}
+export interface TeamDetail extends Team {
+  isActive: boolean;
+  seasonName: string;
+  divisionName: string;
+  members: TeamMember[];
+}
+
+export interface Player {
+  slug?: string | undefined;
+  id: string;
+  gameName: string;
+  riotTag: string | null;
+  countryCode: string | null;
+  isMain: boolean;
+  displayName: string | null;
+}
+export interface PlayerTeam extends Team {
+  seasonName: string;
+  divisionName: string;
+  role: TeamMember['role'];
+  isCaptain: boolean;
+  isActive: boolean;
+}
+export interface PlayerDetail extends Player {
+  teams: PlayerTeam[];
 }
 export interface Round {
   id: string;
@@ -23,6 +70,7 @@ export interface Round {
   name: string | null;
 }
 export interface Match {
+  slug?: string | undefined;
   id: string;
   homeTeam?: Team;
   awayTeam?: Team;

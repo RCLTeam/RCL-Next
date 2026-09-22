@@ -49,7 +49,11 @@ const matches = (table: PgTable, row: CrudRecord) =>
     )
   );
 
-export async function lockDeletePlan(db: Database, actorId: string) {
+export async function lockDeletePlan(
+  db: Database,
+  actorId: string,
+  purpose: 'preview' | 'delete' = 'delete'
+) {
   // A preview and its confirmed deletion each see a stable graph. Lock before any row lock,
   // including the actor, to serialize role changes and concurrent inserts/imports.
   try {
@@ -76,8 +80,9 @@ export async function lockDeletePlan(db: Database, actorId: string) {
     .select({ role: schema.discordUsers.role })
     .from(schema.discordUsers)
     .where(eq(schema.discordUsers.discordId, actorId));
-  if (actor?.role !== 'owner')
+  if (actor?.role !== 'owner' && !(purpose === 'preview' && actor?.role === 'admin'))
     throw new AppError(403, 'FORBIDDEN', 'Only an owner can delete related data.');
+  return actor.role;
 }
 
 export async function buildDeletePlan(db: Database, root: PgTable, row: CrudRecord) {

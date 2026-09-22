@@ -10,7 +10,7 @@ import type {
   Team
 } from '../types/competition.types.js';
 
-function useCollection<T>(path: string | null, revision: number): CollectionState<T> {
+export function useCollection<T>(path: string | null, revision: number): CollectionState<T> {
   const [result, setResult] = useState<{
     path: string | null;
     revision: number;
