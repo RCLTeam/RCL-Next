@@ -2048,13 +2048,6 @@
           "primaryKey": false,
           "notNull": false
         },
-        "is_active": {
-          "name": "is_active",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
-        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp with time zone",
@@ -2070,24 +2063,7 @@
           "default": "now()"
         }
       },
-      "indexes": {
-        "seasons_one_active_key": {
-          "name": "seasons_one_active_key",
-          "columns": [
-            {
-              "expression": "is_active",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "where": "\"seasons\".\"is_active\" = true",
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
+      "indexes": {},
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
@@ -2470,7 +2446,8 @@
       "schema": "public",
       "values": [
         "viewer",
-        "admin"
+        "admin",
+        "owner"
       ]
     },
     "public.game_side": {

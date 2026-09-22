@@ -32,31 +32,40 @@
   min-width: 0;
 }
 
+/* Division buttons */
 .rcl-site .league-switch button {
-  background: transparent;
-  border: 1px solid var(--stone);
-  padding: 9px 13px;
+  padding: 8px 16px;
+  background: transparent; 
+  border: none;
   color: var(--muted);
-  font: 700 11px var(--body-f);
-  text-transform: uppercase;
+  font: 700 11px var(--mono);
+  letter-spacing: 0.08em;
+  position: relative;
   clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
-  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition: color 0.2s ease, background-color 0.2s ease;
+}
+
+.rcl-site .league-switch button::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  padding: 2px; 
+  background: var(--line);
+  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
+  pointer-events: none;
 }
 
 .rcl-site .league-switch button[aria-pressed='true'] {
-  background: var(--purple);
-  border-color: var(--purple);
   color: var(--text);
+  background: var(--purple);
 }
 
-.rcl-site .league-switch button:hover {
-  border-color: var(--lime);
-}
-
-.rcl-site .league-switch button[data-division='ascend'][aria-pressed='true'] {
-  background: var(--lime);
-  border-color: var(--lime);
-  color: var(--void);
+.rcl-site .league-switch button[aria-pressed='true']::before {
+  display: none;
 }
 
 @media (max-width: 650px) {

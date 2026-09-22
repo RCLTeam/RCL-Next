@@ -24,7 +24,7 @@ describe('SiteLayout', () => {
 
   it('renders season HUD with active match when live', () => {
     const mockCompetition = {
-      season: { id: 's1', name: 'Temporada Invierno', isActive: true },
+      season: { id: 's1', name: 'Temporada Invierno' },
       calendar: {
         data: [
           {
@@ -68,19 +68,18 @@ describe('SiteLayout', () => {
     expect(html).toContain('class="is-live"');
   });
 
-  it('renders league switch slot when provided', () => {
+  it('renders navigation correctly without header switch', () => {
     const html = renderToString(
       <NavigationContext.Provider value={{ path: '/', navigate: () => {} }}>
-        <SiteLayout leagueSwitch={<div id="custom-switch">Switch</div>}>
+        <SiteLayout>
           <div>Content</div>
         </SiteLayout>
       </NavigationContext.Provider>
     );
 
-    expect(html).toContain('id="custom-switch"');
-    expect(html).toContain('Switch');
+    expect(html).toContain('id="site-navigation"');
+    expect(html).toContain('Inicio');
   });
-
   it('highlights current navigation link via aria-current', () => {
     const html = renderToString(
       <NavigationContext.Provider value={{ path: '/clasificacion', navigate: () => {} }}>

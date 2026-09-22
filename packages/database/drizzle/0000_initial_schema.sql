@@ -1,4 +1,4 @@
-CREATE TYPE "public"."app_role" AS ENUM('viewer', 'admin');--> statement-breakpoint
+CREATE TYPE "public"."app_role" AS ENUM('viewer', 'admin', 'owner');--> statement-breakpoint
 CREATE TYPE "public"."game_side" AS ENUM('blue', 'red');--> statement-breakpoint
 CREATE TYPE "public"."stage" AS ENUM('regular', 'playoff');--> statement-breakpoint
 CREATE TYPE "public"."match_status" AS ENUM('scheduled', 'live', 'completed', 'cancelled', 'forfeit');--> statement-breakpoint
@@ -43,7 +43,6 @@ CREATE TABLE "seasons" (
 	"name" varchar(120) PRIMARY KEY NOT NULL,
 	"starts_on" date,
 	"ends_on" date,
-	"is_active" boolean DEFAULT false NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
 	CONSTRAINT "seasons_dates_check" CHECK ("ends_on" IS NULL OR "starts_on" IS NULL OR "ends_on" >= "starts_on")
@@ -310,7 +309,6 @@ CREATE INDEX "audit_logs_entity_idx" ON "audit_logs" USING btree ("entity_type",
 CREATE INDEX "audit_logs_actor_discord_user_id_idx" ON "audit_logs" USING btree ("actor_discord_user_id");--> statement-breakpoint
 CREATE INDEX "auth_sessions_expires_at_idx" ON "auth_sessions" USING btree ("expires_at");--> statement-breakpoint
 CREATE INDEX "oauth_states_expires_at_idx" ON "oauth_states" USING btree ("expires_at");--> statement-breakpoint
-CREATE UNIQUE INDEX "seasons_one_active_key" ON "seasons" USING btree ("is_active") WHERE "seasons"."is_active" = true;--> statement-breakpoint
 CREATE INDEX "seasons_divisions_season_name_idx" ON "seasons_divisions" USING btree ("season_name");--> statement-breakpoint
 CREATE INDEX "seasons_divisions_division_name_idx" ON "seasons_divisions" USING btree ("division_name");--> statement-breakpoint
 CREATE INDEX "teams_season_division_id_idx" ON "teams" USING btree ("season_division_id");--> statement-breakpoint

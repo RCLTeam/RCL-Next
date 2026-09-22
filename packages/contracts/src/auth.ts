@@ -3,5 +3,5 @@ export interface AuthUser {
   username: string;
   globalName: string | null;
   avatarHash: string | null;
-  role: 'viewer' | 'admin';
+  role: 'viewer' | 'admin' | 'owner';
 }

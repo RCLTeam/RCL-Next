@@ -6,6 +6,10 @@ import { AuthService } from './modules/auth/auth.service.js';
 import { DiscordOAuthClient } from './modules/auth/discord.client.js';
 import { PostgresAuthRepository } from './modules/auth/postgres-auth.repository.js';
 import { PostgresCompetitionRepository } from './modules/competition/postgres-competition.repository.js';
+import { PostgresCrudOperationsRepository } from './modules/crud-operations/postgres-crud-operations.repository.js';
+import { NativePostgresBackupTools } from './modules/database-transfer/postgres-backup-tools.js';
+import { PostgresDatabaseTransferRepository } from './modules/database-transfer/postgres-database-transfer.repository.js';
+import { PostgresMemberRolesRepository } from './modules/member-roles/postgres-member-roles.repository.js';
 import { PostgresRoflUploadRepository } from './modules/rofl-upload/persistence/postgres-rofl-upload.repository.js';
 import { attachRoflUploadGateway } from './modules/rofl-upload/websocket/rofl-upload.gateway.js';
 
@@ -40,6 +44,12 @@ const authService = env.DISCORD_CLIENT_ID
   : undefined;
 
 const app = createApp({
+  databaseTransferRepository: new PostgresDatabaseTransferRepository(
+    connection.db,
+    new NativePostgresBackupTools(env.DATABASE_URL, env.POSTGRES_BIN_DIR)
+  ),
+  memberRolesRepository: new PostgresMemberRolesRepository(connection.db),
+  crudOperationsRepository: new PostgresCrudOperationsRepository(connection.db),
   repository: new PostgresCompetitionRepository(connection.db),
   checkDatabase,
   corsOrigin: env.CORS_ORIGIN,

@@ -1,0 +1,43 @@
+.rcl-site .crud-operations-data { min-width: 0; }
+.rcl-site .crud-operations-data-heading { display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; margin-bottom: 24px; }
+.rcl-site .crud-operations-data h2 { margin: 0; font: 700 42px/1 var(--display2); }
+.rcl-site .crud-operations-data p { color: var(--muted); max-width: 80ch; }
+@media (max-width: 650px) { .rcl-site .crud-operations-data-heading { flex-direction: column; } }
+
+.rcl-site .crud-operations-toolbar, .rcl-site .crud-operations-actions, .rcl-site .crud-operations-pagination { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.rcl-site .crud-operations-toolbar { justify-content: space-between; margin: 24px 0; }
+.rcl-site .crud-operations-toolbar label { display: grid; gap: 8px; width: min(100%, 440px); }
+.rcl-site .crud-operations-pagination { justify-content: flex-end; margin-top: 20px; }
+.rcl-site .crud-operations-data button:disabled { opacity: 0.45; cursor: not-allowed; }
+.rcl-site .crud-operations-data input, .rcl-site .crud-operations-data select { width: 100%; min-width: 0; min-height: 44px; background: var(--void); color: var(--text); border: 1px solid var(--stone); border-radius: 4px; padding: 10px 12px; font: inherit; color-scheme: dark; }
+.rcl-site .crud-operations-data :is(input, select, button):focus-visible { outline: 2px solid var(--lime); outline-offset: 3px; }
+.rcl-site .crud-operations-data input[type='checkbox'] { width: 24px; min-height: 24px; accent-color: var(--lime); }
+
+.rcl-site .crud-operations-editor { background: var(--panel); border: 1px solid var(--stone); border-top: 3px solid var(--lime); padding: 24px; margin-bottom: 24px; }
+.rcl-site .crud-operations-editor h3 { margin: 0; font-size: 24px; }
+.rcl-site .crud-operations-fields { border: 0; padding: 0; margin: 24px 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+.rcl-site .crud-operations-field { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.rcl-site .crud-operations-field small, .rcl-site .crud-operations-field [role='status'] { color: var(--muted); font-size: 12px; }
+.rcl-site .crud-operations-field input:disabled, .rcl-site .crud-operations-field select:disabled { opacity: 0.6; }
+@media (max-width: 750px) { .rcl-site .crud-operations-fields { grid-template-columns: 1fr; } .rcl-site .crud-operations-editor { padding: 18px; } }
+
+.rcl-site .crud-operations-table-scroll { overflow-x: auto; border: 1px solid var(--line); }
+.rcl-site .crud-operations-table-scroll table { width: 100%; border-collapse: collapse; text-align: left; font-size: 14px; }
+.rcl-site .crud-operations-table-scroll th { background: var(--panel-raised); color: var(--muted); font: 400 12px var(--mono); text-transform: uppercase; }
+.rcl-site .crud-operations-table-scroll :is(th, td) { padding: 16px; border-bottom: 1px solid var(--line); max-width: 280px; overflow-wrap: anywhere; }
+.rcl-site .crud-operations-table-scroll td:last-child { min-width: 180px; }
+.rcl-site .crud-operations-table-scroll tbody tr:hover { background: var(--panel); }
+.rcl-site .crud-operations-error { border: 1px solid var(--crimson); padding: 16px; margin-bottom: 20px; }
+.rcl-site .crud-operations-error p, .rcl-site .crud-operations-field [role='alert'] { color: var(--crimson); }
+.rcl-site .crud-operations-data .crud-operations-success { color: var(--win); border-left: 3px solid var(--win); padding: 12px; }
+.rcl-site .crud-operations-danger { background: var(--crimson); color: var(--text); }
+
+.rcl-site .crud-operations-delete-dialog { width: min(960px, calc(100vw - 32px)); max-height: calc(100dvh - 48px); overflow: auto; padding: 28px; border: 1px solid var(--crimson); background: var(--panel); color: var(--text); }
+.rcl-site .crud-operations-delete-dialog::backdrop { background: rgb(0 0 0 / 75%); }
+.rcl-site .crud-operations-delete-dialog h3 { margin-top: 0; }
+.rcl-site .crud-operations-delete-dialog [role='alert'] { color: var(--crimson); }
+.rcl-site .crud-operations-delete-dialog .crud-operations-actions { justify-content: flex-end; margin-top: 24px; }
+.rcl-site .crud-operations-delete-confirm { display: flex; align-items: flex-start; gap: 12px; margin-top: 24px; }
+.rcl-site .crud-operations-delete-confirm input { flex-shrink: 0; }
+.rcl-site .crud-operations-delete-dialog td { overflow-wrap: anywhere; }
+@media (max-width: 650px) { .rcl-site .crud-operations-delete-dialog { padding: 16px; } }

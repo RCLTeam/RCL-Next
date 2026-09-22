@@ -6,6 +6,15 @@ import { CompetitionController } from './modules/competition/competition.control
 import type { CompetitionRepository } from './modules/competition/competition.repository.js';
 import { competitionRouter } from './modules/competition/competition.router.js';
 import { CompetitionService } from './modules/competition/competition.service.js';
+import type { CrudOperationsRepository } from './modules/crud-operations/crud-operations.repository.js';
+import { crudOperationsRouter } from './modules/crud-operations/crud-operations.router.js';
+import { CrudOperationsService } from './modules/crud-operations/crud-operations.service.js';
+import type { DatabaseTransferRepository } from './modules/database-transfer/database-transfer.repository.js';
+import { databaseTransferRouter } from './modules/database-transfer/database-transfer.router.js';
+import { DatabaseTransferService } from './modules/database-transfer/database-transfer.service.js';
+import type { MemberRolesRepository } from './modules/member-roles/member-roles.repository.js';
+import { memberRolesRouter } from './modules/member-roles/member-roles.router.js';
+import { MemberRolesService } from './modules/member-roles/member-roles.service.js';
 import { errorHandler } from './shared/http.js';
 
 export function createApp(options: {
@@ -13,12 +22,66 @@ export function createApp(options: {
   checkDatabase: () => Promise<void>;
   corsOrigin: string;
   auth?: AuthOptions;
+  crudOperationsRepository?: CrudOperationsRepository;
+  memberRolesRepository?: MemberRolesRepository;
+  databaseTransferRepository?: DatabaseTransferRepository;
 }): express.Express {
   const app = express();
   app.disable('x-powered-by');
   app.use(helmet());
   app.use(cors({ origin: options.corsOrigin, credentials: true }));
+  if (options.auth && options.databaseTransferRepository) {
+    app.use(
+      '/api/v1/database-transfer',
+      databaseTransferRouter(
+        new DatabaseTransferService(options.databaseTransferRepository),
+        options.auth
+      )
+    );
+  } else {
+    app.use('/api/v1/database-transfer', (_req, res) =>
+      res.status(503).json({
+        error: {
+          code: 'DATABASE_TRANSFER_NOT_CONFIGURED',
+          message: 'Database transfer is not configured.'
+        }
+      })
+    );
+  }
   app.use(express.json({ limit: '1mb' }));
+  if (options.auth && options.memberRolesRepository) {
+    app.use(
+      '/api/v1/member-roles',
+      memberRolesRouter(new MemberRolesService(options.memberRolesRepository), options.auth)
+    );
+  } else {
+    app.use('/api/v1/member-roles', (_req, res) =>
+      res.status(503).json({
+        error: {
+          code: 'MEMBER_ROLES_NOT_CONFIGURED',
+          message: 'Member roles are not configured.'
+        }
+      })
+    );
+  }
+  if (options.auth && options.crudOperationsRepository) {
+    app.use(
+      '/api/v1/crud-operations',
+      crudOperationsRouter(
+        new CrudOperationsService(options.crudOperationsRepository),
+        options.auth
+      )
+    );
+  } else {
+    app.use('/api/v1/crud-operations', (_req, res) =>
+      res.status(503).json({
+        error: {
+          code: 'CRUD_OPERATIONS_NOT_CONFIGURED',
+          message: 'CRUD operations are not configured.'
+        }
+      })
+    );
+  }
   if (options.auth) {
     app.use('/api/v1/auth', authRouter(options.auth));
   } else {

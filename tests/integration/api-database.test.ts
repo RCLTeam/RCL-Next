@@ -48,4 +48,21 @@ test('HTTP -> controller -> service -> real repository -> embedded PostgreSQL', 
     .get(`/api/v1/divisions/${divisions.body.data[1].id}/standings`)
     .expect(200);
   assert.equal(ascend.body.data[0].played, 0);
+  await db
+    .insert(schema.seasons)
+    .values([
+      { name: 'Undated' },
+      { name: 'Older', startsOn: '2040-01-01' },
+      { name: 'Recent B', startsOn: '2060-01-01' },
+      { name: 'Recent A', startsOn: '2060-01-01' }
+    ]);
+  const ordered = await request(app).get('/api/v1/seasons').expect(200);
+  assert.deepEqual(
+    ordered.body.data.map((season: { name: string }) => season.name),
+    ['Recent A', 'Recent B', 'Temporada DEMO — datos ficticios', 'Older', 'Undated']
+  );
+  assert.equal(
+    ordered.body.data.some((season: object) => 'isActive' in season),
+    false
+  );
 });

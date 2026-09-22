@@ -20,7 +20,7 @@ import {
   varchar
 } from 'drizzle-orm/pg-core';
 
-export const appRole = pgEnum('app_role', ['viewer', 'admin']);
+export const appRole = pgEnum('app_role', ['viewer', 'admin', 'owner']);
 export const gameSide = pgEnum('game_side', ['blue', 'red']);
 export const stage = pgEnum('stage', ['regular', 'playoff']);
 export const matchStatus = pgEnum('match_status', [
@@ -111,7 +111,6 @@ export const seasons = pgTable(
     name: varchar('name', { length: 120 }).primaryKey(),
     startsOn: date('starts_on'),
     endsOn: date('ends_on'),
-    isActive: boolean('is_active').notNull().default(false),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
   },
@@ -119,8 +118,7 @@ export const seasons = pgTable(
     check(
       'seasons_dates_check',
       sql`"ends_on" IS NULL OR "starts_on" IS NULL OR "ends_on" >= "starts_on"`
-    ),
-    uniqueIndex('seasons_one_active_key').on(t.isActive).where(sql`"seasons"."is_active" = true`)
+    )
   ]
 );
 

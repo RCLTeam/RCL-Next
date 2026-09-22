@@ -22,7 +22,7 @@ const sessionName = (options: AuthOptions) =>
 export function requireAuth(options: AuthOptions, role?: AuthUser['role']): RequestHandler {
   return async (req, res, next) => {
     const user = await options.service.currentUser(cookie(req, sessionName(options)));
-    if (role && user.role !== role)
+    if (role && user.role !== role && !(role === 'admin' && user.role === 'owner'))
       throw new AppError(403, 'FORBIDDEN', 'Insufficient permissions.');
     res.locals.user = user;
     next();

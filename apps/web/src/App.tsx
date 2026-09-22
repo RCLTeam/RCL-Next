@@ -22,11 +22,18 @@ export function App({ initialPath, wsUrl }: AppProps) {
     return () => window.removeEventListener('popstate', onPopState);
   }, []);
   const requestedPath = currentPath.replace(/\/$/, '') || '/';
-  const path = requestedPath === '/admin/rofl/upload' ? '/admin' : requestedPath;
+  const path = requestedPath;
+  const isAdmin = [
+    '/admin',
+    '/admin/rofl/upload',
+    '/admin/crud',
+    '/admin/member-roles',
+    '/admin/database-transfer'
+  ].includes(path);
   const route = siteRoutes.find((item) => item.path === path);
   React.useEffect(() => {
-    document.title = `${path === '/admin' ? 'Admin' : (route?.title ?? 'Página no encontrada')} · Rebel Crown Legacy`;
-  }, [route, path]);
+    document.title = `${isAdmin ? (path === '/admin/database-transfer' ? 'Database Transfer · Admin' : path === '/admin/member-roles' ? 'Gestión de roles · Admin' : path === '/admin/crud' ? 'CRUD Operations · Admin' : path === '/admin/rofl/upload' ? 'ROFL Upload · Admin' : 'Admin') : (route?.title ?? 'Página no encontrada')} · Rebel Crown Legacy`;
+  }, [route, path, isAdmin]);
   const navigate = (nextPath: string) => {
     if (nextPath !== window.location.pathname) window.history.pushState({}, '', nextPath);
     setCurrentPath(nextPath);
@@ -40,7 +47,7 @@ export function App({ initialPath, wsUrl }: AppProps) {
           <LeaguePortal path={route.path} />
         ) : (
           <SiteLayout>
-            {path === '/admin' ? <AdminPage wsUrl={wsUrl} /> : <NotFoundPage />}
+            {isAdmin ? <AdminPage path={path} wsUrl={wsUrl} /> : <NotFoundPage />}
           </SiteLayout>
         )}
       </NavigationContext.Provider>
