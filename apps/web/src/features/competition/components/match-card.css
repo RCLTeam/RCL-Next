@@ -111,4 +111,9 @@
     justify-content: space-between;
   }
 }
-
+.rcl-site .match-row { position: relative; }
+.rcl-site .match-actions { display: grid; gap: 12px; }
+.rcl-site .match-detail-link::after { content: ''; position: absolute; inset: 0; }
+.rcl-site .match-detail-link:focus-visible::after { outline: 2px solid var(--lime); outline-offset: 3px; }
+.rcl-site .match-stream-link { position: relative; z-index: 1; }
+.rcl-site .match-row:has(.match-detail-link):hover { border-color: var(--lime); }

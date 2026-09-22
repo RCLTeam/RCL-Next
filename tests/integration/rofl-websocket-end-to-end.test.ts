@@ -21,6 +21,13 @@ import * as schema from '../../packages/database/src/schema.js';
 const fixtureRoflPath = path.resolve('apps/parser/data/EUW1-7982902321.rofl');
 
 const mockCompetitionRepo: CompetitionRepository = {
+  players: async () => [],
+  playerDetail: async () => undefined,
+  matchDirectory: async () => [],
+  match: async () => undefined,
+  matchGames: async () => [],
+  teamDirectory: async () => [],
+  teamDetail: async () => undefined,
   seasons: async () => [],
   season: async () => undefined,
   divisions: async () => [],

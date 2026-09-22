@@ -48,21 +48,18 @@ export function CrudDeleteDialog({
     setDependencies([]);
     setError('');
     setConfirmed(false);
-    if (owner)
-      previewCrudDelete(resource, record, controller.signal)
-        .then((value) => {
-          if (!controller.signal.aborted) setPreview(value);
-        })
-        .catch((error: unknown) => {
-          if (!controller.signal.aborted)
-            setError(
-              error instanceof Error ? error.message : 'No se pudo calcular la eliminación.'
-            );
-        });
+    previewCrudDelete(resource, record, controller.signal)
+      .then((value) => {
+        if (!controller.signal.aborted) setPreview(value);
+      })
+      .catch((error: unknown) => {
+        if (!controller.signal.aborted)
+          setError(error instanceof Error ? error.message : 'No se pudo calcular la eliminación.');
+      });
     return () => controller.abort();
-  }, [owner, record, resource]);
+  }, [record, resource]);
   async function remove() {
-    if (pending.current || (owner && (!preview?.allowed || !confirmed))) return;
+    if (pending.current || !preview?.allowed || (owner && !confirmed)) return;
     pending.current = true;
     setBusy(true);
     setError('');
@@ -98,28 +95,32 @@ export function CrudDeleteDialog({
         Esta acción es irreversible.{' '}
         {owner
           ? 'Se eliminarán el registro y los datos vinculados por relaciones en cascada.'
-          : 'Si tiene datos relacionados, la eliminación se bloqueará. Solo un owner puede borrar en cascada.'}
+          : 'Si tiene datos relacionados, la eliminación se bloqueará.'}
       </p>
       {error && <p role="alert">{error}</p>}
       {dependencies.length > 0 && <CrudDeleteDependencies dependencies={dependencies} />}
-      {owner && !preview && !error && <output>Calculando filas afectadas…</output>}
-      {owner && preview && (
+      {!preview && !error && <output>Calculando filas afectadas…</output>}
+      {preview && dependencies.length === 0 && (
         <>
           <CrudDeleteImpactTable preview={preview} />
           {!preview.allowed ? (
             <p role="alert">
-              Existen referencias protegidas que impiden eliminar. Reasígnalas antes de continuar.
+              {owner
+                ? 'Existen referencias protegidas que impiden eliminar. Reasígnalas antes de continuar.'
+                : 'Existen datos relacionados que impiden eliminar. Solo un owner puede borrar en cascada.'}
             </p>
           ) : (
-            <label className="crud-operations-delete-confirm">
-              <input
-                type="checkbox"
-                checked={confirmed}
-                disabled={busy}
-                onChange={(event) => setConfirmed(event.target.checked)}
-              />
-              He revisado las tablas y filas afectadas y confirmo su eliminación definitiva.
-            </label>
+            owner && (
+              <label className="crud-operations-delete-confirm">
+                <input
+                  type="checkbox"
+                  checked={confirmed}
+                  disabled={busy}
+                  onChange={(event) => setConfirmed(event.target.checked)}
+                />
+                He revisado las tablas y filas afectadas y confirmo su eliminación definitiva.
+              </label>
+            )
           )}
         </>
       )}
@@ -130,7 +131,7 @@ export function CrudDeleteDialog({
         <button
           type="button"
           className="btn-primary crud-operations-danger"
-          disabled={busy || (owner && (!preview?.allowed || !confirmed))}
+          disabled={busy || !preview?.allowed || (owner && !confirmed)}
           onClick={() => void remove()}
         >
           {busy
@@ -146,45 +147,48 @@ export function CrudDeleteDialog({
 
 export function CrudDeleteDependencies({ dependencies }: { dependencies: CrudDeleteDependency[] }) {
   return (
-    <div className="crud-operations-table-scroll">
-      <table>
-        <caption>Entidades relacionadas que impiden eliminar</caption>
-        <thead>
-          <tr>
-            <th scope="col">Entidad</th>
-            <th scope="col">Registros relacionados</th>
-          </tr>
-        </thead>
-        <tbody>
-          {dependencies.map((dependency) => (
-            <tr key={dependency.label}>
-              <td>{dependency.label}</td>
-              <td>{dependency.count}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <CrudDeleteImpactTable
+      caption="Entidades relacionadas que impiden eliminar"
+      preview={{
+        allowed: false,
+        confirmation: '',
+        impacts: dependencies.map(({ label, count }) => ({
+          table: label,
+          action: 'blocked',
+          count,
+          examples: []
+        }))
+      }}
+    />
   );
 }
 
-export function CrudDeleteImpactTable({ preview }: { preview: CrudDeletePreview }) {
+export function CrudDeleteImpactTable({
+  preview,
+  caption
+}: {
+  preview: CrudDeletePreview;
+  caption?: string;
+}) {
   return (
     <div className="crud-operations-table-scroll">
       <table>
         <caption>
-          Alcance de la eliminación ·{' '}
-          {preview.impacts
-            .filter((impact) => impact.action === 'delete')
-            .reduce((sum, impact) => sum + impact.count, 0)}{' '}
-          filas que se eliminarán
+          {caption ?? (
+            <>
+              Alcance de la eliminación ·{' '}
+              {preview.impacts
+                .filter((impact) => impact.action === 'delete')
+                .reduce((sum, impact) => sum + impact.count, 0)}{' '}
+              filas afectadas por el borrado en cascada
+            </>
+          )}
         </caption>
         <thead>
           <tr>
             <th scope="col">Tabla</th>
             <th scope="col">Efecto</th>
             <th scope="col">Filas</th>
-            <th scope="col">Identificadores (hasta 5 ejemplos)</th>
           </tr>
         </thead>
         <tbody>
@@ -199,15 +203,6 @@ export function CrudDeleteImpactTable({ preview }: { preview: CrudDeletePreview 
                     : 'Bloquea el borrado'}
               </td>
               <td>{impact.count}</td>
-              <td>
-                {impact.examples.map((key) => (
-                  <div key={JSON.stringify(key)}>
-                    {Object.entries(key)
-                      .map(([name, value]) => `${name}: ${value}`)
-                      .join(' · ')}
-                  </div>
-                ))}
-              </td>
             </tr>
           ))}
         </tbody>

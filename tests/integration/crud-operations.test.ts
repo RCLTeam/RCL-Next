@@ -386,6 +386,23 @@ describe('admin CRUD with HTTP sessions and PostgreSQL constraints', () => {
       .expect(422);
   });
 
+  it('lets admins preview and delete unrelated records but denies preview access to viewers', async () => {
+    const season = await create('seasons', { name: 'Admin preview without dependencies' });
+    const body = deleteBody('seasons', season);
+    await request(app)
+      .post(`${endpoint('seasons')}/delete-preview`)
+      .set('Cookie', `rcl_session=${viewerToken}`)
+      .set('Origin', origin)
+      .send(body)
+      .expect(403);
+    const response = await send('post', 'seasons/delete-preview', body).expect(200);
+    expect(response.body.data.allowed).toBe(true);
+    expect(response.body.data.impacts).toMatchObject([
+      { table: 'seasons', action: 'delete', count: 1 }
+    ]);
+    await send('delete', 'seasons', body).expect(204);
+  });
+
   it('previews and confirms owner-only cascades, rejecting stale plans and revoked ownership', async () => {
     const ownerId = '723456789012345678';
     const ownerToken = '7'.repeat(64);
@@ -476,12 +493,14 @@ describe('admin CRUD with HTTP sessions and PostgreSQL constraints', () => {
         .set('Cookie', session)
         .set('Origin', origin)
         .send({ ...body, cascadeConfirmation: confirmation });
-    await request(app)
+    const adminPreviewResponse = await request(app)
       .post(`${endpoint('seasons')}/delete-preview`)
       .set('Cookie', cookie)
       .set('Origin', origin)
       .send(body)
-      .expect(403);
+      .expect(200);
+    const adminPreview = adminPreviewResponse.body.data as CrudDeletePreview;
+    expect(adminPreview.allowed).toBe(false);
     await request(app)
       .post(`${endpoint('seasons')}/delete-preview`)
       .set('Cookie', ownerCookie)
@@ -489,6 +508,7 @@ describe('admin CRUD with HTTP sessions and PostgreSQL constraints', () => {
       .expect(403);
     await send('delete', 'seasons', body).expect(409);
     const preview = (await previewRequest().expect(200)).body.data as CrudDeletePreview;
+    expect(adminPreview.impacts).toEqual(preview.impacts);
     expect(preview.allowed).toBe(true);
     expect(preview.impacts.map(({ table, count, action }) => ({ table, count, action }))).toEqual(
       expect.arrayContaining([

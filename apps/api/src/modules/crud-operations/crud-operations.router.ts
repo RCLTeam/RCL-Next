@@ -17,7 +17,7 @@ export function crudOperationsRouter(service: CrudOperationsService, auth: AuthO
     res.json({ data: await service.list(String(req.params.resource), req.query) })
   );
   router.use(requireTrustedOrigin(auth.frontendOrigin));
-  router.post('/:resource/delete-preview', requireAuth(auth, 'owner'), async (req, res) => {
+  router.post('/:resource/delete-preview', async (req, res) => {
     res.json({
       data: await service.previewDelete(
         String(req.params.resource),

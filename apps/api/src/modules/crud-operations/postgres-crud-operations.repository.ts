@@ -60,7 +60,7 @@ const project = (resource: ResourceDefinition, record: CrudRecord): CrudRecord =
   );
 
 // Inspect the existing FK definitions so the admin cannot accidentally invoke ON DELETE CASCADE.
-async function assertNoDependents(db: Database, table: PgTable, row: CrudRecord) {
+async function findDependents(db: Database, table: PgTable, row: CrudRecord) {
   const sourceColumns = getTableColumns(table);
   const dependencies: CrudDeleteDependency[] = [];
   for (const dependent of Object.values(schema)) {
@@ -102,6 +102,11 @@ async function assertNoDependents(db: Database, table: PgTable, row: CrudRecord)
       count: found.count
     });
   }
+  return dependencies;
+}
+
+async function assertNoDependents(db: Database, table: PgTable, row: CrudRecord) {
+  const dependencies = await findDependents(db, table, row);
   if (dependencies.length)
     throw new AppError(
       409,
@@ -163,7 +168,7 @@ export class PostgresCrudOperationsRepository implements CrudOperationsRepositor
   async previewDelete(descriptor: ResourceDefinition, mutation: CrudMutation) {
     const resource = storedResource(descriptor);
     return this.db.transaction(async (tx) => {
-      await lockDeletePlan(tx, mutation.actorId);
+      const role = await lockDeletePlan(tx, mutation.actorId, 'preview');
       const [before] = records(
         await tx
           .select(selection(resource.table))
@@ -173,7 +178,10 @@ export class PostgresCrudOperationsRepository implements CrudOperationsRepositor
       if (!before) throw notFound('Record');
       if (before.updatedAt !== mutation.version)
         throw conflict('This record changed. Reload it before deleting.');
-      return (await buildDeletePlan(tx, resource.table, before)).preview;
+      const { preview } = await buildDeletePlan(tx, resource.table, before);
+      if (role !== 'owner')
+        preview.allowed = (await findDependents(tx, resource.table, before)).length === 0;
+      return preview;
     });
   }
 

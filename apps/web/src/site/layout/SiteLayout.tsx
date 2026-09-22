@@ -85,7 +85,13 @@ function SiteNavigation({ onNavigate }: { onNavigate: () => void }) {
         <SiteLink
           key={route.path}
           href={route.path}
-          aria-current={path === route.path ? 'page' : undefined}
+          aria-current={
+            path === route.path ||
+            (route.path === '/calendario' && path.startsWith('/partidos/')) ||
+            (['/equipos', '/jugadores'].includes(route.path) && path.startsWith(`${route.path}/`))
+              ? 'page'
+              : undefined
+          }
           onClick={onNavigate}
         >
           {route.title}

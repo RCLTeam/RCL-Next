@@ -41,9 +41,148 @@ test('HTTP -> controller -> service -> real repository -> embedded PostgreSQL', 
   assert.equal(standings.body.data[0].team.name, 'Lobos DEMO');
   assert.equal(standings.body.data[0].wins, 1);
   assert.equal(standings.body.data[1].losses, 1);
+  const teamId = standings.body.data[0].team.id as string;
+  const teamList = await request(app).get(`/api/v1/divisions/${divisionId}/teams`).expect(200);
+  assert.equal(
+    teamList.body.data.find((team: { id: string }) => team.id === teamId).slug,
+    'lobos-demo'
+  );
+  const namedTeam = await request(app).get('/api/v1/teams/lobos-demo').expect(200);
+  assert.equal(namedTeam.body.data.id, teamId);
+  await db.insert(schema.discordUsers).values([
+    { discordId: 'test-coach', username: 'Coach sin cuenta' },
+    { discordId: 'test-staff', username: 'Staff sin cuenta' }
+  ]);
+  await db.insert(schema.teamMemberships).values([
+    { teamId, discordUserId: 'test-coach', role: 'coach' },
+    { teamId, discordUserId: 'test-staff', role: 'staff' }
+  ]);
+  await db
+    .insert(schema.players)
+    .values({ discordUserId: '900000000000000001', gameName: 'Alternate', isMain: false });
+  const detail = await request(app).get(`/api/v1/teams/${teamId}`).expect(200);
+  assert.equal(detail.body.data.name, 'Lobos DEMO');
+  assert.equal(detail.body.data.divisionName, 'Premier DEMO');
+  assert.equal(detail.body.data.members.length, 7);
+  const captain = detail.body.data.members.find(
+    (member: { isCaptain: boolean }) => member.isCaptain
+  );
+  assert.equal(captain.gameName, 'Jugador Demo 1');
+  const playerId = captain.playerId as string;
+  assert.equal(captain.playerSlug, 'jugador-demo-1-demo');
+  const playerList = await request(app).get('/api/v1/players').expect(200);
+  assert.equal(playerList.body.data.length, 21);
+  assert.equal(
+    playerList.body.data.some((player: { id: string }) => player.id === playerId),
+    true
+  );
+  const playerDetail = await request(app).get(`/api/v1/players/${playerId}`).expect(200);
+  assert.equal(playerDetail.body.data.gameName, 'Jugador Demo 1');
+  assert.equal(playerDetail.body.data.slug, 'jugador-demo-1-demo');
+  assert.equal(playerDetail.body.data.teams[0].slug, 'lobos-demo');
+  const namedPlayer = await request(app).get('/api/v1/players/jugador-demo-1-demo').expect(200);
+  assert.equal(namedPlayer.body.data.id, playerId);
+  assert.equal(playerDetail.body.data.isMain, true);
+  assert.equal(playerDetail.body.data.teams.length, 1);
+  assert.equal(playerDetail.body.data.teams[0].id, teamId);
+  assert.equal(playerDetail.body.data.teams[0].role, 'top');
+  assert.equal(playerDetail.body.data.teams[0].isCaptain, true);
+  assert.equal(playerDetail.body.data.teams[0].divisionName, 'Premier DEMO');
+  assert.equal('puuid' in playerDetail.body.data, false);
+  assert.equal('discordUserId' in playerDetail.body.data, false);
+  const [unlinked] = await db
+    .insert(schema.players)
+    .values({ gameName: 'Sin vínculo' })
+    .returning();
+  const unlinkedDetail = await request(app).get(`/api/v1/players/${unlinked?.id}`).expect(200);
+  assert.equal(unlinkedDetail.body.data.displayName, null);
+  assert.deepEqual(unlinkedDetail.body.data.teams, []);
+  await request(app).get('/api/v1/players/not-a-uuid').expect(404);
+  await request(app).get('/api/v1/players/invalid%21').expect(422);
+  await request(app).get('/api/v1/players/40000000-0000-4000-8000-000000000099').expect(404);
+  const coach = detail.body.data.members.find(
+    (member: { role: string }) => member.role === 'coach'
+  );
+  assert.equal(coach.name, 'Coach sin cuenta');
+  assert.equal(coach.gameName, null);
+  assert.equal(
+    detail.body.data.members.some((member: { role: string }) => member.role === 'staff'),
+    true
+  );
+  assert.equal(JSON.stringify(detail.body.data).includes('puuid'), false);
+  await request(app).get('/api/v1/teams/not-a-uuid').expect(404);
+  await request(app).get('/api/v1/teams/invalid%21').expect(422);
+  await request(app).get('/api/v1/teams/30000000-0000-4000-8000-000000000099').expect(404);
+  const [emptyTeam] = await db
+    .insert(schema.teams)
+    .values({ name: 'Sin plantilla', seasonDivisionId: divisionId })
+    .returning();
+  const emptyDetail = await request(app).get(`/api/v1/teams/${emptyTeam?.id}`).expect(200);
+  assert.deepEqual(emptyDetail.body.data.members, []);
   const calendar = await request(app).get(`/api/v1/divisions/${divisionId}/calendar`).expect(200);
   assert.equal(calendar.body.data.length, 2);
   assert.equal(calendar.body.data[0].round.name, 'Jornada 1');
+  const completedMatch = calendar.body.data.find(
+    (match: { status: string }) => match.status === 'completed'
+  );
+  const report = await request(app).get(`/api/v1/matches/${completedMatch.slug}`).expect(200);
+  assert.equal(report.body.data.homeTeam.id, teamId);
+  assert.equal(report.body.data.games.length, 1);
+  assert.equal(report.body.data.games[0].participants.length, 10);
+  const participant = report.body.data.games[0].participants[0];
+  assert.equal(participant.stats.kills, 5);
+  assert.equal(participant.stats.goldEarned, null);
+  assert.equal(participant.build.item0, 1001);
+  assert.equal(participant.runes.primaryKeystoneId, 8010);
+  assert.equal('puuid' in participant, false);
+  assert.equal('createdAt' in participant.stats, false);
+  const [secondMap] = await db
+    .insert(schema.matchGames)
+    .values({
+      matchesId: completedMatch.id,
+      gameNumber: 2,
+      blueTeamId: completedMatch.awayTeam.id,
+      redTeamId: teamId,
+      winnerTeamId: teamId,
+      durationSeconds: 1500
+    })
+    .returning();
+  assert.ok(secondMap);
+  await db.transaction(async (tx) => {
+    const [info] = await tx
+      .insert(schema.playerGameInfo)
+      .values({
+        matchGameId: secondMap.id,
+        playerId,
+        teamId,
+        side: 'red',
+        champion: 'Ahri',
+        position: 'MIDDLE'
+      })
+      .returning();
+    assert.ok(info);
+    await tx.insert(schema.playerGameStats).values({ id: info.id });
+    await tx.insert(schema.playerGameBuild).values({ id: info.id });
+    await tx.insert(schema.playerGameRunes).values({ id: info.id, ...participant.runes });
+  });
+  const multiMap = await request(app).get(`/api/v1/matches/${completedMatch.id}`).expect(200);
+  assert.deepEqual(
+    multiMap.body.data.games.map((game: { gameNumber: number }) => game.gameNumber),
+    [1, 2]
+  );
+  const sparse = multiMap.body.data.games[1].participants[0];
+  assert.equal(sparse.teamId, teamId);
+  assert.equal(sparse.side, 'red');
+  assert.equal(sparse.stats.kills, 0);
+  assert.equal(sparse.stats.goldEarned, null);
+  assert.equal(sparse.build.item0, 0);
+  assert.equal(sparse.runes.primaryKeystoneId, 8010);
+  const scheduled = calendar.body.data.find(
+    (match: { status: string }) => match.status === 'scheduled'
+  );
+  await request(app).get(`/api/v1/matches/${scheduled.id}`).expect(404);
+  await request(app).get('/api/v1/matches/no-existe').expect(404);
+  await request(app).get('/api/v1/matches/invalid%21').expect(422);
   const ascend = await request(app)
     .get(`/api/v1/divisions/${divisions.body.data[1].id}/standings`)
     .expect(200);
