@@ -1,9 +1,10 @@
 /* Navigation links — default, hover and current page (aria-current) */
 
 .rcl-site #site-navigation {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px 22px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  width: 100%;
 }
 
 .rcl-site #site-navigation a,
@@ -12,8 +13,11 @@
   font: 700 11px var(--mono);
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
   padding: 9px 0;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
   position: relative;
   transition: color 0.2s ease;
 }
@@ -31,9 +35,19 @@
   border-bottom: 2px solid var(--lime);
 }
 
-/* Desktop Styles */
+@media (min-width: 651px) {
+  .rcl-site #site-navigation {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px 22px;
+  }
+}
+
+/* Desktop navigation */
+
 @media (min-width: 951px) {
   .rcl-site #site-navigation {
+    display: flex;
+    width: auto;
     grid-column: 2;
     grid-row: 1;
     flex-wrap: wrap;
@@ -53,11 +67,13 @@
   }
 
   /* Quitamos el border-bottom estático de móvil */
+
   .rcl-site #site-navigation a[aria-current='page'] {
     border-bottom: 0;
   }
 
   /* Creación de la línea neón */
+
   .rcl-site #site-navigation a::after {
     content: '';
     position: absolute;
@@ -77,19 +93,3 @@
     width: 100%;
   }
 }
-
-@media (max-width: 950px) {
-  .rcl-site #site-navigation {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    width: 100%;
-  }
-}
-
-@media (max-width: 650px) {
-  .rcl-site #site-navigation {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 14px;
-  }
-}
-

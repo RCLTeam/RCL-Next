@@ -4,13 +4,22 @@
 
 .rcl-site .budget-bar {
   display: flex;
-  align-items: center;
   justify-content: space-between;
   gap: 24px;
-  padding: 28px;
   border: 1px solid var(--stone);
   border-left: 3px solid var(--purple);
   margin-bottom: 20px;
+  padding: 22px;
+  align-items: flex-start;
+  flex-direction: column;
+}
+
+@media (min-width: 651px) {
+  .rcl-site .budget-bar {
+    padding: 28px;
+    align-items: center;
+    flex-direction: row;
+  }
 }
 
 .rcl-site .budget-bar .eyebrow {
@@ -23,20 +32,18 @@
   margin-bottom: 0;
 }
 
-@media (max-width: 650px) {
-  .rcl-site .budget-bar {
-    align-items: flex-start;
-    flex-direction: column;
-    padding: 22px;
-  }
-}
-
 .rcl-site .page-content .budget-bar {
   background-color: var(--panel);
   border-color: var(--line);
   border-radius: 0;
-  padding: 28px;
   border-left-color: var(--purple);
+  padding: 20px;
+}
+
+@media (min-width: 651px) {
+  .rcl-site .page-content .budget-bar {
+    padding: 28px;
+  }
 }
 
 .rcl-site .budget-stats {
@@ -57,30 +64,30 @@
   text-transform: uppercase;
 }
 
-@media (max-width: 650px) {
-  .rcl-site .page-content .budget-bar {
-    padding: 20px;
-  }
-}
-
 /* Team grid */
 
 .rcl-site .fantasy-grid {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 18px;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 20px 12px;
 }
 
-@media (max-width: 850px) {
+@media (min-width: 480px) {
   .rcl-site .fantasy-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
-@media (max-width: 650px) {
+@media (min-width: 651px) {
   .rcl-site .fantasy-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 20px 12px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 18px;
+  }
+}
+
+@media (min-width: 851px) {
+  .rcl-site .fantasy-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
   }
 }
 
@@ -89,11 +96,17 @@
 .rcl-site .fantasy-card {
   display: flex;
   flex-direction: column;
-  padding: 20px;
   min-height: 260px;
   border: 1px dashed var(--stone);
   background: linear-gradient(140deg, color-mix(in srgb, var(--purple) 15%, var(--panel)), var(--panel) 70%);
   transition: transform 180ms, border-color 180ms;
+  padding: 16px;
+}
+
+@media (min-width: 651px) {
+  .rcl-site .fantasy-card {
+    padding: 20px;
+  }
 }
 
 .rcl-site .fantasy-card .role-chip {
@@ -119,12 +132,6 @@
   font: 10px var(--mono);
   color: var(--muted);
   margin-bottom: 0;
-}
-
-@media (max-width: 650px) {
-  .rcl-site .fantasy-card {
-    padding: 16px;
-  }
 }
 
 .rcl-site .page-content .fantasy-card {

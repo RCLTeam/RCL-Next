@@ -1,12 +1,11 @@
-import React, { useEffect, useState } from 'react';
-
 export interface GameAsset {
   name: string;
   image?: string | undefined;
 }
+export type GameAssetKind = 'item' | 'champion' | 'summoner' | 'rune';
 export type GameCatalog = Record<string, GameAsset>;
 const CDN = 'https://ddragon.leagueoflegends.com';
-const fragments: GameCatalog = {
+export const statShardAssets: GameCatalog = {
   'rune:5001': { name: 'Vida' },
   'rune:5002': { name: 'Armadura' },
   'rune:5003': { name: 'Resistencia mágica' },
@@ -20,7 +19,7 @@ async function json(url: string) {
   if (!response.ok) throw new Error('Catalog unavailable');
   return response.json();
 }
-export async function loadGameCatalog(): Promise<GameCatalog> {
+async function fetchGameCatalog(): Promise<{ catalog: GameCatalog; complete: boolean }> {
   const versions = await json(`${CDN}/api/versions.json`);
   const version = versions[0];
   if (typeof version !== 'string' || !/^\d+\.\d+\.\d+$/.test(version))
@@ -31,7 +30,7 @@ export async function loadGameCatalog(): Promise<GameCatalog> {
       json(`${base}/data/es_ES/${file}.json`)
     )
   );
-  const catalog: GameCatalog = {};
+  const catalog: GameCatalog = { ...statShardAssets };
   for (const [index, kind] of ['item', 'champion', 'summoner'].entries()) {
     const result = results[index];
     if (result?.status !== 'fulfilled') continue;
@@ -56,53 +55,22 @@ export async function loadGameCatalog(): Promise<GameCatalog> {
       }
     }
   }
-  return catalog;
+  return { catalog, complete: results.every((result) => result.status === 'fulfilled') };
 }
-export function useGameCatalog() {
-  const [catalog, setCatalog] = useState<GameCatalog>({});
-  useEffect(() => {
-    let active = true;
-    catalogRequest ??= loadGameCatalog().catch(() => {
-      catalogRequest = undefined;
-      return {};
-    });
-    void catalogRequest.then((data) => {
-      if (active) setCatalog(data);
-    });
-    return () => {
-      active = false;
-    };
-  }, []);
-  return catalog;
-}
-export function GameIcon({
-  kind,
-  id,
-  catalog,
-  label = false
-}: { kind: string; id: string | number | null; catalog: GameCatalog; label?: boolean }) {
-  const asset = catalog[`${kind}:${id}`] ?? fragments[`${kind}:${id}`];
-  const [failed, setFailed] = useState<string>();
-  const fallback =
-    kind === 'champion'
-      ? String(id)
-      : `${kind === 'item' ? 'Objeto' : kind === 'summoner' ? 'Hechizo' : 'Runa'} ${id}`;
-  const name = id ? (asset?.name ?? fallback) : 'Hueco vacío';
-  return (
-    <span className={`game-asset ${label ? 'with-label' : ''}`} title={name}>
-      {asset?.image && failed !== asset.image ? (
-        <img
-          src={asset.image}
-          alt={label ? '' : name}
-          loading="lazy"
-          onError={() => setFailed(asset.image)}
-        />
-      ) : (
-        <span className="game-asset-fallback" aria-label={name}>
-          {id ? String(id).slice(0, 8) : '—'}
-        </span>
-      )}
-      {label && <span>{name}</span>}
-    </span>
-  );
+
+/** Shared by every consumer, including callers outside React. Failed or partial loads can retry. */
+export function loadGameCatalog(): Promise<GameCatalog> {
+  if (!catalogRequest) {
+    catalogRequest = fetchGameCatalog().then(
+      ({ catalog, complete }) => {
+        if (!complete) catalogRequest = undefined;
+        return catalog;
+      },
+      (error: unknown) => {
+        catalogRequest = undefined;
+        throw error;
+      }
+    );
+  }
+  return catalogRequest;
 }

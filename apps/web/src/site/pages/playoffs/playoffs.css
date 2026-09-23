@@ -1,6 +1,9 @@
+/* Bracket rounds remain side by side; only the bracket container scrolls on small screens. */
+
 /* Page-specific styles: playoffs. Base styles, states and responsive rules stay with their component. */
 
 /* playoffs page and components */
+
 .rcl-site .bracket-scroll {
   overflow-x: auto;
   padding: 6px;

@@ -3,18 +3,18 @@ import { DivisionSwitch } from '../../features/competition/components/Competitio
 import { useCompetition } from '../../features/competition/hooks/useCompetition.js';
 import type { SitePath } from '../../shared/navigation.js';
 import { CalendarPage } from '../pages/calendar/CalendarPage.js';
-import { MatchDetailPage } from '../pages/calendar/MatchDetailPage.js';
 import { ChampionsPage } from '../pages/champions/ChampionsPage.js';
 import { CrystalBallPage } from '../pages/crystal-ball/CrystalBallPage.js';
 import { FantasyPage } from '../pages/fantasy/FantasyPage.js';
 import { HomePage } from '../pages/home/HomePage.js';
 import { LeaguesPage } from '../pages/leagues/LeaguesPage.js';
-import { PlayerDetailPage } from '../pages/players/PlayerDetailPage.js';
+import { MatchDetailPage } from '../pages/match-details/MatchDetailPage.js';
+import { PlayerDetailPage } from '../pages/player-details/PlayerDetailPage.js';
 import { PlayersPage } from '../pages/players/PlayersPage.js';
 import { PlayoffsPage } from '../pages/playoffs/PlayoffsPage.js';
 import { PredictionsPage } from '../pages/predictions/PredictionsPage.js';
 import { StandingsPage } from '../pages/standings/StandingsPage.js';
-import { TeamDetailPage } from '../pages/teams/TeamDetailPage.js';
+import { TeamDetailPage } from '../pages/team-details/TeamDetailPage.js';
 import { TeamsPage } from '../pages/teams/TeamsPage.js';
 import { SiteLayout } from './SiteLayout.js';
 

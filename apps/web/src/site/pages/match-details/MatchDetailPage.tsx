@@ -3,61 +3,70 @@ import React, { useEffect, useState } from 'react';
 import { TeamBadge } from '../../../features/competition/components/CompetitionViews.js';
 import { PageLayout } from '../../../shared/components/PageLayout.js';
 import { SiteLink } from '../../../shared/components/SiteLink.js';
-import { type GameCatalog, GameIcon, useGameCatalog } from './match-assets.js';
-import { matchPosition, positionRows, statGroups, statNumber } from './match-stats.js';
+import { GameIcon } from '../../../shared/riot/GameIcon.js';
+import type { GameCatalog } from '../../../shared/riot/data-dragon.service.js';
+import { useGameCatalog } from '../../../shared/riot/useGameCatalog.js';
+import {
+  formatMatchStat,
+  matchPosition,
+  positionRows,
+  statGroups,
+  statNumber
+} from './match-stats.js';
 import './match-detail.css';
 
 function PlayerSummary({
   player,
-  catalog
-}: { player: MatchParticipant | undefined; catalog: GameCatalog }) {
-  if (!player) return <div className="match-player empty-state">Jugador no disponible</div>;
+  catalog,
+  teamName
+}: { player: MatchParticipant | undefined; catalog: GameCatalog; teamName: string }) {
+  if (!player) return <div className="player-summary empty-state">Jugador no disponible</div>;
   const build = player.build;
+  const slots = ['item0', 'item1', 'item2', 'item3', 'item4', 'item5'] as const;
   return (
-    <div className="match-player">
-      <div className="match-player-identity">
-        <GameIcon kind="champion" id={player.champion} catalog={catalog} />
-        <div>
-          <strong>
-            {player.gameName}
-            {player.riotTag ? `#${player.riotTag}` : ''}
-          </strong>
-          <span>
-            {player.champion}
-            {player.stats?.isMvp ? ' · MVP' : ''}
-          </span>
+    <article className="player-summary" aria-label={`Resumen de ${player.gameName}`}>
+      <p className="player-summary-team">{teamName}</p>
+      <div className="player-summary-slots" aria-label={`Build de ${player.gameName}`}>
+        <div className="player-summary-group spells-group">
+          <div className="spell-item">
+            <GameIcon kind="summoner" id={build?.summonerSpell1Id ?? null} catalog={catalog} />
+          </div>
+          <div className="spell-item">
+            <GameIcon kind="summoner" id={build?.summonerSpell2Id ?? null} catalog={catalog} />
+          </div>
         </div>
-        <strong className="player-kda" title="Asesinatos / Muertes / Asistencias">
+        <div className="player-summary-group trinket-group" aria-label="Trinket">
+          <GameIcon kind="item" id={build?.trinket ?? null} catalog={catalog} />
+        </div>
+        <div className="player-summary-group items-group">
+          {slots.map((slot, index) => (
+            <div className="player-summary-slot" key={slot} aria-label={`Objeto ${index + 1}`}>
+              <GameIcon kind="item" id={build?.[slot] ?? null} catalog={catalog} />
+            </div>
+          ))}
+        </div>
+        <div className="player-summary-group champion-group">
+          <GameIcon kind="champion" id={player.champion} catalog={catalog} />
+        </div>
+      </div>
+      <div className="player-summary-caption">
+        <strong className="player-summary-kda" title="Asesinatos / Muertes / Asistencias">
           {player.stats
             ? `${statNumber(player.stats.kills)} / ${statNumber(player.stats.deaths)} / ${statNumber(player.stats.assists)}`
             : 'K/D/A —'}
         </strong>
+        <strong className="player-summary-name">
+          {player.gameName}
+          {player.riotTag ? `#${player.riotTag}` : ''}
+        </strong>
+        <span className="player-summary-champion-name">
+          {catalog[`champion:${player.champion}`]?.name ?? player.champion}
+        </span>
       </div>
-      {build ? (
-        <div className="match-build" aria-label={`Build de ${player.gameName}`}>
-          {[
-            build.item0,
-            build.item1,
-            build.item2,
-            build.item3,
-            build.item4,
-            build.item5,
-            build.trinket
-          ].map((id, slot) => (
-            <GameIcon key={`${slot}-${id}`} kind="item" id={id} catalog={catalog} />
-          ))}
-          <span className="match-spells">
-            <GameIcon kind="summoner" id={build.summonerSpell1Id} catalog={catalog} />
-            <GameIcon kind="summoner" id={build.summonerSpell2Id} catalog={catalog} />
-          </span>
-        </div>
-      ) : (
-        <p className="meta">Build no disponible</p>
-      )}
-    </div>
+      {!build && <p className="player-summary-missing meta">Build no disponible</p>}
+    </article>
   );
 }
-
 function DetailedStats({ game, match }: { game: MatchMap; match: MatchDetail }) {
   const [choice, setChoice] = useState('');
   const ordered = positionRows(game.participants, match.homeTeam.id, match.awayTeam.id)
@@ -132,7 +141,7 @@ function DetailedStats({ game, match }: { game: MatchMap; match: MatchDetail }) 
                   {group.stats.map(([key, label]) => (
                     <div key={key}>
                       <dt>{label}</dt>
-                      <dd>{statNumber(stats[key])}</dd>
+                      <dd>{formatMatchStat(key, stats[key])}</dd>
                     </div>
                   ))}
                 </dl>
@@ -206,8 +215,14 @@ export function MatchReport({
   catalog = {}
 }: { match: MatchDetail; catalog?: GameCatalog }) {
   const [gameChoice, setGameChoice] = useState('');
+  const [section, setSection] = useState('enfrentamientos');
+  const [runeChoice, setRuneChoice] = useState('');
   const game = match.games.find((item) => item.id === gameChoice) ?? match.games[0];
   const rows = game ? positionRows(game.participants, match.homeTeam.id, match.awayTeam.id) : [];
+  const players = rows
+    .flatMap((row) => [row.home, row.away])
+    .filter((player): player is MatchParticipant => !!player);
+  const runePlayer = players.find((player) => player.id === runeChoice) ?? players[0];
   const winner =
     game?.winnerTeamId === match.homeTeam.id
       ? match.homeTeam.name
@@ -260,12 +275,49 @@ export function MatchReport({
             : 'Duración no disponible'}
         </p>
       )}
-      <nav className="match-section-nav" aria-label="Secciones del partido">
-        <a href="#enfrentamientos">01 · Enfrentamientos</a>
-        <a href="#estadisticas">02 · Estadísticas</a>
-        <a href="#runas">03 · Runas</a>
-      </nav>
-      <section id="enfrentamientos" className="match-report-section">
+      <div className="match-section-nav" role="tablist" aria-label="Secciones del partido">
+        {(['enfrentamientos', 'estadisticas', 'runas'] as const).map((id, index, tabs) => (
+          <button
+            key={id}
+            type="button"
+            role="tab"
+            id={`tab-${id}`}
+            aria-selected={section === id}
+            aria-controls={id}
+            tabIndex={section === id ? 0 : -1}
+            onClick={() => setSection(id)}
+            onKeyDown={(event) => {
+              const next =
+                event.key === 'ArrowRight'
+                  ? (index + 1) % tabs.length
+                  : event.key === 'ArrowLeft'
+                    ? (index + tabs.length - 1) % tabs.length
+                    : event.key === 'Home'
+                      ? 0
+                      : event.key === 'End'
+                        ? tabs.length - 1
+                        : -1;
+              if (next >= 0) {
+                event.preventDefault();
+                const target = tabs[next];
+                if (target) {
+                  setSection(target);
+                  document.getElementById(`tab-${target}`)?.focus();
+                }
+              }
+            }}
+          >
+            {['Enfrentamiento', 'Estadísticas', 'Runas'][index]}
+          </button>
+        ))}
+      </div>
+      <section
+        id="enfrentamientos"
+        role="tabpanel"
+        aria-labelledby="tab-enfrentamientos"
+        hidden={section !== 'enfrentamientos'}
+        className="match-report-section"
+      >
         <h2>01 · Enfrentamientos por posición</h2>
         <p className="meta">Campeones, K/D/A y build final</p>
         {!game ? (
@@ -275,28 +327,53 @@ export function MatchReport({
           </div>
         ) : (
           <>
-            <div className="match-lane-heading">
-              <span>
-                {match.homeTeam.name} ·{' '}
-                {game.blueTeamId === match.homeTeam.id ? 'Lado azul' : 'Lado rojo'}
-              </span>
-              <span>Posición</span>
-              <span>
-                {match.awayTeam.name} ·{' '}
-                {game.blueTeamId === match.awayTeam.id ? 'Lado azul' : 'Lado rojo'}
-              </span>
-            </div>
-            {rows.map((row) => (
-              <div className="match-lane-row" key={row.key}>
-                <PlayerSummary player={row.home} catalog={catalog} />
-                <span className="match-lane-label">{row.position}</span>
-                <PlayerSummary player={row.away} catalog={catalog} />
+            {rows.length === 0 && (
+              <div className="empty-state">Jugadores pendientes de importar para este mapa.</div>
+            )}
+            {rows.some((row) => row.position === 'SIN POSICIÓN') && (
+              <p className="meta">Algunos jugadores no tienen posición registrada en este mapa.</p>
+            )}
+            <div
+              className="match-lanes-scroll"
+              aria-label="Comparativa de los equipos por posición"
+            >
+              <div className="match-lane-heading">
+                <span>
+                  {match.homeTeam.name} ·{' '}
+                  {game.blueTeamId === match.homeTeam.id ? 'Lado azul' : 'Lado rojo'}
+                </span>
+                <span>Posición</span>
+                <span>
+                  {match.awayTeam.name} ·{' '}
+                  {game.blueTeamId === match.awayTeam.id ? 'Lado azul' : 'Lado rojo'}
+                </span>
               </div>
-            ))}
+              {rows.map((row) => (
+                <div className="match-lane-row" key={row.key}>
+                  <PlayerSummary
+                    player={row.home}
+                    catalog={catalog}
+                    teamName={match.homeTeam.name}
+                  />
+                  <span className="match-lane-label">{row.position}</span>
+                  <PlayerSummary
+                    player={row.away}
+                    catalog={catalog}
+                    teamName={match.awayTeam.name}
+                  />
+                </div>
+              ))}
+            </div>
           </>
         )}
       </section>
-      <section id="estadisticas" className="match-report-section">
+      <section
+        id="estadisticas"
+        role="tabpanel"
+        aria-labelledby="tab-estadisticas"
+        hidden={section !== 'estadisticas'}
+        className="match-report-section"
+      >
         <h2>02 · Estadísticas de jugadores</h2>
         {game ? (
           <DetailedStats key={game.id} game={game} match={match} />
@@ -304,24 +381,32 @@ export function MatchReport({
           <div className="empty-state">Estadísticas pendientes de importar.</div>
         )}
       </section>
-      <section id="runas" className="match-report-section">
+      <section
+        id="runas"
+        role="tabpanel"
+        aria-labelledby="tab-runas"
+        hidden={section !== 'runas'}
+        className="match-report-section"
+      >
         <h2>03 · Runas</h2>
-        {game?.participants.length ? (
-          <div className="match-runes-teams">
-            {[match.homeTeam, match.awayTeam].map((team) => (
-              <section key={team.id}>
-                <h3>{team.name}</h3>
-                {rows
-                  .flatMap((row) => [row.home, row.away])
-                  .filter(
-                    (player): player is MatchParticipant => !!player && player.teamId === team.id
-                  )
-                  .map((player) => (
-                    <PlayerRunes key={player.id} player={player} catalog={catalog} />
-                  ))}
-              </section>
-            ))}
-          </div>
+        {runePlayer ? (
+          <>
+            <label className="select-field match-player-select">
+              Seleccionar jugador para runas
+              <select value={runePlayer.id} onChange={(event) => setRuneChoice(event.target.value)}>
+                {players.map((player) => (
+                  <option key={player.id} value={player.id}>
+                    {player.gameName} ·{' '}
+                    {player.teamId === match.homeTeam.id
+                      ? match.homeTeam.name
+                      : match.awayTeam.name}{' '}
+                    · {matchPosition(player.position)}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <PlayerRunes key={runePlayer.id} player={runePlayer} catalog={catalog} />
+          </>
         ) : (
           <div className="empty-state">Runas pendientes de importar.</div>
         )}

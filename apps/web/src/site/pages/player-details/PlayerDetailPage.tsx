@@ -1,3 +1,4 @@
+import '../../../features/competition/components/player-card.css';
 import React, { useEffect, useState } from 'react';
 import { TeamBadge } from '../../../features/competition/components/CompetitionViews.js';
 import type {
@@ -6,7 +7,7 @@ import type {
 } from '../../../features/competition/types/competition.types.js';
 import { PageLayout } from '../../../shared/components/PageLayout.js';
 import { SiteLink } from '../../../shared/components/SiteLink.js';
-import './players.css';
+import './player-details.css';
 
 const roleLabels: Record<TeamMember['role'], string> = {
   top: 'Top',

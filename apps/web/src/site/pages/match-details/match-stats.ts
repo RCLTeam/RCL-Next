@@ -19,10 +19,7 @@ export function positionRows(
     const away = participants.filter(
       (player) => player.teamId === awayTeamId && matchPosition(player.position) === position
     );
-    const count =
-      position === 'SIN POSICIÓN'
-        ? Math.max(home.length, away.length)
-        : Math.max(1, home.length, away.length);
+    const count = Math.max(home.length, away.length);
     return Array.from({ length: count }, (_, index) => ({
       key: `${position}-${index}`,
       position,
@@ -87,11 +84,19 @@ export const statGroups: { title: string; stats: [MatchStatKey, string][] }[] = 
       ['summonerSpell1Casts', 'Usos de hechizo 1'],
       ['summonerSpell2Casts', 'Usos de hechizo 2'],
       ['pings', 'Señales'],
-      ['longestTimeLiving', 'Mayor tiempo con vida (s)'],
-      ['timeSpentDead', 'Tiempo muerto (s)']
+      ['longestTimeLiving', 'Mayor tiempo con vida'],
+      ['timeSpentDead', 'Tiempo muerto']
     ]
   }
 ];
 export function statNumber(value: number | null | undefined) {
   return value == null ? '—' : value.toLocaleString('es-ES');
+}
+export function formatMatchStat(key: MatchStatKey, value: number | null | undefined) {
+  if (value == null) return '—';
+  if (['longestTimeLiving', 'timeSpentDead', 'crowdControlTime'].includes(key)) {
+    const seconds = Math.max(0, Math.floor(value));
+    return `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
+  }
+  return statNumber(value);
 }

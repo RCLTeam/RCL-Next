@@ -17,7 +17,7 @@ Configura `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET` y `DISCORD_REDIRECT_URI` 
 - SQL ejecutable: `packages/database/drizzle/0000_initial_schema.sql`.
 - SQL original conservado: `docs/reference/0000_initial_schema.original.sql`.
 - Modelo tipado: `packages/database/src/schema.ts`.
-- Datos sintéticos: `packages/database/seed/demo.sql`.
+- Datos sintéticos: `packages/database/seed/demo.sql` y `packages/database/seed/showcase.sql`.
 - Conexión PostgreSQL: configurada mediante `DATABASE_URL` en `.env`.
 - Los registros se guardan en la instancia PostgreSQL; el archivo SQL define la estructura.
 
@@ -37,7 +37,7 @@ pnpm db:check
 pnpm dev:api
 ```
 
-El seed requiere `ALLOW_DEMO_SEED=true` y rechaza `NODE_ENV=production`. Crea una temporada DEMO, dos divisiones vinculadas mediante seasons_divisions, cuatro equipos, veinte cuentas principales y sus miembros Discord, tres jornadas/series y un mapa con diez snapshots completos. Incluye 21 usuarios Discord ficticios (todos viewer) y un pronóstico; ya no hay tablas de bonus. Repetirlo no borra datos ni modifica filas existentes. Sus fechas de 2050 y nombres DEMO son deliberadamente ficticios.
+El seed requiere `ALLOW_DEMO_SEED=true` y rechaza `NODE_ENV=production`. Ejecuta `demo.sql` y `showcase.sql` en una sola transacción. Crea una temporada DEMO, dos divisiones, cuatro equipos, veinte jugadores, 11 encuentros y 24 mapas con 240 registros de estadísticas completas. Incluye series BO3/BO5, playoffs, encuentros programados, uno en directo y uno cancelado, además de objetos, hechizos, runas, MVP y un pronóstico. Las estadísticas alimentan los perfiles, comparativas y clasificaciones. Repetirlo no duplica registros: conserva los valores existentes y completa únicamente campos vacíos de las partidas DEMO identificadas. Las fechas de 2050 y los nombres DEMO son deliberadamente ficticios. Las pruebas existentes conservan el fixture mínimo `demo.sql`; `demo-showcase.test.ts` verifica la ampliación, coherencia de resultados e idempotencia.
 
 ## Cómo ver las tablas y los registros
 

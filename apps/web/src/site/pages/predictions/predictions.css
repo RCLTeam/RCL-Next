@@ -46,8 +46,14 @@
 
 .rcl-site .prediction-grid {
   display: grid;
-  grid-template-columns: repeat(2,minmax(0,1fr));
   gap: 18px;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 951px) {
+  .rcl-site .prediction-grid {
+    grid-template-columns: repeat(2,minmax(0,1fr));
+  }
 }
 
 .rcl-site .prediction-card {
@@ -78,10 +84,4 @@
 .rcl-site .prediction-teams > span:last-child {
   flex-direction: row-reverse;
   text-align: right;
-}
-
-@media (max-width: 950px) {
-  .rcl-site .prediction-grid {
-    grid-template-columns: 1fr;
-  }
 }
