@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { type GameAssetKind, type GameCatalog, statShardAssets } from './data-dragon.service.js';
+import { type GameAssetKind, type GameCatalog, getGameAsset } from './riot-assets.service.js';
 import './game-icon.css';
 
 export function GameIcon({
@@ -8,13 +8,18 @@ export function GameIcon({
   catalog,
   label = false
 }: { kind: GameAssetKind; id: string | number | null; catalog: GameCatalog; label?: boolean }) {
-  const asset = catalog[`${kind}:${id}`] ?? statShardAssets[`${kind}:${id}`];
+  const asset = getGameAsset(kind, id, catalog);
   const [failed, setFailed] = useState<string>();
   const fallback =
     kind === 'champion'
       ? String(id)
       : `${kind === 'item' ? 'Objeto' : kind === 'summoner' ? 'Hechizo' : 'Runa'} ${id}`;
-  const name = id ? (asset?.name ?? fallback) : 'Hueco vacío';
+  const name =
+    kind === 'position'
+      ? (asset?.name ?? 'Sin posición')
+      : id
+        ? (asset?.name ?? fallback)
+        : 'Hueco vacío';
   return (
     <span className={`game-asset ${label ? 'with-label' : ''}`} title={name}>
       {asset?.image && failed !== asset.image ? (
@@ -26,7 +31,7 @@ export function GameIcon({
         />
       ) : (
         <span className="game-asset-fallback" aria-label={name}>
-          {id ? String(id).slice(0, 8) : '—'}
+          {kind === 'position' ? name : id ? String(id).slice(0, 8) : '—'}
         </span>
       )}
       {label && <span>{name}</span>}

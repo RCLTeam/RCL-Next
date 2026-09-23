@@ -4,7 +4,7 @@ import { TeamBadge } from '../../../features/competition/components/CompetitionV
 import { PageLayout } from '../../../shared/components/PageLayout.js';
 import { SiteLink } from '../../../shared/components/SiteLink.js';
 import { GameIcon } from '../../../shared/riot/GameIcon.js';
-import type { GameCatalog } from '../../../shared/riot/data-dragon.service.js';
+import type { GameCatalog } from '../../../shared/riot/riot-assets.service.js';
 import { useGameCatalog } from '../../../shared/riot/useGameCatalog.js';
 import {
   formatMatchStat,
@@ -355,7 +355,9 @@ export function MatchReport({
                     catalog={catalog}
                     teamName={match.homeTeam.name}
                   />
-                  <span className="match-lane-label">{row.position}</span>
+                  <span className="match-lane-label">
+                    <GameIcon kind="position" id={row.position} catalog={catalog} />
+                  </span>
                   <PlayerSummary
                     player={row.away}
                     catalog={catalog}
