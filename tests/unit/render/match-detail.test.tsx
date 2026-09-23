@@ -4,11 +4,12 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { expect, test } from 'vitest';
 import { App } from '../../../apps/web/src/App.js';
 import { MatchCard } from '../../../apps/web/src/features/competition/components/CompetitionViews.js';
-import { MatchReport } from '../../../apps/web/src/site/pages/calendar/MatchDetailPage.js';
+import { MatchReport } from '../../../apps/web/src/site/pages/match-details/MatchDetailPage.js';
 import {
+  formatMatchStat,
   matchPosition,
   positionRows
-} from '../../../apps/web/src/site/pages/calendar/match-stats.js';
+} from '../../../apps/web/src/site/pages/match-details/match-stats.js';
 
 const home = { id: 'home', name: 'Lobos', shortName: 'LOB', logoUrl: null };
 const away = { id: 'away', name: 'Cuervos', shortName: 'CUE', logoUrl: null };
@@ -88,6 +89,11 @@ test('Reports render three ordered sections, multiple maps and accurate sides wi
   expect(html).toContain('25:00');
   expect(html).toContain('Lobos · Lado rojo');
   expect(html).toContain('Mid Player');
+  expect(html).toContain('role="tablist"');
+  expect(html).toContain('aria-selected="true"');
+  expect(html).toMatch(/id="estadisticas"[^>]*hidden=""/);
+  expect(html).toMatch(/id="runas"[^>]*hidden=""/);
+  expect(html).toContain('Seleccionar jugador para runas');
   expect(html).toContain('Build no disponible');
   expect(html).toContain('Runas no disponibles');
   expect(html).toContain('No hay estadísticas registradas');
@@ -97,6 +103,14 @@ test('Reports render three ordered sections, multiple maps and accurate sides wi
   expect(empty).toContain('todavía no se han importado');
   expect(empty).toContain('Estadísticas pendientes');
   expect(empty).toContain('Runas pendientes');
+});
+
+test('Duration stats display minutes and seconds while other values remain numeric', () => {
+  expect(formatMatchStat('timeSpentDead', 125)).toBe('02:05');
+  expect(formatMatchStat('longestTimeLiving', 3601)).toBe('60:01');
+  expect(formatMatchStat('crowdControlTime', 0)).toBe('00:00');
+  expect(formatMatchStat('timeSpentDead', null)).toBe('—');
+  expect(formatMatchStat('kills', 12)).toBe('12');
 });
 
 test('Position pairing uses match team IDs, normalizes roles, and retains duplicate or unknown positions', () => {

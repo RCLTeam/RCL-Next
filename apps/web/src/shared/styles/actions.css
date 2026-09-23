@@ -11,12 +11,22 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  min-height: 44px;
+  max-width: 100%;
   gap: 16px;
-  padding: 16px 24px;
-  font: 700 12px var(--body-f);
+  padding: 14px 18px;
+  font: 700 10px var(--body-f);
   text-transform: uppercase;
   letter-spacing: 0.035em;
   transition: background 150ms, transform 150ms;
+}
+
+@media (min-width: 651px) {
+  .rcl-site .btn-primary,
+  .rcl-site .btn-ghost {
+    padding: 16px 24px;
+    font-size: 12px;
+  }
 }
 
 .rcl-site .btn-primary {
@@ -48,12 +58,3 @@
   text-decoration: underline;
   text-underline-offset: 4px;
 }
-
-@media (max-width: 650px) {
-  .rcl-site .btn-primary,
-  .rcl-site .btn-ghost {
-    padding: 14px 18px;
-    font-size: 10px;
-  }
-}
-

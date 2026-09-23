@@ -1,4 +1,5 @@
 /* Account layout */
+
 .auth-controls,
 .auth-identity {
   display: flex;
@@ -9,29 +10,36 @@
 .auth-controls {
   flex-wrap: wrap;
   max-width: 100%;
-  font-size: 0.85rem;
+  font-size: 12px;
 }
 
-@media (max-width: 650px) {
-  .rcl-site .auth-controls {
-    font-size: 12px;
+@media (min-width: 651px) {
+  .auth-controls {
+    font-size: 0.85rem;
   }
 }
 
 /* Button base, focus and disabled states */
+
 .auth-button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  min-height: 42px;
-  padding: 0.6rem 1rem;
+  min-height: 44px;
+  padding: 8px 12px;
   border: 1px solid transparent;
   border-radius: 6px;
   font: inherit;
   font-weight: 700;
   text-decoration: none;
   cursor: pointer;
+}
+
+@media (min-width: 651px) {
+  .auth-button {
+    padding: 0.6rem 1rem;
+  }
 }
 
 .auth-button:focus-visible {
@@ -44,17 +52,12 @@
   opacity: 0.65;
 }
 
-@media (max-width: 650px) {
-  .rcl-site .auth-button {
-    padding: 8px 12px;
-  }
-}
-
 .rcl-site .auth-button {
   min-height: var(--control-height);
 }
 
 /* Discord login and navbar variant */
+
 .auth-login {
   background: var(--purple);
   color: var(--text);
@@ -86,6 +89,7 @@
 }
 
 /* Logout and retry button */
+
 .auth-logout {
   background: transparent;
   border-color: var(--muted);
@@ -101,6 +105,7 @@
 }
 
 /* Avatar */
+
 .auth-avatar {
   display: grid;
   place-items: center;
@@ -122,6 +127,7 @@ img.auth-avatar {
 }
 
 /* User identity and feedback */
+
 .auth-user {
   display: grid;
   gap: 0.15rem;

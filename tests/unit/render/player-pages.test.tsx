@@ -3,9 +3,9 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { expect, test } from 'vitest';
 import { App } from '../../../apps/web/src/App.js';
 import type { PlayerDetail } from '../../../apps/web/src/features/competition/types/competition.types.js';
-import { PlayerProfile } from '../../../apps/web/src/site/pages/players/PlayerDetailPage.js';
+import { PlayerProfile } from '../../../apps/web/src/site/pages/player-details/PlayerDetailPage.js';
 import { PlayerGrid, filterPlayers } from '../../../apps/web/src/site/pages/players/PlayersPage.js';
-import { TeamProfile } from '../../../apps/web/src/site/pages/teams/TeamDetailPage.js';
+import { TeamProfile } from '../../../apps/web/src/site/pages/team-details/TeamDetailPage.js';
 
 const player: PlayerDetail = {
   slug: 'jugador-uno-euw',

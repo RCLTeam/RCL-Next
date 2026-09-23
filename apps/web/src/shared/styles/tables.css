@@ -1,3 +1,5 @@
+/* Tables keep their columns aligned; horizontal scrolling stays inside the table container. */
+
 /* Tables — StandingsTable / ChampionsTable */
 
 .rcl-site .table-scroll {
@@ -65,4 +67,3 @@
 .rcl-site .page-content .standings-table tr:last-child > * {
   border-bottom: 0;
 }
-

@@ -1,117 +1,41 @@
 /* Page-specific styles: players. Base styles, states and responsive rules stay with their component. */
 
-.rcl-site .player-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr));
-  gap: 20px;
-}
-
-.rcl-site .player-card {
-  display: block;
-  padding: 24px;
-  border: 1px solid var(--line);
-  border-top: 3px solid var(--purple);
-  background: var(--panel);
-  color: inherit;
-  text-decoration: none;
-  overflow-wrap: anywhere;
-  transition: border-color 180ms, transform 180ms;
-}
-
-.rcl-site .player-card:hover {
-  border-color: var(--lime);
-  transform: translateY(-4px);
-}
-
-.rcl-site .player-card:focus-visible {
-  outline: 2px solid var(--lime);
-  outline-offset: 4px;
-}
-
-.rcl-site .player-monogram {
-  display: grid;
-  place-items: center;
-  width: 80px;
-  height: 80px;
-  flex-shrink: 0;
-  margin-bottom: 24px;
-  border: 1px solid var(--purple);
-  background: radial-gradient(ellipse, color-mix(in srgb, var(--purple) 25%, var(--panel)), var(--panel));
-  font: 700 30px var(--display2);
-  color: var(--lime);
-}
-
-.rcl-site .player-card h2,
-.rcl-site .player-card h3 {
-  margin: 16px 0 8px;
-  font: 700 28px var(--display2);
-}
-
-.rcl-site .player-card p {
-  color: var(--muted);
-  font-size: 14px;
-  line-height: 1.6;
-}
-
-.rcl-site .player-card-action {
-  display: block;
-  margin-top: 20px;
-  color: var(--lime);
-  font: 12px var(--mono);
-}
-
-.rcl-site .player-back-link { color: var(--lime); }
-
-.rcl-site .player-profile-header {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 28px;
-  padding: 32px;
-  border: 1px solid var(--line);
-  border-left: 3px solid var(--purple);
-  background: var(--panel);
-  overflow-wrap: anywhere;
-}
-
-.rcl-site .player-profile-header .player-monogram { margin: 0; }
-.rcl-site .player-profile-header h2 { margin: 12px 0; font: 700 36px var(--display2); }
-.rcl-site .player-profile-header p { margin: 0; color: var(--muted); }
-
-.rcl-site .player-profile-info {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  margin: 20px 0 40px;
-  border: 1px solid var(--line);
-}
-
-.rcl-site .player-profile-info div { padding: 20px; }
-.rcl-site .player-profile-info dt { font: 11px var(--mono); color: var(--lime); text-transform: uppercase; }
-.rcl-site .player-profile-info dd { margin: 10px 0 0; overflow-wrap: anywhere; }
-.rcl-site .player-teams > h2 { font: 700 30px var(--display2); text-transform: uppercase; }
-.rcl-site .player-teams > p { margin-bottom: 24px; }
-.rcl-site .player-team-card .team-badge { width: 64px; height: 64px; }
-
-@media (max-width: 650px) {
-  .rcl-site .player-profile-header { padding: 24px; }
-  .rcl-site .player-profile-info { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-}
-
 /* Profile preview */
+
 .rcl-site .profile-preview {
   display: grid;
-  grid-template-columns: 260px 1fr;
-  gap: 40px;
-  padding: 36px;
   border: 1px solid var(--stone);
   background: var(--panel);
   align-items: center;
+  padding: 24px;
+  grid-template-columns: 1fr;
+  gap: 24px;
+}
+
+@media (min-width: 651px) {
+  .rcl-site .profile-preview {
+    grid-template-columns: 180px 1fr;
+  }
+}
+
+@media (min-width: 851px) {
+  .rcl-site .profile-preview {
+    padding: 36px;
+    grid-template-columns: 260px 1fr;
+    gap: 40px;
+  }
 }
 
 .rcl-site .profile-preview > img {
   aspect-ratio: 1;
   object-fit: cover;
-  width: 100%;
+  width: 180px;
+}
+
+@media (min-width: 651px) {
+  .rcl-site .profile-preview > img {
+    width: 100%;
+  }
 }
 
 .rcl-site .profile-preview h3 {
@@ -127,50 +51,51 @@
   line-height: 1.7;
 }
 
-@media (max-width: 850px) {
-  .rcl-site .profile-preview {
-    grid-template-columns: 180px 1fr;
-    gap: 24px;
-    padding: 24px;
-  }
-}
-
-@media (max-width: 650px) {
-  .rcl-site .profile-preview {
-    grid-template-columns: 1fr;
-  }
-
-  .rcl-site .profile-preview > img {
-    width: 180px;
-  }
-}
-
 .rcl-site .page-content .profile-preview {
   background-color: var(--panel);
   border-color: var(--line);
   border-radius: 0;
-  padding: 28px;
+  padding: 20px;
 }
 
-@media (max-width: 650px) {
+@media (min-width: 651px) {
   .rcl-site .page-content .profile-preview {
-    padding: 20px;
+    padding: 28px;
   }
 }
 
 /* PlayerLeaderboards */
+
 .rcl-site .leaderboard-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 18px;
   margin-top: 28px;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (min-width: 480px) {
+  .rcl-site .leaderboard-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 851px) {
+  .rcl-site .leaderboard-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
 }
 
 .rcl-site .leaderboard-card {
   border: 1px solid var(--line);
   border-top: 3px solid var(--lime);
   background: var(--panel);
-  padding: 24px;
+  padding: 18px;
+}
+
+@media (min-width: 651px) {
+  .rcl-site .leaderboard-card {
+    padding: 24px;
+  }
 }
 
 .rcl-site .leaderboard-card h3 {
@@ -188,18 +113,6 @@
   color: var(--muted);
   font-size: 12px;
   margin-bottom: 0;
-}
-
-@media (max-width: 850px) {
-  .rcl-site .leaderboard-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 650px) {
-  .rcl-site .leaderboard-card {
-    padding: 18px;
-  }
 }
 
 .rcl-site .page-content .leaderboard-card {

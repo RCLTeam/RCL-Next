@@ -1,11 +1,18 @@
 /* Page-specific styles: leagues. Base styles, states and responsive rules stay with their component. */
 
 /* leagues page and components */
+
 .rcl-site .format-grid {
   margin-top: 36px;
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 20px;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 851px) {
+  .rcl-site .format-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
 }
 
 .rcl-site .format-card {
@@ -32,12 +39,6 @@
   line-height: 1.7;
   color: var(--muted);
   margin-bottom: 0;
-}
-
-@media (max-width: 850px) {
-  .rcl-site .format-grid {
-    grid-template-columns: 1fr;
-  }
 }
 
 .rcl-site .page-content .format-card {

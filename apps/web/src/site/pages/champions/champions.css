@@ -1,13 +1,20 @@
 /* Page-specific styles: champions. Base styles, states and responsive rules stay with their component. */
 
 /* champions page and components */
+
 .rcl-site #campeones .section-cross {
   color: var(--purple);
 }
 
 .rcl-site .champion-panel {
-  padding: 28px;
   border: 1px solid var(--line);
+  padding: 16px;
+}
+
+@media (min-width: 651px) {
+  .rcl-site .champion-panel {
+    padding: 28px;
+  }
 }
 
 .rcl-site .page-content .champion-panel .table-scroll {
@@ -25,10 +32,4 @@
   text-align: center;
   color: var(--muted);
   line-height: 1.7;
-}
-
-@media (max-width: 650px) {
-  .rcl-site .champion-panel {
-    padding: 16px;
-  }
 }

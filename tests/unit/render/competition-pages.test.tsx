@@ -19,7 +19,7 @@ import type {
 import { PlayoffsPage } from '../../../apps/web/src/site/pages/playoffs/PlayoffsPage.js';
 import { PredictionsPage } from '../../../apps/web/src/site/pages/predictions/PredictionsPage.js';
 import { StandingsPage } from '../../../apps/web/src/site/pages/standings/StandingsPage.js';
-import { TeamProfile } from '../../../apps/web/src/site/pages/teams/TeamDetailPage.js';
+import { TeamProfile } from '../../../apps/web/src/site/pages/team-details/TeamDetailPage.js';
 
 test('Team profiles group members and handle an unpublished roster', () => {
   const team = {

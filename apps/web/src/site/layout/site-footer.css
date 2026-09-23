@@ -16,6 +16,13 @@
   gap: 32px;
   padding-bottom: 34px;
   border-bottom: 1px solid var(--line);
+  flex-direction: column;
+}
+
+@media (min-width: 651px) {
+  .rcl-site .footer-top {
+    flex-direction: row;
+  }
 }
 
 .rcl-site .footer-top .meta {
@@ -24,7 +31,13 @@
 
 .rcl-site .footer-links {
   display: flex;
-  gap: 70px;
+  gap: 40px;
+}
+
+@media (min-width: 651px) {
+  .rcl-site .footer-links {
+    gap: 70px;
+  }
 }
 
 .rcl-site .footer-links > div {
@@ -56,16 +69,11 @@
   margin-top: 24px;
   font: 10px/1.7 var(--mono);
   color: var(--muted);
+  flex-direction: column;
 }
 
-@media (max-width: 650px) {
-  .rcl-site .footer-top,
+@media (min-width: 651px) {
   .rcl-site .footer-bottom {
-    flex-direction: column;
-  }
-
-  .rcl-site .footer-links {
-    gap: 40px;
+    flex-direction: row;
   }
 }
-

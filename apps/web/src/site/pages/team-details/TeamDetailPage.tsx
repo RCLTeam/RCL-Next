@@ -6,7 +6,7 @@ import type {
 } from '../../../features/competition/types/competition.types.js';
 import { PageLayout } from '../../../shared/components/PageLayout.js';
 import { SiteLink } from '../../../shared/components/SiteLink.js';
-import './teams.css';
+import './team-details.css';
 
 const roleLabels: Record<TeamMember['role'], string> = {
   top: 'Top',
