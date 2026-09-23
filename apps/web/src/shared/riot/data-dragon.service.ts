@@ -1,9 +1,5 @@
-export interface GameAsset {
-  name: string;
-  image?: string | undefined;
-}
-export type GameAssetKind = 'item' | 'champion' | 'summoner' | 'rune';
-export type GameCatalog = Record<string, GameAsset>;
+import type { GameCatalog } from './riot-assets.types.js';
+
 const CDN = 'https://ddragon.leagueoflegends.com';
 export const statShardAssets: GameCatalog = {
   'rune:5001': { name: 'Vida' },
