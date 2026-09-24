@@ -623,24 +623,40 @@ export const predictions = pgTable(
     index('predictions_discord_user_id_idx').on(t.discordUserId)
   ]
 );
-export const homeWeeklyTeams = pgTable('home_weekly_teams', {
-  divisionId: uuid('division_id')
-    .primaryKey()
-    .references(() => seasonsDivisions.id, { onDelete: 'cascade' }),
-  label: varchar('label', { length: 120 }).notNull(),
-  published: boolean('published').notNull().default(false),
-  players: jsonb('players')
-    .$type<
-      {
-        role: 'top' | 'jungle' | 'mid' | 'adc' | 'support';
-        name: string;
-        team: string;
-        imageUrl: string;
-      }[]
-    >()
-    .notNull(),
-  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
-});
+export const homeWeeklyTeams = pgTable(
+  'home_weekly_teams',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    roundId: smallint('round_id'),
+    divisionId: uuid('division_id')
+      .notNull()
+      .references(() => seasonsDivisions.id, { onDelete: 'cascade' }),
+    label: varchar('label', { length: 120 }).notNull(),
+    published: boolean('published').notNull().default(false),
+    players: jsonb('players')
+      .$type<
+        {
+          role: 'top' | 'jungle' | 'mid' | 'adc' | 'support';
+          name: string;
+          team: string;
+          imageUrl: string;
+          playerId?: string;
+          teamId?: string;
+          champions?: string[];
+        }[]
+      >()
+      .notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
+  },
+  (t) => [
+    unique('home_weekly_teams_division_round_key').on(t.divisionId, t.roundId),
+    foreignKey({
+      name: 'home_weekly_teams_round_fkey',
+      columns: [t.roundId, t.divisionId],
+      foreignColumns: [rounds.id, rounds.idSeasonDivision]
+    }).onDelete('cascade')
+  ]
+);
 
 export const editorialArticles = pgTable(
   'editorial_articles',

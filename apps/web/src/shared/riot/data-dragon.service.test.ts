@@ -51,6 +51,31 @@ test('Game catalog maps items, spells and rune paths and tolerates partial catal
   expect(catalog['rune:8000']?.name).toBe('Precisión');
 });
 
+test('Champion splash art uses the canonical Data Dragon id', async () => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (url: string) => ({
+      ok: true,
+      json: async () =>
+        url.endsWith('versions.json')
+          ? ['16.1.1']
+          : url.endsWith('champion.json')
+            ? {
+                data: Object.fromEntries([['Ahri', { name: 'Ahri', image: { full: 'Ahri.png' } }]])
+              }
+            : url.endsWith('runesReforged.json')
+              ? []
+              : { data: {} }
+    }))
+  );
+  const { loadGameCatalog } = await import('./data-dragon.service.js');
+  const { getGameAsset } = await import('./riot-assets.service.js');
+  const catalog = await loadGameCatalog();
+  expect(getGameAsset('champion', 'ahri', catalog)?.splashImage).toBe(
+    'https://ddragon.leagueoflegends.com/cdn/img/champion/splash/Ahri_0.jpg'
+  );
+});
+
 function catalogResponse(url: string) {
   const data = url.endsWith('versions.json')
     ? ['16.1.1']

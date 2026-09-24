@@ -30,6 +30,7 @@ const articleInput = z
   );
 const teamInput = z
   .object({
+    roundId: z.number().int().min(1).max(32767),
     label: z.string().trim().min(1).max(120),
     published: z.boolean(),
     players: z
@@ -39,7 +40,10 @@ const teamInput = z
             role: z.enum(['top', 'jungle', 'mid', 'adc', 'support']),
             name: z.string().trim().min(1).max(80),
             team: z.string().trim().min(1).max(120),
-            imageUrl
+            imageUrl,
+            playerId: z.string().uuid(),
+            teamId: z.string().uuid(),
+            champions: z.array(z.string().max(64)).default([])
           })
           .strict()
       )
@@ -71,9 +75,17 @@ export class HomeContentService {
   deleteArticle(actor: string, id: unknown) {
     return this.repository.deleteArticle(actor, z.string().uuid().parse(id));
   }
+  weeklyCandidates(id: unknown, roundId: unknown) {
+    return this.repository.weeklyCandidates(
+      z.string().uuid().parse(id),
+      z.coerce.number().int().min(1).max(32767).parse(roundId)
+    );
+  }
+  listWeeklyTeams(id: unknown, admin = false) {
+    return this.repository.listWeeklyTeams(z.string().uuid().parse(id), admin);
+  }
   async weeklyTeam(id: unknown, admin = false) {
-    const team = await this.repository.getWeeklyTeam(z.string().uuid().parse(id));
-    return admin || team?.published ? team : null;
+    return (await this.listWeeklyTeams(id, admin))[0] ?? null;
   }
   saveWeeklyTeam(actor: string, id: unknown, body: unknown) {
     return this.repository.saveWeeklyTeam(

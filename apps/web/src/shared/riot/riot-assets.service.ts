@@ -24,5 +24,12 @@ export function getGameAsset(
   catalog: GameCatalog
 ) {
   if (kind === 'position') return getPositionAsset(id === null ? null : String(id));
+  if (kind === 'champion' && id !== null) {
+    const key = `champion:${id}`.toLowerCase();
+    return (
+      catalog[`${kind}:${id}`] ??
+      Object.entries(catalog).find(([name]) => name.toLowerCase() === key)?.[1]
+    );
+  }
   return catalog[`${kind}:${id}`] ?? defaultGameCatalog[`${kind}:${id}`];
 }

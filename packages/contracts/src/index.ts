@@ -10,6 +10,7 @@ export type {
   EditorialInput,
   EditorialArticle,
   WeeklyPlayer,
+  WeeklyCandidate,
   WeeklyTeamInput,
   WeeklyTeam
 } from './home-content.js';
