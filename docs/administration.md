@@ -77,3 +77,16 @@ La importación web **reemplaza los datos y conserva el esquema instalado**: `pg
 Al confirmar, se comprueba de nuevo el rol owner y que ni el archivo ni los datos actuales hayan cambiado desde la revisión. Reemplazo, comprobación de restricciones y auditoría se confirman en una sola transacción. Un fallo conserva la base anterior. La cuenta del owner que importa se conserva con ese rol, aunque no figure en el archivo. Se invalidan todas las sesiones y estados OAuth, incluidos los importados: hay que volver a iniciar sesión tras restaurar.
 
 El límite web es de 64 MiB por `.dump`, 128 MiB para su extracción y 64 MiB para la instantánea de validación de la base actual. Las herramientas tienen un plazo máximo de tres minutos. Se procesa una transferencia a la vez por instancia API; durante la validación y restauración se bloquean las tablas brevemente, pero no mientras el usuario revisa el diálogo. No se añaden migraciones ni se asigna un owner inicial.
+
+## Contenido de la home
+
+En `/admin/home-content`, admins y owners pueden gestionar:
+
+- **Team of the Week**: selecciona temporada y división, indica la jornada y elige los cinco jugadores desde las plantillas de la división (uno por posición). El equipo se completa automáticamente; las fotos opcionales por URL HTTPS están en un desplegable. Los jugadores de la posición aparecen primero y los ya elegidos no se pueden repetir. Guarda como borrador o publícalo. Cada temporada/división conserva su propio quinteto; guardar reemplaza su selección actual. Desmarca «Publicado» para retirarlo sin perder los datos.
+- **Editorial**: crea, edita y elimina noticias, entrevistas, reportajes u otros temas. Cada artículo tiene título, subtítulo opcional, autor, contenido e imagen opcional por URL HTTPS con descripción accesible. La vista previa muestra el contenido antes de guardar. Separa párrafos con líneas en blanco; `## ` crea subtítulos y `> ` citas. El HTML se trata como texto.
+- **Selección de portada**: «Publicado» permite leer el artículo; «Mostrar en la editorial de la home» decide si aparece en la home. El menor orden ocupa la tarjeta destacada. Los borradores nunca se sirven al público, incluso con su enlace directo.
+
+Los enlaces de editorial abren una ventana emergente compacta con desplazamiento interno, cierre con botón o Escape y URL propia `/editorial/:id`. La home incorpora el selector de división encima del quinteto.
+
+La migración `0001_home_content.sql` añade `home_weekly_teams` y `editorial_articles`. Ejecuta `pnpm db:migrate` al actualizar otros entornos. Las escrituras mantienen la autenticación, comprobación de origen y registro de auditoría de la administración.
+

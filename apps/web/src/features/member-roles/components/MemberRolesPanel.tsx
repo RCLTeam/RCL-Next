@@ -65,12 +65,17 @@ export function MemberRolesPanel() {
   }
   return (
     <section className="member-roles" aria-label="Gestión de roles">
-      <h2>Roles Management</h2>
-      <p>
-        {canManage
-          ? 'Gestiona el acceso de los miembros: viewer, admin u owner.'
-          : 'Consulta los miembros y sus roles. Solo un owner puede modificarlos.'}
-      </p>
+      <div className="content-manager-heading">
+        <div>
+          <span className="eyebrow">Gestion de roles</span>
+          <h2>Roles Management</h2>
+          <p>
+            {canManage
+              ? 'Gestiona el acceso de los miembros: viewer, admin u owner.'
+              : 'Consulta los miembros y sus roles.'}
+          </p>
+        </div>
+      </div>
       <div className="member-roles-toolbar">
         <label htmlFor="member-search">
           Buscar miembro

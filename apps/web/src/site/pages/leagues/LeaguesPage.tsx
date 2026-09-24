@@ -16,7 +16,6 @@ export function LeaguesPage({ competition }: { competition: Competition }) {
       title="Ligas"
       subtitle="Hub de competiciones"
       description="Descubre las divisiones, el formato de la competición y el camino hacia la corona."
-      toolbar={<CompetitionFilters competition={competition} />}
     >
       <DataState
         state={competition.seasons}

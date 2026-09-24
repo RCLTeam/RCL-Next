@@ -32,6 +32,11 @@ export function App({ initialPath, wsUrl }: AppProps) {
   const navigate = (nextPath: string) => {
     if (nextPath !== window.location.pathname) window.history.pushState({}, '', nextPath);
     setCurrentPath(nextPath);
+    if (
+      (path === '/' && nextPath.startsWith('/editorial/')) ||
+      (path.startsWith('/editorial/') && nextPath === '/')
+    )
+      return;
     window.scrollTo({ top: 0, behavior: 'instant' });
     document.getElementById('main-content')?.focus({ preventScroll: true });
   };

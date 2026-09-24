@@ -23,12 +23,12 @@ test('PostgreSQL migrations, fixtures and relational constraints', async (t) => 
   const db = drizzle(client, { schema });
   await migrate(db, { migrationsFolder });
 
-  await t.test('migrate twice and retain exactly one journal entry', async () => {
+  await t.test('migrate twice and retain exactly two journal entries', async () => {
     await migrate(db, { migrationsFolder });
     const result = await client.query<{ total: number }>(
       'SELECT count(*)::int AS total FROM drizzle.__drizzle_migrations'
     );
-    assert.equal(result.rows[0]?.total, 1);
+    assert.equal(result.rows[0]?.total, 2);
   });
   await t.test('seed twice in transactions without duplicate data', async () => {
     for (let i = 0; i < 2; i++) await client.transaction((tx) => tx.exec(seed));
@@ -37,9 +37,9 @@ test('PostgreSQL migrations, fixtures and relational constraints', async (t) => 
     assert.equal((await db.select().from(schema.playerGameInfo)).length, 10);
     assert.equal('isActive' in ((await db.select().from(schema.seasons))[0] ?? {}), false);
   });
-  await t.test('all 19 ORM tables map to executable SQL', async () => {
+  await t.test('all 21 ORM tables map to executable SQL', async () => {
     const tables = Object.values(schema).filter((value) => is(value, Table));
-    assert.equal(tables.length, 19);
+    assert.equal(tables.length, 21);
     for (const table of tables) await db.select().from(table).limit(1);
   });
   await t.test('SQL columns, foreign keys, checks and indexes match Drizzle metadata', async () => {

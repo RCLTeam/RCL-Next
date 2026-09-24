@@ -115,6 +115,13 @@ export const siteRoutes = [
 
 const detailRoutes = [
   {
+    path: '/editorial',
+    id: 'editorial-detail',
+    title: 'Editorial',
+    competition: ['calendar'],
+    render: ({ id, competition }) => <HomePage competition={competition} articleId={id} />
+  },
+  {
     path: '/equipos',
     id: 'team-detail',
     title: 'Equipo',
@@ -138,6 +145,7 @@ const detailRoutes = [
 ] satisfies RouteDefinition[];
 
 export const adminRoutes = [
+  { path: '/admin/home-content', title: 'Contenido de la home' },
   { path: '/admin', title: 'Admin' },
   { path: '/admin/rofl/upload', title: 'ROFL Upload' },
   { path: '/admin/crud', title: 'CRUD Operations' },

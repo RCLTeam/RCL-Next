@@ -623,3 +623,47 @@ export const predictions = pgTable(
     index('predictions_discord_user_id_idx').on(t.discordUserId)
   ]
 );
+export const homeWeeklyTeams = pgTable('home_weekly_teams', {
+  divisionId: uuid('division_id')
+    .primaryKey()
+    .references(() => seasonsDivisions.id, { onDelete: 'cascade' }),
+  label: varchar('label', { length: 120 }).notNull(),
+  published: boolean('published').notNull().default(false),
+  players: jsonb('players')
+    .$type<
+      {
+        role: 'top' | 'jungle' | 'mid' | 'adc' | 'support';
+        name: string;
+        team: string;
+        imageUrl: string;
+      }[]
+    >()
+    .notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
+});
+
+export const editorialArticles = pgTable(
+  'editorial_articles',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    title: varchar('title', { length: 180 }).notNull(),
+    excerpt: varchar('excerpt', { length: 500 }).notNull(),
+    body: text('body').notNull(),
+    kind: varchar('kind', { length: 20 })
+      .$type<'noticia' | 'reportaje' | 'entrevista' | 'otro'>()
+      .notNull(),
+    author: varchar('author', { length: 120 }).notNull(),
+    coverUrl: text('cover_url').notNull().default(''),
+    coverAlt: varchar('cover_alt', { length: 240 }).notNull().default(''),
+    published: boolean('published').notNull().default(false),
+    showOnHome: boolean('show_on_home').notNull().default(false),
+    homeOrder: integer('home_order').notNull().default(0),
+    publishedAt: timestamp('published_at', { withTimezone: true }),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
+  },
+  (t) => [
+    index('editorial_home_idx').on(t.published, t.showOnHome, t.homeOrder),
+    check('editorial_kind_check', sql`${t.kind} in ('noticia', 'reportaje', 'entrevista', 'otro')`),
+    check('editorial_order_check', sql`${t.homeOrder} >= 0`)
+  ]
+);
