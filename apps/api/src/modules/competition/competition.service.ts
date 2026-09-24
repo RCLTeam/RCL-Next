@@ -1,5 +1,6 @@
 import type { MatchDetail } from '@rcl/contracts';
 import { notFound } from '../../shared/app-error.js';
+import { calculateChampionStats } from './champion-stats.js';
 import type { CompetitionRepository, Match, Team } from './competition.repository.js';
 import { profileSlugs, resolveProfileId } from './profile-slugs.js';
 
@@ -189,6 +190,10 @@ export class CompetitionService {
         awayTeam: teamIndex.get(match.awayTeamId),
         round: match.roundId ? roundIndex.get(match.roundId) : null
       }));
+  }
+  async champions(divisionId: string) {
+    await this.assertDivision(divisionId);
+    return calculateChampionStats(await this.repository.championPicks(divisionId));
   }
   async standings(divisionId: string, stage = 'regular') {
     await this.assertDivision(divisionId);

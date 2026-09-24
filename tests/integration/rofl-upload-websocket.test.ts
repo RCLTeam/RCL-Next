@@ -30,6 +30,7 @@ const mockCompetitionRepo: CompetitionRepository = {
   matchDirectory: async () => [],
   match: async () => undefined,
   matchGames: async () => [],
+  championPicks: async () => [],
   teamDirectory: async () => [],
   teamDetail: async () => undefined,
   seasons: async () => [],

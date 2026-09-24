@@ -12,6 +12,7 @@ export function competitionRouter(controller: CompetitionController): Router {
   router.get('/divisions/:divisionId/teams', controller.teams);
   router.get('/divisions/:divisionId/rounds', controller.rounds);
   router.get('/divisions/:divisionId/calendar', controller.calendar);
+  router.get('/divisions/:divisionId/champions', controller.champions);
   router.get('/divisions/:divisionId/standings', controller.standings);
   return router;
 }

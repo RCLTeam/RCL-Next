@@ -557,7 +557,6 @@
   justify-self: end;
 }
 
-
 .rcl-site .match-lane-row>.player-summary:last-child {
   background: linear-gradient(to right, color-mix(in srgb, var(--lime) 5%, var(--panel)), var(--panel));
 }

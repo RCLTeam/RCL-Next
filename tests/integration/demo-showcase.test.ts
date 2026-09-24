@@ -13,7 +13,7 @@ test('showcase is complete, consistent and safe to rerun', async () => {
       await tx.exec(extra);
     });
     const snapshot = async () =>
-      (await db.query('SELECT * FROM player_game_stats ORDER BY id')).rows;
+      (await db.query<Record<string, unknown>>('SELECT * FROM player_game_stats ORDER BY id')).rows;
     const before = await snapshot();
     await db.transaction(async (tx) => {
       await tx.exec(base);

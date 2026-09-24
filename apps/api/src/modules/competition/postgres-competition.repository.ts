@@ -15,7 +15,7 @@ import {
   teams
 } from '@rcl/database';
 import type * as schema from '@rcl/database/schema';
-import { asc, desc, eq, getTableColumns, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, getTableColumns, inArray, isNotNull, sql } from 'drizzle-orm';
 import type { PgDatabase, PgQueryResultHKT } from 'drizzle-orm/pg-core';
 import type { CompetitionRepository } from './competition.repository.js';
 
@@ -23,6 +23,25 @@ import type { CompetitionRepository } from './competition.repository.js';
 // the seasons_divisions UUID. Round identifiers are scoped to that UUID.
 export class PostgresCompetitionRepository implements CompetitionRepository {
   constructor(private readonly db: PgDatabase<PgQueryResultHKT, typeof schema>) {}
+  championPicks(divisionId: string) {
+    return this.db
+      .select({
+        gameId: matchGames.id,
+        champion: playerGameInfo.champion,
+        teamId: playerGameInfo.teamId,
+        winnerTeamId: matchGames.winnerTeamId
+      })
+      .from(playerGameInfo)
+      .innerJoin(matchGames, eq(playerGameInfo.matchGameId, matchGames.id))
+      .innerJoin(matches, eq(matchGames.matchesId, matches.id))
+      .where(
+        and(
+          eq(matches.idSeasonDivision, divisionId),
+          inArray(matches.status, ['completed', 'forfeit']),
+          isNotNull(matchGames.winnerTeamId)
+        )
+      );
+  }
   matchDirectory() {
     return this.db
       .select({
