@@ -1,4 +1,4 @@
-import type { MatchDetail } from '@rcl/contracts';
+import type { MatchDetail, PlayerDetail, TeamDetail } from '@rcl/contracts';
 import { notFound } from '../../shared/app-error.js';
 import { calculateChampionStats } from './champion-stats.js';
 import type { CompetitionRepository, Match, Team } from './competition.repository.js';
@@ -122,7 +122,7 @@ export class CompetitionService {
     const { players, slugs } = await this.playerDirectory();
     return players.map((player) => ({ ...player, slug: slugs.get(player.id) }));
   }
-  async playerDetail(reference: string) {
+  async playerDetail(reference: string): Promise<PlayerDetail> {
     const { slugs } = await this.playerDirectory();
     const id = resolveProfileId(reference, slugs);
     if (!id) throw notFound('Player');
@@ -135,7 +135,7 @@ export class CompetitionService {
       teams: player.teams.map((team) => ({ ...team, slug: teamSlugs.get(team.id) }))
     };
   }
-  async teamDetail(reference: string) {
+  async teamDetail(reference: string): Promise<TeamDetail> {
     const slugs = await this.teamSlugs();
     const id = resolveProfileId(reference, slugs);
     if (!id) throw notFound('Team');

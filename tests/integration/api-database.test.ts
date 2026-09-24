@@ -62,6 +62,11 @@ test('HTTP -> controller -> service -> real repository -> embedded PostgreSQL', 
     .values({ discordUserId: '900000000000000001', gameName: 'Alternate', isMain: false });
   const detail = await request(app).get(`/api/v1/teams/${teamId}`).expect(200);
   assert.equal(detail.body.data.name, 'Lobos DEMO');
+  assert.equal(detail.body.data.isActive, true);
+  await client.query('UPDATE teams SET is_active = false WHERE id = $1', [teamId]);
+  const inactiveDetail = await request(app).get(`/api/v1/teams/${teamId}`).expect(200);
+  assert.equal(inactiveDetail.body.data.isActive, false);
+  await client.query('UPDATE teams SET is_active = true WHERE id = $1', [teamId]);
   assert.equal(detail.body.data.divisionName, 'Premier DEMO');
   assert.equal(detail.body.data.members.length, 7);
   const captain = detail.body.data.members.find(
