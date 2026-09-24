@@ -1,6 +1,6 @@
 import React from 'react';
+import { DataState } from '../../../features/competition/components/CompetitionDataState.js';
 import { CompetitionFilters } from '../../../features/competition/components/CompetitionFilters.js';
-import { DataState } from '../../../features/competition/components/CompetitionViews.js';
 import type { Competition } from '../../../features/competition/hooks/useCompetition.js';
 import { PageLayout } from '../../../shared/components/PageLayout.js';
 import { CompetitionFormat } from './CompetitionFormat.js';

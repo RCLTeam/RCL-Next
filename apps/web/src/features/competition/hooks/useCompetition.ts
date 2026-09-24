@@ -1,77 +1,34 @@
-import { useEffect, useState } from 'react';
-import { getCollection } from '../api/competition-api.js';
-import type {
-  CollectionState,
-  Division,
-  Match,
-  Round,
-  Season,
-  Standing,
-  Team
-} from '../types/competition.types.js';
+import type { Match, Round, Standing, Team } from '../types/competition.types.js';
+import { useCollection } from './useCollection.js';
+import { useCompetitionSelection } from './useCompetitionSelection.js';
 
-export function useCollection<T>(path: string | null, revision: number): CollectionState<T> {
-  const [result, setResult] = useState<{
-    path: string | null;
-    revision: number;
-    state: CollectionState<T>;
-  }>();
-  useEffect(() => {
-    if (path === null) return;
-    const controller = new AbortController();
-    getCollection<T>(path, controller.signal).then(
-      (data) => {
-        if (!controller.signal.aborted)
-          setResult({ path, revision, state: { status: 'ready', data } });
-      },
-      () => {
-        if (!controller.signal.aborted)
-          setResult({ path, revision, state: { status: 'error', data: [] } });
-      }
-    );
-    return () => controller.abort();
-  }, [path, revision]);
-  // Never show the previous division's results during a selection change.
-  if (path === null) return { status: 'ready', data: [] };
-  return result?.path === path && result.revision === revision
-    ? result.state
-    : { status: 'loading', data: [] };
-}
+export type CompetitionResource = 'teams' | 'rounds' | 'calendar' | 'standings';
 
-export function useCompetition() {
-  const [revision, setRevision] = useState(0);
-  const [seasonChoice, setSeasonChoice] = useState('');
-  const [divisionChoice, setDivisionChoice] = useState('');
-  const seasons = useCollection<Season>('seasons', revision);
-  const season = seasons.data.find((item) => item.id === seasonChoice) ?? seasons.data[0];
-  const divisions = useCollection<Division>(
-    season ? `seasons/${encodeURIComponent(season.id)}/divisions` : null,
-    revision
-  );
-  const division = divisions.data.find((item) => item.id === divisionChoice) ?? divisions.data[0];
+export function useCompetition(
+  resources: readonly CompetitionResource[] | false = ['teams', 'rounds', 'calendar', 'standings']
+) {
+  const selection = useCompetitionSelection(resources !== false);
+  const { division, revision } = selection;
   const prefix = division ? `divisions/${encodeURIComponent(division.id)}` : null;
-  const teams = useCollection<Team>(prefix ? `${prefix}/teams` : null, revision);
-  const rounds = useCollection<Round>(prefix ? `${prefix}/rounds` : null, revision);
-  const calendar = useCollection<Match>(prefix ? `${prefix}/calendar` : null, revision);
-  const standings = useCollection<Standing>(
-    prefix ? `${prefix}/standings?stage=regular` : null,
-    revision
-  );
+  const path = (resource: CompetitionResource, suffix: string = resource) =>
+    prefix && resources !== false && resources.includes(resource) ? `${prefix}/${suffix}` : null;
+  const teams = useCollection<Team>(path('teams'), revision);
+  const rounds = useCollection<Round>(path('rounds'), revision);
+  const calendar = useCollection<Match>(path('calendar'), revision);
+  const standings = useCollection<Standing>(path('standings', 'standings?stage=regular'), revision);
+  // Keep the public screen model independent from the selection hook's retry counter.
   return {
-    seasons,
-    season,
-    divisions,
+    seasons: selection.seasons,
+    season: selection.season,
+    divisions: selection.divisions,
     division,
+    selectSeason: selection.selectSeason,
+    selectDivision: selection.selectDivision,
+    retry: selection.retry,
     teams,
     rounds,
     calendar,
-    standings,
-    selectSeason: (id: string) => {
-      setSeasonChoice(id);
-      setDivisionChoice('');
-    },
-    selectDivision: setDivisionChoice,
-    retry: () => setRevision((value) => value + 1)
+    standings
   };
 }
 

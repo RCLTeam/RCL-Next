@@ -1,14 +1,12 @@
 import type { ChampionStats } from '@rcl/contracts';
 import React, { useState } from 'react';
-import { CompetitionFilters } from '../../../features/competition/components/CompetitionFilters.js';
 import {
   DataState,
   resolveCompetitionState
-} from '../../../features/competition/components/CompetitionViews.js';
-import {
-  type Competition,
-  useCollection
-} from '../../../features/competition/hooks/useCompetition.js';
+} from '../../../features/competition/components/CompetitionDataState.js';
+import { CompetitionFilters } from '../../../features/competition/components/CompetitionFilters.js';
+import { useCollection } from '../../../features/competition/hooks/useCollection.js';
+import type { Competition } from '../../../features/competition/hooks/useCompetition.js';
 import { PageLayout } from '../../../shared/components/PageLayout.js';
 import { useGameCatalog } from '../../../shared/riot/useGameCatalog.js';
 import { ChampionsTable } from './ChampionsTable.js';

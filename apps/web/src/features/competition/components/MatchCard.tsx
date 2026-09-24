@@ -1,66 +1,9 @@
-import React, { type ReactNode, useState } from 'react';
+import React from 'react';
 import { SiteLink } from '../../../shared/components/SiteLink.js';
-import './competition-filters.css';
-import './data-state.css';
-import './team-badge.css';
-import './match-card.css';
-import {
-  type DataStateProps,
-  DataState as SharedDataState
-} from '../../../shared/components/DataState.js';
 import { safeStreamUrl } from '../api/competition-api.js';
-import type { Competition } from '../hooks/useCompetition.js';
-import type { CollectionState, Match, Team } from '../types/competition.types.js';
-
-export function DivisionSwitch({ competition }: { competition: Competition }) {
-  if (competition.divisions.data.length === 0) return null;
-  return (
-    <fieldset className="league-switch" aria-label="Seleccionar división">
-      {competition.divisions.data.map((division) => (
-        <button
-          key={division.id}
-          type="button"
-          aria-pressed={competition.division?.id === division.id}
-          data-division={division.code.toLowerCase()}
-          onClick={() => competition.selectDivision(division.id)}
-        >
-          {division.name}
-        </button>
-      ))}
-    </fieldset>
-  );
-}
-
-export function resolveCompetitionState<T>(
-  competition: Competition,
-  state: CollectionState<T>
-): CollectionState<T> {
-  const parent =
-    competition.seasons.status !== 'ready' ? competition.seasons : competition.divisions;
-  return parent.status !== 'ready' ? { status: parent.status, data: [] } : state;
-}
-
-export function DataState<T>({
-  loadingMessage = 'Cargando competición…',
-  errorMessage = 'No se pudo cargar la competición.',
-  ...props
-}: DataStateProps<T>) {
-  return <SharedDataState loadingMessage={loadingMessage} errorMessage={errorMessage} {...props} />;
-}
-
-export function TeamBadge({ team }: { team: Team | undefined }) {
-  const [failedUrl, setFailedUrl] = useState<string | null>(null);
-  const url = safeStreamUrl(team?.logoUrl ?? null);
-  return (
-    <span className="team-badge" aria-hidden="true">
-      {url && url !== failedUrl ? (
-        <img src={url} alt="" loading="lazy" onError={() => setFailedUrl(url)} />
-      ) : (
-        (team?.shortName ?? team?.name ?? '?').slice(0, 3).toUpperCase()
-      )}
-    </span>
-  );
-}
+import type { Match } from '../types/competition.types.js';
+import { TeamBadge } from './TeamBadge.js';
+import './match-card.css';
 
 export const matchStatus: Record<Match['status'], string> = {
   scheduled: 'Programado',

@@ -61,7 +61,7 @@ export function ChampionsTable({
       </div>
       {/* biome-ignore lint/a11y/noNoninteractiveTabindex: Enable keyboard scrolling. */}
       <section className="table-scroll" aria-label="Estadísticas de campeones" tabIndex={0}>
-        <table className="standings-table champion-table" aria-describedby="champion-stats-note">
+        <table className="standings-table champion-table">
           <caption className="sr-only">Estadísticas de campeones de la competición</caption>
           <thead>
             <tr>
@@ -90,7 +90,7 @@ export function ChampionsTable({
             ))}
             {!filtered.length && (
               <tr>
-                <td colSpan={8} className="table-empty">
+                <td colSpan={7} className="table-empty">
                   {rows.length
                     ? 'No hay campeones que coincidan con la búsqueda.'
                     : 'Las estadísticas de campeones todavía no están disponibles.'}

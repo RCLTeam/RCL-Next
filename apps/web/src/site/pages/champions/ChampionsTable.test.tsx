@@ -12,8 +12,7 @@ const rows: ChampionStats[] = [
     losses: 1,
     totalGames: 4,
     pickRate: 50,
-    winRate: 50,
-    banRate: null
+    winRate: 50
   },
   {
     champion: 'MonkeyKing',
@@ -22,8 +21,7 @@ const rows: ChampionStats[] = [
     losses: 0,
     totalGames: 4,
     pickRate: 25,
-    winRate: 100,
-    banRate: null
+    winRate: 100
   }
 ];
 const catalog = {
@@ -39,11 +37,20 @@ test('Champion search uses the localized catalog name and ranking does not mutat
   expect(filterChampionStats(rows, catalog, 'missing', 'games')).toEqual([]);
 });
 
-test('Renders statistics, provider icons, and missing-ban explanation', () => {
+test('Renders recorded statistics and provider icons without a bans column', () => {
   const html = renderToStaticMarkup(<ChampionsTable rows={rows} catalog={catalog} />);
   expect(html).toContain('Wukong.png');
   expect(html).toContain('50 %');
   expect(html).toContain('4 mapas analizados');
-  expect(html).toContain('Los bans no se registran');
+  expect(html).toContain('Pick %');
+  expect(html).toContain('Win %');
+  expect(html).not.toContain('Ban %');
+  expect(html).not.toContain('aria-describedby="champion-stats-note"');
   expect(html).toContain('tabindex="0"');
+});
+
+test('Empty statistics span all seven table columns', () => {
+  const html = renderToStaticMarkup(<ChampionsTable />);
+  expect(html).toContain('colSpan="7"');
+  expect(html).toContain('Las estadísticas de campeones todavía no están disponibles.');
 });

@@ -1,5 +1,5 @@
 import React from 'react';
-import { MatchCard } from '../../../features/competition/components/CompetitionViews.js';
+import { MatchCard } from '../../../features/competition/components/MatchCard.js';
 import type { Match } from '../../../features/competition/types/competition.types.js';
 import { SiteLink } from '../../../shared/components/SiteLink.js';
 
