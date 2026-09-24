@@ -10,18 +10,30 @@
 
 .rcl-site .league-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 22px;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 851px) {
+  .rcl-site .league-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 .rcl-site .league-card {
   position: relative;
   display: block;
   border: 1px solid var(--stone);
-  padding: 38px;
   overflow: hidden;
   background: linear-gradient(130deg, color-mix(in srgb, var(--purple) 16%, transparent), transparent 65%), var(--panel);
   transition: transform 180ms, border-color 180ms;
+  padding: 28px;
+}
+
+@media (min-width: 651px) {
+  .rcl-site .league-card {
+    padding: 38px;
+  }
 }
 
 .rcl-site .league-card.ascend {
@@ -53,20 +65,7 @@
   border-color: var(--lime);
 }
 
-@media (max-width: 850px) {
-  .rcl-site .league-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 650px) {
-  .rcl-site .league-card {
-    padding: 28px;
-  }
-}
-
 .rcl-site .league-card:hover {
   transform: translateY(-5px);
   border-color: var(--lime);
 }
-

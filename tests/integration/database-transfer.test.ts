@@ -137,7 +137,7 @@ describe('database transfer permissions and atomic restoration', () => {
   });
   it('validates by restoring and rolling back, leaving rows and sessions intact', async () => {
     const response = await preview().expect(200);
-    expect(response.body.data.tables).toHaveLength(19);
+    expect(response.body.data.tables).toHaveLength(21);
     expect(response.body.data.confirmation).toMatch(/^[a-f0-9]{64}$/);
     expect(await db.select().from(schema.authSessions)).toHaveLength(3);
     expect(await db.select().from(schema.auditLogs)).toHaveLength(1);

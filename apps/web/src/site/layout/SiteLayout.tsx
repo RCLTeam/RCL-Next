@@ -3,8 +3,9 @@ import { AuthControls } from '../../features/auth/components/AuthControls.js';
 import { canAccessAdmin, useAuth } from '../../features/auth/components/AuthProvider.js';
 import type { Competition } from '../../features/competition/hooks/useCompetition.js';
 import { SiteLink } from '../../shared/components/SiteLink.js';
-import { NavigationContext, siteRoutes } from '../../shared/navigation.js';
+import { NavigationContext } from '../../shared/navigation.js';
 import { brandAssets } from '../../shared/resources/assets.js';
+import { resolveSiteRoute, siteRoutes } from '../routes.js';
 
 export interface SiteLayoutProps {
   children: ReactNode;
@@ -78,6 +79,7 @@ function SiteHeader({ leagueSwitch }: { leagueSwitch: ReactNode }) {
 // aria-current drives the selected-link indicator in site-navigation.css.
 function SiteNavigation({ onNavigate }: { onNavigate: () => void }) {
   const { path } = useContext(NavigationContext);
+  const navigationPath = resolveSiteRoute(path)?.navigationPath;
   const { state, signingOut } = useAuth();
   return (
     <nav id="site-navigation" aria-label="Navegación principal">
@@ -85,7 +87,7 @@ function SiteNavigation({ onNavigate }: { onNavigate: () => void }) {
         <SiteLink
           key={route.path}
           href={route.path}
-          aria-current={path === route.path ? 'page' : undefined}
+          aria-current={navigationPath === route.path ? 'page' : undefined}
           onClick={onNavigate}
         >
           {route.title}
@@ -94,7 +96,7 @@ function SiteNavigation({ onNavigate }: { onNavigate: () => void }) {
       {canAccessAdmin(state) && !signingOut && (
         <SiteLink
           href="/admin"
-          aria-current={path === '/admin' || path.startsWith('/admin/') ? 'page' : undefined}
+          aria-current={navigationPath === '/admin' ? 'page' : undefined}
           onClick={onNavigate}
         >
           Administración

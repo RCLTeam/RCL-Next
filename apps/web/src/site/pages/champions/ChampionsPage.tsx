@@ -1,24 +1,48 @@
-import React from 'react';
-import { ChampionsTable } from '../../../features/competition/components/ChampionsTable.js';
+import type { ChampionStats } from '@rcl/contracts';
+import React, { useState } from 'react';
+import {
+  DataState,
+  resolveCompetitionState
+} from '../../../features/competition/components/CompetitionDataState.js';
+import { CompetitionFilters } from '../../../features/competition/components/CompetitionFilters.js';
+import { useCollection } from '../../../features/competition/hooks/useCollection.js';
+import type { Competition } from '../../../features/competition/hooks/useCompetition.js';
 import { PageLayout } from '../../../shared/components/PageLayout.js';
+import { useGameCatalog } from '../../../shared/riot/useGameCatalog.js';
+import { ChampionsTable } from './ChampionsTable.js';
 import './champions.css';
 
-export function ChampionsPage() {
+export function ChampionsPage({ competition }: { competition: Competition }) {
+  const [revision, setRevision] = useState(0);
+  const champions = useCollection<ChampionStats>(
+    competition.division
+      ? `divisions/${encodeURIComponent(competition.division.id)}/champions`
+      : null,
+    revision
+  );
+  const catalog = useGameCatalog();
+  const state = resolveCompetitionState(competition, champions);
   return (
     <PageLayout
       id="campeones"
       number="07"
       title="Campeones"
       subtitle="Estadísticas de juego"
-      description="Pick, ban y porcentaje de victorias de cada campeón en Rift Premier y Rift Ascend."
-      toolbar={
-        <>
-          <span className="meta">Meta de la competición</span>
-          <span className="availability">Próximamente</span>
-        </>
-      }
+      description="Selecciones y victorias de cada campeón en los mapas de la competición."
+      toolbar={<CompetitionFilters competition={competition} />}
     >
-      <ChampionsTable />
+      <DataState
+        state={state}
+        loadingMessage="Cargando estadísticas de campeones…"
+        errorMessage="No se han podido cargar las estadísticas de campeones."
+        empty="Todavía no hay mapas finalizados con datos de campeones en esta división."
+        retry={() => {
+          competition.retry();
+          setRevision((value) => value + 1);
+        }}
+      >
+        <ChampionsTable rows={champions.data} catalog={catalog} />
+      </DataState>
     </PageLayout>
   );
 }

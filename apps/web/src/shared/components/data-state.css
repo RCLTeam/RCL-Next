@@ -42,7 +42,13 @@
   gap: 16px;
   border-style: solid;
   border-color: var(--line);
-  padding: 28px;
+  padding: 20px;
+}
+
+@media (min-width: 651px) {
+  .rcl-site .page-content .empty-state {
+    padding: 28px;
+  }
 }
 
 .rcl-site .page-content .empty-state p {
@@ -51,10 +57,4 @@
 
 .rcl-site .page-content .error-state {
   border-color: var(--crimson);
-}
-
-@media (max-width: 650px) {
-  .rcl-site .page-content .empty-state {
-    padding: 20px;
-  }
 }

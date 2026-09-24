@@ -14,7 +14,7 @@ export function HomeHero({ seasonName, streamUrl }: HomeHeroProps) {
       <div className="hero-body">
         <div className="hero-kicker">
           <span className="status-dot" />
-          {seasonName ?? 'REBEL CROWN LEGACY · THE REBELLION'}
+          {`REBEL CROWN LEGACY · ${seasonName}`}
         </div>
         <h1>
           LA CORONA
@@ -42,10 +42,10 @@ export function HomeHero({ seasonName, streamUrl }: HomeHeroProps) {
       </div>
       <div className="hero-ticker" aria-hidden="true">
         <div className="hero-ticker-track">
-          {[0, 1].map((copy) => (
-            <span key={copy}>
-              THE REBELLION · LA CORONA NO SE HEREDA, SE CONQUISTA · THE REBELLION · LA CORONA NO SE
-              HEREDA, SE CONQUISTA ·&nbsp;
+          {Array.from({ length: 10 }).map((_, index) => (
+            // biome-ignore lint/suspicious/noArrayIndexKey: elemento estático repetido para animación
+            <span key={index}>
+              {`${seasonName} · LA CORONA NO SE HEREDA, SE CONQUISTA ·`}&nbsp;
             </span>
           ))}
         </div>

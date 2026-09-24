@@ -17,12 +17,26 @@
   font: 900 clamp(44px, 5vw, 74px)/1 var(--display);
   text-transform: uppercase;
   margin-bottom: 0;
+  font-size: 42px;
+}
+
+@media (min-width: 651px) {
+  .rcl-site .section-heading h1 {
+    font-size: clamp(44px, 5vw, 74px);
+  }
 }
 
 .rcl-site .section-cross {
   font: 80px/1 var(--mono);
   color: var(--lime);
   transform: rotate(8deg);
+  font-size: 52px;
+}
+
+@media (min-width: 651px) {
+  .rcl-site .section-cross {
+    font-size: 80px;
+  }
 }
 
 .rcl-site .eyebrow {
@@ -30,8 +44,16 @@
   font: 700 11px/1.7 var(--mono);
   color: var(--muted);
   text-transform: uppercase;
-  letter-spacing: 0.16em;
   margin-bottom: 24px;
+  font-size: 9px;
+  letter-spacing: 0.09em;
+}
+
+@media (min-width: 651px) {
+  .rcl-site .eyebrow {
+    font-size: 11px;
+    letter-spacing: 0.16em;
+  }
 }
 
 .rcl-site .eyebrow::before {
@@ -67,19 +89,3 @@
 .rcl-site .paper .eyebrow::before {
   background: var(--purple);
 }
-
-@media (max-width: 650px) {
-  .rcl-site .section-cross {
-    font-size: 52px;
-  }
-
-  .rcl-site .section-heading h1 {
-    font-size: 42px;
-  }
-
-  .rcl-site .eyebrow {
-    font-size: 9px;
-    letter-spacing: 0.09em;
-  }
-}
-

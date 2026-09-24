@@ -1,13 +1,20 @@
 /* Page-specific styles: champions. Base styles, states and responsive rules stay with their component. */
 
 /* champions page and components */
+
 .rcl-site #campeones .section-cross {
   color: var(--purple);
 }
 
 .rcl-site .champion-panel {
-  padding: 28px;
   border: 1px solid var(--line);
+  padding: 16px;
+}
+
+@media (min-width: 651px) {
+  .rcl-site .champion-panel {
+    padding: 28px;
+  }
 }
 
 .rcl-site .page-content .champion-panel .table-scroll {
@@ -27,8 +34,14 @@
   line-height: 1.7;
 }
 
-@media (max-width: 650px) {
-  .rcl-site .champion-panel {
-    padding: 16px;
-  }
+.rcl-site .champion-controls { display: flex; flex-direction: column; gap: 20px; margin-bottom: 24px; }
+.rcl-site .champion-controls .meta { margin: 0; }
+@media (min-width: 651px) {
+  .rcl-site .champion-controls { flex-direction: row; flex-wrap: wrap; align-items: end; }
+  .rcl-site .champion-controls .meta { margin-left: auto; }
 }
+.rcl-site .champion-table td { text-align: center; }
+.rcl-site .champion-table tbody th { text-align: left; }
+.rcl-site .champion-table .game-asset { gap: 12px; }
+.rcl-site .champion-table .game-asset img { width: 40px; height: 40px; border-radius: 6px; }
+.rcl-site .champion-stats-note { margin: 20px 0 0; color: var(--muted); font-size: 12px; line-height: 1.7; }

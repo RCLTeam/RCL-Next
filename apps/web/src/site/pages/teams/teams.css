@@ -1,17 +1,33 @@
 /* Page-specific styles: teams. Base styles, states and responsive rules stay with their component. */
 
 /* teams page and components */
+
 .rcl-site .team-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr));
   gap: 20px;
 }
 
 .rcl-site .team-card {
+  display: block;
+  color: inherit;
+  text-decoration: none;
   border: 1px solid var(--line);
   border-left: 3px solid var(--purple);
   background: var(--panel);
   transition: transform 180ms, border-color 180ms;
+}
+
+.rcl-site .team-card:focus-visible {
+  outline: 2px solid var(--lime);
+  outline-offset: 4px;
+}
+
+.rcl-site .team-card-action {
+  display: block;
+  margin-top: 20px;
+  color: var(--lime);
+  font: 12px var(--mono);
 }
 
 .rcl-site .team-card-art {

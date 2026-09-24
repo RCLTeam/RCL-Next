@@ -1,3 +1,5 @@
+import type { MatchMap, Player, PlayerDetail, TeamDetail } from '@rcl/contracts';
+export type { Player, PlayerDetail, TeamDetail, TeamMember, PlayerTeam } from '@rcl/contracts';
 export interface Season {
   id: string;
   name: string;
@@ -44,7 +46,25 @@ export interface Match {
   finishedAt: Date | null;
   streamUrl: string | null;
 }
+export interface ChampionPick {
+  gameId: string;
+  champion: string;
+  teamId: string;
+  winnerTeamId: string | null;
+}
 export interface CompetitionRepository {
+  championPicks(divisionId: string): Promise<ChampionPick[]>;
+  matchDirectory(): Promise<
+    { id: string; homeTeamId: string; awayTeamId: string; roundId: string | null }[]
+  >;
+  match(id: string): Promise<Match | undefined>;
+  matchGames(id: string): Promise<MatchMap[]>;
+  teamDirectory(): Promise<
+    { id: string; name: string; seasonName: string; divisionName: string }[]
+  >;
+  players(): Promise<Player[]>;
+  playerDetail(id: string): Promise<PlayerDetail | undefined>;
+  teamDetail(id: string): Promise<TeamDetail | undefined>;
   seasons(): Promise<Season[]>;
   season(id: string): Promise<Season | undefined>;
   divisions(seasonId: string): Promise<Division[]>;

@@ -1,21 +1,148 @@
-.rcl-site .member-roles h2 { font: 700 42px/1 var(--display2); margin: 0 0 12px; }
-.rcl-site .member-roles p { color: var(--muted); line-height: 1.6; }
-.rcl-site .member-roles-toolbar, .rcl-site .member-roles-actions, .rcl-site .member-roles-pagination { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
-.rcl-site .member-roles-toolbar { margin: 24px 0; justify-content: space-between; }
-.rcl-site .member-roles-toolbar label { display: grid; gap: 8px; width: min(100%, 440px); }
-.rcl-site .member-roles :is(input, select) { width: 100%; min-height: 44px; padding: 10px 12px; background: var(--void); color: var(--text); border: 1px solid var(--stone); font: inherit; color-scheme: dark; }
-.rcl-site .member-roles :is(input, select, button):focus-visible { outline: 2px solid var(--lime); outline-offset: 3px; }
-.rcl-site .member-roles :disabled { opacity: 0.5; cursor: not-allowed; }
-.rcl-site .member-roles-table { overflow-x: auto; border: 1px solid var(--line); }
-.rcl-site .member-roles-table table { width: 100%; min-width: 600px; border-collapse: collapse; text-align: left; }
-.rcl-site .member-roles-table :is(th, td) { padding: 16px; border-bottom: 1px solid var(--line); }
-.rcl-site .member-roles-table th { background: var(--panel-raised); color: var(--muted); font: 400 12px var(--mono); text-transform: uppercase; }
-.rcl-site .member-roles-table small { display: block; color: var(--muted); margin-top: 4px; }
-.rcl-site .member-role-badge { font: 400 12px var(--mono); color: var(--lime); }
-.rcl-site .member-roles-pagination { justify-content: flex-end; margin-top: 20px; }
-.rcl-site .member-roles-confirmation { padding: 24px; margin-bottom: 24px; background: var(--panel); border: 1px solid var(--stone); border-top: 3px solid var(--lime); }
-.rcl-site .member-roles-confirmation h3 { margin-top: 0; }
-.rcl-site .member-roles-success { display: block; padding: 12px; color: var(--win); border-left: 3px solid var(--win); margin-bottom: 16px; }
-.rcl-site .member-roles-error { padding: 16px; margin-bottom: 20px; border: 1px solid var(--crimson); }
-.rcl-site .member-roles-error p { color: var(--crimson); }
-@media (max-width: 650px) { .rcl-site .member-roles-toolbar { align-items: stretch; flex-direction: column; } .rcl-site .member-roles-confirmation { padding: 16px; } }
+/* The members table scrolls locally so roles and actions remain aligned. */
+
+.rcl-site .member-roles h2 {
+  font: 700 42px/1 var(--display2);
+  margin: 0 0 12px;
+}
+
+.rcl-site .member-roles p {
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.rcl-site .member-roles-toolbar {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.rcl-site .member-roles-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.rcl-site .member-roles-pagination {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.rcl-site .member-roles-toolbar {
+  margin: 24px 0;
+  justify-content: space-between;
+  align-items: stretch;
+  flex-direction: column;
+}
+
+@media (min-width: 651px) {
+  .rcl-site .member-roles-toolbar {
+    align-items: center;
+    flex-direction: row;
+  }
+}
+
+.rcl-site .member-roles-toolbar label {
+  display: grid;
+  gap: 8px;
+  width: min(100%, 440px);
+}
+
+.rcl-site .member-roles :is(input, select) {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  background: var(--void);
+  color: var(--text);
+  border: 1px solid var(--stone);
+  font: inherit;
+  color-scheme: dark;
+}
+
+.rcl-site .member-roles :is(input, select, button):focus-visible {
+  outline: 2px solid var(--lime);
+  outline-offset: 3px;
+}
+
+.rcl-site .member-roles :disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.rcl-site .member-roles-table {
+  overflow-x: auto;
+  border: 1px solid var(--line);
+}
+
+.rcl-site .member-roles-table table {
+  width: 100%;
+  min-width: 600px;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.rcl-site .member-roles-table :is(th, td) {
+  padding: 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+.rcl-site .member-roles-table th {
+  background: var(--panel-raised);
+  color: var(--muted);
+  font: 400 12px var(--mono);
+  text-transform: uppercase;
+}
+
+.rcl-site .member-roles-table small {
+  display: block;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+.rcl-site .member-role-badge {
+  font: 400 12px var(--mono);
+  color: var(--lime);
+}
+
+.rcl-site .member-roles-pagination {
+  justify-content: flex-end;
+  margin-top: 20px;
+}
+
+.rcl-site .member-roles-confirmation {
+  margin-bottom: 24px;
+  background: var(--panel);
+  border: 1px solid var(--stone);
+  border-top: 3px solid var(--lime);
+  padding: 16px;
+}
+
+@media (min-width: 651px) {
+  .rcl-site .member-roles-confirmation {
+    padding: 24px;
+  }
+}
+
+.rcl-site .member-roles-confirmation h3 {
+  margin-top: 0;
+}
+
+.rcl-site .member-roles-success {
+  display: block;
+  padding: 12px;
+  color: var(--win);
+  border-left: 3px solid var(--win);
+  margin-bottom: 16px;
+}
+
+.rcl-site .member-roles-error {
+  padding: 16px;
+  margin-bottom: 20px;
+  border: 1px solid var(--crimson);
+}
+
+.rcl-site .member-roles-error p {
+  color: var(--crimson);
+}

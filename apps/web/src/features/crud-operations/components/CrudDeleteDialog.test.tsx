@@ -65,9 +65,11 @@ describe('CRUD deletion confirmation', () => {
         onDeleted={() => {}}
       />
     );
-    expect(html).toContain('Solo un owner puede borrar en cascada');
+    expect(html).toContain('Si tiene datos relacionados, la eliminación se bloqueará.');
     expect(html).not.toContain('Confirmar eliminación en cascada');
-    expect(html).not.toContain('Calculando filas afectadas');
+    expect(html).toContain('Calculando filas afectadas');
+    expect(html).toMatch(/disabled="">Confirmar eliminación/);
+    expect(html).not.toContain('type="checkbox"');
   });
   it('shows per-table counts and distinguishes deleted rows, unlinked rows and blockers', () => {
     const preview: CrudDeletePreview = {
@@ -80,10 +82,11 @@ describe('CRUD deletion confirmation', () => {
       ]
     };
     const html = renderToString(<CrudDeleteImpactTable preview={preview} />);
-    expect(html.replaceAll('<!-- -->', '')).toContain('2 filas que se eliminarán');
+    expect(html.replaceAll('<!-- -->', '')).toContain(
+      '2 filas afectadas por el borrado en cascada'
+    );
     for (const content of [
       'teams',
-      'team-a',
       'matches',
       'predictions',
       'Desvincular (no se eliminan)',

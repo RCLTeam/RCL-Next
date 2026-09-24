@@ -1,3 +1,12 @@
+import type { TeamSummary as Team } from '@rcl/contracts';
+export type {
+  TeamSummary as Team,
+  TeamDetail,
+  TeamMember,
+  Player,
+  PlayerTeam,
+  PlayerDetail
+} from '@rcl/contracts';
 // Public JSON shapes of the existing /api/v1 competition endpoints.
 export interface Season {
   id: string;
@@ -10,12 +19,6 @@ export interface Division {
   name: string;
   sortOrder: number;
 }
-export interface Team {
-  id: string;
-  name: string;
-  shortName: string | null;
-  logoUrl: string | null;
-}
 export interface Round {
   id: string;
   sequence: number;
@@ -23,6 +26,7 @@ export interface Round {
   name: string | null;
 }
 export interface Match {
+  slug?: string | undefined;
   id: string;
   homeTeam?: Team;
   awayTeam?: Team;

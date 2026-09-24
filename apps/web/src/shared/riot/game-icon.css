@@ -1,0 +1,26 @@
+.rcl-site .game-asset {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  vertical-align: middle;
+}
+
+.rcl-site .game-asset img,
+.rcl-site .game-asset-fallback {
+  width: 34px;
+  height: 34px;
+  object-fit: contain;
+  border: 1px solid var(--line);
+  flex-shrink: 0;
+}
+
+.rcl-site .game-asset-fallback {
+  display: grid;
+  place-items: center;
+  font: 9px var(--mono);
+  overflow: hidden;
+}
+
+.rcl-site .game-asset.with-label {
+  font-size: 12px;
+}

@@ -1,4 +1,4 @@
-/* Header layout and mobile menu — SiteLayout */
+/* Header layout and mobile menu - SiteLayout */
 
 .rcl-site .site-header {
   position: sticky;
@@ -11,10 +11,11 @@
 
 .rcl-site .nav-top {
   min-height: 68px;
-  padding: 10px var(--page-gutter);
+  padding: 12px var(--page-gutter);
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 24px;
+  gap: 12px;
   width: 100%;
 }
 
@@ -25,29 +26,69 @@
 
 .rcl-site .brand img {
   object-fit: contain;
+  width: 70px;
+  height: 30px;
 }
 
 .rcl-site .nav-account {
   margin-left: auto;
   min-width: 0;
-}
-
-.rcl-site .nav-bottom {
-  display: flex;
-  justify-content: space-between;
-  gap: 20px;
-  align-items: center;
-  padding: 0 var(--page-gutter) 14px;
-  width: 100%;
+  order: 3;
+  flex-basis: 100%;
 }
 
 .rcl-site .menu-toggle {
-  display: none;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  margin-left: auto;
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--stone);
+  padding: 10px 12px;
+  font: 700 11px var(--body-f);
+  text-transform: uppercase;
 }
 
-@media (max-width: 1150px) {
+.rcl-site .nav-bottom {
+  display: none;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 20px;
+  align-items: center;
+  padding: 12px var(--page-gutter) 20px;
+  width: 100%;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.rcl-site .nav-bottom.is-open {
+  display: flex;
+}
+
+@media (min-width: 651px) {
+  .rcl-site .nav-top {
+    padding: 10px var(--page-gutter);
+    gap: 24px;
+  }
+
+  .rcl-site .brand img {
+    width: 92px;
+    height: 38px;
+  }
+
+  .rcl-site .nav-account {
+    order: 0;
+    flex-basis: auto;
+  }
+
+  .rcl-site .menu-toggle {
+    margin-left: 0;
+  }
+
   .rcl-site .nav-bottom {
-    flex-wrap: wrap;
+    padding: 0 var(--page-gutter) 14px;
   }
 }
 
@@ -61,8 +102,13 @@
   }
 
   .rcl-site .nav-top,
-  .rcl-site .nav-bottom {
+  .rcl-site .nav-bottom,
+  .rcl-site .nav-bottom.is-open {
     display: contents;
+  }
+
+  .rcl-site .menu-toggle {
+    display: none;
   }
 
   .rcl-site .brand {
@@ -77,58 +123,3 @@
     padding-block: 10px;
   }
 }
-
-@media (max-width: 950px) {
-  .rcl-site .nav-top {
-    flex-wrap: wrap;
-  }
-
-  .rcl-site .menu-toggle {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    background: transparent;
-    color: var(--text);
-    border: 1px solid var(--stone);
-    padding: 10px 12px;
-    font: 700 11px var(--body-f);
-  }
-
-  .rcl-site .nav-bottom {
-    display: none;
-    max-height: 60vh;
-    overflow-y: auto;
-  }
-
-  .rcl-site .nav-bottom.is-open {
-    display: flex;
-    flex-wrap: wrap;
-  }
-}
-
-@media (max-width: 650px) {
-  .rcl-site .nav-top {
-    padding: 12px var(--page-gutter);
-    gap: 12px;
-  }
-
-  .rcl-site .brand img {
-    width: 70px;
-    height: 30px;
-  }
-
-  .rcl-site .nav-account {
-    order: 3;
-    flex-basis: 100%;
-  }
-
-  .rcl-site .menu-toggle {
-    margin-left: auto;
-    text-transform: uppercase;
-  }
-
-  .rcl-site .nav-bottom {
-    padding: 12px var(--page-gutter) 20px;
-  }
-}
-

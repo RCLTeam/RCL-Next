@@ -15,8 +15,15 @@
 }
 
 .rcl-site .page-heading {
-  margin-bottom: 32px;
-  padding-bottom: 0;
+  padding-bottom: 24px;
+  margin-bottom: 24px;
+}
+
+@media (min-width: 651px) {
+  .rcl-site .page-heading {
+    padding-bottom: 0;
+    margin-bottom: 32px;
+  }
 }
 
 .rcl-site .page-heading .section-heading {
@@ -54,29 +61,27 @@
 
 .rcl-site .page-hud > span:last-child {
   text-align: right;
+  display: none;
+}
+
+@media (min-width: 651px) {
+  .rcl-site .page-hud > span:last-child {
+    display: inline;
+  }
 }
 
 .rcl-site .page-description {
   max-width: 720px;
-  min-height: 48px;
   margin: 0;
   font-size: 14px;
   line-height: 24px;
   color: var(--muted);
+  min-height: 72px;
 }
 
-@media (max-width: 650px) {
-  .rcl-site .page-hud > span:last-child {
-    display: none;
-  }
-
-  .rcl-site .page-heading {
-    margin-bottom: 24px;
-    padding-bottom: 24px;
-  }
-
+@media (min-width: 651px) {
   .rcl-site .page-description {
-    min-height: 72px;
+    min-height: 48px;
   }
 }
 
@@ -85,8 +90,14 @@
 .rcl-site .page-content {
   display: flex;
   flex-direction: column;
-  gap: 28px;
   min-width: 0;
+  gap: 24px;
+}
+
+@media (min-width: 651px) {
+  .rcl-site .page-content {
+    gap: 28px;
+  }
 }
 
 .rcl-site .page-content > * {
@@ -94,10 +105,3 @@
   margin-top: 0;
   margin-bottom: 0;
 }
-
-@media (max-width: 650px) {
-  .rcl-site .page-content {
-    gap: 24px;
-  }
-}
-

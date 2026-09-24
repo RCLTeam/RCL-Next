@@ -1,21 +1,33 @@
 /* Page-specific styles: home. Base styles, states and responsive rules stay with their component. */
 
 /* Hero and artwork */
+
 .rcl-site .hero {
-  min-height: 760px;
   position: relative;
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
   overflow: hidden;
   border-bottom: 1px solid var(--line);
+  min-height: 600px;
+}
+
+@media (min-width: 651px) {
+  .rcl-site .hero {
+    min-height: 620px;
+  }
+}
+
+@media (min-width: 851px) {
+  .rcl-site .hero {
+    min-height: 760px;
+  }
 }
 
 .rcl-site .hero-bg {
   position: absolute;
   inset: 0;
-  background:
-    linear-gradient(
+  background: linear-gradient(
       to left,
       transparent 20%,
       rgba(0, 0, 0, 0.35) 45%,
@@ -66,19 +78,42 @@
 
 .rcl-site .hero-badge {
   position: absolute;
-  width: min(45vw, 570px);
   height: auto;
-  top: 28px;
-  right: -30px;
   transform: rotate(6deg);
-  opacity: 0.86;
   mix-blend-mode: lighten;
+  top: -20px;
+  width: 340px;
+  opacity: 0.45;
+  right: -95px;
+}
+
+@media (min-width: 651px) {
+  .rcl-site .hero-badge {
+    top: 0;
+    width: 420px;
+    right: -100px;
+  }
+}
+
+@media (min-width: 851px) {
+  .rcl-site .hero-badge {
+    top: 28px;
+    width: min(45vw, 570px);
+    opacity: 0.86;
+    right: -30px;
+  }
 }
 
 .rcl-site .hero-body {
   position: relative;
   z-index: 1;
-  padding: 76px var(--page-gutter) 65px;
+  padding: 120px 24px 44px;
+}
+
+@media (min-width: 651px) {
+  .rcl-site .hero-body {
+    padding: 76px var(--page-gutter) 65px;
+  }
 }
 
 .rcl-site .hero-kicker {
@@ -87,8 +122,18 @@
   align-items: center;
   margin-bottom: 26px;
   font: 700 11px var(--mono);
-  letter-spacing: 0.17em;
   text-transform: uppercase;
+  font-size: 9px;
+  max-width: 300px;
+  letter-spacing: 0.09em;
+}
+
+@media (min-width: 651px) {
+  .rcl-site .hero-kicker {
+    font-size: 11px;
+    max-width: none;
+    letter-spacing: 0.17em;
+  }
 }
 
 .rcl-site .status-dot {
@@ -102,12 +147,18 @@
 
 .rcl-site .hero h1 {
   font-family: var(--display);
-  font-size: clamp(54px, 10vw, 158px);
   line-height: 0.9;
   font-weight: 900;
   letter-spacing: 0;
   margin: 0;
   text-shadow: 0 6px 40px var(--void);
+  font-size: clamp(54px, 12vw, 78px);
+}
+
+@media (min-width: 651px) {
+  .rcl-site .hero h1 {
+    font-size: clamp(54px, 10vw, 158px);
+  }
 }
 
 .rcl-site .hero h1 em {
@@ -117,22 +168,35 @@
 
 .rcl-site .hero p {
   max-width: 540px;
-  font-size: 17px;
   font-weight: 300;
   line-height: 1.6;
   margin: 26px 0 34px;
   color: var(--text);
+  font-size: 14px;
+}
+
+@media (min-width: 651px) {
+  .rcl-site .hero p {
+    font-size: 17px;
+  }
 }
 
 .rcl-site .news-hero {
-  min-height: 420px;
-  padding: 30px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   border: 1px solid var(--line);
   background: linear-gradient(0deg, var(--panel) 10%, transparent), radial-gradient(ellipse at 75% 10%, color-mix(in srgb, var(--purple) 30%, var(--panel)), var(--panel) 65%);
   clip-path: polygon(0 0, 100% 0, 100% calc(100% - 30px), calc(100% - 30px) 100%, 0 100%);
+  padding: 24px;
+  min-height: 360px;
+}
+
+@media (min-width: 651px) {
+  .rcl-site .news-hero {
+    padding: 30px;
+    min-height: 420px;
+  }
 }
 
 .rcl-site .news-hero h2 {
@@ -147,75 +211,7 @@
   font-size: 14px;
 }
 
-@media (max-width: 850px) {
-  .rcl-site .hero-badge {
-    width: 420px;
-    top: 0;
-    right: -100px;
-    opacity: 0.45;
-  }
-
-  .rcl-site .hero {
-    min-height: 620px;
-  }
-}
-
-@media (max-width: 650px) {
-  .rcl-site .hero {
-    min-height: 600px;
-  }
-
-  .rcl-site .hero-body {
-    padding: 120px 24px 44px;
-  }
-
-  .rcl-site .hero h1 {
-    font-size: clamp(54px, 12vw, 78px);
-  }
-
-  .rcl-site .hero-kicker {
-    font-size: 9px;
-    letter-spacing: 0.09em;
-    max-width: 300px;
-  }
-
-  .rcl-site .hero p {
-    font-size: 14px;
-  }
-
-  .rcl-site .hero-badge {
-    width: 340px;
-    top: -20px;
-    right: -95px;
-  }
-
-  .rcl-site .news-hero {
-    min-height: 360px;
-    padding: 24px;
-  }
-}
-
 /* Ticker and animation */
-.rcl-site .hero-ticker-track {
-  display: flex;
-  width: max-content;
-  animation: rcl-marquee 26s linear infinite;
-}
-
-.rcl-site .hero-ticker-track span {
-  flex-shrink: 0;
-  padding-left: 10px;
-}
-
-@keyframes rcl-marquee {
-  from {
-    transform: translateX(0);
-  }
-
-  to {
-    transform: translateX(-50%);
-  }
-}
 
 .rcl-site .hero-ticker {
   position: relative;
@@ -227,18 +223,42 @@
   align-items: center;
   overflow: hidden;
   white-space: nowrap;
-  font: 700 18px var(--display2);
+  font: 700 16px var(--display2);
   letter-spacing: 0.04em;
   transform: skewY(-1deg);
+  user-select: none; 
 }
 
-@media (max-width: 650px) {
+.rcl-site .hero-ticker-track {
+  display: flex;
+  width: max-content;
+  will-change: transform; /* Optimización de rendimiento para animaciones compuestas */
+  animation: rcl-marquee 35s linear infinite;
+}
+
+.rcl-site .hero-ticker-track span {
+  flex-shrink: 0;
+  display: inline-block;
+  white-space: nowrap;
+}
+
+@keyframes rcl-marquee {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+@media (min-width: 651px) {
   .rcl-site .hero-ticker {
-    font-size: 16px;
+    font-size: 18px;
   }
 }
 
 /* Featured match */
+
 .rcl-site .featured-match {
   padding: 32px var(--page-gutter);
   background: var(--panel);
@@ -258,6 +278,7 @@
 }
 
 /* Team of the week */
+
 .rcl-site .totw-strip {
   position: relative;
   background: var(--paper);
@@ -265,15 +286,40 @@
 
 .rcl-site .totw-grid {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 18px;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 20px 12px;
+}
+
+@media (min-width: 480px) {
+  .rcl-site .totw-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 651px) {
+  .rcl-site .totw-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 18px;
+  }
+}
+
+@media (min-width: 851px) {
+  .rcl-site .totw-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
 }
 
 .rcl-site .totw-card {
   position: relative;
-  padding: 18px;
   background: var(--paper);
   border: 1px solid var(--stone);
+  padding: 16px;
+}
+
+@media (min-width: 651px) {
+  .rcl-site .totw-card {
+    padding: 18px;
+  }
 }
 
 .rcl-site .totw-card::before {
@@ -309,28 +355,18 @@
   margin-bottom: 0;
 }
 
-@media (max-width: 850px) {
-  .rcl-site .totw-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 650px) {
-  .rcl-site .totw-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 20px 12px;
-  }
-
-  .rcl-site .totw-card {
-    padding: 16px;
-  }
-}
-
 /* News */
+
 .rcl-site .news-grid {
   display: grid;
-  grid-template-columns: 1.3fr 1fr;
   gap: 24px;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 851px) {
+  .rcl-site .news-grid {
+    grid-template-columns: 1.3fr 1fr;
+  }
 }
 
 .rcl-site .news-tag {
@@ -348,12 +384,18 @@
 }
 
 .rcl-site .news-item {
-  padding: 22px;
   display: flex;
   align-items: center;
   gap: 20px;
   background: var(--panel);
   border: 1px solid var(--line);
+  padding: 18px;
+}
+
+@media (min-width: 651px) {
+  .rcl-site .news-item {
+    padding: 22px;
+  }
 }
 
 .rcl-site .news-item:hover {
@@ -371,29 +413,26 @@
   margin: 8px 0;
 }
 
-@media (max-width: 850px) {
-  .rcl-site .news-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 650px) {
-  .rcl-site .news-item {
-    padding: 18px;
-  }
-}
-
 /* Competitions */
+
 .rcl-site .competition-teaser {
   background: var(--panel);
 }
 
 /* Crown teaser */
+
 .rcl-site .crown-teaser {
   display: grid;
-  grid-template-columns: 1.1fr 1fr;
-  gap: 60px;
   align-items: center;
+  grid-template-columns: 1fr;
+  gap: 24px;
+}
+
+@media (min-width: 851px) {
+  .rcl-site .crown-teaser {
+    grid-template-columns: 1.1fr 1fr;
+    gap: 60px;
+  }
 }
 
 .rcl-site .crown-teaser h2 {
@@ -424,11 +463,4 @@
   font: 700 30px var(--display2);
   text-transform: uppercase;
   margin: 14px 0;
-}
-
-@media (max-width: 850px) {
-  .rcl-site .crown-teaser {
-    grid-template-columns: 1fr;
-    gap: 24px;
-  }
 }

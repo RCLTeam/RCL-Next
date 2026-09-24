@@ -20,13 +20,15 @@ export function RoflUploadPanel({ wsUrl }: RoflUploadPanelProps) {
 
   return (
     <div className="admin-rofl-upload-panel-container">
-      <section className="admin-rofl-upload-panel-header-card">
-        <h2 className="admin-rofl-upload-panel-title">ROFL Replay Upload</h2>
-        <p className="admin-rofl-upload-panel-subtitle">
-          Administrative batch ingestion workspace for League of Legends match replays.
-        </p>
-      </section>
-
+      <div className="content-manager-heading">
+        <div>
+          <span className="eyebrow">Subir datos</span>
+          <h2>ROFL Upload</h2>
+          <p>
+            Espacio de trabajo para la ingesta administrativa por lotes de repeticiones de partidas.
+          </p>
+        </div>
+      </div>
       {/* Dropzone rendered when idle, or when finished/errored if user wants to select another */}
       {isIdle ? (
         <RoflDropzone onFileSelected={uploadFile} />

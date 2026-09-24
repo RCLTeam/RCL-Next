@@ -50,6 +50,8 @@
 }
 
 .rcl-site .admin-rofl-upload-panel-retry-button {
+  min-height: 44px;
+  max-width: 100%;
   background-color: var(--crimson);
   color: var(--text);
   border: none;
@@ -125,6 +127,8 @@
 }
 
 .rcl-site .admin-rofl-dropzone-badge-group {
+  flex-wrap: wrap;
+  gap: 8px;
   display: inline-flex;
   gap: 0.5rem;
   align-items: center;
@@ -165,6 +169,8 @@
 }
 
 .rcl-site .admin-upload-stepper-file-title {
+  min-width: 0;
+  overflow-wrap: anywhere;
   margin: 0;
   font-size: 1.1rem;
   font-weight: 700;
@@ -181,6 +187,8 @@
 }
 
 .rcl-site .admin-upload-stepper-queue-alert {
+  flex-wrap: wrap;
+  gap: 8px;
   background-color: color-mix(in srgb, var(--lime) 12%, transparent);
   border: 1px solid color-mix(in srgb, var(--lime) 40%, transparent);
   border-radius: 8px;
@@ -208,6 +216,8 @@
 }
 
 .rcl-site .admin-upload-stepper-stepper-track {
+  flex-direction: column;
+  gap: 16px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -300,6 +310,8 @@
 }
 
 .rcl-site .admin-upload-stepper-log-line {
+  min-width: 0;
+  overflow-wrap: anywhere;
   display: flex;
   gap: 0.75rem;
   margin-bottom: 0.25rem;
@@ -317,6 +329,13 @@
 .rcl-site .admin-upload-stepper-step-circle {
   font-family: var(--mono);
   font-weight: 700;
+}
+
+@media (min-width: 651px) {
+  .rcl-site .admin-upload-stepper-stepper-track {
+    flex-direction: row;
+    gap: 0;
+  }
 }
 
 /* MissingPlayersAlert */
@@ -367,6 +386,8 @@
 }
 
 .rcl-site .admin-missing-players-alert-player-tag {
+  min-width: 0;
+  overflow-wrap: anywhere;
   background-color: color-mix(in srgb, var(--crimson) 20%, transparent);
   border: 1px solid color-mix(in srgb, var(--crimson) 50%, transparent);
   color: var(--crimson);
@@ -420,7 +441,7 @@
 .rcl-site .admin-anomaly-alerts-anomaly-grid {
   display: grid;
   gap: 1rem;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
 }
 
 .rcl-site .admin-anomaly-alerts-card {
@@ -432,6 +453,8 @@
 }
 
 .rcl-site .admin-anomaly-alerts-card-header {
+  flex-wrap: wrap;
+  gap: 8px;
   display: flex;
   justify-content: space-between;
   align-items: baseline;
@@ -439,6 +462,8 @@
 }
 
 .rcl-site .admin-anomaly-alerts-game-file {
+  min-width: 0;
+  overflow-wrap: anywhere;
   font-size: 0.85rem;
   font-weight: 700;
   color: var(--text);
@@ -465,6 +490,8 @@
 }
 
 .rcl-site .admin-anomaly-alerts-account-item {
+  flex-wrap: wrap;
+  gap: 8px;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -476,6 +503,8 @@
 }
 
 .rcl-site .admin-anomaly-alerts-account-name {
+  min-width: 0;
+  overflow-wrap: anywhere;
   color: var(--text);
   font-weight: 700;
 }
@@ -539,7 +568,7 @@
 
 .rcl-site .admin-batch-summary-card-stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 160px), 1fr));
   gap: 1rem;
   margin-bottom: 1.5rem;
 }
@@ -593,12 +622,16 @@
 }
 
 .rcl-site .admin-batch-summary-card-actions {
+  flex-wrap: wrap;
+  gap: 8px;
   display: flex;
   justify-content: flex-end;
   gap: 1rem;
 }
 
 .rcl-site .admin-batch-summary-card-reset-button {
+  min-height: 44px;
+  max-width: 100%;
   background-color: var(--purple);
   color: var(--text);
   border: none;

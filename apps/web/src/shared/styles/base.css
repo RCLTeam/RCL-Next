@@ -54,6 +54,7 @@
 .rcl-site h3,
 .rcl-site p {
   margin-top: 0;
+  overflow-wrap: anywhere;
 }
 
 .rcl-site h1,
@@ -83,7 +84,19 @@
 }
 
 .rcl-site section[id] {
-  scroll-margin-top: 145px;
+  scroll-margin-top: 150px;
+}
+
+@media (min-width: 651px) {
+  .rcl-site section[id] {
+    scroll-margin-top: 180px;
+  }
+}
+
+@media (min-width: 1151px) {
+  .rcl-site section[id] {
+    scroll-margin-top: 145px;
+  }
 }
 
 .rcl-site main {
@@ -111,20 +124,7 @@
   color: var(--void);
 }
 
-@media (max-width: 1150px) {
-  .rcl-site section[id] {
-    scroll-margin-top: 180px;
-  }
-}
-
-@media (max-width: 650px) {
-  .rcl-site section[id] {
-    scroll-margin-top: 150px;
-  }
-}
-
 .rcl-site #main-content {
   min-height: 62vh;
   width: 100%;
 }
-

@@ -1,12 +1,9 @@
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { expect, test } from 'vitest';
-import { ChampionsTable } from '../../../apps/web/src/features/competition/components/ChampionsTable.js';
-import {
-  DataState,
-  MatchCard
-} from '../../../apps/web/src/features/competition/components/CompetitionViews.js';
+import { DataState } from '../../../apps/web/src/features/competition/components/CompetitionDataState.js';
 import { DivisionCard } from '../../../apps/web/src/features/competition/components/DivisionCard.js';
+import { MatchCard } from '../../../apps/web/src/features/competition/components/MatchCard.js';
 import { PlayoffBracket } from '../../../apps/web/src/features/competition/components/PlayoffBracket.js';
 import { RoundFilter } from '../../../apps/web/src/features/competition/components/RoundFilter.js';
 import { StandingsTable } from '../../../apps/web/src/features/competition/components/StandingsTable.js';
@@ -16,9 +13,60 @@ import type {
   Match,
   Team
 } from '../../../apps/web/src/features/competition/types/competition.types.js';
+import { ChampionsTable } from '../../../apps/web/src/site/pages/champions/ChampionsTable.js';
 import { PlayoffsPage } from '../../../apps/web/src/site/pages/playoffs/PlayoffsPage.js';
 import { PredictionsPage } from '../../../apps/web/src/site/pages/predictions/PredictionsPage.js';
 import { StandingsPage } from '../../../apps/web/src/site/pages/standings/StandingsPage.js';
+import { TeamProfile } from '../../../apps/web/src/site/pages/team-details/TeamDetailPage.js';
+
+test('Team profiles group members and handle an unpublished roster', () => {
+  const team = {
+    id: 'a',
+    name: 'Equipo A',
+    shortName: null,
+    logoUrl: null,
+    isActive: true,
+    seasonName: 'Temporada 1',
+    divisionName: 'Premier',
+    members: []
+  };
+  const empty = renderToStaticMarkup(<TeamProfile team={team} />);
+  expect(empty).toContain('Todavía no hay jugadores');
+  expect(empty).toContain('Coach pendiente');
+  expect(empty).toContain('Todavía no hay staff');
+  const member = {
+    id: 'p',
+    name: 'Jugador',
+    role: 'top' as const,
+    isCaptain: true,
+    gameName: 'RiotName',
+    riotTag: 'EUW',
+    countryCode: null
+  };
+  const html = renderToStaticMarkup(
+    <TeamProfile
+      team={{
+        ...team,
+        members: [
+          member,
+          {
+            ...member,
+            id: 'c',
+            role: 'coach',
+            isCaptain: false,
+            gameName: null,
+            name: 'Entrenador'
+          },
+          { ...member, id: 's', role: 'staff', isCaptain: false, gameName: null, name: 'Manager' }
+        ]
+      }}
+    />
+  );
+  expect(html).toContain('RiotName#EUW');
+  expect(html).toContain('Capitán');
+  expect(html).toMatch(/aria-label="Coach"[\s\S]*Entrenador/);
+  expect(html).toMatch(/aria-label="Staff"[\s\S]*Manager/);
+});
 
 const home: Team = { id: 'home', name: 'Lobos', shortName: 'LOB', logoUrl: null };
 const away: Team = { id: 'away', name: 'Cuervos', shortName: 'CUE', logoUrl: null };
@@ -240,6 +288,10 @@ test('Centralized tournament components render correctly', () => {
   expect(teamCardHtml).toContain('Lobos');
   expect(teamCardHtml).toContain('Premier');
   expect(teamCardHtml).toContain('LOB');
+  expect(teamCardHtml).toContain('href="/equipos/home"');
+  expect(
+    renderToStaticMarkup(<TeamCard team={{ ...home, slug: 'lobos' }} divisionName="Premier" />)
+  ).toContain('href="/equipos/lobos"');
 
   const championsHtml = renderToStaticMarkup(<ChampionsTable />);
   expect(championsHtml).toContain('Las estadísticas de campeones todavía no están disponibles.');

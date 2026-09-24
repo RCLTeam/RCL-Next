@@ -1,6 +1,7 @@
 import React from 'react';
 import type { Match, Round } from '../types/competition.types.js';
-import { TeamBadge, matchStatus } from './CompetitionViews.js';
+import { matchStatus } from './MatchCard.js';
+import { TeamBadge } from './TeamBadge.js';
 
 export function PlayoffBracket({ rounds, matches }: { rounds: Round[]; matches: Match[] }) {
   return (

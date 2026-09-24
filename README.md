@@ -17,7 +17,7 @@ Configura `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET` y `DISCORD_REDIRECT_URI` 
 - SQL ejecutable: `packages/database/drizzle/0000_initial_schema.sql`.
 - SQL original conservado: `docs/reference/0000_initial_schema.original.sql`.
 - Modelo tipado: `packages/database/src/schema.ts`.
-- Datos sintéticos: `packages/database/seed/demo.sql`.
+- Datos sintéticos: `packages/database/seed/demo.sql` y `packages/database/seed/showcase.sql`.
 - Conexión PostgreSQL: configurada mediante `DATABASE_URL` en `.env`.
 - Los registros se guardan en la instancia PostgreSQL; el archivo SQL define la estructura.
 
@@ -37,7 +37,7 @@ pnpm db:check
 pnpm dev:api
 ```
 
-El seed requiere `ALLOW_DEMO_SEED=true` y rechaza `NODE_ENV=production`. Crea una temporada DEMO, dos divisiones vinculadas mediante seasons_divisions, cuatro equipos, veinte cuentas principales y sus miembros Discord, tres jornadas/series y un mapa con diez snapshots completos. Incluye 21 usuarios Discord ficticios (todos viewer) y un pronóstico; ya no hay tablas de bonus. Repetirlo no borra datos ni modifica filas existentes. Sus fechas de 2050 y nombres DEMO son deliberadamente ficticios.
+El seed requiere `ALLOW_DEMO_SEED=true` y rechaza `NODE_ENV=production`. Ejecuta `demo.sql` y `showcase.sql` en una sola transacción. Crea una temporada DEMO, dos divisiones, cuatro equipos, veinte jugadores, 11 encuentros y 24 mapas con 240 registros de estadísticas completas. Incluye series BO3/BO5, playoffs, encuentros programados, uno en directo y uno cancelado, además de objetos, hechizos, runas, MVP y un pronóstico. Las estadísticas alimentan los perfiles, comparativas y clasificaciones. Repetirlo no duplica registros: conserva los valores existentes y completa únicamente campos vacíos de las partidas DEMO identificadas. Las fechas de 2050 y los nombres DEMO son deliberadamente ficticios. Las pruebas existentes conservan el fixture mínimo `demo.sql`; `demo-showcase.test.ts` verifica la ampliación, coherencia de resultados e idempotencia.
 
 ## Cómo ver las tablas y los registros
 
@@ -119,6 +119,8 @@ Las rutas públicas son `/`, `/ligas`, `/calendario`, `/clasificacion`, `/equipo
 
 `features/auth/` comparte una única sesión entre cabecera y guarda mediante `AuthProvider`. `features/competition/` reúne API, tipos, hooks y componentes de competición. `features/site/` compone el portal, la navegación y el marco visual. `shared/` contiene únicamente recursos y primitivas reutilizables. Los colores y fuentes están en `shared/styles/tokens.css` y `fonts.css`. Los estilos de navegación, cabecera, pie, filtros y tarjetas están junto a sus componentes; `site/site.css` conserva el orden de carga de los estilos compartidos. Cada página importa su propio CSS y sus ajustes responsive. La imagen `shared/assets/brand/rebellion.webp` conserva sus dimensiones de 1254 × 1254 y está comprimida con calidad 85 para la web.
 
+La página `/campeones` consulta `GET /api/v1/divisions/:divisionId/champions`. Calcula selecciones y victorias por mapa importado con ganador, dentro de series finalizadas (`completed` o `forfeit`), y respeta la temporada/división seleccionada. Los mapas sin participantes no forman parte de la muestra. Incluye búsqueda, ordenación e iconos del servicio compartido de Riot.
+
 El contenedor conserva el ancho completo y los mismos márgenes interiores. La selección de temporada y división se conserva al navegar entre páginas públicas. El hook de competición cancela solicitudes obsoletas y muestra estados de carga, error y vacío. Predicciones utiliza los partidos programados del calendario real; las funciones aún sin API muestran estados pendientes, sin inventar resultados o porcentajes.
 
 El módulo `features/rofl-upload/` conserva componentes, hooks, tipos y pruebas del protocolo WebSocket. `site/pages/admin/admin.css` define el contenedor; `features/rofl-upload/components/rofl-upload.css` define la consola. `features/crud-operations/` reúne la gestión CRUD. El traslado no cambia contratos ni endpoints.
@@ -152,3 +154,4 @@ Las pruebas no requieren una base de datos externa ni variables en `.env`: ejecu
 La migración original era SQL incompleto y no ejecutable. Se conserva íntegra como referencia y se ha reconstruido el baseline para **bases nuevas**. Por petición del usuario, antes de desplegar en producción se consolidaron las migraciones antiguas 0000/0001/0002 en una única `0000_initial_schema.sql`. Incluye visión, estadísticas ROFL, timestamps y validación de snapshots completos. Como la base todavía no está en producción, las tablas de autenticación también están integradas en ese esquema inicial: hay un único snapshot y una sola entrada en el journal. Si ya aplicaste el historial previo a la consolidación en desarrollo, utiliza otra base vacía o prepara una adaptación explícita; no se ha borrado ninguna base existente. Consulta `docs/architecture/rofl-mapping.md` para el mapeo completo de estadísticas.
 
 Si tienes una base previa, no borres su volumen ni apliques este baseline manualmente. El runner rechaza esquemas sin historial o con hashes distintos. En ese caso hace falta una migración de adaptación basada en el esquema realmente desplegado. No se ha importado ni alterado ninguna base MySQL o PostgreSQL existente.
+
