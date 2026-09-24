@@ -1,0 +1,16 @@
+.rcl-site .totw-round-select { margin: 0 0 24px; max-width: 100%; }
+.rcl-site .totw-champion-card { min-height: 300px; isolation: isolate; overflow: hidden; background: var(--void); color: #fff; display: flex; align-items: end; }
+.rcl-site .totw-champion-card::before { display: none; }
+.rcl-site .totw-splash { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 62% center; z-index: -2; }
+.rcl-site .totw-champion-card::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, #0001 15%, #0008 55%, #000e 100%); z-index: -1; }
+.rcl-site .totw-player-content { width: 100%; min-width: 0; }
+.rcl-site .totw-champion-card .role-chip { margin-bottom: 64px; color: var(--lime); background: #0009; }
+.rcl-site .totw-champion-card h3 { font-size: 28px; }
+.rcl-site .totw-champion-card p { color: #eee; line-height: 1.5; }
+.rcl-site .totw-champion-name { display: block; font: 11px var(--mono); color: var(--lime); margin-top: 12px; }
+@media (min-width: 651px) { .rcl-site .totw-champion-card { min-height: 340px; } }
+
+.rcl-site .totw-slides { position: absolute; inset: 0; z-index: -2; }
+.rcl-site .totw-slides .totw-splash { opacity: 0; transition: opacity 900ms ease-in-out; }
+.rcl-site .totw-slides .totw-splash.is-active { opacity: 1; }
+@media (prefers-reduced-motion: reduce) { .rcl-site .totw-slides .totw-splash { transition: none; } }

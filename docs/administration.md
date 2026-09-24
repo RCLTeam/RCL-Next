@@ -82,7 +82,7 @@ El límite web es de 64 MiB por `.dump`, 128 MiB para su extracción y 64 MiB pa
 
 En `/admin/home-content`, admins y owners pueden gestionar:
 
-- **Team of the Week**: selecciona temporada y división, indica la jornada y elige los cinco jugadores desde las plantillas de la división (uno por posición). El equipo se completa automáticamente; las fotos opcionales por URL HTTPS están en un desplegable. Los jugadores de la posición aparecen primero y los ya elegidos no se pueden repetir. Guarda como borrador o publícalo. Cada temporada/división conserva su propio quinteto; guardar reemplaza su selección actual. Desmarca «Publicado» para retirarlo sin perder los datos.
+- **Team of the Week**: selecciona temporada, división y jornada; elige cinco jugadores de las partidas importadas; todos sus campeones se incorporan automáticamente. Guarda como borrador o publica. Cada jornada conserva su quinteto independiente. Desmarca «Publicado» para retirarlo sin perder los datos.
 - **Editorial**: crea, edita y elimina noticias, entrevistas, reportajes u otros temas. Cada artículo tiene título, subtítulo opcional, autor, contenido e imagen opcional por URL HTTPS con descripción accesible. La vista previa muestra el contenido antes de guardar. Separa párrafos con líneas en blanco; `## ` crea subtítulos y `> ` citas. El HTML se trata como texto.
 - **Selección de portada**: «Publicado» permite leer el artículo; «Mostrar en la editorial de la home» decide si aparece en la home. El menor orden ocupa la tarjeta destacada. Los borradores nunca se sirven al público, incluso con su enlace directo.
 
@@ -90,3 +90,11 @@ Los enlaces de editorial abren una ventana emergente compacta con desplazamiento
 
 La migración `0001_home_content.sql` añade `home_weekly_teams` y `editorial_articles`. Ejecuta `pnpm db:migrate` al actualizar otros entornos. Las escrituras mantienen la autenticación, comprobación de origen y registro de auditoría de la administración.
 
+
+### Quintetos por jornada
+
+Cada división conserva ahora un quinteto independiente por jornada. En **Home content → Team of the Week**, selecciona temporada, división y jornada; después elige los cinco jugadores; los campeones usados por cada jugador se obtienen automáticamente. Los candidatos se obtienen de las partidas importadas, aunque su plantilla actual haya cambiado. Si no aparecen jugadores, primero hay que importar los ROFL de esa jornada.
+
+La home muestra únicamente jornadas con quintetos publicados y abre por defecto la más reciente. Despublicar una jornada la retira del selector sin borrar su quinteto. Las tarjetas alternan los splash arts de todos los campeones de la jornada con un fundido cada 4,5 segundos (imagen fija con un solo campeón o preferencia de movimiento reducido), con texto legible y fondo alternativo si la imagen no se puede cargar.
+
+La migración `0002_weekly_team_rounds.sql` conserva los quintetos anteriores sin inventarles una jornada. Permanecen visibles como referencia en admin, pero quedan fuera del selector público hasta que se confirmen para una jornada real. Las imágenes manuales antiguas se conservan en esos registros; los quintetos por jornada usan todos los campeones registrados.

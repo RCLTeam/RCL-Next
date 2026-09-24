@@ -12,6 +12,9 @@ export function homeContentRouter(service: HomeContentService, auth?: AuthOption
   router.get('/articles/:id', async (req, res) =>
     res.json({ data: await service.article(req.params.id) })
   );
+  router.get('/weekly-teams/:id/rounds', async (req, res) =>
+    res.json({ data: await service.listWeeklyTeams(req.params.id) })
+  );
   router.get('/weekly-teams/:id', async (req, res) =>
     res.json({ data: await service.weeklyTeam(req.params.id) })
   );
@@ -19,6 +22,12 @@ export function homeContentRouter(service: HomeContentService, auth?: AuthOption
     router.use('/admin', requireAuth(auth, 'admin'));
     router.get('/admin/articles', async (_req, res) =>
       res.json({ data: await service.listArticles(true) })
+    );
+    router.get('/admin/weekly-teams/:id/rounds', async (req, res) =>
+      res.json({ data: await service.listWeeklyTeams(req.params.id, true) })
+    );
+    router.get('/admin/weekly-teams/:id/candidates/:roundId', async (req, res) =>
+      res.json({ data: await service.weeklyCandidates(req.params.id, req.params.roundId) })
     );
     router.get('/admin/weekly-teams/:id', async (req, res) =>
       res.json({ data: await service.weeklyTeam(req.params.id, true) })
