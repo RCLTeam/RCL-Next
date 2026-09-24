@@ -23,7 +23,7 @@ export function RoflUploadPanel({ wsUrl }: RoflUploadPanelProps) {
       <div className="content-manager-heading">
         <div>
           <span className="eyebrow">Subir datos</span>
-          <h2>ROFL Uploud</h2>
+          <h2>ROFL Upload</h2>
           <p>
             Espacio de trabajo para la ingesta administrativa por lotes de repeticiones de partidas.
           </p>

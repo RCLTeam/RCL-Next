@@ -91,7 +91,7 @@ test('BatchSummaryCard renders processed statistics and skipped duplicates', () 
 
 test('RoflUploadPanel renders complete initial console with dropzone', () => {
   const html = renderToString(React.createElement(RoflUploadPanel));
-  assert.match(html, /ROFL Replay Upload/i);
-  assert.match(html, /Administrative batch ingestion workspace/i);
+  assert.match(html, /ROFL Upload/i);
+  assert.match(html, /Espacio de trabajo para la ingesta administrativa/i);
   assert.match(html, /Dropzone for ROFL and ZIP files/i);
 });
