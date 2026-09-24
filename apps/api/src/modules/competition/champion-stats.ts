@@ -25,8 +25,7 @@ export function calculateChampionStats(picks: ChampionPick[]): ChampionStats[] {
       losses: games.size - wins.size,
       totalGames,
       pickRate: (games.size / totalGames) * 100,
-      winRate: (wins.size / games.size) * 100,
-      banRate: null
+      winRate: (wins.size / games.size) * 100
     }))
     .sort((a, b) => b.games - a.games || a.champion.localeCompare(b.champion));
 }

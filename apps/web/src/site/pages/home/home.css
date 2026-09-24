@@ -213,27 +213,6 @@
 
 /* Ticker and animation */
 
-.rcl-site .hero-ticker-track {
-  display: flex;
-  width: max-content;
-  animation: rcl-marquee 26s linear infinite;
-}
-
-.rcl-site .hero-ticker-track span {
-  flex-shrink: 0;
-  padding-left: 10px;
-}
-
-@keyframes rcl-marquee {
-  from {
-    transform: translateX(0);
-  }
-
-  to {
-    transform: translateX(-50%);
-  }
-}
-
 .rcl-site .hero-ticker {
   position: relative;
   z-index: 2;
@@ -244,10 +223,32 @@
   align-items: center;
   overflow: hidden;
   white-space: nowrap;
-  font: 700 18px var(--display2);
+  font: 700 16px var(--display2);
   letter-spacing: 0.04em;
   transform: skewY(-1deg);
-  font-size: 16px;
+  user-select: none; 
+}
+
+.rcl-site .hero-ticker-track {
+  display: flex;
+  width: max-content;
+  will-change: transform; /* Optimización de rendimiento para animaciones compuestas */
+  animation: rcl-marquee 35s linear infinite;
+}
+
+.rcl-site .hero-ticker-track span {
+  flex-shrink: 0;
+  display: inline-block;
+  white-space: nowrap;
+}
+
+@keyframes rcl-marquee {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
 }
 
 @media (min-width: 651px) {

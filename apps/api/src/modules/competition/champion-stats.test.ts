@@ -1,7 +1,7 @@
 import { expect, test } from 'vitest';
 import { calculateChampionStats } from './champion-stats.js';
 
-test('Counts maps rather than players or series and keeps unavailable bans null', () => {
+test('Counts maps rather than players or series', () => {
   const rows = calculateChampionStats([
     { gameId: '1', champion: 'Ahri', teamId: 'a', winnerTeamId: 'a' },
     { gameId: '1', champion: ' ahri ', teamId: 'a', winnerTeamId: 'a' },
@@ -17,8 +17,7 @@ test('Counts maps rather than players or series and keeps unavailable bans null'
       losses: 1,
       totalGames: 2,
       pickRate: 100,
-      winRate: 50,
-      banRate: null
+      winRate: 50
     },
     {
       champion: 'Garen',
@@ -27,8 +26,7 @@ test('Counts maps rather than players or series and keeps unavailable bans null'
       losses: 1,
       totalGames: 2,
       pickRate: 50,
-      winRate: 0,
-      banRate: null
+      winRate: 0
     }
   ]);
 });

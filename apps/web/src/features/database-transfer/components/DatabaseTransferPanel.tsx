@@ -91,11 +91,14 @@ export function DatabaseTransferPanel() {
     );
   return (
     <section className="database-transfer" aria-label="Importar y exportar base de datos">
-      <h2>Base de datos</h2>
-      <p>
-        Exporta una copia PostgreSQL o restaura los datos desde un backup compatible con el esquema
-        actual de RCL.
-      </p>
+      <div className="content-manager-heading">
+        <div>
+          <span className="eyebrow">Restauración</span>
+          <h2>Base de datos</h2>
+          <p>Exporta una copia PostgreSQL o restaura los datos desde un backup compatible con el esquema
+        actual de RCL.</p>
+        </div>
+      </div>
       {error && (
         <p className="database-transfer-error" role="alert">
           {error}

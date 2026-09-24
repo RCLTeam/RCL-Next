@@ -136,7 +136,15 @@ test('HTTP -> controller -> service -> real repository -> embedded PostgreSQL', 
   assert.equal(garen.totalGames, 1);
   assert.equal(garen.pickRate, 100);
   assert.equal(garen.winRate, 100);
-  assert.equal(garen.banRate, null);
+  assert.deepEqual(Object.keys(garen).sort(), [
+    'champion',
+    'games',
+    'losses',
+    'pickRate',
+    'totalGames',
+    'winRate',
+    'wins'
+  ]);
   const emptyChampions = await request(app)
     .get(`/api/v1/divisions/${divisions.body.data[1].id}/champions`)
     .expect(200);

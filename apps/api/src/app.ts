@@ -12,6 +12,9 @@ import { CrudOperationsService } from './modules/crud-operations/crud-operations
 import type { DatabaseTransferRepository } from './modules/database-transfer/database-transfer.repository.js';
 import { databaseTransferRouter } from './modules/database-transfer/database-transfer.router.js';
 import { DatabaseTransferService } from './modules/database-transfer/database-transfer.service.js';
+import type { HomeContentRepository } from './modules/home-content/home-content.repository.js';
+import { homeContentRouter } from './modules/home-content/home-content.router.js';
+import { HomeContentService } from './modules/home-content/home-content.service.js';
 import type { MemberRolesRepository } from './modules/member-roles/member-roles.repository.js';
 import { memberRolesRouter } from './modules/member-roles/member-roles.router.js';
 import { MemberRolesService } from './modules/member-roles/member-roles.service.js';
@@ -25,6 +28,7 @@ export function createApp(options: {
   crudOperationsRepository?: CrudOperationsRepository;
   memberRolesRepository?: MemberRolesRepository;
   databaseTransferRepository?: DatabaseTransferRepository;
+  homeContentRepository?: HomeContentRepository;
 }): express.Express {
   const app = express();
   app.disable('x-powered-by');
@@ -49,6 +53,12 @@ export function createApp(options: {
     );
   }
   app.use(express.json({ limit: '1mb' }));
+  if (options.homeContentRepository) {
+    app.use(
+      '/api/v1/home-content',
+      homeContentRouter(new HomeContentService(options.homeContentRepository), options.auth)
+    );
+  }
   if (options.auth && options.memberRolesRepository) {
     app.use(
       '/api/v1/member-roles',

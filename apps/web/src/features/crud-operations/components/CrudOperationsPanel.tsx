@@ -39,6 +39,7 @@ export function CrudOperationsPanel() {
   return (
     <div className="crud-operations-crud">
       <div className="crud-operations-resource-selector">
+        <span className="eyebrow">Base de datos</span>
         <label htmlFor="crud-operations-resource">Datos que quieres gestionar</label>
         <select
           id="crud-operations-resource"
