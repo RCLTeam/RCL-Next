@@ -1,9 +1,9 @@
 import React from 'react';
-import { CompetitionFilters } from '../../../features/competition/components/CompetitionFilters.js';
 import {
   DataState,
   resolveCompetitionState
-} from '../../../features/competition/components/CompetitionViews.js';
+} from '../../../features/competition/components/CompetitionDataState.js';
+import { CompetitionFilters } from '../../../features/competition/components/CompetitionFilters.js';
 import { StandingsTable } from '../../../features/competition/components/StandingsTable.js';
 import type { Competition } from '../../../features/competition/hooks/useCompetition.js';
 import { PageLayout } from '../../../shared/components/PageLayout.js';

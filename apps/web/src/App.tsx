@@ -1,11 +1,11 @@
 import React from 'react';
 import { AuthProvider } from './features/auth/components/AuthProvider.js';
-import { NavigationContext, siteRoutes } from './shared/navigation.js';
+import { NavigationContext } from './shared/navigation.js';
 import { LeaguePortal } from './site/layout/LeaguePortal.js';
 import { SiteLayout } from './site/layout/SiteLayout.js';
 import './site/layout/site.css';
-import { AdminPage } from './site/pages/admin/AdminPage.js';
 import { NotFoundPage } from './site/pages/not-found/NotFoundPage.js';
+import { resolveSiteRoute } from './site/routes.js';
 
 export interface AppProps {
   initialPath?: string | undefined;
@@ -23,23 +23,12 @@ export function App({ initialPath, wsUrl }: AppProps) {
   }, []);
   const requestedPath = currentPath.replace(/\/$/, '') || '/';
   const path = requestedPath;
-  const isAdmin = [
-    '/admin',
-    '/admin/rofl/upload',
-    '/admin/crud',
-    '/admin/member-roles',
-    '/admin/database-transfer'
-  ].includes(path);
-  const route = siteRoutes.find((item) => item.path === path);
-  const teamId = /^\/equipos\/([^/]+)$/.exec(path)?.[1];
-  const playerId = /^\/jugadores\/([^/]+)$/.exec(path)?.[1];
-  const matchId = /^\/partidos\/([^/]+)$/.exec(path)?.[1];
+  const route = resolveSiteRoute(path);
+  const title = route?.title ?? 'Página no encontrada';
+  // biome-ignore lint/correctness/useExhaustiveDependencies: A new detail URL must reset the previous record's title even when both routes share a title.
   React.useEffect(() => {
-    document.title = `${isAdmin ? (path === '/admin/database-transfer' ? 'Database Transfer · Admin' : path === '/admin/member-roles' ? 'Gestión de roles · Admin' : path === '/admin/crud' ? 'CRUD Operations · Admin' : path === '/admin/rofl/upload' ? 'ROFL Upload · Admin' : 'Admin') : (route?.title ?? 'Página no encontrada')} · Rebel Crown Legacy`;
-    if (teamId) document.title = 'Equipo · Rebel Crown Legacy';
-    if (playerId) document.title = 'Jugador · Rebel Crown Legacy';
-    if (matchId) document.title = 'Partido · Rebel Crown Legacy';
-  }, [route, path, isAdmin, teamId, playerId, matchId]);
+    document.title = `${title} · Rebel Crown Legacy`;
+  }, [title, path]);
   const navigate = (nextPath: string) => {
     if (nextPath !== window.location.pathname) window.history.pushState({}, '', nextPath);
     setCurrentPath(nextPath);
@@ -49,16 +38,11 @@ export function App({ initialPath, wsUrl }: AppProps) {
   return (
     <AuthProvider>
       <NavigationContext.Provider value={{ path, navigate }}>
-        {route || teamId || playerId || matchId ? (
-          <LeaguePortal
-            path={route?.path ?? (matchId ? '/calendario' : playerId ? '/jugadores' : '/equipos')}
-            teamId={teamId}
-            playerId={playerId}
-            matchId={matchId}
-          />
+        {route ? (
+          <LeaguePortal route={route} wsUrl={wsUrl} />
         ) : (
           <SiteLayout>
-            {isAdmin ? <AdminPage path={path} wsUrl={wsUrl} /> : <NotFoundPage />}
+            <NotFoundPage />
           </SiteLayout>
         )}
       </NavigationContext.Provider>

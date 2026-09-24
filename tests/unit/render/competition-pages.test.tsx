@@ -1,12 +1,9 @@
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { expect, test } from 'vitest';
-import { ChampionsTable } from '../../../apps/web/src/features/competition/components/ChampionsTable.js';
-import {
-  DataState,
-  MatchCard
-} from '../../../apps/web/src/features/competition/components/CompetitionViews.js';
+import { DataState } from '../../../apps/web/src/features/competition/components/CompetitionDataState.js';
 import { DivisionCard } from '../../../apps/web/src/features/competition/components/DivisionCard.js';
+import { MatchCard } from '../../../apps/web/src/features/competition/components/MatchCard.js';
 import { PlayoffBracket } from '../../../apps/web/src/features/competition/components/PlayoffBracket.js';
 import { RoundFilter } from '../../../apps/web/src/features/competition/components/RoundFilter.js';
 import { StandingsTable } from '../../../apps/web/src/features/competition/components/StandingsTable.js';
@@ -16,6 +13,7 @@ import type {
   Match,
   Team
 } from '../../../apps/web/src/features/competition/types/competition.types.js';
+import { ChampionsTable } from '../../../apps/web/src/site/pages/champions/ChampionsTable.js';
 import { PlayoffsPage } from '../../../apps/web/src/site/pages/playoffs/PlayoffsPage.js';
 import { PredictionsPage } from '../../../apps/web/src/site/pages/predictions/PredictionsPage.js';
 import { StandingsPage } from '../../../apps/web/src/site/pages/standings/StandingsPage.js';

@@ -1,6 +1,7 @@
+import { useCompetitionDetail } from '../../../features/competition/hooks/useCompetitionDetail.js';
 import '../../../features/competition/components/player-card.css';
-import React, { useEffect, useState } from 'react';
-import { TeamBadge } from '../../../features/competition/components/CompetitionViews.js';
+import React, { useEffect } from 'react';
+import { TeamBadge } from '../../../features/competition/components/TeamBadge.js';
 import type {
   PlayerDetail,
   TeamMember
@@ -88,47 +89,16 @@ export function PlayerProfile({ player }: { player: PlayerDetail }) {
   );
 }
 
-type PlayerState =
-  | { status: 'loading' | 'error' | 'missing' }
-  | { status: 'ready'; player: PlayerDetail };
-
 export function PlayerDetailPage({ playerId }: { playerId: string }) {
-  const [state, setState] = useState<PlayerState>({ status: 'loading' });
-  const [revision, setRevision] = useState(0);
-  // biome-ignore lint/correctness/useExhaustiveDependencies: revision explicitly retries a failed request.
+  const { state, retry } = useCompetitionDetail('players', playerId);
   useEffect(() => {
-    const controller = new AbortController();
-    setState({ status: 'loading' });
-    async function load() {
-      try {
-        const response = await fetch(`/api/v1/players/${playerId}`, {
-          signal: controller.signal,
-          credentials: 'include'
-        });
-        if (controller.signal.aborted) return;
-        if (response.status === 404 || response.status === 422) {
-          setState({ status: 'missing' });
-          return;
-        }
-        if (!response.ok) throw new Error('Player request failed');
-        const body = await response.json();
-        if (!body.data || !Array.isArray(body.data.teams)) throw new Error('Invalid player');
-        if (!controller.signal.aborted) setState({ status: 'ready', player: body.data });
-      } catch {
-        if (!controller.signal.aborted) setState({ status: 'error' });
-      }
-    }
-    void load();
-    return () => controller.abort();
-  }, [playerId, revision]);
-  useEffect(() => {
-    if (state.status === 'ready') document.title = `${state.player.gameName} · Rebel Crown Legacy`;
+    if (state.status === 'ready') document.title = `${state.data.gameName} · Rebel Crown Legacy`;
   }, [state]);
   return (
     <PageLayout
       id="jugador"
       number="06"
-      title={state.status === 'ready' ? state.player.gameName : 'Ficha del jugador'}
+      title={state.status === 'ready' ? state.data.gameName : 'Ficha del jugador'}
       subtitle="Protagonistas de la rebelión"
       description="Conoce al jugador y sus inscripciones en la competición."
       toolbar={
@@ -144,16 +114,12 @@ export function PlayerDetailPage({ playerId }: { playerId: string }) {
       {state.status === 'error' && (
         <div className="empty-state error-state" role="alert">
           <p>No se ha podido cargar el jugador.</p>
-          <button
-            className="btn-ghost"
-            type="button"
-            onClick={() => setRevision((value) => value + 1)}
-          >
+          <button className="btn-ghost" type="button" onClick={retry}>
             Reintentar
           </button>
         </div>
       )}
-      {state.status === 'ready' && <PlayerProfile player={state.player} />}
+      {state.status === 'ready' && <PlayerProfile player={state.data} />}
     </PageLayout>
   );
 }

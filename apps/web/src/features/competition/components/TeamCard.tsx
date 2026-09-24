@@ -1,7 +1,7 @@
 import React from 'react';
 import { SiteLink } from '../../../shared/components/SiteLink.js';
 import type { Team } from '../types/competition.types.js';
-import { TeamBadge } from './CompetitionViews.js';
+import { TeamBadge } from './TeamBadge.js';
 
 export function TeamCard({ team, divisionName }: { team: Team; divisionName: string | undefined }) {
   return (

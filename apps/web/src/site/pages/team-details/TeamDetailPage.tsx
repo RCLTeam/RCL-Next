@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from 'react';
-import { TeamBadge } from '../../../features/competition/components/CompetitionViews.js';
+import React, { useEffect } from 'react';
+import { TeamBadge } from '../../../features/competition/components/TeamBadge.js';
+import { useCompetitionDetail } from '../../../features/competition/hooks/useCompetitionDetail.js';
 import type {
   TeamDetail,
   TeamMember
@@ -133,47 +134,16 @@ export function TeamProfile({ team }: { team: TeamDetail }) {
   );
 }
 
-type DetailState =
-  | { status: 'loading' | 'error' | 'missing' }
-  | { status: 'ready'; team: TeamDetail };
-
 export function TeamDetailPage({ teamId }: { teamId: string }) {
-  const [state, setState] = useState<DetailState>({ status: 'loading' });
-  const [revision, setRevision] = useState(0);
-  // biome-ignore lint/correctness/useExhaustiveDependencies: revision explicitly retries a failed request.
+  const { state, retry } = useCompetitionDetail('teams', teamId);
   useEffect(() => {
-    const controller = new AbortController();
-    setState({ status: 'loading' });
-    async function load() {
-      try {
-        const response = await fetch(`/api/v1/teams/${teamId}`, {
-          signal: controller.signal,
-          credentials: 'include'
-        });
-        if (controller.signal.aborted) return;
-        if (response.status === 404 || response.status === 422) {
-          setState({ status: 'missing' });
-          return;
-        }
-        if (!response.ok) throw new Error('Team request failed');
-        const body = await response.json();
-        if (!body.data || !Array.isArray(body.data.members)) throw new Error('Invalid team');
-        if (!controller.signal.aborted) setState({ status: 'ready', team: body.data });
-      } catch {
-        if (!controller.signal.aborted) setState({ status: 'error' });
-      }
-    }
-    void load();
-    return () => controller.abort();
-  }, [teamId, revision]);
-  useEffect(() => {
-    if (state.status === 'ready') document.title = `${state.team.name} · Rebel Crown Legacy`;
+    if (state.status === 'ready') document.title = `${state.data.name} · Rebel Crown Legacy`;
   }, [state]);
   return (
     <PageLayout
       id="equipo"
       number="05"
-      title={state.status === 'ready' ? state.team.name : 'Ficha del equipo'}
+      title={state.status === 'ready' ? state.data.name : 'Ficha del equipo'}
       subtitle="Una identidad. Una rebelión."
       description="Conoce a los jugadores y al equipo que hay detrás de la competición."
       toolbar={
@@ -189,12 +159,12 @@ export function TeamDetailPage({ teamId }: { teamId: string }) {
       {state.status === 'error' && (
         <div className="empty-state" role="alert">
           <p>No se ha podido cargar el equipo.</p>
-          <button type="button" onClick={() => setRevision((value) => value + 1)}>
+          <button type="button" onClick={retry}>
             Reintentar
           </button>
         </div>
       )}
-      {state.status === 'ready' && <TeamProfile team={state.team} />}
+      {state.status === 'ready' && <TeamProfile team={state.data} />}
     </PageLayout>
   );
 }

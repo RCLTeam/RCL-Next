@@ -3,8 +3,8 @@ import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { expect, test } from 'vitest';
 import { App } from '../../../apps/web/src/App.js';
-import { MatchCard } from '../../../apps/web/src/features/competition/components/CompetitionViews.js';
-import { MatchReport } from '../../../apps/web/src/site/pages/match-details/MatchDetailPage.js';
+import { MatchCard } from '../../../apps/web/src/features/competition/components/MatchCard.js';
+import { MatchReport } from '../../../apps/web/src/site/pages/match-details/MatchReport.js';
 import {
   formatMatchStat,
   matchPosition,

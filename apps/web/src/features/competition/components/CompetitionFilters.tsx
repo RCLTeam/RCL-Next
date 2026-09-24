@@ -1,7 +1,7 @@
 import React, { type ReactNode } from 'react';
 import './competition-filters.css';
 import type { Competition } from '../hooks/useCompetition.js';
-import { DivisionSwitch } from './CompetitionViews.js';
+import { DivisionSwitch } from './DivisionSwitch.js';
 
 export function CompetitionFilters({
   competition,

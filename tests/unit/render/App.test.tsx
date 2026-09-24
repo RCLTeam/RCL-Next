@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import React from 'react';
 import { renderToString } from 'react-dom/server';
 import { App } from '../../../apps/web/src/App.js';
-import { siteRoutes } from '../../../apps/web/src/shared/navigation.js';
+import { siteRoutes } from '../../../apps/web/src/site/routes.js';
 
 test('Team detail direct links render their own page and keep Teams selected', () => {
   for (const path of [

@@ -1,5 +1,5 @@
 import React from 'react';
-import { TeamBadge } from '../../../features/competition/components/CompetitionViews.js';
+import { TeamBadge } from '../../../features/competition/components/TeamBadge.js';
 import type { Match } from '../../../features/competition/types/competition.types.js';
 
 export function PredictionCard({ match }: { match: Match }) {

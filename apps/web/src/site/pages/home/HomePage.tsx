@@ -17,7 +17,6 @@ export function HomePage({ competition }: { competition: Competition }) {
       .filter((match) => match.status === 'scheduled')
       .sort((a, b) => (a.scheduledAt ?? '9999').localeCompare(b.scheduledAt ?? '9999'))[0];
   const stream = featured?.status === 'live' ? safeStreamUrl(featured.streamUrl) : null;
-
   return (
     <section id="home" aria-label="Inicio">
       <HomeHero seasonName={competition.season?.name} streamUrl={stream} />

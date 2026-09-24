@@ -4,7 +4,7 @@ import type { BatchUploadSummary, MultiAccountAnomaly } from '@rcl/contracts';
 import {
   initialUploadState,
   uploadReducer
-} from '../../apps/web/src/features/rofl-upload/hooks/useRoflUploadWs.js';
+} from '../../apps/web/src/features/rofl-upload/state/upload-reducer.js';
 
 test('uploadReducer starts upload and transitions to uploading stage', () => {
   const state = uploadReducer(initialUploadState, {

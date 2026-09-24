@@ -26,13 +26,15 @@
     "build:packages": "pnpm --filter \"./packages/*\" build"
   },
   "devDependencies": {
-    "@rcl/contracts": "workspace:*",
     "@biomejs/biome": "^1.9.4",
     "@electric-sql/pglite": "^0.3.14",
+    "@rcl/contracts": "workspace:*",
+    "@types/adm-zip": "^0.5.8",
     "@types/node": "^24.3.0",
     "@types/supertest": "^6.0.3",
     "@types/ws": "^8.18.1",
     "@vitest/coverage-v8": "^3.0.7",
+    "adm-zip": "^0.6.1",
     "drizzle-orm": "^0.44.7",
     "simple-git-hooks": "^2.11.1",
     "supertest": "^7.1.4",
