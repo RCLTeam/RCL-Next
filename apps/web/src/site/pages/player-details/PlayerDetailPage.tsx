@@ -1,7 +1,6 @@
-import { useCompetitionDetail } from '../../../features/competition/hooks/useCompetitionDetail.js';
-import '../../../features/competition/components/player-card.css';
 import React, { useEffect } from 'react';
 import { TeamBadge } from '../../../features/competition/components/TeamBadge.js';
+import { useCompetitionDetail } from '../../../features/competition/hooks/useCompetitionDetail.js';
 import type {
   PlayerDetail,
   TeamMember

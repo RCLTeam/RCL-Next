@@ -13,3 +13,4 @@ export type {
   WeeklyTeamInput,
   WeeklyTeam
 } from './home-content.js';
+export type * from './competition-profiles.js';

@@ -1,4 +1,3 @@
-import '../../../features/competition/components/player-card.css';
 import React, { useState } from 'react';
 import { useCollection } from '../../../features/competition/hooks/useCollection.js';
 import type { Player } from '../../../features/competition/types/competition.types.js';

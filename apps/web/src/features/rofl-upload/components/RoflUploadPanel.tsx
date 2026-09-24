@@ -24,7 +24,9 @@ export function RoflUploadPanel({ wsUrl }: RoflUploadPanelProps) {
         <div>
           <span className="eyebrow">Subir datos</span>
           <h2>ROFL Uploud</h2>
-          <p>Espacio de trabajo para la ingesta administrativa por lotes de repeticiones de partidas.</p>
+          <p>
+            Espacio de trabajo para la ingesta administrativa por lotes de repeticiones de partidas.
+          </p>
         </div>
       </div>
       {/* Dropzone rendered when idle, or when finished/errored if user wants to select another */}

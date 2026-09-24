@@ -10,9 +10,11 @@
 
 /* Shared Layout Component */
 @import '../../shared/components/page-layout.css';
+@import '../../shared/styles/player-cards.css';
 
 /* Shell Components */
 @import './season-hud.css';
 @import './site-header.css';
 @import './site-navigation.css';
 @import './site-footer.css';
+

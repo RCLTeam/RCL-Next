@@ -1,4 +1,5 @@
-import type { MatchMap } from '@rcl/contracts';
+import type { MatchMap, Player, PlayerDetail, TeamDetail } from '@rcl/contracts';
+export type { Player, PlayerDetail, TeamDetail, TeamMember, PlayerTeam } from '@rcl/contracts';
 export interface Season {
   id: string;
   name: string;
@@ -71,55 +72,4 @@ export interface CompetitionRepository {
   teams(divisionId: string): Promise<Team[]>;
   rounds(divisionId: string): Promise<Round[]>;
   matches(divisionId: string): Promise<Match[]>;
-}
-
-export interface TeamMember {
-  playerId?: string | null;
-  id: string;
-  name: string;
-  role:
-    | 'top'
-    | 'jungle'
-    | 'mid'
-    | 'adc'
-    | 'support'
-    | 'substitute'
-    | 'coach'
-    | 'staff'
-    | 'partners';
-  isCaptain: boolean;
-  gameName: string | null;
-  riotTag: string | null;
-  countryCode: string | null;
-}
-
-export interface TeamDetail extends Team {
-  seasonName: string;
-  divisionName: string;
-  members: TeamMember[];
-}
-
-export interface Player {
-  id: string;
-  gameName: string;
-  riotTag: string | null;
-  countryCode: string | null;
-  isMain: boolean;
-  displayName: string | null;
-}
-
-export interface PlayerTeam {
-  id: string;
-  name: string;
-  shortName: string | null;
-  logoUrl: string | null;
-  seasonName: string;
-  divisionName: string;
-  role: TeamMember['role'];
-  isCaptain: boolean;
-  isActive: boolean;
-}
-
-export interface PlayerDetail extends Player {
-  teams: PlayerTeam[];
 }

@@ -95,8 +95,10 @@ export function DatabaseTransferPanel() {
         <div>
           <span className="eyebrow">Restauración</span>
           <h2>Base de datos</h2>
-          <p>Exporta una copia PostgreSQL o restaura los datos desde un backup compatible con el esquema
-        actual de RCL.</p>
+          <p>
+            Exporta una copia PostgreSQL o restaura los datos desde un backup compatible con el
+            esquema actual de RCL.
+          </p>
         </div>
       </div>
       {error && (
