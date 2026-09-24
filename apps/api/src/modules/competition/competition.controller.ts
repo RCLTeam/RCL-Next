@@ -71,6 +71,11 @@ export class CompetitionController {
       .parse(req.query);
     res.json({ data: await this.service.calendar(id, query.roundId) });
   };
+  champions: RequestHandler = async (req, res) => {
+    res.json({
+      data: await this.service.champions(z.string().uuid().parse(req.params.divisionId))
+    });
+  };
   standings: RequestHandler = async (req, res) => {
     const id = z.string().uuid().parse(req.params.divisionId);
     const query = z

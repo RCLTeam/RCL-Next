@@ -129,6 +129,22 @@ test('HTTP -> controller -> service -> real repository -> embedded PostgreSQL', 
   assert.equal(report.body.data.homeTeam.id, teamId);
   assert.equal(report.body.data.games.length, 1);
   assert.equal(report.body.data.games[0].participants.length, 10);
+  const champions = await request(app).get(`/api/v1/divisions/${divisionId}/champions`).expect(200);
+  assert.equal(champions.body.data.length, 10);
+  const garen = champions.body.data.find((row: { champion: string }) => row.champion === 'Garen');
+  assert.equal(garen.games, 1);
+  assert.equal(garen.totalGames, 1);
+  assert.equal(garen.pickRate, 100);
+  assert.equal(garen.winRate, 100);
+  assert.equal(garen.banRate, null);
+  const emptyChampions = await request(app)
+    .get(`/api/v1/divisions/${divisions.body.data[1].id}/champions`)
+    .expect(200);
+  assert.deepEqual(emptyChampions.body.data, []);
+  await request(app).get('/api/v1/divisions/invalid/champions').expect(422);
+  await request(app)
+    .get('/api/v1/divisions/40000000-0000-4000-8000-000000000099/champions')
+    .expect(404);
   const participant = report.body.data.games[0].participants[0];
   assert.equal(participant.stats.kills, 5);
   assert.equal(participant.stats.goldEarned, null);
@@ -180,6 +196,46 @@ test('HTTP -> controller -> service -> real repository -> embedded PostgreSQL', 
   const scheduled = calendar.body.data.find(
     (match: { status: string }) => match.status === 'scheduled'
   );
+  const afterMaps = await request(app).get(`/api/v1/divisions/${divisionId}/champions`).expect(200);
+  assert.equal(afterMaps.body.data[0].champion, 'Ahri');
+  assert.equal(afterMaps.body.data[0].games, 2);
+  assert.equal(afterMaps.body.data[0].totalGames, 2);
+  assert.equal(
+    afterMaps.body.data.find((row: { champion: string }) => row.champion === 'Garen').pickRate,
+    50
+  );
+  // Imported games from an unfinished series must not leak into the public statistics.
+  const [pendingGame] = await db
+    .insert(schema.matchGames)
+    .values({
+      matchesId: scheduled.id,
+      gameNumber: 1,
+      blueTeamId: teamId,
+      redTeamId: completedMatch.awayTeam.id,
+      winnerTeamId: teamId
+    })
+    .returning();
+  assert.ok(pendingGame);
+  await db.transaction(async (tx) => {
+    const [info] = await tx
+      .insert(schema.playerGameInfo)
+      .values({
+        matchGameId: pendingGame.id,
+        playerId,
+        teamId,
+        side: 'blue',
+        champion: 'Ashe'
+      })
+      .returning();
+    assert.ok(info);
+    await tx.insert(schema.playerGameStats).values({ id: info.id });
+    await tx.insert(schema.playerGameBuild).values({ id: info.id });
+    await tx.insert(schema.playerGameRunes).values({ id: info.id, ...participant.runes });
+  });
+  const afterPending = await request(app)
+    .get(`/api/v1/divisions/${divisionId}/champions`)
+    .expect(200);
+  assert.deepEqual(afterPending.body.data, afterMaps.body.data);
   await request(app).get(`/api/v1/matches/${scheduled.id}`).expect(404);
   await request(app).get('/api/v1/matches/no-existe').expect(404);
   await request(app).get('/api/v1/matches/invalid%21').expect(422);

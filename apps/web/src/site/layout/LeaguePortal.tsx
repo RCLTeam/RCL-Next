@@ -56,7 +56,7 @@ export function LeaguePortal({
         ))}
       {path === '/jugadores' &&
         (playerId ? <PlayerDetailPage key={playerId} playerId={playerId} /> : <PlayersPage />)}
-      {path === '/campeones' && <ChampionsPage />}
+      {path === '/campeones' && <ChampionsPage competition={competition} />}
       {path === '/fantasy' && <FantasyPage />}
       {path === '/predicciones' && <PredictionsPage competition={competition} />}
       {path === '/bola-cristal' && <CrystalBallPage />}

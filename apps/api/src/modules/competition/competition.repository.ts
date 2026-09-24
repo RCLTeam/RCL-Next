@@ -45,7 +45,14 @@ export interface Match {
   finishedAt: Date | null;
   streamUrl: string | null;
 }
+export interface ChampionPick {
+  gameId: string;
+  champion: string;
+  teamId: string;
+  winnerTeamId: string | null;
+}
 export interface CompetitionRepository {
+  championPicks(divisionId: string): Promise<ChampionPick[]>;
   matchDirectory(): Promise<
     { id: string; homeTeamId: string; awayTeamId: string; roundId: string | null }[]
   >;
