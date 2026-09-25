@@ -1,5 +1,6 @@
 import type { MemberRole, MemberRolesPage, RoleMember } from '@rcl/contracts';
 import React, { useEffect, useState } from 'react';
+import { Select } from '../../../shared/components/Selector/Selector.js';
 import { useAuth } from '../../auth/components/AuthProvider.js';
 import { changeMemberRole, getRoleMembers } from '../api/member-roles-api.js';
 import './member-roles.css';
@@ -241,7 +242,8 @@ export function MemberRolesTable({
               </td>
               {canManage && (
                 <td>
-                  <select
+                  <Select
+                    variant="form"
                     aria-label={`Rol de ${member.username}`}
                     value={member.role}
                     disabled={disabled}
@@ -254,7 +256,7 @@ export function MemberRolesTable({
                     <option value="viewer">viewer</option>
                     <option value="admin">admin</option>
                     <option value="owner">owner</option>
-                  </select>
+                  </Select>
                 </td>
               )}
             </tr>

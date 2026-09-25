@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { useCollection } from '../../../features/competition/hooks/useCollection.js';
 import type { Player } from '../../../features/competition/types/competition.types.js';
-import { DataState } from '../../../shared/components/DataState.js';
-import { PageLayout } from '../../../shared/components/PageLayout.js';
+import { DataState } from '../../../shared/components/DataState/DataState.js';
+import { PageLayout } from '../../../shared/components/PageLayout/PageLayout.js';
 import { SiteLink } from '../../../shared/components/SiteLink.js';
 import { PlayerLeaderboards } from './PlayerLeaderboards.js';
 import { PlayerMvpPoll } from './PlayerMvpPoll.js';

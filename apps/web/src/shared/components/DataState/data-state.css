@@ -4,7 +4,7 @@
   padding: 36px 24px;
   color: var(--muted);
   background: var(--panel);
-  border: 1px dashed var(--stone);
+  border: 1px dashed var(--line);
   line-height: 1.7;
   font-size: 14px;
 }

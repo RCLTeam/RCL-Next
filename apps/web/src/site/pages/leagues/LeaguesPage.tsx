@@ -2,7 +2,7 @@ import React from 'react';
 import { DataState } from '../../../features/competition/components/CompetitionDataState.js';
 import { CompetitionFilters } from '../../../features/competition/components/CompetitionFilters.js';
 import type { Competition } from '../../../features/competition/hooks/useCompetition.js';
-import { PageLayout } from '../../../shared/components/PageLayout.js';
+import { PageLayout } from '../../../shared/components/PageLayout/PageLayout.js';
 import { CompetitionFormat } from './CompetitionFormat.js';
 import { LeagueDivisionGrid } from './LeagueDivisionGrid.js';
 import './league-cards.css';

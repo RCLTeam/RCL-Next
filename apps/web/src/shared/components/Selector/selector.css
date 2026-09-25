@@ -1,0 +1,55 @@
+/* Shared appearance for every Select; page styles only arrange their containers. */
+.rcl-site .rcl-select {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  min-height: var(--control-height);
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 0;
+  background: var(--panel);
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+  color-scheme: dark;
+}
+
+.rcl-site .rcl-select--form {
+  background: var(--void);
+  padding: 12px;
+  font-size: inherit;
+}
+
+.rcl-site .rcl-select--resource {
+  min-height: 48px;
+  padding: 12px;
+  font-size: inherit;
+}
+
+.rcl-site .rcl-select:focus-visible {
+  outline: 2px solid var(--lime);
+  outline-offset: 3px;
+}
+
+.rcl-site .rcl-select:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.rcl-site .select-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font: 10px var(--mono);
+  color: var(--muted);
+  text-transform: uppercase;
+  max-width: 100%;
+  width: 100%;
+}
+
+@media (min-width: 651px) {
+  .rcl-site .select-field {
+    width: auto;
+  }
+}

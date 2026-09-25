@@ -1,5 +1,6 @@
 import type { ChampionStats } from '@rcl/contracts';
 import React, { useState } from 'react';
+import { Select } from '../../../shared/components/Selector/Selector.js';
 import { GameIcon } from '../../../shared/riot/GameIcon.js';
 import type { GameCatalog } from '../../../shared/riot/riot-assets.service.js';
 import { getGameAsset } from '../../../shared/riot/riot-assets.service.js';
@@ -32,6 +33,7 @@ export function ChampionsTable({
   rows = [],
   catalog = {}
 }: { rows?: ChampionStats[]; catalog?: GameCatalog }) {
+  const selectId = React.useId();
   const [query, setQuery] = useState('');
   const [order, setOrder] = useState<ChampionOrder>('games');
   const filtered = filterChampionStats(rows, catalog, query, order);
@@ -47,13 +49,17 @@ export function ChampionsTable({
             onChange={(event) => setQuery(event.target.value)}
           />
         </label>
-        <label className="select-field">
+        <label htmlFor={`${selectId}-1`} className="select-field">
           Ordenar por
-          <select value={order} onChange={(event) => setOrder(event.target.value as ChampionOrder)}>
+          <Select
+            id={`${selectId}-1`}
+            value={order}
+            onChange={(event) => setOrder(event.target.value as ChampionOrder)}
+          >
             <option value="games">Más jugados</option>
             <option value="winRate">Porcentaje de victorias</option>
             <option value="name">Nombre</option>
-          </select>
+          </Select>
         </label>
         <output className="meta">
           {filtered.length} campeones · {rows[0]?.totalGames ?? 0} mapas analizados

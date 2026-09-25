@@ -23,7 +23,7 @@
 
 .rcl-site .database-transfer-panels>section {
   padding: 24px;
-  border: 1px solid var(--stone);
+  border: 1px solid var(--line);
   background: var(--panel);
 }
 
@@ -45,7 +45,7 @@
   margin-bottom: 18px;
   color: var(--text);
   background: var(--void);
-  border: 1px solid var(--stone);
+  border: 1px solid var(--line);
   font: inherit;
 }
 
@@ -66,8 +66,8 @@
 .rcl-site .database-transfer-success {
   display: block;
   padding: 12px;
-  color: var(--win);
-  border-left: 3px solid var(--win);
+  color: var(--lime);
+  border-left: 3px solid var(--lime);
 }
 
 .rcl-site .database-import-dialog {

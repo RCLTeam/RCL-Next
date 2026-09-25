@@ -3,7 +3,7 @@ import { DataState } from '../../../features/competition/components/CompetitionD
 import { CompetitionFilters } from '../../../features/competition/components/CompetitionFilters.js';
 import { PlayoffBracket } from '../../../features/competition/components/PlayoffBracket.js';
 import type { Competition } from '../../../features/competition/hooks/useCompetition.js';
-import { PageLayout } from '../../../shared/components/PageLayout.js';
+import { PageLayout } from '../../../shared/components/PageLayout/PageLayout.js';
 import './playoffs.css';
 
 export function PlayoffsPage({ competition }: { competition: Competition }) {

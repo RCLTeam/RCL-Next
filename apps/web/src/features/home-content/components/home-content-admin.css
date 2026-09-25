@@ -2,7 +2,7 @@
 .rcl-site .content-manager-heading { display: flex; flex-wrap: wrap; gap: 20px; align-items: center; justify-content: space-between; margin-bottom: 24px; }
 .rcl-site .content-manager-heading h2 { font: 700 clamp(30px, 4vw, 48px)/1.1 var(--display2); margin: 10px 0; }
 .rcl-site .content-manager-heading p, .rcl-site .content-editor p, .rcl-site .content-editor-empty p { color: var(--muted); line-height: 1.6; }
-.rcl-site .home-content-admin button { min-height: 44px; border: 1px solid var(--stone); padding: 10px 16px; background: var(--panel); color: var(--text); cursor: pointer; font: inherit; overflow-wrap: anywhere; }
+.rcl-site .home-content-admin button { min-height: 44px; border: 1px solid var(--line); padding: 10px 16px; background: var(--panel); color: var(--text); cursor: pointer; font: inherit; overflow-wrap: anywhere; }
 .rcl-site .home-content-admin button:disabled { cursor: wait; opacity: 0.5; }
 .rcl-site .home-content-admin button:focus-visible, .rcl-site .home-content-admin input:focus-visible, .rcl-site .home-content-admin textarea:focus-visible { outline: 2px solid var(--lime); outline-offset: 3px; }
 .rcl-site .home-content-admin .content-primary { background: var(--lime); color: var(--void); font-weight: 700; }
@@ -16,7 +16,7 @@
 .rcl-site .content-editor legend { font: 700 28px var(--display2); margin-bottom: 20px; }
 .rcl-site .content-field { display: grid; gap: 8px; min-width: 0; margin-bottom: 20px; }
 .rcl-site .content-field label { font-size: 13px; font-weight: 600; }
-.rcl-site .content-field input, .rcl-site .content-field textarea, .rcl-site .content-field select { width: 100%; min-width: 0; max-width: 100%; box-sizing: border-box; background: var(--void); color: var(--text); border: 1px solid var(--stone); padding: 12px; min-height: 44px; font: inherit; border-radius: 0; }
+.rcl-site .content-field input, .rcl-site .content-field textarea { width: 100%; min-width: 0; max-width: 100%; box-sizing: border-box; background: var(--void); color: var(--text); border: 1px solid var(--line); padding: 12px; min-height: 44px; font: inherit; border-radius: 0; }
 .rcl-site .content-field textarea { resize: vertical; line-height: 1.6; }
 .rcl-site .content-field small { color: var(--muted); line-height: 1.5; }
 .rcl-site .content-check { display: flex; gap: 12px; align-items: center; min-height: 44px; margin-bottom: 12px; }
@@ -30,10 +30,12 @@
 .rcl-site .content-article-row span { font-size: 12px; color: var(--muted); }
 .rcl-site .content-article-row strong { font-size: 18px; }
 .rcl-site .content-article-row[aria-pressed='true'] { border-color: var(--lime); }
-.rcl-site .content-editor-empty { padding: 32px; border: 1px dashed var(--stone); min-width: 0; }
+.rcl-site .content-editor-empty { padding: 32px; border: 1px dashed var(--line); min-width: 0; }
 .rcl-site .content-actions { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 20px; }
 .rcl-site .content-actions a { min-height: 44px; display: inline-flex; align-items: center; color: var(--lime); }
 .rcl-site .content-publication { padding: 20px 0; border-top: 1px solid var(--line); }
 .rcl-site .content-preview .editorial-header h1 { font-size: clamp(32px, 4vw, 54px); }
 @media (min-width: 651px) { .rcl-site .weekly-edit-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .rcl-site .content-editor { padding: 28px; } }
 @media (min-width: 1000px) { .rcl-site .editorial-manager-grid { grid-template-columns: minmax(220px, 0.7fr) minmax(0, 2fr); } .rcl-site .weekly-edit-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+
+.editorial-upload-preview img { display: block; max-width: 100%; max-height: 220px; object-fit: contain; margin-bottom: 12px; }

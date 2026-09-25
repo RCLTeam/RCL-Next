@@ -17,7 +17,7 @@ import {
   teams
 } from '@rcl/database';
 import type * as schema from '@rcl/database/schema';
-import { and, asc, desc, eq, isNotNull } from 'drizzle-orm';
+import { and, asc, desc, eq, isNotNull, sql } from 'drizzle-orm';
 import type { PgDatabase, PgQueryResultHKT } from 'drizzle-orm/pg-core';
 import { AppError, notFound } from '../../shared/app-error.js';
 import type { HomeContentRepository } from './home-content.repository.js';
@@ -58,6 +58,19 @@ const teamDto = (row: typeof homeWeeklyTeams.$inferSelect) => ({
 
 export class PostgresHomeContentRepository implements HomeContentRepository {
   constructor(private readonly db: PgDatabase<PgQueryResultHKT, typeof schema>) {}
+  async removeUnusedImages(urls: string[], remove: (url: string) => Promise<void>) {
+    if (!urls.length) return;
+    await this.db.transaction(async (tx) => {
+      await tx.execute(sql`LOCK TABLE editorial_articles IN SHARE ROW EXCLUSIVE MODE`);
+      const articles = await tx
+        .select({ coverUrl: editorialArticles.coverUrl, body: editorialArticles.body })
+        .from(editorialArticles);
+      for (const url of new Set(urls)) {
+        if (!articles.some((article) => article.coverUrl === url || article.body.includes(url)))
+          await remove(url);
+      }
+    });
+  }
   async listArticles(admin: boolean) {
     const rows = await this.db
       .select()

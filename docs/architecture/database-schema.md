@@ -11,7 +11,7 @@ Para el contexto de diseño, operaciones y mapeo de partidas:
 
 ## Diagrama Entidad-Relación (Mermaid ER)
 
-El esquema se compone de 19 tablas: las 17 de competición, jugadores, auditoría y pronósticos del diagrama siguiente, más `auth_sessions` y `oauth_states`, descritas en [autenticación](../authentication.md). `auth_sessions.discord_user_id` referencia `discord_users.discord_id` con borrado en cascada; ambas tablas nuevas almacenan hashes de tokens y fechas de caducidad indexadas.
+El esquema se compone de 21 tablas: las 17 de competición, jugadores, auditoría y pronósticos del diagrama siguiente, más `editorial_articles`, `home_weekly_teams`, `auth_sessions` y `oauth_states`, descritas en [autenticación](../authentication.md). `auth_sessions.discord_user_id` referencia `discord_users.discord_id` con borrado en cascada; ambas tablas nuevas almacenan hashes de tokens y fechas de caducidad indexadas.
 
 ```mermaid
 erDiagram

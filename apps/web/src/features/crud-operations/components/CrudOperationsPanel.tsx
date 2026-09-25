@@ -1,5 +1,6 @@
 import type { CrudResource } from '@rcl/contracts';
 import React, { useEffect, useState } from 'react';
+import { Select } from '../../../shared/components/Selector/Selector.js';
 import { getCrudResources } from '../api/crud-operations-api.js';
 import { CrudDataPanel } from './CrudDataPanel.js';
 
@@ -41,7 +42,8 @@ export function CrudOperationsPanel() {
       <div className="crud-operations-resource-selector">
         <span className="eyebrow">Base de datos</span>
         <label htmlFor="crud-operations-resource">Datos que quieres gestionar</label>
-        <select
+        <Select
+          variant="resource"
           id="crud-operations-resource"
           value={selected}
           onChange={(event) => setSelected(event.target.value)}
@@ -51,7 +53,7 @@ export function CrudOperationsPanel() {
               {resource.label}
             </option>
           ))}
-        </select>
+        </Select>
       </div>
       {resource && <CrudDataPanel key={resource.name} resource={resource} />}
     </div>

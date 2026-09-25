@@ -1,8 +1,10 @@
 import type { MatchDetail, MatchMap, MatchParticipant } from '@rcl/contracts';
 import React, { useState } from 'react';
+import { Select } from '../../../shared/components/Selector/Selector.js';
 import { formatMatchStat, matchPosition, positionRows, statGroups } from './match-stats.js';
 
 export function MatchStatsTable({ game, match }: { game: MatchMap; match: MatchDetail }) {
+  const selectId = React.useId();
   const [choice, setChoice] = useState('');
   const ordered = positionRows(game.participants, match.homeTeam.id, match.awayTeam.id)
     .flatMap((row) => [row.home, row.away])
@@ -14,9 +16,13 @@ export function MatchStatsTable({ game, match }: { game: MatchMap; match: MatchD
   const minutes = game.durationSeconds ? game.durationSeconds / 60 : null;
   return (
     <>
-      <label className="select-field match-player-select">
+      <label htmlFor={`${selectId}-1`} className="select-field match-player-select">
         Seleccionar jugador
-        <select value={player.id} onChange={(event) => setChoice(event.target.value)}>
+        <Select
+          id={`${selectId}-1`}
+          value={player.id}
+          onChange={(event) => setChoice(event.target.value)}
+        >
           {ordered.map((item) => (
             <option key={item.id} value={item.id}>
               {item.gameName} ·{' '}
@@ -24,7 +30,7 @@ export function MatchStatsTable({ game, match }: { game: MatchMap; match: MatchD
               {matchPosition(item.position)}
             </option>
           ))}
-        </select>
+        </Select>
       </label>
       <h3>
         {player.gameName}{' '}

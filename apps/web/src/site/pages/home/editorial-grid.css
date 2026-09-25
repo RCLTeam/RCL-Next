@@ -1,0 +1,109 @@
+@import "../../../features/home-content/components/editorial-tag.css";
+
+/* Article cards and featured story. */
+
+.rcl-site .news-hero-link {
+  color: inherit;
+  text-decoration: none;
+  gap: 32px;
+  overflow-wrap: anywhere;
+}
+
+.rcl-site .news-hero-link:hover {
+  border-color: var(--lime);
+}
+
+.rcl-site .news-hero-cover {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+}
+
+.rcl-site .news-item > div {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.rcl-site .news-grid > * {
+  min-width: 0;
+}
+
+
+.rcl-site .news-hero {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  border: 1px solid var(--line);
+  background: linear-gradient(0deg, var(--panel) 10%, transparent), radial-gradient(ellipse at 75% 10%, color-mix(in srgb, var(--purple) 30%, var(--panel)), var(--panel) 65%);
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 30px), calc(100% - 30px) 100%, 0 100%);
+  padding: 24px;
+  min-height: 360px;
+}
+
+@media (min-width: 651px) {
+  .rcl-site .news-hero {
+    padding: 30px;
+    min-height: 420px;
+  }
+}
+
+.rcl-site .news-hero h2 {
+  font: 900 clamp(34px, 4vw, 54px)/1.05 var(--display);
+  text-transform: uppercase;
+  margin-bottom: 16px;
+}
+
+.rcl-site .news-hero p {
+  color: var(--muted);
+  line-height: 1.7;
+  font-size: 14px;
+}
+
+/* News */
+
+.rcl-site .news-grid {
+  display: grid;
+  gap: 24px;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 851px) {
+  .rcl-site .news-grid {
+    grid-template-columns: 1.3fr 1fr;
+  }
+}
+
+.rcl-site .news-side {
+  display: grid;
+  gap: 16px;
+}
+
+.rcl-site .news-item {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  padding: 18px;
+}
+
+@media (min-width: 651px) {
+  .rcl-site .news-item {
+    padding: 22px;
+  }
+}
+
+.rcl-site .news-item:hover {
+  border-color: var(--purple);
+}
+
+.rcl-site .news-number {
+  font: 700 42px var(--display2);
+  color: var(--purple);
+}
+
+.rcl-site .news-item h3 {
+  font-size: 16px;
+  line-height: 1.4;
+  margin: 8px 0;
+}

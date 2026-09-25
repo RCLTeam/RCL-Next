@@ -6,7 +6,7 @@ import {
 import { CompetitionFilters } from '../../../features/competition/components/CompetitionFilters.js';
 import { StandingsTable } from '../../../features/competition/components/StandingsTable.js';
 import type { Competition } from '../../../features/competition/hooks/useCompetition.js';
-import { PageLayout } from '../../../shared/components/PageLayout.js';
+import { PageLayout } from '../../../shared/components/PageLayout/PageLayout.js';
 import './standings.css';
 
 export function StandingsPage({ competition }: { competition: Competition }) {

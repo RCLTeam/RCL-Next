@@ -32,12 +32,11 @@
 .rcl-site .btn-primary {
   background: var(--lime);
   color: var(--void);
-  border: 1px solid var(--lime);
   clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
 }
 
 .rcl-site .btn-ghost {
-  border: 1px solid var(--stone);
+  border: 1px solid var(--line);
   background: color-mix(in srgb, var(--void) 30%, transparent);
   color: var(--text);
 }

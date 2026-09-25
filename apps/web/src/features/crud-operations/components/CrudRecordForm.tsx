@@ -1,5 +1,6 @@
 import type { CrudField, CrudRecord, CrudResource, CrudValue } from '@rcl/contracts';
 import React, { useEffect, useId, useState } from 'react';
+import { Select } from '../../../shared/components/Selector/Selector.js';
 import { getCrudRecords, recordLabel } from '../api/crud-operations-api.js';
 
 export function initialValues(resource: CrudResource, record: CrudRecord | null): CrudRecord {
@@ -114,7 +115,8 @@ function RecordField({
           onChange={(event) => onChange(event.target.checked)}
         />
       ) : field.options ? (
-        <select
+        <Select
+          variant="form"
           id={id}
           value={String(value ?? '')}
           required={field.required}
@@ -128,7 +130,7 @@ function RecordField({
               {option}
             </option>
           ))}
-        </select>
+        </Select>
       ) : (
         <input
           id={id}
@@ -240,7 +242,8 @@ function ReferenceField({
           }}
         />
       )}
-      <select
+      <Select
+        variant="form"
         id={id}
         value={String(value ?? '')}
         required={field.required}
@@ -264,7 +267,7 @@ function ReferenceField({
             {recordLabel(row)}
           </option>
         ))}
-      </select>
+      </Select>
       {loading && <output>Cargando opciones…</output>}
       {error && (
         <span role="alert">

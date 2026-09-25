@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { useCompetitionDetail } from '../../../features/competition/hooks/useCompetitionDetail.js';
-import { PageLayout } from '../../../shared/components/PageLayout.js';
+import { PageLayout } from '../../../shared/components/PageLayout/PageLayout.js';
 import { SiteLink } from '../../../shared/components/SiteLink.js';
 import { useGameCatalog } from '../../../shared/riot/useGameCatalog.js';
 import { MatchReport } from './MatchReport.js';

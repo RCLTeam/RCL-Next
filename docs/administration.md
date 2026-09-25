@@ -70,7 +70,7 @@ La previsualización y el borrado bloquean temporalmente las escrituras en las t
 
 Cualquier admin u owner puede descargar un backup nativo de formato personalizado (`pg_dump -Fc`), con el esquema y datos de `public` y el historial `drizzle`. El archivo incluye miembros, roles y sesiones; debe guardarse como copia privada. No incluye las credenciales de conexión ni la configuración del servidor PostgreSQL.
 
-Solo un owner puede seleccionar un `.dump`, validarlo y confirmar escribiendo **IMPORTAR**. La validación muestra filas actuales y filas del archivo por tabla y ensaya la restauración dentro de una transacción que se revierte. El archivo debe contener las 19 tablas completas, sus columnas actuales y un historial de migraciones coincidente. Los dumps generados con INSERT en lugar de COPY, parciales o de otro esquema se rechazan.
+Solo un owner puede seleccionar un `.dump`, validarlo y confirmar escribiendo **IMPORTAR**. La validación muestra filas actuales y filas del archivo por tabla y ensaya la restauración dentro de una transacción que se revierte. El archivo debe contener las 21 tablas completas, sus columnas actuales y un historial de migraciones coincidente. Los dumps generados con INSERT en lugar de COPY, parciales o de otro esquema se rechazan.
 
 La importación web **reemplaza los datos y conserva el esquema instalado**: `pg_restore` extrae los bloques COPY del archivo; la API valida y carga esos datos con consultas parametrizadas. No ejecuta funciones, triggers, permisos, comandos SQL ni comandos de shell contenidos en el backup. El archivo exportado sigue siendo un `.dump` estándar que puede utilizarse con las herramientas PostgreSQL fuera de la aplicación.
 
@@ -83,12 +83,12 @@ El límite web es de 64 MiB por `.dump`, 128 MiB para su extracción y 64 MiB pa
 En `/admin/home-content`, admins y owners pueden gestionar:
 
 - **Team of the Week**: selecciona temporada, división y jornada; elige cinco jugadores de las partidas importadas; todos sus campeones se incorporan automáticamente. Guarda como borrador o publica. Cada jornada conserva su quinteto independiente. Desmarca «Publicado» para retirarlo sin perder los datos.
-- **Editorial**: crea, edita y elimina noticias, entrevistas, reportajes u otros temas. Cada artículo tiene título, subtítulo opcional, autor, contenido e imagen opcional por URL HTTPS con descripción accesible. La vista previa muestra el contenido antes de guardar. Separa párrafos con líneas en blanco; `## ` crea subtítulos y `> ` citas. El HTML se trata como texto.
+- **Editorial**: crea, edita y elimina noticias, entrevistas, reportajes u otros temas. Cada artículo tiene título, subtítulo opcional, autor, contenido e portada opcional desde un archivo con descripción accesible. La vista previa muestra el contenido antes de guardar. Separa párrafos con líneas en blanco; `## ` crea subtítulos y `> ` citas. El HTML se trata como texto.
 - **Selección de portada**: «Publicado» permite leer el artículo; «Mostrar en la editorial de la home» decide si aparece en la home. El menor orden ocupa la tarjeta destacada. Los borradores nunca se sirven al público, incluso con su enlace directo.
 
 Los enlaces de editorial abren una ventana emergente compacta con desplazamiento interno, cierre con botón o Escape y URL propia `/editorial/:id`. La home incorpora el selector de división encima del quinteto.
 
-La migración `0001_home_content.sql` añade `home_weekly_teams` y `editorial_articles`. Ejecuta `pnpm db:migrate` al actualizar otros entornos. Las escrituras mantienen la autenticación, comprobación de origen y registro de auditoría de la administración.
+El esquema inicial `0000_initial_schema.sql` incluye `home_weekly_teams` y `editorial_articles`, con quintetos por división y jornada. Ejecuta `pnpm db:migrate` para inicializar una base vacía. Las escrituras mantienen la autenticación, comprobación de origen y registro de auditoría de la administración.
 
 
 ### Quintetos por jornada
@@ -97,4 +97,10 @@ Cada división conserva ahora un quinteto independiente por jornada. En **Home c
 
 La home muestra únicamente jornadas con quintetos publicados y abre por defecto la más reciente. Despublicar una jornada la retira del selector sin borrar su quinteto. Las tarjetas alternan los splash arts de todos los campeones de la jornada con un fundido cada 4,5 segundos (imagen fija con un solo campeón o preferencia de movimiento reducido), con texto legible y fondo alternativo si la imagen no se puede cargar.
 
-La migración `0002_weekly_team_rounds.sql` conserva los quintetos anteriores sin inventarles una jornada. Permanecen visibles como referencia en admin, pero quedan fuera del selector público hasta que se confirmen para una jornada real. Las imágenes manuales antiguas se conservan en esos registros; los quintetos por jornada usan todos los campeones registrados.
+Los quintetos locales anteriores sin jornada se conservan sin asignarles una automáticamente. Permanecen visibles como referencia en admin, pero quedan fuera del selector público hasta que se confirmen para una jornada real. Las imágenes manuales antiguas se conservan en esos registros; los quintetos por jornada usan todos los campeones registrados.
+
+### Imágenes de editorial
+
+La portada se selecciona desde un archivo PNG, JPEG o WebP (máximo 5 MiB). Puede sustituirse o quitarse. Para insertar imágenes en la noticia, coloca el cursor en el contenido, escribe la descripción y selecciona el archivo en «Insertar imagen en el contenido». El editor inserta un bloque `![descripción](ruta)` que puedes mover o eliminar; la vista previa y la noticia muestran la imagen con su pie.
+
+Las subidas requieren sesión admin/owner y origen autorizado. La API comprueba tipo, firma y tamaño. Los archivos se guardan en `EDITORIAL_IMAGE_DIR` (por defecto `data/editorial-images`, relativo al directorio de ejecución de la API). En despliegues usa un volumen persistente y compartido si hay varias instancias. Incluye esta carpeta en las copias de seguridad: el backup PostgreSQL conserva las referencias, no los archivos. Las imágenes tienen rutas públicas aleatorias desde su subida y se eliminan al guardar si se han retirado de la portada o del contenido y ninguna otra noticia o borrador las utiliza. Borrar una noticia también limpia sus imágenes no compartidas. Las imágenes subidas y retiradas durante una edición se limpian al guardar esa edición; cancelar una edición sin guardar no realiza esa limpieza.

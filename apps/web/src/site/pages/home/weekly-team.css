@@ -1,16 +1,229 @@
-.rcl-site .totw-round-select { margin: 0 0 24px; max-width: 100%; }
-.rcl-site .totw-champion-card { min-height: 300px; isolation: isolate; overflow: hidden; background: var(--void); color: #fff; display: flex; align-items: end; }
-.rcl-site .totw-champion-card::before { display: none; }
-.rcl-site .totw-splash { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 62% center; z-index: -2; }
-.rcl-site .totw-champion-card::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, #0001 15%, #0008 55%, #000e 100%); z-index: -1; }
-.rcl-site .totw-player-content { width: 100%; min-width: 0; }
-.rcl-site .totw-champion-card .role-chip { margin-bottom: 64px; color: var(--lime); background: #0009; }
-.rcl-site .totw-champion-card h3 { font-size: 28px; }
-.rcl-site .totw-champion-card p { color: #eee; line-height: 1.5; }
-.rcl-site .totw-champion-name { display: block; font: 11px var(--mono); color: var(--lime); margin-top: 12px; }
-@media (min-width: 651px) { .rcl-site .totw-champion-card { min-height: 340px; } }
+/* Heading and champion backgrounds. */
+.rcl-site .totw-heading {
+  display: grid;
+  gap: 16px;
+}
 
-.rcl-site .totw-slides { position: absolute; inset: 0; z-index: -2; }
-.rcl-site .totw-slides .totw-splash { opacity: 0; transition: opacity 900ms ease-in-out; }
-.rcl-site .totw-slides .totw-splash.is-active { opacity: 1; }
-@media (prefers-reduced-motion: reduce) { .rcl-site .totw-slides .totw-splash { transition: none; } }
+.rcl-site .totw-heading .eyebrow {
+  margin-bottom: 0;
+}
+
+.rcl-site .totw-card {
+  overflow-wrap: anywhere;
+}
+
+.rcl-site .totw-portrait {
+  width: 100%;
+  height: 140px;
+  object-fit: contain;
+  margin: 12px 0;
+}
+
+@media (min-width: 651px) {
+  .rcl-site .totw-heading {
+    grid-template-columns: 1fr auto;
+    align-items: center;
+  }
+
+}
+
+.rcl-site .totw-round-select {
+  margin: 0 0 24px;
+  max-width: 100%;
+}
+
+.rcl-site .totw-champion-card {
+  min-height: 300px;
+  isolation: isolate;
+  overflow: hidden;
+  background: var(--void);
+  color: var(--text);
+  display: flex;
+  align-items: end;
+}
+
+.rcl-site .totw-champion-card::before {
+  display: none;
+}
+
+.rcl-site .totw-splash {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 62% center;
+  z-index: -2;
+}
+
+.rcl-site .totw-champion-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to top, 
+    var(--void) 0%, 
+    color-mix(in srgb, var(--void) 50%, transparent), 
+    transparent 100%
+  );
+  z-index: -1;
+}
+
+.rcl-site .totw-player-content {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+}
+
+.rcl-site .totw-champion-card .role-chip {
+  position: absolute;
+  bottom: 16px;
+  right: 16px;
+  color: var(--lime);
+  background: color-mix(in srgb, var(--void) 30%, transparent);
+}
+
+.rcl-site .totw-champion-card h3 {
+  font-size: 28px;
+}
+
+.rcl-site .totw-champion-card p {
+  color: var(--text);
+  line-height: 1.5;
+}
+
+@media (min-width: 651px) {
+  .rcl-site .totw-champion-card {
+    min-height: 340px;
+  }
+}
+
+.rcl-site .totw-slides {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+}
+
+.rcl-site .totw-slides .totw-splash {
+  opacity: 0;
+  transition: opacity 900ms ease-in-out;
+}
+
+.rcl-site .totw-slides .totw-splash.is-active {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rcl-site .totw-slides .totw-splash {
+    transition: none;
+  }
+}
+
+/* Base cards follow the champion rules to preserve the existing cascade. */
+
+.rcl-site .totw-strip {
+  position: relative;
+  background: var(--panel-raised);
+  padding: 44px 60px 64px;
+}
+
+.rcl-site .totw-strip::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px; /* Ajusta el grosor exacto del borde superior */
+  background: linear-gradient(
+    to right, 
+    var(--lime) 0%, 
+    color-mix(in srgb, var(--lime) 30%, transparent), 
+    transparent 100%
+  );
+}
+
+.rcl-site .totw-strip::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px; /* Ajusta el grosor exacto del borde inferior */
+  background: linear-gradient(
+    to right, 
+    var(--lime) 0%, 
+    color-mix(in srgb, var(--lime) 30%, transparent), 
+    transparent 100%
+  );
+}
+
+.rcl-site .totw-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 20px 12px;
+}
+
+@media (min-width: 480px) {
+  .rcl-site .totw-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 651px) {
+  .rcl-site .totw-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 18px;
+  }
+}
+
+@media (min-width: 851px) {
+  .rcl-site .totw-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
+
+.rcl-site .totw-card {
+  position: relative;
+  background: var(--panel);
+  border: 2px solid var(--line);
+  padding: 16px;
+}
+
+@media (min-width: 651px) {
+  .rcl-site .totw-card {
+    padding: 18px;
+  }
+}
+
+.rcl-site .totw-card::before {
+  content: '';
+  width: 46px;
+  height: 15px;
+  position: absolute;
+  top: -8px;
+  left: calc(50% - 23px);
+  background: color-mix(in srgb, var(--text) 15%, transparent);
+  border: 1px solid color-mix(in srgb, var(--text) 20%, transparent);
+  transform: rotate(-3deg);
+}
+
+.rcl-site .player-silhouette {
+  color: var(--line);
+  font-size: 48px;
+  padding: 10px 0;
+}
+
+.rcl-site .totw-card h3 {
+  font: 700 22px var(--display2);
+  text-transform: uppercase;
+  border-bottom: 2px solid var(--lime);
+  padding-bottom: 5px;
+  width: fit-content;
+  margin-bottom: 8px;
+}
+
+.rcl-site .totw-card p {
+  color: var(--muted);
+  font: 10px var(--mono);
+  margin-bottom: 0;
+}

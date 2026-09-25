@@ -2,7 +2,7 @@ import React from 'react';
 import {
   type DataStateProps,
   DataState as SharedDataState
-} from '../../../shared/components/DataState.js';
+} from '../../../shared/components/DataState/DataState.js';
 import type { Competition } from '../hooks/useCompetition.js';
 import type { CollectionState } from '../types/competition.types.js';
 

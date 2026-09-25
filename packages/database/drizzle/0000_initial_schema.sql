@@ -305,6 +305,37 @@ CREATE TABLE "predictions" (
 	CONSTRAINT "predictions_user_match_key" UNIQUE ("discord_user_id", "match_id")
 );
 --> statement-breakpoint
+CREATE TABLE "editorial_articles" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"title" varchar(180) NOT NULL,
+	"excerpt" varchar(500) NOT NULL,
+	"body" text NOT NULL,
+	"kind" varchar(20) NOT NULL,
+	"author" varchar(120) NOT NULL,
+	"cover_url" text DEFAULT '' NOT NULL,
+	"cover_alt" varchar(240) DEFAULT '' NOT NULL,
+	"published" boolean DEFAULT false NOT NULL,
+	"show_on_home" boolean DEFAULT false NOT NULL,
+	"home_order" integer DEFAULT 0 NOT NULL,
+	"published_at" timestamp with time zone,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "editorial_kind_check" CHECK ("editorial_articles"."kind" in ('noticia', 'reportaje', 'entrevista', 'otro')),
+	CONSTRAINT "editorial_order_check" CHECK ("editorial_articles"."home_order" >= 0)
+);
+--> statement-breakpoint
+CREATE TABLE "home_weekly_teams" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"division_id" uuid NOT NULL,
+	"round_id" smallint,
+	"label" varchar(120) NOT NULL,
+	"published" boolean DEFAULT false NOT NULL,
+	"players" jsonb NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "home_weekly_teams_division_id_seasons_divisions_id_fk" FOREIGN KEY ("division_id") REFERENCES "public"."seasons_divisions"("id") ON DELETE cascade ON UPDATE no action,
+	CONSTRAINT "home_weekly_teams_round_fkey" FOREIGN KEY ("round_id","division_id") REFERENCES "public"."rounds"("id","id_season_division") ON DELETE cascade ON UPDATE no action,
+	CONSTRAINT "home_weekly_teams_division_round_key" UNIQUE("division_id","round_id")
+);
+--> statement-breakpoint
 CREATE INDEX "audit_logs_entity_idx" ON "audit_logs" USING btree ("entity_type", "entity_id");--> statement-breakpoint
 CREATE INDEX "audit_logs_actor_discord_user_id_idx" ON "audit_logs" USING btree ("actor_discord_user_id");--> statement-breakpoint
 CREATE INDEX "auth_sessions_expires_at_idx" ON "auth_sessions" USING btree ("expires_at");--> statement-breakpoint
@@ -336,6 +367,7 @@ CREATE INDEX "player_game_info_player_id_idx" ON "player_game_info" USING btree 
 CREATE INDEX "player_game_info_team_id_idx" ON "player_game_info" USING btree ("team_id");--> statement-breakpoint
 CREATE INDEX "predictions_match_id_idx" ON "predictions" USING btree ("match_id");--> statement-breakpoint
 CREATE INDEX "predictions_discord_user_id_idx" ON "predictions" USING btree ("discord_user_id");--> statement-breakpoint
+CREATE INDEX "editorial_home_idx" ON "editorial_articles" USING btree ("published","show_on_home","home_order");--> statement-breakpoint
 CREATE FUNCTION set_updated_at() RETURNS trigger LANGUAGE plpgsql AS $$
 BEGIN
   NEW.updated_at = clock_timestamp();

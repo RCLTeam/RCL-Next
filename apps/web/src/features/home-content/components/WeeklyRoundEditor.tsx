@@ -1,5 +1,6 @@
 import type { WeeklyCandidate, WeeklyPlayer, WeeklyTeam, WeeklyTeamInput } from '@rcl/contracts';
 import React, { useState } from 'react';
+import { Select } from '../../../shared/components/Selector/Selector.js';
 import type { Round } from '../../competition/types/competition.types.js';
 import { saveWeeklyTeam } from '../home-content-api.js';
 import { useHomeContent } from '../useHomeContent.js';
@@ -131,7 +132,8 @@ function WeeklyRoundForm({
                   <label htmlFor={`weekly-player-${player.role}`}>
                     Jugador · {labels[player.role]}
                   </label>
-                  <select
+                  <Select
+                    variant="form"
                     id={`weekly-player-${player.role}`}
                     value={candidate ? `${candidate.teamId}:${candidate.playerId}` : ''}
                     required
@@ -162,7 +164,7 @@ function WeeklyRoundForm({
                         {item.tag ? `#${item.tag}` : ''} — {item.team}
                       </option>
                     ))}
-                  </select>
+                  </Select>
                 </div>
                 {!candidate && player.name && (
                   <p>
