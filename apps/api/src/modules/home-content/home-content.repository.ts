@@ -7,6 +7,7 @@ import type {
 } from '@rcl/contracts';
 
 export interface HomeContentRepository {
+  removeUnusedImages(urls: string[], remove: (url: string) => Promise<void>): Promise<void>;
   listArticles(admin: boolean): Promise<EditorialArticle[]>;
   getArticle(id: string): Promise<EditorialArticle | null>;
   saveArticle(actor: string, id: string | null, input: EditorialInput): Promise<EditorialArticle>;

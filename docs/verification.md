@@ -15,7 +15,7 @@
 - `pnpm typecheck`: correcto en raíz y workspaces.
 - `biome check .`: correcto, 42 archivos comprobados.
 - `pnpm test`: 37 pruebas en 10 archivos, todas correctas. Incluye 12 pruebas de integración de autenticación, 4 de configuración Discord y 4 de errores del proveedor.
-- PostgreSQL embebido ejecuta el esquema inicial consolidado, comprueba las 19 tablas y valida el consumo único del estado OAuth, cookies, rotación/revocación/caducidad de sesiones, permisos y borrado en cascada. La autenticación se integró en ese esquema el 17 de septiembre de 2026, manteniendo una sola entrada en el journal.
+- PostgreSQL embebido ejecuta el esquema inicial consolidado, comprueba las 21 tablas y valida el consumo único del estado OAuth, cookies, rotación/revocación/caducidad de sesiones, permisos y borrado en cascada. La autenticación se integró en ese esquema el 17 de septiembre de 2026, manteniendo una sola entrada en el journal.
 - Las respuestas externas de Discord están simuladas. No se ha efectuado el consentimiento real ni aplicado la migración en una instancia PostgreSQL externa.
 - Las pruebas de configuración utilizan `parseEnvironment` directamente para evitar depender del `.env` del equipo. No se añadieron dependencias.
 

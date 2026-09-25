@@ -7,7 +7,7 @@ import {
 import { CompetitionFilters } from '../../../features/competition/components/CompetitionFilters.js';
 import { useCollection } from '../../../features/competition/hooks/useCollection.js';
 import type { Competition } from '../../../features/competition/hooks/useCompetition.js';
-import { PageLayout } from '../../../shared/components/PageLayout.js';
+import { PageLayout } from '../../../shared/components/PageLayout/PageLayout.js';
 import { useGameCatalog } from '../../../shared/riot/useGameCatalog.js';
 import { ChampionsTable } from './ChampionsTable.js';
 import './champions.css';

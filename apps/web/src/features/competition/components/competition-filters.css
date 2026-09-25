@@ -1,32 +1,14 @@
 /* Fields and division selection — CompetitionFilters / DivisionSwitch */
 
-.rcl-site select,
 .rcl-site input[type='search'] {
   max-width: 100%;
   min-height: 44px;
   background: var(--panel);
   color: var(--text);
-  border: 1px solid var(--stone);
+  border: 1px solid var(--line);
   padding: 10px 12px;
   font-size: 12px;
   border-radius: 0;
-}
-
-.rcl-site .select-field {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  font: 10px var(--mono);
-  color: var(--muted);
-  text-transform: uppercase;
-  max-width: 100%;
-  width: 100%;
-}
-
-@media (min-width: 651px) {
-  .rcl-site .select-field {
-    width: auto;
-  }
 }
 
 .rcl-site .league-switch {
@@ -158,6 +140,6 @@
   }
 }
 
-.rcl-site .page-toolbar :is(select, input, .league-switch button) {
+.rcl-site .page-toolbar :is(input, .league-switch button) {
   min-height: var(--control-height);
 }

@@ -83,7 +83,7 @@
 
 .rcl-site .paper {
   position: relative;
-  background: var(--paper);
+  background: var(--void);
 }
 
 .rcl-site .paper .eyebrow::before {

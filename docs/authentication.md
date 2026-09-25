@@ -59,7 +59,7 @@ No se conceden privilegios a partir del login o los roles del servidor Discord. 
 
 ## Migración y pruebas
 
-El esquema inicial `0000_initial_schema.sql` incluye las 19 tablas, con un único snapshot y una entrada en el journal. `discord_users` es la tabla existente de identidad y permisos; la autenticación la reutiliza. `auth_sessions` guarda las sesiones y `oauth_states` los estados temporales de autorización, sin duplicar usuarios. Ambas están integradas en el esquema inicial, con índices de caducidad y borrado de sesiones en cascada al eliminar el usuario. No hay una migración incremental de autenticación porque la base todavía no está en producción.
+El esquema inicial `0000_initial_schema.sql` incluye las 21 tablas, con un único snapshot y una entrada en el journal. `discord_users` es la tabla existente de identidad y permisos; la autenticación la reutiliza. `auth_sessions` guarda las sesiones y `oauth_states` los estados temporales de autorización, sin duplicar usuarios. Ambas están integradas en el esquema inicial, con índices de caducidad y borrado de sesiones en cascada al eliminar el usuario. No hay una migración incremental de autenticación porque la base todavía no está en producción.
 
 Las pruebas HTTP ejecutan el esquema inicial en PGlite y simulan únicamente las respuestas externas de Discord. Verifican cookies, intercambio de código, protección de estado, consumo concurrente, sesiones, roles, logout y errores sin filtración de secretos. Para comprobar el consentimiento real en Discord se necesitan las credenciales y una base PostgreSQL configurada.
 

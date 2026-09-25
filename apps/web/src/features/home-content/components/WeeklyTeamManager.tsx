@@ -1,5 +1,6 @@
 import type { WeeklyTeam } from '@rcl/contracts';
 import React, { useState } from 'react';
+import { Select } from '../../../shared/components/Selector/Selector.js';
 import { useCollection } from '../../competition/hooks/useCollection.js';
 import { useCompetitionSelection } from '../../competition/hooks/useCompetitionSelection.js';
 import type { Round } from '../../competition/types/competition.types.js';
@@ -9,6 +10,7 @@ import type { EditorStateProps } from './HomeContentPanel.js';
 import { WeeklyRoundEditor } from './WeeklyRoundEditor.js';
 
 export function WeeklyTeamManager(props: EditorStateProps) {
+  const selectId = React.useId();
   const competition = useCompetitionSelection();
   const [busy, setBusy] = useState(false);
   const [savedTeams, setSavedTeams] = useState<WeeklyTeam[]>([]);
@@ -41,9 +43,10 @@ export function WeeklyTeamManager(props: EditorStateProps) {
   return (
     <section aria-label="Editar Team of the Week">
       <div className="content-filters">
-        <label>
+        <label htmlFor={`${selectId}-1`}>
           Temporada
-          <select
+          <Select
+            id={`${selectId}-1`}
             value={competition.season?.id ?? ''}
             disabled={busy}
             onChange={(event) =>
@@ -58,11 +61,12 @@ export function WeeklyTeamManager(props: EditorStateProps) {
                 {season.name}
               </option>
             ))}
-          </select>
+          </Select>
         </label>
-        <label>
+        <label htmlFor={`${selectId}-2`}>
           División
-          <select
+          <Select
+            id={`${selectId}-2`}
             value={divisionId ?? ''}
             disabled={busy}
             onChange={(event) =>
@@ -77,11 +81,12 @@ export function WeeklyTeamManager(props: EditorStateProps) {
                 {division.name}
               </option>
             ))}
-          </select>
+          </Select>
         </label>
-        <label>
+        <label htmlFor={`${selectId}-3`}>
           Jornada
-          <select
+          <Select
+            id={`${selectId}-3`}
             value={round?.id ?? ''}
             disabled={busy || rounds.status !== 'ready'}
             onChange={(event) => change(event.target.value, setRoundChoice)}
@@ -94,7 +99,7 @@ export function WeeklyTeamManager(props: EditorStateProps) {
                   : ''}
               </option>
             ))}
-          </select>
+          </Select>
         </label>
       </div>
       <ContentStatus

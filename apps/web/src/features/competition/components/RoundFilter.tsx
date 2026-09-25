@@ -1,4 +1,5 @@
 import React from 'react';
+import { Select } from '../../../shared/components/Selector/Selector.js';
 import './competition-filters.css';
 import type { Round } from '../types/competition.types.js';
 
@@ -7,10 +8,12 @@ export function RoundFilter({
   value,
   onChange
 }: { rounds: Round[]; value: string; onChange: (value: string) => void }) {
+  const selectId = React.useId();
   return (
-    <label className="select-field">
+    <label htmlFor={`${selectId}-1`} className="select-field">
       Jornada
-      <select
+      <Select
+        id={`${selectId}-1`}
         value={value}
         onChange={(event) => onChange(event.target.value)}
         disabled={!rounds.length}
@@ -21,7 +24,7 @@ export function RoundFilter({
             {round.name ?? `Jornada ${round.sequence}`}
           </option>
         ))}
-      </select>
+      </Select>
     </label>
   );
 }

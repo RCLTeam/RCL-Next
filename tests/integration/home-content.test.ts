@@ -1,4 +1,7 @@
 import { createHash } from 'node:crypto';
+import { existsSync, mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { PGlite } from '@electric-sql/pglite';
 import { drizzle } from 'drizzle-orm/pglite';
@@ -14,11 +17,13 @@ import { PostgresHomeContentRepository } from '../../apps/api/src/modules/home-c
 import * as schema from '../../packages/database/src/schema.js';
 
 describe('home content publication, authorization and persistence', () => {
+  const imageDirectory = mkdtempSync(join(tmpdir(), 'rcl-editorial-test-'));
   const client = new PGlite();
   const db = drizzle(client, { schema });
   const origin = 'http://localhost:5173';
   const tokens = { admin: 'a'.repeat(64), viewer: 'b'.repeat(64) };
   const app = createApp({
+    editorialImageDirectory: imageDirectory,
     repository: new PostgresCompetitionRepository(db),
     homeContentRepository: new PostgresHomeContentRepository(db),
     checkDatabase: async () => {},
@@ -186,7 +191,112 @@ describe('home content publication, authorization and persistence', () => {
       }
     }
   });
-  afterAll(() => client.close());
+  afterAll(async () => {
+    await client.close();
+    rmSync(imageDirectory, { recursive: true, force: true });
+  });
+  it('uploads images with authorization and persists cover and inline references', async () => {
+    const png = Buffer.from(
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aX1sAAAAASUVORK5CYII=',
+      'base64'
+    );
+    await request(app)
+      .post(`${root}/admin/images`)
+      .set('Content-Type', 'image/png')
+      .send(png)
+      .expect(401);
+    await request(app)
+      .post(`${root}/admin/images`)
+      .set('Cookie', cookie('viewer'))
+      .set('Origin', origin)
+      .set('Content-Type', 'image/png')
+      .send(png)
+      .expect(403);
+    await request(app)
+      .post(`${root}/admin/images`)
+      .set('Cookie', cookie('admin'))
+      .set('Origin', 'https://evil.example')
+      .set('Content-Type', 'image/png')
+      .send(png)
+      .expect(403);
+    await request(app)
+      .post(`${root}/admin/images`)
+      .set('Cookie', cookie('admin'))
+      .set('Origin', origin)
+      .set('Content-Type', 'image/png')
+      .send(Buffer.from('<svg></svg>'))
+      .expect(422);
+    await request(app)
+      .post(`${root}/admin/images`)
+      .set('Cookie', cookie('admin'))
+      .set('Origin', origin)
+      .set('Content-Type', 'image/png')
+      .send(Buffer.alloc(5 * 1024 * 1024 + 1))
+      .expect(413);
+    const uploaded = await request(app)
+      .post(`${root}/admin/images`)
+      .set('Cookie', cookie('admin'))
+      .set('Origin', origin)
+      .set('Content-Type', 'image/png')
+      .send(png)
+      .expect(201);
+    const url = uploaded.body.data.url as string;
+    const fetched = await request(app)
+      .get(url)
+      .expect(200)
+      .expect('Content-Type', /image\/png/);
+    expect(fetched.body).toEqual(png);
+    await request(app).get(`${root}/images/invalid.png`).expect(404);
+    const created = await post({
+      ...article,
+      coverUrl: url,
+      coverAlt: 'La final',
+      body: `Crónica.\n\n![La final](${url})`,
+      published: true,
+      showOnHome: false
+    }).expect(201);
+    const read = await request(app).get(`${root}/articles/${created.body.data.id}`).expect(200);
+    expect(read.body.data.coverUrl).toBe(url);
+    expect(read.body.data.body).toContain(`![La final](${url})`);
+    await put(`articles/${created.body.data.id}`, { ...article, title: '', coverUrl: '' }).expect(
+      422
+    );
+    await request(app).get(url).expect(200);
+    // Removing the cover must retain the same image used inside the article.
+    await put(`articles/${created.body.data.id}`, {
+      ...article,
+      body: `![La final](${url})`
+    }).expect(200);
+    await request(app).get(url).expect(200);
+    const shared = await post({ ...article, coverUrl: url, coverAlt: 'Compartida' }).expect(201);
+    await put(`articles/${created.body.data.id}`, article).expect(200);
+    await request(app).get(url).expect(200);
+    await request(app)
+      .delete(`${root}/admin/articles/${shared.body.data.id}`)
+      .set('Cookie', cookie('admin'))
+      .set('Origin', origin)
+      .expect(200);
+    await request(app).get(url).expect(404);
+    expect(existsSync(join(imageDirectory, url.split('/').at(-1) ?? ''))).toBe(false);
+    const unused = await request(app)
+      .post(`${root}/admin/images`)
+      .set('Cookie', cookie('admin'))
+      .set('Origin', origin)
+      .set('Content-Type', 'image/png')
+      .send(png)
+      .expect(201);
+    await put(`articles/${created.body.data.id}`, {
+      ...article,
+      uploadedImages: [unused.body.data.url]
+    }).expect(200);
+    await request(app).get(unused.body.data.url).expect(404);
+
+    await request(app)
+      .delete(`${root}/admin/articles/${created.body.data.id}`)
+      .set('Cookie', cookie('admin'))
+      .set('Origin', origin)
+      .expect(200);
+  });
   it('protects administration and rejects untrusted mutations', async () => {
     await request(app).get(`${root}/admin/articles`).expect(401);
     await request(app).get(`${root}/admin/articles`).set('Cookie', cookie('viewer')).expect(403);

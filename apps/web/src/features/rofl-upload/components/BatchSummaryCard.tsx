@@ -58,7 +58,7 @@ export function BatchSummaryCard({ summary, onReset }: BatchSummaryCardProps) {
           <div
             className="admin-batch-summary-card-stat-value"
             style={{
-              color: duplicatesCount > 0 ? 'var(--amber)' : 'var(--muted)'
+              color: duplicatesCount > 0 ? 'var(--lime)' : 'var(--muted)'
             }}
           >
             {duplicatesCount}

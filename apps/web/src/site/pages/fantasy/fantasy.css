@@ -6,7 +6,7 @@
   display: flex;
   justify-content: space-between;
   gap: 24px;
-  border: 1px solid var(--stone);
+  border: 1px solid var(--line);
   border-left: 3px solid var(--purple);
   margin-bottom: 20px;
   padding: 22px;
@@ -97,7 +97,7 @@
   display: flex;
   flex-direction: column;
   min-height: 260px;
-  border: 1px dashed var(--stone);
+  border: 1px dashed var(--line);
   background: linear-gradient(140deg, color-mix(in srgb, var(--purple) 15%, var(--panel)), var(--panel) 70%);
   transition: transform 180ms, border-color 180ms;
   padding: 16px;
@@ -138,7 +138,7 @@
   border-style: solid;
   padding: 0;
   overflow: hidden;
-  border-color: var(--stone);
+  border-color: var(--line);
   background: var(--panel);
 }
 

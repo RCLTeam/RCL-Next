@@ -57,20 +57,20 @@
   cursor: not-allowed;
 }
 
-.rcl-site .crud-operations-data input, .rcl-site .crud-operations-data select {
+.rcl-site .crud-operations-data input {
   width: 100%;
   min-width: 0;
   min-height: 44px;
   background: var(--void);
   color: var(--text);
-  border: 1px solid var(--stone);
+  border: 1px solid var(--line);
   border-radius: 4px;
   padding: 10px 12px;
   font: inherit;
   color-scheme: dark;
 }
 
-.rcl-site .crud-operations-data :is(input, select, button):focus-visible {
+.rcl-site .crud-operations-data :is(input, button):focus-visible {
   outline: 2px solid var(--lime);
   outline-offset: 3px;
 }
@@ -83,7 +83,7 @@
 
 .rcl-site .crud-operations-editor {
   background: var(--panel);
-  border: 1px solid var(--stone);
+  border: 1px solid var(--line);
   border-top: 3px solid var(--lime);
   margin-bottom: 24px;
   padding: 18px;
@@ -127,7 +127,7 @@
   font-size: 12px;
 }
 
-.rcl-site .crud-operations-field input:disabled, .rcl-site .crud-operations-field select:disabled {
+.rcl-site .crud-operations-field input:disabled {
   opacity: 0.6;
 }
 
@@ -176,8 +176,8 @@
 }
 
 .rcl-site .crud-operations-data .crud-operations-success {
-  color: var(--win);
-  border-left: 3px solid var(--win);
+  color: var(--lime);
+  border-left: 3px solid var(--lime);
   padding: 12px;
 }
 

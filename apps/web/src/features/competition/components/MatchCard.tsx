@@ -44,9 +44,17 @@ export function MatchCard({ match }: { match: Match }) {
           <TeamBadge team={match.homeTeam} />
           {match.homeTeam?.name ?? 'Por definir'}
         </span>
-        <strong className="match-score">
-          {showScore ? `${match.homeScore}–${match.awayScore}` : 'VS'}
-        </strong>
+        <div className="match-score-container">
+          {showScore ? (
+            <label className="match-score-spoiler">
+              <input type="checkbox" className="spoiler-toggle" />
+              <span className="spoiler-cover">HAZ CLIC PARA VER MÁS</span>
+              <strong className="match-score">{`${match.homeScore} – ${match.awayScore}`}</strong>
+            </label>
+          ) : (
+            <strong className="match-score">VS</strong>
+          )}
+        </div>
         <span>
           {match.awayTeam?.name ?? 'Por definir'}
           <TeamBadge team={match.awayTeam} />

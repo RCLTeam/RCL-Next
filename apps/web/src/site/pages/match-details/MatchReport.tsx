@@ -1,6 +1,7 @@
 import type { MatchDetail, MatchParticipant } from '@rcl/contracts';
 import React, { useState } from 'react';
 import { TeamBadge } from '../../../features/competition/components/TeamBadge.js';
+import { Select } from '../../../shared/components/Selector/Selector.js';
 import type { GameCatalog } from '../../../shared/riot/riot-assets.service.js';
 import { MatchLaneComparison } from './MatchLaneComparison.js';
 import { MatchMapTabs } from './MatchMapTabs.js';
@@ -14,6 +15,7 @@ export function MatchReport({
   match,
   catalog = {}
 }: { match: MatchDetail; catalog?: GameCatalog }) {
+  const selectId = React.useId();
   const [gameChoice, setGameChoice] = useState('');
   const [section, setSection] = useState('enfrentamientos');
   const [runeChoice, setRuneChoice] = useState('');
@@ -84,9 +86,13 @@ export function MatchReport({
         <h2>03 · Runas</h2>
         {runePlayer ? (
           <>
-            <label className="select-field match-player-select">
+            <label htmlFor={`${selectId}-1`} className="select-field match-player-select">
               Seleccionar jugador para runas
-              <select value={runePlayer.id} onChange={(event) => setRuneChoice(event.target.value)}>
+              <Select
+                id={`${selectId}-1`}
+                value={runePlayer.id}
+                onChange={(event) => setRuneChoice(event.target.value)}
+              >
                 {players.map((player) => (
                   <option key={player.id} value={player.id}>
                     {player.gameName} ·{' '}
@@ -96,7 +102,7 @@ export function MatchReport({
                     · {matchPosition(player.position)}
                   </option>
                 ))}
-              </select>
+              </Select>
             </label>
             <MatchPlayerRunes key={runePlayer.id} player={runePlayer} catalog={catalog} />
           </>

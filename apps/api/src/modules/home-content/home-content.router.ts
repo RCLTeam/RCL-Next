@@ -1,12 +1,24 @@
-import { Router } from 'express';
+import { Router, raw } from 'express';
+import { notFound } from '../../shared/app-error.js';
 import { type AuthOptions, requireAuth, requireTrustedOrigin } from '../auth/auth.router.js';
+import { EditorialImageStore } from './editorial-image.store.js';
 import type { HomeContentService } from './home-content.service.js';
 
-export function homeContentRouter(service: HomeContentService, auth?: AuthOptions): Router {
+export function homeContentRouter(
+  service: HomeContentService,
+  auth?: AuthOptions,
+  images = new EditorialImageStore()
+): Router {
   const router = Router();
   router.use((_req, res, next) => {
     res.set('Cache-Control', 'no-store');
     next();
+  });
+  router.get('/images/:name', (req, res, next) => {
+    res.set('X-Content-Type-Options', 'nosniff');
+    res.sendFile(images.path(req.params.name), (error) => {
+      if (error) next('code' in error && error.code === 'ENOENT' ? notFound('Image') : error);
+    });
   });
   router.get('/articles', async (_req, res) => res.json({ data: await service.listArticles() }));
   router.get('/articles/:id', async (req, res) =>
@@ -33,6 +45,13 @@ export function homeContentRouter(service: HomeContentService, auth?: AuthOption
       res.json({ data: await service.weeklyTeam(req.params.id, true) })
     );
     router.use('/admin', requireTrustedOrigin(auth.frontendOrigin));
+    router.post(
+      '/admin/images',
+      raw({ type: ['image/png', 'image/jpeg', 'image/webp'], limit: '5mb' }),
+      async (req, res) => {
+        res.status(201).json({ data: await images.save(req.body, req.get('Content-Type')) });
+      }
+    );
     router.post('/admin/articles', async (req, res) =>
       res.status(201).json({
         data: await service.saveArticle(String(res.locals.user.discordId), null, req.body)

@@ -38,6 +38,17 @@ export function ArticleView({
         {article.body.split(/\n\s*\n/).map((paragraph, index) => {
           // Content is rendered as text, never interpreted as HTML.
           const key = `${index}-${paragraph.slice(0, 20)}`;
+          const image =
+            /^!\[([^\]\n]+)\]\((\/api\/v1\/home-content\/images\/[a-f0-9-]{36}\.(?:png|jpg|webp))\)$/.exec(
+              paragraph.trim()
+            );
+          if (image)
+            return (
+              <figure className="editorial-inline-image" key={key}>
+                <img src={image[2]} alt={image[1]} loading="lazy" />
+                <figcaption>{image[1]}</figcaption>
+              </figure>
+            );
           if (paragraph.startsWith('## ')) return <h2 key={key}>{paragraph.slice(3)}</h2>;
           if (paragraph.startsWith('> '))
             return <blockquote key={key}>{paragraph.slice(2)}</blockquote>;

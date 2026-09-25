@@ -1,0 +1,227 @@
+/* Hero and artwork */
+
+.rcl-site .hero {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  overflow: hidden;
+  border-bottom: 1px solid var(--line);
+  min-height: 600px;
+}
+
+@media (min-width: 651px) {
+  .rcl-site .hero {
+    min-height: 620px;
+  }
+}
+
+@media (min-width: 851px) {
+  .rcl-site .hero {
+    min-height: 760px;
+  }
+}
+
+.rcl-site .hero-bg {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+      to left,
+      transparent 20%,
+      color-mix(in srgb, var(--void) 45%, transparent),
+      color-mix(in srgb, var(--void) 75%, transparent),
+      var(--void) 
+    ),
+    url('../../../shared/assets/brand/home-banner.webp')
+      center/cover no-repeat;
+}
+
+.rcl-site .hero-bg::after {
+  content: '';
+  position: absolute;
+  inset: 22px;
+  border: 1px solid color-mix(in srgb, var(--lime) 13%, transparent);
+  clip-path: polygon(0 0, 25% 0, 25% 1%, 1% 1%, 1% 25%, 0 25%, 0 0, 100% 100%, 75% 100%, 75% 99%, 99% 99%, 99% 75%, 100% 75%, 100% 100%);
+}
+
+.rcl-site .hero-frame {
+  position: absolute;
+  inset: 24px;
+  pointer-events: none;
+  border-inline: 1px solid color-mix(in srgb, var(--lime) 10%, transparent);
+}
+
+.rcl-site .hero-frame::before,
+.rcl-site .hero-frame::after {
+  content: '';
+  position: absolute;
+  width: 64px;
+  height: 64px;
+  border: 2px solid color-mix(in srgb, var(--lime) 35%, transparent);
+}
+
+.rcl-site .hero-frame::before {
+  top: 0;
+  left: 0;
+  border-right: 0;
+  border-bottom: 0;
+}
+
+.rcl-site .hero-frame::after {
+  bottom: 0;
+  right: 0;
+  border-left: 0;
+  border-top: 0;
+}
+
+.rcl-site .hero-badge {
+  position: absolute;
+  height: auto;
+  transform: rotate(6deg);
+  mix-blend-mode: lighten;
+  top: -20px;
+  width: 340px;
+  opacity: 0.45;
+  right: -95px;
+}
+
+@media (min-width: 651px) {
+  .rcl-site .hero-badge {
+    top: 0;
+    width: 420px;
+    right: -100px;
+  }
+}
+
+@media (min-width: 851px) {
+  .rcl-site .hero-badge {
+    top: 28px;
+    width: min(45vw, 570px);
+    opacity: 0.86;
+    right: -30px;
+  }
+}
+
+.rcl-site .hero-body {
+  position: relative;
+  z-index: 1;
+  padding: 120px 24px 44px;
+}
+
+@media (min-width: 651px) {
+  .rcl-site .hero-body {
+    padding: 76px var(--page-gutter) 65px;
+  }
+}
+
+.rcl-site .hero-kicker {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 26px;
+  font: 700 11px var(--mono);
+  text-transform: uppercase;
+  font-size: 9px;
+  max-width: 300px;
+  letter-spacing: 0.09em;
+}
+
+@media (min-width: 651px) {
+  .rcl-site .hero-kicker {
+    font-size: 11px;
+    max-width: none;
+    letter-spacing: 0.17em;
+  }
+}
+
+.rcl-site .status-dot {
+  display: block;
+  flex-shrink: 0;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--lime);
+}
+
+.rcl-site .hero h1 {
+  font-family: var(--display);
+  line-height: 0.9;
+  font-weight: 900;
+  letter-spacing: 0;
+  margin: 0;
+  text-shadow: 0 6px 40px var(--void);
+  font-size: clamp(54px, 12vw, 78px);
+}
+
+@media (min-width: 651px) {
+  .rcl-site .hero h1 {
+    font-size: clamp(54px, 10vw, 158px);
+  }
+}
+
+.rcl-site .hero h1 em {
+  color: var(--lime);
+  font-style: normal;
+}
+
+.rcl-site .hero p {
+  max-width: 540px;
+  font-weight: 300;
+  line-height: 1.6;
+  margin: 26px 0 34px;
+  color: var(--text);
+  font-size: 14px;
+}
+
+@media (min-width: 651px) {
+  .rcl-site .hero p {
+    font-size: 17px;
+  }
+}
+
+/* Ticker and animation */
+
+.rcl-site .hero-ticker {
+  position: relative;
+  z-index: 2;
+  background: var(--lime);
+  color: var(--void);
+  height: 38px;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  white-space: nowrap;
+  font: 700 16px var(--display2);
+  letter-spacing: 0.04em;
+  transform: skewY(-2deg);
+  user-select: none;
+  margin-bottom: 10px;
+}
+
+.rcl-site .hero-ticker-track {
+  display: flex;
+  width: max-content;
+  will-change: transform; 
+  animation: rcl-marquee 40s linear infinite;
+}
+
+.rcl-site .hero-ticker-track span {
+  flex-shrink: 0;
+  display: inline-block;
+  white-space: nowrap;
+}
+
+@keyframes rcl-marquee {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+@media (min-width: 651px) {
+  .rcl-site .hero-ticker {
+    font-size: 18px;
+  }
+}

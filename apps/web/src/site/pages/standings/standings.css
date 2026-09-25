@@ -7,7 +7,7 @@
 }
 
 .rcl-site .standings-table .wins {
-  color: var(--win);
+  color: var(--lime);
 }
 
 .rcl-site .standings-table .losses {
@@ -15,5 +15,5 @@
 }
 
 .rcl-site #clasificacion .table-scroll {
-  background: var(--paper);
+  background: var(--void);
 }

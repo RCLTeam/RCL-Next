@@ -1,5 +1,5 @@
 import React from 'react';
-import { PageLayout } from '../../../shared/components/PageLayout.js';
+import { PageLayout } from '../../../shared/components/PageLayout/PageLayout.js';
 import { CrystalCard } from './CrystalCard.js';
 import { SeerRankingPanel } from './SeerRankingPanel.js';
 import '../players/ranking-panel.css';

@@ -5,7 +5,7 @@ import {
 } from '../../../features/competition/components/CompetitionDataState.js';
 import { CompetitionFilters } from '../../../features/competition/components/CompetitionFilters.js';
 import type { Competition } from '../../../features/competition/hooks/useCompetition.js';
-import { PageLayout } from '../../../shared/components/PageLayout.js';
+import { PageLayout } from '../../../shared/components/PageLayout/PageLayout.js';
 import { PredictionCard } from './PredictionCard.js';
 import { PredictionRules } from './PredictionRules.js';
 import { PredictorRankingPanel } from './PredictorRankingPanel.js';

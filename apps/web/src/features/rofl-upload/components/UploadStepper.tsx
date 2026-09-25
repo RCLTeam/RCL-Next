@@ -67,7 +67,7 @@ export function UploadStepper({
           style={{
             backgroundColor:
               stage === 'completed'
-                ? 'color-mix(in srgb, var(--win) 20%, transparent)'
+                ? 'color-mix(in srgb, var(--lime) 20%, transparent)'
                 : stage === 'error'
                   ? 'color-mix(in srgb, var(--crimson) 20%, transparent)'
                   : stage === 'queue'
@@ -75,7 +75,7 @@ export function UploadStepper({
                     : 'color-mix(in srgb, var(--purple) 20%, transparent)',
             color:
               stage === 'completed'
-                ? 'var(--win)'
+                ? 'var(--lime)'
                 : stage === 'error'
                   ? 'var(--crimson)'
                   : stage === 'queue'
@@ -83,7 +83,7 @@ export function UploadStepper({
                     : 'var(--text)',
             border: `1px solid ${
               stage === 'completed'
-                ? 'var(--win)'
+                ? 'var(--lime)'
                 : stage === 'error'
                   ? 'var(--crimson)'
                   : stage === 'queue'
@@ -118,14 +118,14 @@ export function UploadStepper({
 
           let circleBg = 'var(--panel-raised)';
           let circleColor = 'var(--muted)';
-          let circleBorder = '1px solid var(--stone)';
+          let circleBorder = '1px solid var(--line)';
           let labelColor = 'var(--muted)';
 
           if (isDone) {
-            circleBg = 'var(--win)';
+            circleBg = 'var(--lime)';
             circleColor = 'var(--text)';
-            circleBorder = '1px solid var(--win)';
-            labelColor = 'var(--win)';
+            circleBorder = '1px solid var(--lime)';
+            labelColor = 'var(--lime)';
           } else if (isCurrent) {
             circleBg = 'var(--purple)';
             circleColor = 'var(--lime)';
@@ -168,7 +168,7 @@ export function UploadStepper({
               stage === 'error'
                 ? 'var(--crimson)'
                 : stage === 'completed'
-                  ? 'var(--win)'
+                  ? 'var(--lime)'
                   : 'var(--lime)'
           }}
         />
@@ -182,11 +182,8 @@ export function UploadStepper({
               className="admin-upload-stepper-dot"
               style={{ backgroundColor: 'var(--crimson)' }}
             />
-            <span
-              className="admin-upload-stepper-dot"
-              style={{ backgroundColor: 'var(--amber)' }}
-            />
-            <span className="admin-upload-stepper-dot" style={{ backgroundColor: 'var(--win)' }} />
+            <span className="admin-upload-stepper-dot" style={{ backgroundColor: 'var(--lime)' }} />
+            <span className="admin-upload-stepper-dot" style={{ backgroundColor: 'var(--lime)' }} />
           </div>
           <span>Live Ingestion Console</span>
           <span>{terminalLogs.length} events</span>
@@ -205,8 +202,8 @@ export function UploadStepper({
 
               let textColor = 'var(--text)';
               if (isError) textColor = 'var(--crimson)';
-              else if (isAnomaly) textColor = 'var(--amber)';
-              else if (isSuccess) textColor = 'var(--win)';
+              else if (isAnomaly) textColor = 'var(--lime)';
+              else if (isSuccess) textColor = 'var(--lime)';
               else if (isQueue) textColor = 'var(--lime)';
 
               return (

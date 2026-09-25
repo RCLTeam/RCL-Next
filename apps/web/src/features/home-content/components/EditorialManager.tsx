@@ -1,11 +1,13 @@
 import type { EditorialArticle, EditorialInput, EditorialKind } from '@rcl/contracts';
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
+import { Select } from '../../../shared/components/Selector/Selector.js';
 import { SiteLink } from '../../../shared/components/SiteLink.js';
 import { deleteArticle, saveArticle } from '../home-content-api.js';
 import { useHomeContent } from '../useHomeContent.js';
 import { ArticleView } from './ArticleView.js';
 import { ContentField } from './ContentField.js';
 import { ContentStatus } from './ContentStatus.js';
+import { EditorialImagePicker } from './EditorialImagePicker.js';
 import type { EditorStateProps } from './HomeContentPanel.js';
 
 const emptyArticle: EditorialInput = {
@@ -134,6 +136,8 @@ function ArticleForm({
         }
       : { ...emptyArticle }
   );
+  const uploadedImages = useRef<string[]>([]);
+  const bodyInput = useRef<HTMLTextAreaElement>(null);
   const [preview, setPreview] = useState(false);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
@@ -182,7 +186,8 @@ function ArticleForm({
           setError('');
           setMessage('');
           try {
-            const article = await saveArticle(initial?.id ?? null, form);
+            const article = await saveArticle(initial?.id ?? null, form, uploadedImages.current);
+            uploadedImages.current = [];
             onSaved(article);
             setMessage(article.published ? 'Artículo publicado.' : 'Borrador guardado.');
           } catch (failure) {
@@ -203,7 +208,8 @@ function ArticleForm({
           />
           <div className="content-field">
             <label htmlFor="editorial-kind">Tipo de publicación</label>
-            <select
+            <Select
+              variant="form"
               id="editorial-kind"
               value={form.kind}
               onChange={(event) => update({ kind: event.target.value as EditorialKind })}
@@ -212,7 +218,7 @@ function ArticleForm({
               <option value="reportaje">Reportaje</option>
               <option value="entrevista">Entrevista</option>
               <option value="otro">Otro tema</option>
-            </select>
+            </Select>
           </div>
           <ContentField
             label="Autor"
@@ -228,29 +234,58 @@ function ArticleForm({
             required={false}
             multiline
           />
-          <ContentField
-            label="URL de portada"
-            value={form.coverUrl}
-            onChange={(coverUrl) => update({ coverUrl })}
-            maxLength={2000}
-            type="url"
-            required={false}
-            hint="Imagen pública con HTTPS (opcional)."
+          <EditorialImagePicker
+            label="Portada"
+            description={form.coverAlt}
+            onDescriptionChange={(coverAlt) => update({ coverAlt })}
+            descriptionRequired={!!form.coverUrl}
+            onBusy={(value) => {
+              setBusy(value);
+              onBusy(value);
+            }}
+            onUploaded={(coverUrl, coverAlt) => {
+              uploadedImages.current.push(coverUrl);
+              update({ coverUrl, coverAlt });
+            }}
           />
-          <ContentField
-            label="Descripción de la imagen"
-            value={form.coverAlt}
-            onChange={(coverAlt) => update({ coverAlt })}
-            maxLength={240}
-            required={!!form.coverUrl}
-          />
-          <ContentField
-            label="Contenido"
-            value={form.body}
-            onChange={(body) => update({ body })}
-            maxLength={100000}
-            multiline
-            hint="Separa párrafos con una línea en blanco. Usa ## al inicio de un bloque para un subtítulo y > para una cita. No se admite HTML."
+          {form.coverUrl && (
+            <div className="editorial-upload-preview">
+              <img src={form.coverUrl} alt={form.coverAlt} />
+              <button type="button" onClick={() => update({ coverUrl: '', coverAlt: '' })}>
+                Quitar portada
+              </button>
+            </div>
+          )}
+          <div className="content-field">
+            <label htmlFor="editorial-body-input">Contenido</label>
+            <textarea
+              id="editorial-body-input"
+              ref={bodyInput}
+              value={form.body}
+              required
+              maxLength={100000}
+              rows={16}
+              onChange={(event) => update({ body: event.target.value })}
+            />
+            <small>
+              Separa párrafos con una línea en blanco. Usa ## para subtítulos y &gt; para citas.
+              Coloca el cursor donde quieras insertar una imagen. Puedes mover o eliminar su bloque
+              de texto.
+            </small>
+          </div>
+          <EditorialImagePicker
+            label="Insertar imagen en el contenido"
+            onBusy={(value) => {
+              setBusy(value);
+              onBusy(value);
+            }}
+            onUploaded={(url, description) => {
+              uploadedImages.current.push(url);
+              const position = bodyInput.current?.selectionStart ?? form.body.length;
+              const alt = description.replace(/[\[\]\r\n]/g, ' ');
+              const image = `\n\n![${alt}](${url})\n\n`;
+              update({ body: form.body.slice(0, position) + image + form.body.slice(position) });
+            }}
           />
           <div className="content-publication">
             <label className="content-check">

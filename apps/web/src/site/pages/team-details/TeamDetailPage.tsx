@@ -5,7 +5,7 @@ import type {
   TeamDetail,
   TeamMember
 } from '../../../features/competition/types/competition.types.js';
-import { PageLayout } from '../../../shared/components/PageLayout.js';
+import { PageLayout } from '../../../shared/components/PageLayout/PageLayout.js';
 import { SiteLink } from '../../../shared/components/SiteLink.js';
 import './team-details.css';
 

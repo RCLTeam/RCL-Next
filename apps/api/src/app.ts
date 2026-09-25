@@ -12,6 +12,7 @@ import { CrudOperationsService } from './modules/crud-operations/crud-operations
 import type { DatabaseTransferRepository } from './modules/database-transfer/database-transfer.repository.js';
 import { databaseTransferRouter } from './modules/database-transfer/database-transfer.router.js';
 import { DatabaseTransferService } from './modules/database-transfer/database-transfer.service.js';
+import { EditorialImageStore } from './modules/home-content/editorial-image.store.js';
 import type { HomeContentRepository } from './modules/home-content/home-content.repository.js';
 import { homeContentRouter } from './modules/home-content/home-content.router.js';
 import { HomeContentService } from './modules/home-content/home-content.service.js';
@@ -29,6 +30,7 @@ export function createApp(options: {
   memberRolesRepository?: MemberRolesRepository;
   databaseTransferRepository?: DatabaseTransferRepository;
   homeContentRepository?: HomeContentRepository;
+  editorialImageDirectory?: string;
 }): express.Express {
   const app = express();
   app.disable('x-powered-by');
@@ -54,9 +56,14 @@ export function createApp(options: {
   }
   app.use(express.json({ limit: '1mb' }));
   if (options.homeContentRepository) {
+    const images = new EditorialImageStore(options.editorialImageDirectory);
     app.use(
       '/api/v1/home-content',
-      homeContentRouter(new HomeContentService(options.homeContentRepository), options.auth)
+      homeContentRouter(
+        new HomeContentService(options.homeContentRepository, images),
+        options.auth,
+        images
+      )
     );
   }
   if (options.auth && options.memberRolesRepository) {

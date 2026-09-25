@@ -1,5 +1,4 @@
 import React from 'react';
-import { championArt } from '../../../shared/resources/assets.js';
 
 const roleArt: Record<string, string> = {
   top: 'camille',
@@ -13,7 +12,6 @@ export function FantasyCard({ role }: { role: string }) {
   return (
     <article className="fantasy-card">
       <div className="fantasy-art">
-        <img src={championArt[roleArt[role.toLowerCase()] ?? 'camille']} alt="" loading="lazy" />
         <span className="role-chip">{role}</span>
       </div>
       <div className="fantasy-card-body">

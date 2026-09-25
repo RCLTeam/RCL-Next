@@ -30,8 +30,7 @@
 }
 
 .rcl-site button,
-.rcl-site input,
-.rcl-site select {
+.rcl-site input {
   font: inherit;
 }
 
@@ -44,7 +43,7 @@
   opacity: 0.55;
 }
 
-.rcl-site :is(a, button, select, input, [tabindex]):focus-visible {
+.rcl-site :is(a, button, input, [tabindex]):not(.rcl-select):focus-visible {
   outline: 2px solid var(--lime);
   outline-offset: 4px;
 }

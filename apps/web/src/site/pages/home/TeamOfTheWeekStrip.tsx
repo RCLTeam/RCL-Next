@@ -1,16 +1,15 @@
 import type { WeeklyTeam } from '@rcl/contracts';
 import React, { useState } from 'react';
-import { DivisionSwitch } from '../../../features/competition/components/DivisionSwitch.js';
 import type { Competition } from '../../../features/competition/hooks/useCompetition.js';
 import { ContentStatus } from '../../../features/home-content/components/ContentStatus.js';
 import { useHomeContent } from '../../../features/home-content/useHomeContent.js';
+import { Select } from '../../../shared/components/Selector/Selector.js';
 import { WeeklyChampionBackground } from './WeeklyChampionBackground.js';
-import '../../../features/home-content/components/editorial.css';
-import './weekly-team.css';
 
 const roles = ['top', 'jungle', 'mid', 'adc', 'support'] as const;
 const labels = { top: 'Top', jungle: 'Jungla', mid: 'Mid', adc: 'ADC', support: 'Support' };
 export function TeamOfTheWeekStrip({ competition }: { competition: Competition }) {
+  const selectId = React.useId();
   const [selection, setSelection] = useState<{ divisionId: string; roundId: number }>();
   const content = useHomeContent<WeeklyTeam[]>(
     competition.division ? `weekly-teams/${competition.division.id}/rounds` : null
@@ -21,18 +20,15 @@ export function TeamOfTheWeekStrip({ competition }: { competition: Competition }
         competition.division?.id === selection?.divisionId && item.roundId === selection?.roundId
     ) ?? content.data?.[0];
   return (
-    <section className="section totw-strip" aria-label="Team of the Week">
+    <section className="totw-strip" aria-label="Team of the Week">
       <div className="totw-heading">
-        <div>
-          <div className="eyebrow">Team of the Week · El quinteto de la jornada</div>
-          {competition.division && <p>{competition.division.name}</p>}
-        </div>
-        <DivisionSwitch competition={competition} />
+        <div className="eyebrow">Team of the Week · El quinteto de la jornada</div>
       </div>
       {content.data && content.data.length > 0 && (
-        <label className="select-field totw-round-select">
+        <label htmlFor={`${selectId}-1`} className="select-field totw-round-select">
           Jornada
-          <select
+          <Select
+            id={`${selectId}-1`}
             value={team?.roundId ?? ''}
             onChange={(event) =>
               setSelection({
@@ -46,18 +42,10 @@ export function TeamOfTheWeekStrip({ competition }: { competition: Competition }
                 Jornada {item.roundId}
               </option>
             ))}
-          </select>
+          </Select>
         </label>
       )}
       <ContentStatus {...content} />
-      {competition.divisions.status === 'error' && (
-        <div role="alert">
-          No se pudieron cargar las divisiones.{' '}
-          <button type="button" onClick={competition.retry}>
-            Reintentar
-          </button>
-        </div>
-      )}
       {!content.loading && !content.error && !team && (
         <p>No hay quintetos publicados para esta división.</p>
       )}

@@ -4,7 +4,7 @@
 
 .rcl-site .profile-preview {
   display: grid;
-  border: 1px solid var(--stone);
+  border: 1px solid var(--line);
   background: var(--panel);
   align-items: center;
   padding: 24px;

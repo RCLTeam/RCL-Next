@@ -1,4 +1,5 @@
 import React, { type ReactNode } from 'react';
+import { Select } from '../../../shared/components/Selector/Selector.js';
 import './competition-filters.css';
 import type { Competition } from '../hooks/useCompetition.js';
 import { DivisionSwitch } from './DivisionSwitch.js';
@@ -7,11 +8,13 @@ export function CompetitionFilters({
   competition,
   children
 }: { competition: Competition; children?: ReactNode }) {
+  const selectId = React.useId();
   return (
     <>
-      <label className="select-field season-field">
+      <label htmlFor={`${selectId}-1`} className="select-field season-field">
         Temporada
-        <select
+        <Select
+          id={`${selectId}-1`}
           value={competition.season?.id ?? ''}
           onChange={(event) => competition.selectSeason(event.target.value)}
           disabled={!competition.seasons.data.length}
@@ -24,7 +27,7 @@ export function CompetitionFilters({
               {season.name}
             </option>
           ))}
-        </select>
+        </Select>
       </label>
       {competition.divisions.data.length > 0 && (
         <div className="division-field">

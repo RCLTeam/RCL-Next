@@ -22,7 +22,7 @@ export function HomeHero({ seasonName, streamUrl }: HomeHeroProps) {
           NO SE <em>HEREDA</em>
         </h1>
         <p>
-          Una liga construida por rebeldes. Cada equipo lucha por dejar su marca y tomar la corona —
+          Una liga construida por rebeldes. Cada equipo lucha por dejar su marca y tomar la corona -
           no es solo un torneo, es una rebelión.
         </p>
         <div className="btn-row">
@@ -45,7 +45,7 @@ export function HomeHero({ seasonName, streamUrl }: HomeHeroProps) {
           {Array.from({ length: 10 }).map((_, index) => (
             // biome-ignore lint/suspicious/noArrayIndexKey: elemento estático repetido para animación
             <span key={index}>
-              {`${seasonName} · LA CORONA NO SE HEREDA, SE CONQUISTA ·`}&nbsp;
+              {`${seasonName} · LA CORONA NO SE HEREDA, SE·CONQUISTA ·`}&nbsp;
             </span>
           ))}
         </div>

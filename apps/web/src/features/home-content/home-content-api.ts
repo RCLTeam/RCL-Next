@@ -11,7 +11,8 @@ export async function contentRequest<T>(path: string, init: RequestInit = {}): P
       401: 'La sesión ha caducado. Inicia sesión de nuevo.',
       403: 'No tienes permiso para realizar esta operación.',
       404: 'El contenido no está disponible.',
-      422: 'Revisa los campos y las URL de las imágenes (HTTPS).'
+      413: 'La imagen supera el límite de 5 MB.',
+      422: 'Revisa los campos y el formato de las imágenes.'
     };
     throw new Error(
       messages[response.status] ?? 'No se pudo cargar o guardar el contenido. Inténtalo de nuevo.'
@@ -27,10 +28,14 @@ const json = (method: string, body: unknown) => ({
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify(body)
 });
-export const saveArticle = (id: string | null, input: EditorialInput) =>
+export const saveArticle = (
+  id: string | null,
+  input: EditorialInput,
+  uploadedImages: string[] = []
+) =>
   contentRequest<EditorialArticle>(
     `admin/articles${id ? `/${id}` : ''}`,
-    json(id ? 'PUT' : 'POST', input)
+    json(id ? 'PUT' : 'POST', { ...input, uploadedImages })
   );
 export const deleteArticle = (id: string) =>
   contentRequest<null>(`admin/articles/${id}`, { method: 'DELETE' });

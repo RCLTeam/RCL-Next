@@ -1,5 +1,5 @@
 import React from 'react';
-import { PageLayout } from '../../../shared/components/PageLayout.js';
+import { PageLayout } from '../../../shared/components/PageLayout/PageLayout.js';
 import { playerRoles } from '../../../shared/resources/player-roles.js';
 import { BudgetBar } from './BudgetBar.js';
 import { FantasyCard } from './FantasyCard.js';
