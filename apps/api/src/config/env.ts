@@ -16,7 +16,9 @@ export function parseEnvironment(environment: NodeJS.ProcessEnv) {
       CORS_ORIGIN: z.string().url().default('http://localhost:5173'),
       DISCORD_CLIENT_ID: z.string().default(''),
       DISCORD_CLIENT_SECRET: z.string().default(''),
-      DISCORD_REDIRECT_URI: z.string().default('')
+      DISCORD_REDIRECT_URI: z.string().default(''),
+      DISCORD_BOT_WS_URL: z.string().default(''),
+      DISCORD_BOT_WS_SUPERTOKEN: z.string().default('')
     })
     .superRefine((env, ctx) => {
       const keys = ['DISCORD_CLIENT_ID', 'DISCORD_CLIENT_SECRET', 'DISCORD_REDIRECT_URI'] as const;
@@ -31,6 +33,24 @@ export function parseEnvironment(environment: NodeJS.ProcessEnv) {
           path: ['DISCORD_CLIENT_ID'],
           message: 'Invalid Discord client ID'
         });
+      }
+      if (env.DISCORD_BOT_WS_URL.trim()) {
+        try {
+          const wsUrl = new URL(env.DISCORD_BOT_WS_URL);
+          if (wsUrl.protocol !== 'ws:' && wsUrl.protocol !== 'wss:') {
+            ctx.addIssue({
+              code: 'custom',
+              path: ['DISCORD_BOT_WS_URL'],
+              message: 'Must be a ws:// or wss:// URL'
+            });
+          }
+        } catch {
+          ctx.addIssue({
+            code: 'custom',
+            path: ['DISCORD_BOT_WS_URL'],
+            message: 'Invalid WebSocket URL'
+          });
+        }
       }
       for (const key of ['CORS_ORIGIN', 'DISCORD_REDIRECT_URI'] as const) {
         try {

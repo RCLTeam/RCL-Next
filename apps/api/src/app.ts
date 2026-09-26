@@ -12,12 +12,18 @@ import { CrudOperationsService } from './modules/crud-operations/crud-operations
 import type { DatabaseTransferRepository } from './modules/database-transfer/database-transfer.repository.js';
 import { databaseTransferRouter } from './modules/database-transfer/database-transfer.router.js';
 import { DatabaseTransferService } from './modules/database-transfer/database-transfer.service.js';
+import { DiscordBridgeClient } from './modules/discord-bridge/discord-bridge.client.js';
+import { createDiscordBridgeRouter } from './modules/discord-bridge/discord-bridge.router.js';
 import type { HomeContentRepository } from './modules/home-content/home-content.repository.js';
 import { homeContentRouter } from './modules/home-content/home-content.router.js';
 import { HomeContentService } from './modules/home-content/home-content.service.js';
 import type { MemberRolesRepository } from './modules/member-roles/member-roles.repository.js';
 import { memberRolesRouter } from './modules/member-roles/member-roles.router.js';
 import { MemberRolesService } from './modules/member-roles/member-roles.service.js';
+import { IncidentLogger } from './modules/suggestions/incident-logger.js';
+import { SuggestionStore } from './modules/suggestions/suggestion.store.js';
+import { createSuggestionsRouter } from './modules/suggestions/suggestions.router.js';
+import { SuggestionsService } from './modules/suggestions/suggestions.service.js';
 import { errorHandler } from './shared/http.js';
 
 export function createApp(options: {
@@ -29,6 +35,10 @@ export function createApp(options: {
   memberRolesRepository?: MemberRolesRepository;
   databaseTransferRepository?: DatabaseTransferRepository;
   homeContentRepository?: HomeContentRepository;
+  bridgeClient?: DiscordBridgeClient;
+  suggestionsService?: SuggestionsService;
+  suggestionStore?: SuggestionStore;
+  incidentLogger?: IncidentLogger;
 }): express.Express {
   const app = express();
   app.disable('x-powered-by');
@@ -101,6 +111,30 @@ export function createApp(options: {
       });
     });
   }
+  const bridgeClient =
+    options.bridgeClient ??
+    new DiscordBridgeClient({
+      wsUrl: process.env.DISCORD_BOT_WS_URL ?? '',
+      supertoken: process.env.DISCORD_BOT_WS_SUPERTOKEN ?? ''
+    });
+  const incidentLogger = options.incidentLogger ?? new IncidentLogger();
+  const suggestionStore = options.suggestionStore ?? new SuggestionStore();
+  const suggestionsService =
+    options.suggestionsService ??
+    new SuggestionsService({
+      store: suggestionStore,
+      bridgeClient,
+      logger: incidentLogger
+    });
+  app.use('/api/v1/bridge', createDiscordBridgeRouter(bridgeClient));
+  app.use(
+    '/api/v1/suggestions',
+    createSuggestionsRouter({
+      suggestionsService,
+      frontendOrigin: options.corsOrigin,
+      auth: options.auth
+    })
+  );
   app.get('/health/live', (_req, res) => {
     res.json({ data: { status: 'ok' } });
   });

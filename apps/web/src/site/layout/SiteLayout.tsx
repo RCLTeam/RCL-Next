@@ -2,6 +2,7 @@ import React, { type ReactNode, useContext, useState } from 'react';
 import { AuthControls } from '../../features/auth/components/AuthControls.js';
 import { canAccessAdmin, useAuth } from '../../features/auth/components/AuthProvider.js';
 import type { Competition } from '../../features/competition/hooks/useCompetition.js';
+import { SuggestionModal } from '../../features/suggestions/components/SuggestionModal.js';
 import { SiteLink } from '../../shared/components/SiteLink.js';
 import { NavigationContext } from '../../shared/navigation.js';
 import { brandAssets } from '../../shared/resources/assets.js';
@@ -107,6 +108,8 @@ function SiteNavigation({ onNavigate }: { onNavigate: () => void }) {
 }
 
 function SiteFooter() {
+  const [suggestionModalOpen, setSuggestionModalOpen] = useState(false);
+
   return (
     <footer className="site-footer">
       <div className="footer-top">
@@ -121,6 +124,13 @@ function SiteFooter() {
         <div className="footer-links">
           <div>
             <h2>Contactos</h2>
+            <button
+              type="button"
+              className="footer-suggestion-btn"
+              onClick={() => setSuggestionModalOpen(true)}
+            >
+              Sugerencias
+            </button>
           </div>
           <div>
             <h2>Comunidad</h2>
@@ -152,6 +162,7 @@ function SiteFooter() {
         <span>© GUILLERMO-JAVIER MARTÍNEZ NAVARRO TIENE LOS DERECHOS RESERVADOS.</span>
         <span>RCL NO ESTÁ AFILIADA A RIOT GAMES.</span>
       </div>
+      {suggestionModalOpen && <SuggestionModal onClose={() => setSuggestionModalOpen(false)} />}
     </footer>
   );
 }

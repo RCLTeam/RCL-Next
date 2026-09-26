@@ -9,10 +9,16 @@ import { PostgresCompetitionRepository } from './modules/competition/postgres-co
 import { PostgresCrudOperationsRepository } from './modules/crud-operations/postgres-crud-operations.repository.js';
 import { NativePostgresBackupTools } from './modules/database-transfer/postgres-backup-tools.js';
 import { PostgresDatabaseTransferRepository } from './modules/database-transfer/postgres-database-transfer.repository.js';
+import { DiscordBridgeClient } from './modules/discord-bridge/discord-bridge.client.js';
 import { PostgresHomeContentRepository } from './modules/home-content/postgres-home-content.repository.js';
 import { PostgresMemberRolesRepository } from './modules/member-roles/postgres-member-roles.repository.js';
 import { PostgresRoflUploadRepository } from './modules/rofl-upload/persistence/postgres-rofl-upload.repository.js';
 import { attachRoflUploadGateway } from './modules/rofl-upload/websocket/rofl-upload.gateway.js';
+import {
+  IncidentLogger,
+  SuggestionStore,
+  SuggestionsService
+} from './modules/suggestions/index.js';
 
 const env = loadEnvironment();
 const connection = createDatabase(env.DATABASE_URL);
@@ -44,6 +50,18 @@ const authService = env.DISCORD_CLIENT_ID
     )
   : undefined;
 
+const bridgeClient = new DiscordBridgeClient({
+  wsUrl: env.DISCORD_BOT_WS_URL,
+  supertoken: env.DISCORD_BOT_WS_SUPERTOKEN
+});
+const incidentLogger = new IncidentLogger();
+const suggestionStore = new SuggestionStore();
+const suggestionsService = new SuggestionsService({
+  store: suggestionStore,
+  bridgeClient,
+  logger: incidentLogger
+});
+
 const app = createApp({
   homeContentRepository: new PostgresHomeContentRepository(connection.db),
   databaseTransferRepository: new PostgresDatabaseTransferRepository(
@@ -55,6 +73,10 @@ const app = createApp({
   repository: new PostgresCompetitionRepository(connection.db),
   checkDatabase,
   corsOrigin: env.CORS_ORIGIN,
+  bridgeClient,
+  suggestionsService,
+  suggestionStore,
+  incidentLogger,
   ...(authService
     ? {
         auth: {
@@ -85,6 +107,12 @@ function shutdown() {
   const timeout = setTimeout(() => process.exit(1), 10000).unref();
   roflUploadGateway.close(() => {
     server.close(async () => {
+      try {
+        suggestionStore.close();
+        await bridgeClient.close();
+      } catch (err) {
+        console.error('Error during Discord bridge/suggestion store shutdown:', err);
+      }
       await connection.close();
       clearTimeout(timeout);
     });
