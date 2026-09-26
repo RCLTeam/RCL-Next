@@ -80,6 +80,49 @@
   line-height: 1.4;
 }
 
+/* Form Content Field & Textarea */
+.rcl-site .suggestion-dialog .content-field {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  margin-bottom: 20px;
+}
+
+.rcl-site .suggestion-dialog .content-field label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.rcl-site .suggestion-dialog .content-field textarea,
+.rcl-site .suggestion-dialog textarea {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  background: var(--void);
+  color: var(--text);
+  border: 1px solid var(--stone);
+  padding: 12px;
+  font: inherit;
+  border-radius: 0;
+  resize: vertical;
+  line-height: 1.6;
+  min-height: 110px;
+}
+
+.rcl-site .suggestion-dialog .content-field textarea:focus-visible,
+.rcl-site .suggestion-dialog textarea:focus-visible {
+  outline: 2px solid var(--lime);
+  outline-offset: 2px;
+}
+
+.rcl-site .suggestion-dialog .content-field textarea:disabled,
+.rcl-site .suggestion-dialog textarea:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
 /* Field Header & Counter */
 .rcl-site .suggestion-field-header {
   display: flex;
@@ -206,8 +249,31 @@
   font-size: 11px;
 }
 
-.rcl-site .suggestion-anonymous-check {
-  margin: 16px 0 20px;
+/* Checkbox Styling */
+.rcl-site .suggestion-dialog .suggestion-anonymous-check,
+.rcl-site .suggestion-dialog .content-check,
+.rcl-site .suggestion-anonymous-check,
+.rcl-site .content-check {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  min-height: 44px;
+  margin-bottom: 20px;
+  cursor: pointer;
+  user-select: none;
+  font-size: 13px;
+  color: var(--text);
+}
+
+.rcl-site .suggestion-dialog .suggestion-anonymous-check input[type="checkbox"],
+.rcl-site .suggestion-dialog .content-check input[type="checkbox"],
+.rcl-site .suggestion-anonymous-check input[type="checkbox"],
+.rcl-site .content-check input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--lime);
+  flex-shrink: 0;
+  cursor: pointer;
 }
 
 .rcl-site .suggestion-actions {
