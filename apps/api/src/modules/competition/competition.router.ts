@@ -10,6 +10,7 @@ export function competitionRouter(controller: CompetitionController): Router {
   router.get('/seasons', controller.seasons);
   router.get('/seasons/:seasonId/divisions', controller.divisions);
   router.get('/divisions/:divisionId/teams', controller.teams);
+  router.get('/divisions/:divisionId/players', controller.players);
   router.get('/divisions/:divisionId/rounds', controller.rounds);
   router.get('/divisions/:divisionId/calendar', controller.calendar);
   router.get('/divisions/:divisionId/champions', controller.champions);
