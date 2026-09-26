@@ -77,6 +77,74 @@ test('HTTP -> controller -> service -> real repository -> embedded PostgreSQL', 
   assert.equal(captain.playerSlug, 'jugador-demo-1-demo');
   const playerList = await request(app).get('/api/v1/players').expect(200);
   assert.equal(playerList.body.data.length, 21);
+  const divisionPlayers = await request(app)
+    .get(`/api/v1/divisions/${divisionId}/players`)
+    .expect(200);
+  assert.equal(divisionPlayers.body.data.length, 11);
+  const rankedPlayer = divisionPlayers.body.data.find(
+    (player: { id: string }) => player.id === playerId
+  );
+  assert.equal(rankedPlayer.competition.role, 'top');
+  assert.equal(rankedPlayer.competition.stats.kda, 6);
+  assert.equal(rankedPlayer.competition.stats.csPerMinute, 7);
+  assert.equal(rankedPlayer.competition.stats.killParticipation, 48);
+  assert.equal(rankedPlayer.competition.team.name, 'Lobos DEMO');
+  const featuredPlayers = divisionPlayers.body.data.filter(
+    (player: { competition: { featured: unknown } }) => player.competition.featured
+  );
+  assert.equal(featuredPlayers.length, 1);
+  assert.equal(featuredPlayers[0].competition.featured.roundName, 'Jornada 1');
+  assert.equal(JSON.stringify(divisionPlayers.body.data).includes('"score"'), false);
+  const otherDivisionPlayers = await request(app)
+    .get(`/api/v1/divisions/${divisions.body.data[1].id}/players`)
+    .expect(200);
+  assert.equal(otherDivisionPlayers.body.data.length, 10);
+  assert.equal(
+    otherDivisionPlayers.body.data.every(
+      (player: { competition: { stats: unknown; featured: unknown } }) =>
+        player.competition.stats === null && player.competition.featured === null
+    ),
+    true
+  );
+  await request(app)
+    .get('/api/v1/divisions/20000000-0000-4000-8000-000000000099/players')
+    .expect(404);
+  const matchMvp = await request(app)
+    .get('/api/v1/matches/70000000-0000-4000-8000-000000000001')
+    .expect(200);
+  assert.equal(matchMvp.body.data.mvpPlayerId, featuredPlayers[0].id);
+  await db.insert(schema.seasons).values({ name: 'Otra temporada' });
+  const [otherSeasonDivision] = await db
+    .insert(schema.seasonsDivisions)
+    .values({
+      seasonName: 'Otra temporada',
+      divisionName: divisions.body.data[0].name
+    })
+    .returning();
+  assert.ok(otherSeasonDivision);
+  const [otherSeasonTeam] = await db
+    .insert(schema.teams)
+    .values({
+      name: 'Otro equipo',
+      seasonDivisionId: otherSeasonDivision.id
+    })
+    .returning();
+  assert.ok(otherSeasonTeam);
+  await db
+    .insert(schema.teamMemberships)
+    .values({ teamId: otherSeasonTeam.id, discordUserId: '900000000000000001', role: 'mid' });
+  const otherSeasonPlayers = await request(app)
+    .get(`/api/v1/divisions/${otherSeasonDivision.id}/players`)
+    .expect(200);
+  const samePlayer = otherSeasonPlayers.body.data.find(
+    (player: { id: string }) => player.id === playerId
+  );
+  assert.equal(samePlayer.competition.role, 'mid');
+  assert.equal(samePlayer.competition.stats, null);
+  assert.equal(samePlayer.competition.featured, null);
+  assert.deepEqual(samePlayer.competition.mvpMatchIds, []);
+  // Remove only the fixture membership so the existing profile assertions retain their scope.
+  await client.query('DELETE FROM team_memberships WHERE team_id = $1', [otherSeasonTeam.id]);
   assert.equal(
     playerList.body.data.some((player: { id: string }) => player.id === playerId),
     true
@@ -267,7 +335,14 @@ test('HTTP -> controller -> service -> real repository -> embedded PostgreSQL', 
   const ordered = await request(app).get('/api/v1/seasons').expect(200);
   assert.deepEqual(
     ordered.body.data.map((season: { name: string }) => season.name),
-    ['Recent A', 'Recent B', 'Temporada DEMO — datos ficticios', 'Older', 'Undated']
+    [
+      'Recent A',
+      'Recent B',
+      'Temporada DEMO — datos ficticios',
+      'Older',
+      'Otra temporada',
+      'Undated'
+    ]
   );
   assert.equal(
     ordered.body.data.some((season: object) => 'isActive' in season),

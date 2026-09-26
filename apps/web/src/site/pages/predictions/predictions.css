@@ -1,87 +1,53 @@
-/* Page-specific styles: predictions. Base styles, states and responsive rules stay with their component. */
-
-/* Page heading */
-
-.rcl-site #predicciones .section-cross {
-  color: var(--purple);
+/* Rules and weekly voting window */
+.rcl-site #predicciones .section-cross { color: var(--purple); }
+.rcl-site .prediction-rules { display: grid; gap: 24px; padding: 24px; border: 1px solid var(--line); background: var(--panel); }
+.rcl-site .prediction-rules b { display: block; font: 700 36px var(--display2); color: var(--purple); margin-bottom: 8px; }
+.rcl-site .prediction-rules span, .rcl-site .prediction-rules small { display: block; font: 11px/1.7 var(--mono); color: var(--muted); }
+.rcl-site .prediction-rules span { text-transform: uppercase; }
+.rcl-site .prediction-rules .prediction-schedule b { font-size: 24px; }
+.rcl-site .prediction-status { font: 11px/1.7 var(--mono); color: var(--muted); }
+.rcl-site .prediction-status.is-open { color: var(--lime); }
+.rcl-site .prediction-week { margin: 0; }
+.rcl-site .prediction-login a { color: var(--lime); text-underline-offset: 4px; }
+@media (min-width: 700px) { .rcl-site .prediction-rules { grid-template-columns: 1fr 1fr 1.3fr; gap: 20px; } }
+/* Match cards */
+.rcl-site .prediction-grid { display: grid; gap: 18px; grid-template-columns: minmax(0,1fr); }
+@media (min-width: 951px) { .rcl-site .prediction-grid { grid-template-columns: repeat(2,minmax(0,1fr)); } }
+.rcl-site .prediction-card { min-width: 0; padding: 20px; background: var(--panel); border: 1px solid var(--line); border-top: 3px solid var(--purple); }
+.rcl-site .prediction-teams { display: flex; align-items: center; gap: 12px; margin-bottom: 22px; }
+.rcl-site .prediction-teams > span { display: flex; flex-direction: column; align-items: center; gap: 10px; flex: 1; min-width: 0; font-size: 14px; font-weight: 700; overflow-wrap: anywhere; text-align: center; }
+@media (min-width: 500px) {
+ .rcl-site .prediction-teams > span { flex-direction: row; text-align: left; }
+ .rcl-site .prediction-teams > span:last-child { flex-direction: row-reverse; text-align: right; }
 }
-
-/* Prediction rules */
-
-.rcl-site .prediction-rules {
-  display: flex;
-  flex-wrap: wrap;
-  gap: clamp(24px,4vw,50px);
-  padding: 24px 28px;
-  border: 1px solid var(--line);
-  background: var(--panel);
-}
-
-.rcl-site .prediction-rules b {
-  display: block;
-  font: 700 30px var(--display2);
-  color: var(--lime);
-  margin-bottom: 8px;
-}
-
-.rcl-site .prediction-rules span {
-  font: 11px/1.6 var(--mono);
-  text-transform: uppercase;
-  color: var(--muted);
-}
-
-/* PredictionCard and grid */
-
-.rcl-site .prediction-meta {
-  font: 11px/1.6 var(--mono);
-  text-transform: uppercase;
-  color: var(--muted);
-  display: flex;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 12px;
-  padding-top: 14px;
-  border-top: 1px solid var(--line);
-}
-
-.rcl-site .prediction-grid {
-  display: grid;
-  gap: 18px;
-  grid-template-columns: 1fr;
-}
-
-@media (min-width: 951px) {
-  .rcl-site .prediction-grid {
-    grid-template-columns: repeat(2,minmax(0,1fr));
-  }
-}
-
-.rcl-site .prediction-card {
-  padding: 22px;
-  background: var(--panel);
-  border: 1px solid var(--line);
-  border-top: 3px solid var(--purple);
-}
-
-.rcl-site .prediction-teams {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  margin-bottom: 22px;
-}
-
-.rcl-site .prediction-teams > span {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex: 1;
-  min-width: 0;
-  font-size: 14px;
-  font-weight: 700;
-  overflow-wrap: anywhere;
-}
-
-.rcl-site .prediction-teams > span:last-child {
-  flex-direction: row-reverse;
-  text-align: right;
-}
+.rcl-site .prediction-meta { font: 11px/1.6 var(--mono); text-transform: uppercase; color: var(--muted); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; padding-top: 14px; border-top: 1px solid var(--line); overflow-wrap: anywhere; }
+.rcl-site .prediction-saved { color: var(--lime); }
+.rcl-site .prediction-community { margin-bottom: 20px; }
+.rcl-site .prediction-gauge { height: 6px; background: var(--line); display: flex; }
+.rcl-site .prediction-gauge span { background: var(--purple); }
+.rcl-site .prediction-percent { display: flex; justify-content: space-between; margin: 8px 0; font: 700 14px var(--mono); }
+.rcl-site .prediction-notice, .rcl-site .prediction-community > small { color: var(--muted); font: 11px/1.7 var(--mono); }
+.rcl-site .prediction-form { display: grid; gap: 14px; margin: 20px 0; }
+.rcl-site .prediction-form fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
+.rcl-site .prediction-form legend, .rcl-site .prediction-form label { font: 11px/1.6 var(--mono); color: var(--muted); }
+.rcl-site .prediction-choices { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; margin-top: 8px; }
+.rcl-site .prediction-form button, .rcl-site .prediction-form select { min-height: 44px; padding: 10px; color: inherit; background: var(--panel); border: 1px solid var(--line); font: 12px var(--mono); overflow-wrap: anywhere; cursor: pointer; }
+.rcl-site .prediction-form select { display: block; width: 100%; margin-top: 6px; }
+.rcl-site .prediction-form button[aria-pressed='true'], .rcl-site .prediction-form button[type='submit'] { border-color: var(--purple); background: color-mix(in srgb, var(--purple) 15%, transparent); }
+.rcl-site .prediction-form :disabled { opacity: .5; cursor: not-allowed; }
+.rcl-site .prediction-form :focus-visible { outline: 2px solid var(--lime); outline-offset: 3px; }
+.rcl-site .prediction-feedback { color: var(--lime); font: 12px/1.6 var(--mono); }
+.rcl-site .prediction-feedback:empty { display: none; }
+/* Season ranking: alternating rows and the current user's highlighted position. */
+.rcl-site .predictor-ranking { min-width: 0; margin-top: 24px; }
+.rcl-site .predictor-rows { list-style: none; padding: 0; margin: 24px 0 0; display: grid; gap: 2px; }
+.rcl-site .predictor-row { display: grid; grid-template-columns: 24px minmax(0,1fr) auto; gap: 12px; align-items: center; padding: 18px 12px; }
+.rcl-site .predictor-row:nth-child(odd) { background: var(--panel); }
+.rcl-site .predictor-row.is-you { background: color-mix(in srgb, var(--purple) 12%, transparent); }
+.rcl-site .predictor-position { font: 700 24px var(--display2); color: var(--muted); }
+.rcl-site .predictor-row:first-child .predictor-position, .rcl-site .predictor-row.is-you .predictor-position { color: var(--purple); }
+.rcl-site .predictor-row strong { display: block; font-size: 14px; overflow-wrap: anywhere; }
+.rcl-site .predictor-row div small { display: block; font: 11px/1.7 var(--mono); color: var(--muted); margin-top: 4px; }
+.rcl-site .predictor-points { font: 700 22px var(--display2); color: var(--purple); white-space: nowrap; }
+.rcl-site .predictor-points small { font: 11px var(--mono); }
+@media (min-width: 600px) { .rcl-site .predictor-row { grid-template-columns: 40px minmax(0,1fr) auto; padding: 20px 24px; gap: 20px; } }

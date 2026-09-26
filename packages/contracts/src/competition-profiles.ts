@@ -35,6 +35,14 @@ export interface TeamDetail extends TeamSummary {
 }
 
 export interface Player {
+  competition?: {
+    role: string | null;
+    team: TeamSummary | null;
+    champion: string | null;
+    stats: PlayerStatistics | null;
+    mvpMatchIds: string[];
+    featured: { roundName: string; stats: PlayerStatistics } | null;
+  };
   slug?: string | undefined;
   id: string;
   gameName: string;
@@ -42,6 +50,16 @@ export interface Player {
   countryCode: string | null;
   isMain: boolean;
   displayName: string | null;
+}
+export interface PlayerStatistics {
+  games: number;
+  kda: number;
+  csPerMinute: number | null;
+  killParticipation: number | null;
+  winRate: number;
+  damagePerMinute: number | null;
+  visionScore: number | null;
+  damageMitigated: number | null;
 }
 export interface PlayerTeam extends TeamSummary {
   seasonName: string;

@@ -36,7 +36,7 @@ Separa los cambios de layout frontend de extracciones de contratos, cambios de c
 
 ### Datos y estado del frontend
 
-- `useCompetitionSelection` mantiene temporada, división y reintentos; `useCompetition` carga únicamente los recursos declarados por la ruta. El calendario también alimenta el indicador de directo de la cabecera. Las fichas y el listado de jugadores no cargan el contexto de competición.
+- `useCompetitionSelection` mantiene temporada, división y reintentos; `useCompetition` carga únicamente los recursos declarados por la ruta. El calendario también alimenta el indicador de directo de la cabecera. Las fichas individuales no cargan el contexto de competición. El listado de jugadores usa los selectores de temporada y división para delimitar sus estadísticas y MVP.
 - `useCollection` gestiona colecciones. Las fichas usan `useCompetitionDetail` y `competition-detail-api.ts` para compartir cancelación, reintentos, errores y respuestas de recurso no encontrado. Mantén las peticiones fuera de los componentes de página.
 - Los componentes de competición se importan desde su archivo específico (`TeamBadge`, `MatchCard`, `DivisionSwitch`, `CompetitionDataState`). El reducer de subida ROFL está en `features/rofl-upload/state/upload-reducer.ts`; el hook mantiene el ciclo de vida WebSocket.
 

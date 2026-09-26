@@ -2,6 +2,7 @@ import type { MatchDetail, PlayerDetail, TeamDetail } from '@rcl/contracts';
 import { notFound } from '../../shared/app-error.js';
 import { calculateChampionStats } from './champion-stats.js';
 import type { CompetitionRepository, Match, Team } from './competition.repository.js';
+import { matchMvpPlayerId } from './player-statistics.js';
 import { profileSlugs, resolveProfileId } from './profile-slugs.js';
 
 export function calculateStandings(teams: Team[], matches: Match[]) {
@@ -97,6 +98,7 @@ export class CompetitionService {
       seasonName: division.seasonId,
       divisionName: division.name,
       roundName: rounds.find((round) => round.id === match.roundId)?.name ?? null,
+      mvpPlayerId: match.status === 'completed' ? matchMvpPlayerId(games) : null,
       games
     };
   }
@@ -118,8 +120,10 @@ export class CompetitionService {
     );
     return { players, slugs };
   }
-  async players() {
-    const { players, slugs } = await this.playerDirectory();
+  async players(divisionId?: string) {
+    if (divisionId && !(await this.repository.division(divisionId))) throw notFound('Division');
+    const { players: directory, slugs } = await this.playerDirectory();
+    const players = divisionId ? await this.repository.players(divisionId) : directory;
     return players.map((player) => ({ ...player, slug: slugs.get(player.id) }));
   }
   async playerDetail(reference: string): Promise<PlayerDetail> {

@@ -62,7 +62,7 @@ export interface CompetitionRepository {
   teamDirectory(): Promise<
     { id: string; name: string; seasonName: string; divisionName: string }[]
   >;
-  players(): Promise<Player[]>;
+  players(divisionId?: string): Promise<Player[]>;
   playerDetail(id: string): Promise<PlayerDetail | undefined>;
   teamDetail(id: string): Promise<TeamDetail | undefined>;
   seasons(): Promise<Season[]>;

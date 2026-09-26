@@ -300,6 +300,8 @@ CREATE TABLE "predictions" (
 	"discord_user_id" varchar(32) NOT NULL REFERENCES "public"."discord_users"("discord_id") ON DELETE cascade ON UPDATE no action,
 	"match_id" uuid NOT NULL REFERENCES "public"."matches"("id") ON DELETE cascade ON UPDATE no action,
 	"selected_team_id" uuid NOT NULL REFERENCES "public"."teams"("id") ON DELETE restrict ON UPDATE no action,
+	"home_score" smallint,
+	"away_score" smallint,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
 	CONSTRAINT "predictions_user_match_key" UNIQUE ("discord_user_id", "match_id")

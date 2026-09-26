@@ -11,6 +11,7 @@ import { NativePostgresBackupTools } from './modules/database-transfer/postgres-
 import { PostgresDatabaseTransferRepository } from './modules/database-transfer/postgres-database-transfer.repository.js';
 import { PostgresHomeContentRepository } from './modules/home-content/postgres-home-content.repository.js';
 import { PostgresMemberRolesRepository } from './modules/member-roles/postgres-member-roles.repository.js';
+import { PredictionsRepository } from './modules/predictions/predictions.repository.js';
 import { PostgresRoflUploadRepository } from './modules/rofl-upload/persistence/postgres-rofl-upload.repository.js';
 import { attachRoflUploadGateway } from './modules/rofl-upload/websocket/rofl-upload.gateway.js';
 
@@ -45,6 +46,7 @@ const authService = env.DISCORD_CLIENT_ID
   : undefined;
 
 const app = createApp({
+  predictionsRepository: new PredictionsRepository(connection.db),
   homeContentRepository: new PostgresHomeContentRepository(connection.db),
   databaseTransferRepository: new PostgresDatabaseTransferRepository(
     connection.db,

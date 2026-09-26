@@ -599,6 +599,8 @@ export const predictions = pgTable(
     discordUserId: varchar('discord_user_id', { length: 32 }).notNull(),
     matchId: uuid('match_id').notNull(),
     selectedTeamId: uuid('selected_team_id').notNull(),
+    homeScore: smallint('home_score'),
+    awayScore: smallint('away_score'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
   },

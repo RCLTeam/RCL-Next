@@ -86,6 +86,7 @@ export interface MatchMap {
   participants: MatchParticipant[];
 }
 export interface MatchDetail {
+  mvpPlayerId?: string | null;
   id: string;
   slug?: string | undefined;
   homeScore: number;
