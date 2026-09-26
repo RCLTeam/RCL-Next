@@ -18,11 +18,12 @@
   min-width: 0;
   margin-left: auto;
   max-width: 100%;
-  background: color-mix(in srgb, var(--void) 97%, transparent);
-  backdrop-filter: blur(12px);
-  border: 1px solid var(--line);
-  border-top: 0;
-  border-right: 0;
+  background: linear-gradient(
+    to right,
+    transparent 0%,
+    transparent 10%,
+    color-mix(in srgb, var(--void) 97%, transparent) 90%
+  );
   padding: 12px var(--page-gutter);
   pointer-events: auto;
 }
