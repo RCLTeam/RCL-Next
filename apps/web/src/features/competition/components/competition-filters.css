@@ -26,11 +26,12 @@
 .rcl-site .league-switch button {
   min-height: 44px;
   padding: 8px 16px;
-  background: transparent;
+  background: color-mix(in srgb, var(--purple) 35%, transparent);
   border: none;
   color: var(--muted);
   font: 700 11px var(--mono);
   letter-spacing: 0.08em;
+  text-transform: uppercase;
   position: relative;
   clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
   cursor: pointer;
@@ -42,7 +43,7 @@
   position: absolute;
   inset: 0;
   padding: 2px;
-  background: var(--line);
+  background: color-mix(in srgb, var(--purple) 55%, transparent);
   clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
   -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
