@@ -14,3 +14,5 @@ export type {
   WeeklyTeam
 } from './home-content.js';
 export type * from './competition-profiles.js';
+export type * from './discord-bridge.js';
+export type * from './suggestions.js';
