@@ -53,12 +53,20 @@
   margin-bottom: 8px;
 }
 
-.rcl-site .footer-links a {
-  font-size: 13px;
+.rcl-site .footer-links a,
+.rcl-site .footer-links .footer-suggestion-btn {
+  font: 13px var(--body-f);
   color: var(--lime);
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  text-align: left;
+  cursor: pointer;
 }
 
-.rcl-site .footer-links a:hover {
+.rcl-site .footer-links a:hover,
+.rcl-site .footer-links .footer-suggestion-btn:hover {
   text-decoration: underline;
 }
 

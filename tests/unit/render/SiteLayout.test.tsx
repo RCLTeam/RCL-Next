@@ -92,4 +92,18 @@ describe('SiteLayout', () => {
     expect(html).toContain('aria-current="page"');
     expect(html).toContain('href="/clasificacion"');
   });
+
+  it('renders footer contacts section containing the Sugerencias button', () => {
+    const html = renderToString(
+      <NavigationContext.Provider value={{ path: '/', navigate: () => {} }}>
+        <SiteLayout>
+          <div>Content</div>
+        </SiteLayout>
+      </NavigationContext.Provider>
+    );
+
+    expect(html).toContain('<h2>Contactos</h2>');
+    expect(html).toContain('footer-suggestion-btn');
+    expect(html).toContain('Sugerencias');
+  });
 });

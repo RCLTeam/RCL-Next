@@ -1,0 +1,217 @@
+/* Suggestions Modal & Form Design Tokens */
+
+.rcl-site .suggestion-dialog {
+  width: min(560px, calc(100vw - 32px));
+  max-height: calc(100dvh - 48px);
+  overflow-y: auto;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  color: var(--text);
+  padding: 24px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
+}
+
+.rcl-site .suggestion-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(4px);
+}
+
+.rcl-site .suggestion-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 14px;
+}
+
+.rcl-site .suggestion-modal-header h2 {
+  font: 700 clamp(20px, 3vw, 28px) var(--display2);
+  margin: 0;
+  text-transform: uppercase;
+  color: var(--text);
+}
+
+.rcl-site .suggestion-modal-close {
+  background: none;
+  border: 1px solid var(--stone);
+  color: var(--muted);
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+
+.rcl-site .suggestion-modal-close:hover {
+  border-color: var(--lime);
+  color: var(--lime);
+}
+
+/* Diagnostic Alert */
+.rcl-site .suggestion-alert {
+  display: flex;
+  gap: 12px;
+  padding: 14px 16px;
+  margin-bottom: 20px;
+  border-left: 3px solid var(--amber);
+  background: color-mix(in srgb, var(--amber) 12%, var(--panel));
+}
+
+.rcl-site .suggestion-alert-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.rcl-site .suggestion-alert-content strong {
+  display: block;
+  font-size: 14px;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+
+.rcl-site .suggestion-alert-content p {
+  margin: 0;
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+/* Field Header & Counter */
+.rcl-site .suggestion-field-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 8px;
+}
+
+.rcl-site .suggestion-counter {
+  font: 11px var(--mono);
+  color: var(--muted);
+}
+
+.rcl-site .suggestion-counter.is-overflow {
+  color: var(--crimson);
+  font-weight: 700;
+}
+
+.rcl-site .suggestion-hint {
+  display: block;
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* Status Indicators */
+.rcl-site .suggestion-status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  background: color-mix(in srgb, var(--lime) 10%, var(--panel));
+  border-left: 3px solid var(--lime);
+  font: 600 13px var(--body-f);
+  color: var(--lime);
+}
+
+.rcl-site .suggestion-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: suggestion-spin 750ms linear infinite;
+}
+
+@keyframes suggestion-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Banners */
+.rcl-site .suggestion-banner {
+  padding: 24px;
+  text-align: center;
+  border: 1px solid var(--line);
+  background: var(--panel-raised);
+}
+
+.rcl-site .suggestion-banner h3 {
+  font: 700 22px var(--display2);
+  margin: 0 0 10px;
+}
+
+.rcl-site .suggestion-banner-success {
+  border-color: var(--win);
+}
+
+.rcl-site .suggestion-banner-success h3 {
+  color: var(--win);
+}
+
+.rcl-site .suggestion-banner-success .suggestion-banner-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--win);
+  color: var(--void);
+  font-size: 24px;
+  font-weight: 900;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 14px;
+}
+
+.rcl-site .suggestion-banner-error {
+  border-color: var(--crimson);
+}
+
+.rcl-site .suggestion-banner-error h3 {
+  color: var(--crimson);
+}
+
+.rcl-site .suggestion-incident-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin: 16px 0;
+  padding: 12px;
+  background: var(--void);
+  border: 1px dashed var(--stone);
+}
+
+.rcl-site .suggestion-incident-label {
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+.rcl-site .suggestion-incident-id {
+  font: 12px var(--mono);
+  color: var(--lime);
+  word-break: break-all;
+}
+
+.rcl-site .suggestion-copy-btn {
+  margin-top: 4px;
+  min-height: 32px;
+  padding: 6px 12px;
+  font-size: 11px;
+}
+
+.rcl-site .suggestion-anonymous-check {
+  margin: 16px 0 20px;
+}
+
+.rcl-site .suggestion-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
