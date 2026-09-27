@@ -23,12 +23,16 @@ test('PostgreSQL migrations, fixtures and relational constraints', async (t) => 
   const db = drizzle(client, { schema });
   await migrate(db, { migrationsFolder });
 
-  await t.test('migrate twice and retain exactly one journal entry', async () => {
+  await t.test('migrate twice and retain exactly three journal entries', async () => {
     await migrate(db, { migrationsFolder });
     const result = await client.query<{ total: number }>(
       'SELECT count(*)::int AS total FROM drizzle.__drizzle_migrations'
     );
-    assert.equal(result.rows[0]?.total, 1);
+    assert.equal(result.rows[0]?.total, 3);
+  });
+  await t.test('matches schema defines stream_url_live column', () => {
+    assert.ok(schema.matches.streamUrlLive);
+    assert.equal(schema.matches.streamUrlLive.name, 'stream_url_live');
   });
   await t.test('seed twice in transactions without duplicate data', async () => {
     for (let i = 0; i < 2; i++) await client.transaction((tx) => tx.exec(seed));

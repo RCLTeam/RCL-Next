@@ -310,6 +310,7 @@ export const matches = pgTable(
     team1Score: smallint('team1_score').notNull().default(0),
     team2Score: smallint('team2_score').notNull().default(0),
     streamUrl: text('stream_url'),
+    streamUrlLive: varchar('stream_url_live', { length: 255 }),
     notes: text('notes'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
