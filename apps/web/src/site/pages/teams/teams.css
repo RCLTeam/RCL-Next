@@ -13,8 +13,8 @@
   color: inherit;
   text-decoration: none;
   border: 1px solid var(--line);
-  border-left: 3px solid var(--purple);
-  background: var(--panel);
+  border-left: 3px solid color-mix(in srgb, var(--team-color) 40%, var(--line));
+  background: linear-gradient(155deg, color-mix(in srgb, var(--team-color) 12%, var(--panel)), var(--panel) 75%);
   transition: transform 180ms, border-color 180ms;
 }
 
@@ -23,34 +23,42 @@
   outline-offset: 4px;
 }
 
-.rcl-site .team-card-action {
-  display: block;
-  margin-top: 20px;
-  color: var(--lime);
-  font: 12px var(--mono);
-}
-
 .rcl-site .team-card-art {
   display: grid;
   place-items: center;
-  height: 160px;
-  background: radial-gradient(ellipse, color-mix(in srgb, var(--purple) 20%, var(--panel)), var(--panel));
+  height: 200px;
+  background: transparent;
 }
 
 .rcl-site .team-card-art .team-badge {
-  width: 80px;
-  height: 80px;
+  width: 160px;
+  height: 160px;
+  border: 0;
+  padding: 0;
+  background: transparent;
   font-size: 22px;
 }
 
 .rcl-site .team-card-body {
-  padding: 24px;
+  padding: 0;
+}
+
+.rcl-site .team-card-abbreviation {
+  display: block;
+  padding: 10px 22px;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  color: var(--muted);
+  font: 11px var(--mono);
+  letter-spacing: 0.08em;
 }
 
 .rcl-site .team-card h3 {
   font: 700 28px var(--display2);
   text-transform: uppercase;
-  margin: 12px 0 18px;
+  margin: 0;
+  padding: 14px 22px;
+  overflow-wrap: anywhere;
 }
 
 .rcl-site .team-tag {
@@ -59,12 +67,10 @@
 }
 
 .rcl-site .page-content .team-card {
-  background-color: var(--panel);
-  border-color: var(--line);
   border-radius: 0;
 }
 
 .rcl-site .team-card:hover {
   transform: translateY(-5px);
-  border-color: var(--lime);
+  border-color: color-mix(in srgb, var(--team-color) 55%, var(--line));
 }

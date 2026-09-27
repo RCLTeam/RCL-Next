@@ -4,6 +4,7 @@ export interface TeamSummary {
   name: string;
   shortName: string | null;
   logoUrl: string | null;
+  color?: string | null;
 }
 export interface TeamMember {
   playerSlug?: string | undefined;

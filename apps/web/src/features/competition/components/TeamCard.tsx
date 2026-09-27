@@ -1,12 +1,13 @@
-import React from 'react';
+import type React from 'react';
 import { SiteLink } from '../../../shared/components/SiteLink.js';
 import type { Team } from '../types/competition.types.js';
 import { TeamBadge } from './TeamBadge.js';
 
-export function TeamCard({ team, divisionName }: { team: Team; divisionName: string | undefined }) {
+export function TeamCard({ team }: { team: Team; divisionName?: string | undefined }) {
   return (
     <SiteLink
       className="team-card"
+      style={{ '--team-color': team.color || 'var(--panel)' } as React.CSSProperties}
       href={`/equipos/${encodeURIComponent(team.slug ?? team.id)}`}
       aria-label={`Ver equipo ${team.name}`}
     >
@@ -14,10 +15,8 @@ export function TeamCard({ team, divisionName }: { team: Team; divisionName: str
         <TeamBadge team={team} />
       </div>
       <div className="team-card-body">
-        <span className="meta">{divisionName}</span>
+        <span className="team-card-abbreviation">{team.shortName ?? 'RCL'}</span>
         <h3>{team.name}</h3>
-        <span className="team-tag">{team.shortName ?? 'RCL'}</span>
-        <span className="team-card-action">Ver equipo →</span>
       </div>
     </SiteLink>
   );
