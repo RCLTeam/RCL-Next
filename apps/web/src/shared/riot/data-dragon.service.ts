@@ -1,14 +1,9 @@
-import type { GameCatalog } from './riot-assets.types.js';
+import { statShardAssets } from './stat-shards.js';
+// Compatibility exports for existing consumers.
+export { STAT_SHARD_SLOTS, statShardAssets } from './stat-shards.js';
+import type { GameCatalog, RuneTree } from './riot-assets.types.js';
 
 const CDN = 'https://ddragon.leagueoflegends.com';
-export const statShardAssets: GameCatalog = {
-  'rune:5001': { name: 'Vida' },
-  'rune:5002': { name: 'Armadura' },
-  'rune:5003': { name: 'Resistencia mágica' },
-  'rune:5005': { name: 'Velocidad de ataque' },
-  'rune:5007': { name: 'Velocidad de habilidades' },
-  'rune:5008': { name: 'Fuerza adaptable' }
-};
 let catalogRequest: Promise<GameCatalog> | undefined;
 async function json(url: string) {
   const response = await fetch(url, { signal: AbortSignal.timeout(10000) });
@@ -45,12 +40,26 @@ async function fetchGameCatalog(): Promise<{ catalog: GameCatalog; complete: boo
   }
   const runes = results[3];
   if (runes?.status === 'fulfilled' && Array.isArray(runes.value)) {
-    for (const tree of runes.value) {
-      for (const rune of [
-        tree,
-        ...tree.slots.flatMap((slot: { runes: unknown[] }) => slot.runes)
-      ]) {
-        catalog[`rune:${rune.id}`] = { name: rune.name, image: `${CDN}/cdn/img/${rune.icon}` };
+    const trees = runes.value as RuneTree[];
+    catalog['rune:trees'] = {
+      name: 'Árboles de Runas',
+      trees
+    };
+    for (const tree of trees) {
+      const treeAsset = {
+        name: tree.name,
+        image: `${CDN}/cdn/img/${tree.icon}`,
+        tree
+      };
+      catalog[`runeTree:${tree.id}`] = treeAsset;
+      catalog[`rune:${tree.id}`] = treeAsset;
+      for (const slot of tree.slots) {
+        for (const rune of slot.runes) {
+          catalog[`rune:${rune.id}`] = {
+            name: rune.name,
+            image: `${CDN}/cdn/img/${rune.icon}`
+          };
+        }
       }
     }
   }

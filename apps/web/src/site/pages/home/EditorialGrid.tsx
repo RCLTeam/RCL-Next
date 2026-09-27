@@ -36,7 +36,7 @@ export function EditorialGrid() {
             <div>
               <h2>{featured.title}</h2>
               <p>{featured.excerpt}</p>
-              <span className="meta">{featured.author} · Leer historia →</span>
+              <span className="meta">{featured.author}</span>
             </div>
           </SiteLink>
           {articles.length > 0 && (
@@ -47,7 +47,6 @@ export function EditorialGrid() {
                   <div>
                     <span className="meta">{article.kind}</span>
                     <h3>{article.title}</h3>
-                    <span className="text-link">Leer historia →</span>
                   </div>
                 </SiteLink>
               ))}

@@ -1,3 +1,13 @@
+/* Shared letter spacing, inherited by all site typography. */
+.rcl-site {
+  --letter-spacing: 0.05em;
+  letter-spacing: var(--letter-spacing);
+}
+
+.rcl-site :is(button, input, select, textarea) {
+  letter-spacing: inherit;
+}
+
 /* Section headings and typography */
 
 .rcl-site .section {
@@ -46,13 +56,11 @@
   text-transform: uppercase;
   margin-bottom: 24px;
   font-size: 9px;
-  letter-spacing: 0.09em;
 }
 
 @media (min-width: 651px) {
   .rcl-site .eyebrow {
     font-size: 11px;
-    letter-spacing: 0.16em;
   }
 }
 
@@ -70,7 +78,6 @@
   color: var(--muted);
   font: 11px/1.6 var(--mono);
   text-transform: uppercase;
-  letter-spacing: 0.035em;
 }
 
 .rcl-site .section-intro {

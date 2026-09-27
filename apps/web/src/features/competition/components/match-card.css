@@ -103,7 +103,6 @@
   justify-content: center;
   gap: 8px;
   font: 700 11px var(--mono);
-  letter-spacing: 0.5px;
   text-transform: uppercase;
   border-radius: inherit;
   transition: background-color 0.2s, color 0.2s;

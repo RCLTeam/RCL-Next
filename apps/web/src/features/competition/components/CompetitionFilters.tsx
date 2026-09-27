@@ -12,43 +12,40 @@ export function CompetitionFilters({
   const selectId = React.useId();
   return (
     <>
-      <label htmlFor={`${selectId}-1`} className="select-field season-field">
-        Temporada
+      <Select
+        label="Temporada"
+        fieldClassName="season-field"
+        id={`${selectId}-1`}
+        value={competition.season?.id ?? ''}
+        onChange={(event) => competition.selectSeason(event.target.value)}
+        disabled={!competition.seasons.data.length}
+      >
+        <option value="" disabled>
+          Seleccionar temporada
+        </option>
+        {competition.seasons.data.map((season) => (
+          <option key={season.id} value={season.id}>
+            {season.name}
+          </option>
+        ))}
+      </Select>
+      {divisionControl === 'select' ? (
         <Select
-          id={`${selectId}-1`}
-          value={competition.season?.id ?? ''}
-          onChange={(event) => competition.selectSeason(event.target.value)}
-          disabled={!competition.seasons.data.length}
+          label="División"
+          id={`${selectId}-2`}
+          value={competition.division?.id ?? ''}
+          onChange={(event) => competition.selectDivision(event.target.value)}
+          disabled={!competition.divisions.data.length}
         >
           <option value="" disabled>
-            Seleccionar temporada
+            Seleccionar división
           </option>
-          {competition.seasons.data.map((season) => (
-            <option key={season.id} value={season.id}>
-              {season.name}
+          {competition.divisions.data.map((division) => (
+            <option key={division.id} value={division.id}>
+              {division.name}
             </option>
           ))}
         </Select>
-      </label>
-      {divisionControl === 'select' ? (
-        <label htmlFor={`${selectId}-2`} className="select-field">
-          División
-          <Select
-            id={`${selectId}-2`}
-            value={competition.division?.id ?? ''}
-            onChange={(event) => competition.selectDivision(event.target.value)}
-            disabled={!competition.divisions.data.length}
-          >
-            <option value="" disabled>
-              Seleccionar división
-            </option>
-            {competition.divisions.data.map((division) => (
-              <option key={division.id} value={division.id}>
-                {division.name}
-              </option>
-            ))}
-          </Select>
-        </label>
       ) : (
         competition.divisions.data.length > 0 && (
           <div className="division-field">

@@ -10,6 +10,7 @@ import type { Competition } from '../../../features/competition/hooks/useCompeti
 import { PageLayout } from '../../../shared/components/PageLayout/PageLayout.js';
 import { Select } from '../../../shared/components/Selector/Selector.js';
 import { SiteLink } from '../../../shared/components/SiteLink.js';
+import { resolveTeamLogo } from '../../../shared/resources/team-logos.js';
 import { type GameCatalog, getGameAsset } from '../../../shared/riot/riot-assets.service.js';
 import { useGameCatalog } from '../../../shared/riot/useGameCatalog.js';
 import './players.css';
@@ -108,20 +109,18 @@ export function PlayersPage({ competition }: { competition: Competition }) {
                 onChange={(event) => setQuery(event.target.value)}
               />
             </label>
-            <label className="select-field" htmlFor={sortId}>
-              Ordenar por
-              <Select
-                id={sortId}
-                value={sort}
-                onChange={(event) => setSort(event.target.value as PlayerSort)}
-              >
-                {playerSortOptions.map(([value, label]) => (
-                  <option key={value} value={value}>
-                    {label}
-                  </option>
-                ))}
-              </Select>
-            </label>
+            <Select
+              label="Ordenar por"
+              id={sortId}
+              value={sort}
+              onChange={(event) => setSort(event.target.value as PlayerSort)}
+            >
+              {playerSortOptions.map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
+            </Select>
           </div>
           <p className="players-stat-note">
             De mayor a menor · Estadísticas de temporada · Participación: (kills + asistencias) /
@@ -188,7 +187,9 @@ function PlayerTeam({ player }: { player: Player }) {
   const team = player.competition?.team;
   return (
     <span className="player-team">
-      {team?.logoUrl && <img src={team.logoUrl} alt="" loading="lazy" />}
+      {resolveTeamLogo(team?.logoUrl) && (
+        <img src={resolveTeamLogo(team?.logoUrl)} alt="" loading="lazy" />
+      )}
       <span>{team?.name ?? 'Sin equipo'}</span>
     </span>
   );

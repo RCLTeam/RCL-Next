@@ -207,8 +207,8 @@ function ArticleForm({
             maxLength={180}
           />
           <div className="content-field">
-            <label htmlFor="editorial-kind">Tipo de publicación</label>
             <Select
+              label="Tipo de publicación"
               variant="form"
               id="editorial-kind"
               value={form.kind}

@@ -25,25 +25,24 @@ export function TeamOfTheWeekStrip({ competition }: { competition: Competition }
         <div className="eyebrow">Team of the Week · El quinteto de la jornada</div>
       </div>
       {content.data && content.data.length > 0 && (
-        <label htmlFor={`${selectId}-1`} className="select-field totw-round-select">
-          Jornada
-          <Select
-            id={`${selectId}-1`}
-            value={team?.roundId ?? ''}
-            onChange={(event) =>
-              setSelection({
-                divisionId: competition.division?.id ?? '',
-                roundId: Number(event.target.value)
-              })
-            }
-          >
-            {content.data.map((item) => (
-              <option key={item.roundId} value={item.roundId ?? ''}>
-                Jornada {item.roundId}
-              </option>
-            ))}
-          </Select>
-        </label>
+        <Select
+          label="Jornada"
+          fieldClassName="totw-round-select"
+          id={`${selectId}-1`}
+          value={team?.roundId ?? ''}
+          onChange={(event) =>
+            setSelection({
+              divisionId: competition.division?.id ?? '',
+              roundId: Number(event.target.value)
+            })
+          }
+        >
+          {content.data.map((item) => (
+            <option key={item.roundId} value={item.roundId ?? ''}>
+              Jornada {item.roundId}
+            </option>
+          ))}
+        </Select>
       )}
       <ContentStatus {...content} />
       {!content.loading && !content.error && !team && (

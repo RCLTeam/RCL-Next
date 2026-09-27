@@ -43,64 +43,58 @@ export function WeeklyTeamManager(props: EditorStateProps) {
   return (
     <section aria-label="Editar Team of the Week">
       <div className="content-filters">
-        <label htmlFor={`${selectId}-1`}>
-          Temporada
-          <Select
-            id={`${selectId}-1`}
-            value={competition.season?.id ?? ''}
-            disabled={busy}
-            onChange={(event) =>
-              change(event.target.value, (value) => {
-                setRoundChoice('');
-                competition.selectSeason(value);
-              })
-            }
-          >
-            {competition.seasons.data.map((season) => (
-              <option value={season.id} key={season.id}>
-                {season.name}
-              </option>
-            ))}
-          </Select>
-        </label>
-        <label htmlFor={`${selectId}-2`}>
-          División
-          <Select
-            id={`${selectId}-2`}
-            value={divisionId ?? ''}
-            disabled={busy}
-            onChange={(event) =>
-              change(event.target.value, (value) => {
-                setRoundChoice('');
-                competition.selectDivision(value);
-              })
-            }
-          >
-            {competition.divisions.data.map((division) => (
-              <option value={division.id} key={division.id}>
-                {division.name}
-              </option>
-            ))}
-          </Select>
-        </label>
-        <label htmlFor={`${selectId}-3`}>
-          Jornada
-          <Select
-            id={`${selectId}-3`}
-            value={round?.id ?? ''}
-            disabled={busy || rounds.status !== 'ready'}
-            onChange={(event) => change(event.target.value, setRoundChoice)}
-          >
-            {rounds.data.map((item) => (
-              <option key={item.id} value={item.id}>
-                {item.name ?? `Jornada ${item.sequence}`}
-                {currentTeams.some((team) => team.roundId === Number(item.id) && team.published)
-                  ? ' · Publicada'
-                  : ''}
-              </option>
-            ))}
-          </Select>
-        </label>
+        <Select
+          label="Temporada"
+          id={`${selectId}-1`}
+          value={competition.season?.id ?? ''}
+          disabled={busy}
+          onChange={(event) =>
+            change(event.target.value, (value) => {
+              setRoundChoice('');
+              competition.selectSeason(value);
+            })
+          }
+        >
+          {competition.seasons.data.map((season) => (
+            <option value={season.id} key={season.id}>
+              {season.name}
+            </option>
+          ))}
+        </Select>
+        <Select
+          label="División"
+          id={`${selectId}-2`}
+          value={divisionId ?? ''}
+          disabled={busy}
+          onChange={(event) =>
+            change(event.target.value, (value) => {
+              setRoundChoice('');
+              competition.selectDivision(value);
+            })
+          }
+        >
+          {competition.divisions.data.map((division) => (
+            <option value={division.id} key={division.id}>
+              {division.name}
+            </option>
+          ))}
+        </Select>
+        <Select
+          label="Jornada"
+          id={`${selectId}-3`}
+          value={round?.id ?? ''}
+          disabled={busy || rounds.status !== 'ready'}
+          onChange={(event) => change(event.target.value, setRoundChoice)}
+        >
+          {rounds.data.map((item) => (
+            <option key={item.id} value={item.id}>
+              {item.name ?? `Jornada ${item.sequence}`}
+              {currentTeams.some((team) => team.roundId === Number(item.id) && team.published)
+                ? ' · Publicada'
+                : ''}
+            </option>
+          ))}
+        </Select>
       </div>
       <ContentStatus
         loading={

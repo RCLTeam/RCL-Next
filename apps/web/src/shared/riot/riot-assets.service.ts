@@ -1,15 +1,24 @@
 import { getPositionAsset, positionAssets } from './community-dragon.service.js';
-import {
-  loadGameCatalog as loadDataDragonCatalog,
-  statShardAssets
-} from './data-dragon.service.js';
-import type { GameAssetKind, GameCatalog } from './riot-assets.types.js';
+import { loadGameCatalog as loadDataDragonCatalog } from './data-dragon.service.js';
+import { STAT_SHARD_SLOTS, statShardAssets } from './stat-shards.js';
+export { STAT_SHARD_SLOTS } from './stat-shards.js';
+import type { GameAssetKind, GameCatalog, RuneTree } from './riot-assets.types.js';
 
-export type { GameAsset, GameAssetKind, GameCatalog } from './riot-assets.types.js';
+export type {
+  GameAsset,
+  GameAssetKind,
+  GameCatalog,
+  RuneDetail,
+  RuneSlot,
+  RuneTree
+} from './riot-assets.types.js';
 
-export const defaultGameCatalog: GameCatalog = { ...statShardAssets, ...positionAssets };
+export const defaultGameCatalog: GameCatalog = {
+  ...statShardAssets,
+  ...positionAssets,
+  'rune:statShards': { name: 'Fragmentos de Estadísticas', slots: STAT_SHARD_SLOTS }
+};
 
-/** Both providers remain usable independently when Data Dragon is unavailable. */
 export async function loadGameCatalog(): Promise<GameCatalog> {
   try {
     return { ...defaultGameCatalog, ...(await loadDataDragonCatalog()) };
@@ -32,4 +41,16 @@ export function getGameAsset(
     );
   }
   return catalog[`${kind}:${id}`] ?? defaultGameCatalog[`${kind}:${id}`];
+}
+
+export function getRuneTrees(catalog: GameCatalog, treeId?: number): RuneTree[] {
+  if (treeId) {
+    const treeAsset = catalog[`runeTree:${treeId}`];
+    return treeAsset?.tree ? [treeAsset.tree] : [];
+  }
+  return catalog['rune:trees']?.trees ?? [];
+}
+
+export function getStatShardSlots() {
+  return STAT_SHARD_SLOTS;
 }

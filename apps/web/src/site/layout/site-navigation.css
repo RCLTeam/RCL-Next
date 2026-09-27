@@ -12,7 +12,6 @@
   color: var(--muted);
   font: 700 11px var(--mono);
   text-transform: uppercase;
-  letter-spacing: 0.05em;
   display: inline-flex;
   align-items: center;
   min-height: 44px;

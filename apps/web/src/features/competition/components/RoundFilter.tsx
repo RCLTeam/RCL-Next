@@ -10,21 +10,19 @@ export function RoundFilter({
 }: { rounds: Round[]; value: string; onChange: (value: string) => void }) {
   const selectId = React.useId();
   return (
-    <label htmlFor={`${selectId}-1`} className="select-field">
-      Jornada
-      <Select
-        id={`${selectId}-1`}
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        disabled={!rounds.length}
-      >
-        <option value="">Todas las jornadas</option>
-        {rounds.map((round) => (
-          <option key={round.id} value={round.id}>
-            {round.name ?? `Jornada ${round.sequence}`}
-          </option>
-        ))}
-      </Select>
-    </label>
+    <Select
+      label="Jornada"
+      id={`${selectId}-1`}
+      value={value}
+      onChange={(event) => onChange(event.target.value)}
+      disabled={!rounds.length}
+    >
+      <option value="">Todas las jornadas</option>
+      {rounds.map((round) => (
+        <option key={round.id} value={round.id}>
+          {round.name ?? `Jornada ${round.sequence}`}
+        </option>
+      ))}
+    </Select>
   );
 }

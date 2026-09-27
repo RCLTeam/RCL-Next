@@ -14,7 +14,7 @@ export function PredictionRules() {
       <div className="prediction-schedule">
         <b>LUN → MAR</b>
         <span>Lunes 00:00 — Martes 23:59</span>
-        <small>Hora de Madrid · Sin bonus por racha</small>
+        <small>Hora de Madrid</small>
       </div>
     </div>
   );

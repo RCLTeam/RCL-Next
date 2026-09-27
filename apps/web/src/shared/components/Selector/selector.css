@@ -27,11 +27,6 @@
   font-size: inherit;
 }
 
-.rcl-site .rcl-select:focus-visible {
-  outline: 2px solid var(--lime);
-  outline-offset: 3px;
-}
-
 .rcl-site .rcl-select:disabled {
   opacity: 0.6;
   cursor: not-allowed;
@@ -52,4 +47,18 @@
   .rcl-site .select-field {
     width: auto;
   }
+}
+
+.rcl-site .rcl-select-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.rcl-site .rcl-select-label {
+  font: 10px var(--mono);
+  color: var(--muted);
+  text-transform: uppercase;
 }

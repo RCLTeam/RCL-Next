@@ -28,11 +28,11 @@ export function HomeHero({ seasonName, streamUrl }: HomeHeroProps) {
         <div className="btn-row">
           {streamUrl ? (
             <a className="btn-primary" href={streamUrl} target="_blank" rel="noreferrer">
-              Ver en directo <span aria-hidden="true">↗</span>
+              Ver en directo
             </a>
           ) : (
             <SiteLink className="btn-primary" href="/ligas">
-              Descubre las ligas <span aria-hidden="true">↗</span>
+              Descubre las ligas
             </SiteLink>
           )}
           <SiteLink className="btn-ghost" href="/calendario">
