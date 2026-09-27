@@ -1,37 +1,77 @@
 import type { MatchDetail, MatchMap, MatchParticipant } from '@rcl/contracts';
 import React, { useState } from 'react';
-import { Select } from '../../../shared/components/Selector/Selector.js';
-import { formatMatchStat, matchPosition, positionRows, statGroups } from './match-stats.js';
+import { Select } from '../../../../../shared/components/Selector/Selector.js';
+import { formatMatchStat, matchPosition, positionRows, statGroups } from '../../match-stats.js';
+import './match-stats-section.css';
 
-export function MatchStatsTable({ game, match }: { game: MatchMap; match: MatchDetail }) {
+export function MatchStatsSection({
+  game,
+  match
+}: { game: MatchMap | undefined; match: MatchDetail }) {
   const selectId = React.useId();
   const [choice, setChoice] = useState('');
+
+  if (!game) {
+    return (
+      <section
+        id="estadisticas"
+        role="tabpanel"
+        aria-labelledby="tab-estadisticas"
+        className="match-report-section"
+      >
+        <h2>02 · Estadísticas de jugadores</h2>
+        <div className="empty-state">Estadísticas pendientes de importar.</div>
+      </section>
+    );
+  }
+
   const ordered = positionRows(game.participants, match.homeTeam.id, match.awayTeam.id)
     .flatMap((row) => [row.home, row.away])
     .filter((player): player is MatchParticipant => !!player);
+
   const player = ordered.find((item) => item.id === choice) ?? ordered[0];
-  if (!player) return <div className="empty-state">Estadísticas pendientes de importar.</div>;
+
+  if (!player) {
+    return (
+      <section
+        id="estadisticas"
+        role="tabpanel"
+        aria-labelledby="tab-estadisticas"
+        className="match-report-section"
+      >
+        <h2>02 · Estadísticas de jugadores</h2>
+        <div className="empty-state">Estadísticas pendientes de importar.</div>
+      </section>
+    );
+  }
+
   const team = player.teamId === match.homeTeam.id ? match.homeTeam : match.awayTeam;
   const stats = player.stats;
   const minutes = game.durationSeconds ? game.durationSeconds / 60 : null;
+
   return (
-    <>
-      <label htmlFor={`${selectId}-1`} className="select-field match-player-select">
-        Seleccionar jugador
-        <Select
-          id={`${selectId}-1`}
-          value={player.id}
-          onChange={(event) => setChoice(event.target.value)}
-        >
-          {ordered.map((item) => (
-            <option key={item.id} value={item.id}>
-              {item.gameName} ·{' '}
-              {item.teamId === match.homeTeam.id ? match.homeTeam.name : match.awayTeam.name} ·{' '}
-              {matchPosition(item.position)}
-            </option>
-          ))}
-        </Select>
-      </label>
+    <section
+      id="estadisticas"
+      role="tabpanel"
+      aria-labelledby="tab-estadisticas"
+      className="match-report-section"
+    >
+      <h2>02 · Estadísticas de jugadores</h2>
+      <Select
+        label="Seleccionar jugador"
+        fieldClassName="match-player-select"
+        id={`${selectId}-1`}
+        value={player.id}
+        onChange={(event) => setChoice(event.target.value)}
+      >
+        {ordered.map((item) => (
+          <option key={item.id} value={item.id}>
+            {item.gameName} ·{' '}
+            {item.teamId === match.homeTeam.id ? match.homeTeam.name : match.awayTeam.name} ·{' '}
+            {matchPosition(item.position)}
+          </option>
+        ))}
+      </Select>
       <h3>
         {player.gameName}{' '}
         <span className="meta">
@@ -89,11 +129,8 @@ export function MatchStatsTable({ game, match }: { game: MatchMap; match: MatchD
               </section>
             ))}
           </div>
-          <p className="meta">
-            — indica un dato no registrado. Las estadísticas corresponden al mapa seleccionado.
-          </p>
         </>
       )}
-    </>
+    </section>
   );
 }

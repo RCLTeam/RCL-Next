@@ -17,7 +17,6 @@
   padding: 14px 18px;
   font: 700 10px var(--body-f);
   text-transform: uppercase;
-  letter-spacing: 0.035em;
   transition: background 150ms, transform 150ms;
 }
 
@@ -56,4 +55,40 @@
 .rcl-site .text-link:hover {
   text-decoration: underline;
   text-underline-offset: 4px;
+}
+
+.rcl-site .btn-selector {
+  min-height: 44px;
+  padding: 8px 16px;
+  background: color-mix(in srgb, var(--purple) 35%, transparent);
+  border: none;
+  color: var(--muted);
+  font: 700 11px var(--mono);
+  text-transform: uppercase;
+  position: relative;
+  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+  cursor: pointer;
+  transition: color 0.2s ease, background-color 0.2s ease;
+}
+
+.rcl-site .btn-selector::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  padding: 2px;
+  background: color-mix(in srgb, var(--purple) 55%, transparent);
+  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+.rcl-site .btn-selector[aria-pressed='true'] {
+  color: var(--text);
+  background: var(--purple);
+}
+
+.rcl-site .btn-selector[aria-pressed='true']::before {
+  display: none;
 }

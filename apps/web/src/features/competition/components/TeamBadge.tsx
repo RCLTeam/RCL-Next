@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { safeStreamUrl } from '../api/competition-api.js';
+import { resolveTeamLogo } from '../../../shared/resources/team-logos.js';
 import type { Team } from '../types/competition.types.js';
 import './team-badge.css';
 
 export function TeamBadge({ team }: { team: Team | undefined }) {
   const [failedUrl, setFailedUrl] = useState<string | null>(null);
-  const url = safeStreamUrl(team?.logoUrl ?? null);
+  const url = resolveTeamLogo(team?.logoUrl);
   return (
     <span className="team-badge" aria-hidden="true">
       {url && url !== failedUrl ? (

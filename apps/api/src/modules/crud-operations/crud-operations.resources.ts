@@ -95,7 +95,7 @@ export const crudResources: ResourceDefinition[] = [
       ref('seasonDivisionId', 'Competición', 'competitions'),
       text('name', 'Nombre', 120, true),
       text('shortName', 'Abreviatura', 16),
-      { name: 'logoUrl', label: 'URL del escudo', type: 'url' },
+      text('logoUrl', 'URL o ruta del escudo', 2048),
       text('color', 'Color (#RRGGBB)', 7),
       bool('isActive', 'Activo', true)
     ]
@@ -157,6 +157,23 @@ function fieldSchema(field: CrudField): z.ZodTypeAny {
       .max(field.max ?? 32767);
   else if (field.type === 'date') value = z.string().date();
   else if (field.type === 'datetime') value = z.string().datetime({ offset: true });
+  else if (field.name === 'logoUrl')
+    value = z
+      .string()
+      .trim()
+      .max(2048)
+      .refine((url) => {
+        if (/^\/(?!\/)/.test(url) && !/[\\\s]/.test(url)) return true;
+        try {
+          const parsed = new URL(url);
+          return (
+            parsed.protocol === 'https:' ||
+            (parsed.protocol === 'http:' && ['localhost', '127.0.0.1'].includes(parsed.hostname))
+          );
+        } catch {
+          return false;
+        }
+      }, 'Introduce una ruta que empiece por / o una URL HTTPS.');
   else if (field.type === 'url')
     value = z
       .string()

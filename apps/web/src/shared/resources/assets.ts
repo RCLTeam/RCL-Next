@@ -1,6 +1,5 @@
-import ascend from '../assets/brand/ascend.png';
-import premier from '../assets/brand/premier.png';
-import rclLogo from '../assets/brand/rcl-logo.png';
-import rebellion from '../assets/brand/rebellion.webp';
+import ascend from '../assets/brand/Corona_Amarilla_.webp';
+import premier from '../assets/brand/Corona_Morada_.webp';
+import rclLogo from '../assets/brand/rcl-logo.webp';
 
-export const brandAssets: Record<string, string> = { rclLogo, rebellion, premier, ascend };
+export const brandAssets: Record<string, string> = { rclLogo, rebellion: rclLogo, premier, ascend };

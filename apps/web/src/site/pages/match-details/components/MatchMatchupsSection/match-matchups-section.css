@@ -1,0 +1,310 @@
+.rcl-site .match-lanes-scroll {
+  overflow-x: visible;
+  border: 0;
+  background: transparent;
+}
+
+.rcl-site .match-lane-heading,
+.rcl-site .match-lane-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+}
+
+@media (min-width: 1100px) {
+  .rcl-site .match-lane-heading,
+  .rcl-site .match-lane-row {
+    grid-template-columns: minmax(0, 1fr) 80px minmax(0, 1fr);
+  }
+}
+
+.rcl-site .match-lane-heading {
+  text-align: center;
+  padding: 14px 20px;
+  color: var(--muted);
+  font: 11px var(--mono);
+  background: transparent;
+  font-size: 11px;
+  display: none;
+}
+
+@media (min-width: 1100px) {
+  .rcl-site .match-lane-heading {
+    display: grid;
+  }
+}
+
+.rcl-site .match-lane-heading > span:nth-child(2) {
+  display: block;
+}
+
+.rcl-site .match-lane-row {
+  background: transparent;
+  padding: 5px 0;
+  gap: 16px;
+}
+
+.rcl-site .match-lane-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  object-fit: contain;
+  filter: brightness(0) invert(1);
+  opacity: 0.8;
+}
+
+.rcl-site .match-lane-label .game-asset img {
+  border: 0;
+  width: 40px;
+  height: 40px;
+}
+
+.rcl-site .match-lane-label .game-asset-fallback {
+  width: auto;
+  height: auto;
+  border: 0;
+  overflow-wrap: anywhere;
+}
+
+@media (min-width: 1100px) {
+  .rcl-site .match-lane-label {
+    grid-row: auto;
+    justify-self: stretch;
+    min-width: 0;
+  }
+}
+
+/* Tarjeta del jugador */
+.rcl-site .player-summary {
+  width: 100%;
+  max-width: 620px;
+  min-width: 0;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  background: linear-gradient(to left, color-mix(in srgb, var(--purple) 5%, var(--panel)), var(--panel));
+  box-shadow: 0 4px 16px var(--void);
+  transition: border-color 160ms, background 160ms;
+}
+
+@media (min-width: 601px) {
+  .rcl-site .player-summary {
+    padding: 14px;
+  }
+}
+
+.rcl-site .player-summary:hover {
+  border-color: color-mix(in srgb, var(--purple) 55%, var(--line));
+}
+
+.rcl-site .match-lane-row > .player-summary:first-child {
+  justify-self: center;
+}
+
+@media (min-width: 1100px) {
+  .rcl-site .match-lane-row > .player-summary:first-child {
+    justify-self: end;
+  }
+}
+
+.rcl-site .match-lane-row > .player-summary:last-child {
+  justify-self: center;
+}
+
+@media (min-width: 1100px) {
+  .rcl-site .match-lane-row > .player-summary:last-child {
+    justify-self: start;
+  }
+}
+
+.rcl-site .player-summary-team {
+  display: block;
+  margin: 0 0 10px;
+  color: var(--muted);
+  font: 11px var(--mono);
+  overflow-wrap: anywhere;
+}
+
+@media (min-width: 1100px) {
+  .rcl-site .player-summary-team {
+  display: block;
+    display: none;
+  }
+}
+
+.rcl-site .player-summary-slots {
+  display: grid;
+  grid-template-columns: .5fr 0.5fr 4.5fr 1.1fr;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+}
+
+@media (min-width: 601px) {
+  .rcl-site .player-summary-slots {
+    gap: 8px;
+  }
+}
+
+.rcl-site .player-summary-group {
+  min-width: 0;
+}
+
+.rcl-site .spells-group {
+  display: grid;
+  gap: 3px;
+}
+
+.rcl-site .spell-item,
+.rcl-site .trinket-group,
+.rcl-site .player-summary-slot,
+.rcl-site .champion-group {
+  aspect-ratio: 1;
+  overflow: hidden;
+  border-radius: 2px;
+  background: var(--void);
+  box-shadow: 0 0 0 1px var(--panel);
+}
+
+.rcl-site .items-group {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 4px;
+}
+
+.rcl-site .champion-group {
+  border-radius: 2px;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--purple) 20%, transparent);
+}
+
+.rcl-site .player-summary-slots .game-asset {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  direction: ltr;
+}
+
+.rcl-site .player-summary-slots .game-asset img,
+.rcl-site .player-summary-slots .game-asset-fallback {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  border: 0;
+  object-fit: cover;
+  font-size: 9px;
+}
+
+.rcl-site .player-summary-caption {
+  background: color-mix(in srgb, var(--void) 25%, transparent);
+  border: 1px solid color-mix(in srgb, var(--panel) 20%, transparent);
+  border-radius: 6px;
+  padding: 6px 10px;
+  margin-top: 10px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  line-height: 1.4;
+  box-shadow: inset 0 1px 2px var(--void);
+}
+
+.rcl-site .player-summary-caption > * {
+  direction: ltr;
+}
+
+.rcl-site .player-summary-kda {
+  color: color-mix(in srgb, var(--text) 70%, transparent);
+  font: 600 11px/1 var(--mono);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  padding: 3px 0;
+  border-radius: 4px;
+  text-align: left;
+  justify-self: start;
+}
+
+.rcl-site .player-summary-name {
+  padding: 4px 0;
+  text-align: center;
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
+}
+
+.rcl-site .player-summary-champion-name {
+  text-align: right;
+  color: color-mix(in srgb, var(--text) 70%, transparent);
+  text-transform: uppercase;
+  font-weight: bold;
+  font-size: 11px;
+  overflow-wrap: anywhere;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  justify-self: end;
+}
+
+/* Lado derecho */
+.rcl-site .match-lane-row > .player-summary:last-child {
+  background: linear-gradient(to right, color-mix(in srgb, var(--lime) 5%, var(--panel)), var(--panel));
+}
+
+.rcl-site .match-lane-row > .player-summary:last-child:hover {
+  border-color: color-mix(in srgb, var(--lime) 55%, var(--line));
+}
+
+.rcl-site .match-lane-row > .player-summary:last-child .champion-group {
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--lime) 20%, transparent);
+}
+
+.rcl-site .match-lane-row > .player-summary:last-child .player-summary-slots,
+.rcl-site .match-lane-row > .player-summary:last-child .player-summary-caption {
+  direction: rtl;
+}
+
+.rcl-site .match-lane-row > .player-summary:last-child .player-summary-kda {
+  text-align: right;
+}
+
+.rcl-site .match-lane-row > .player-summary:last-child .player-summary-champion-name {
+  text-align: left;
+}
+
+.rcl-site .player-summary-missing {
+  display: block;
+  margin: 8px 0 0;
+  text-align: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rcl-site .player-summary {
+    transition: none;
+  }
+}
+
+.rcl-site button.player-summary {
+  appearance: none;
+  display: block;
+  color: inherit;
+  font: inherit;
+  text-align: inherit;
+  cursor: pointer;
+}
+
+.rcl-site .player-summary:focus-visible {
+  outline: 2px solid var(--lime);
+  outline-offset: 2px;
+}

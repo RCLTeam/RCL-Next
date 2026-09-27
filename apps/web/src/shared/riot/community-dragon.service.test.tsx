@@ -51,3 +51,18 @@ test('Community Dragon assets survive a Data Dragon outage', async () => {
   expect(catalog['position:MID']?.image).toContain('icon-position-middle.png');
   expect(catalog['rune:5001']).toBeDefined();
 });
+
+test('Stat shard slots distinguish flat and scaling health even without Data Dragon', async () => {
+  const { getStatShardSlots, defaultGameCatalog } = await import('./riot-assets.service.js');
+  const slots = getStatShardSlots();
+  expect(slots[1]?.runes.map((rune) => rune.id)).toEqual([5008, 5010, 5001]);
+  expect(slots[2]?.runes.map((rune) => rune.id)).toEqual([5011, 5013, 5001]);
+  expect(defaultGameCatalog['rune:statShards']?.slots).toBe(slots);
+  expect(defaultGameCatalog['rune:5007']?.image).toContain('/statmodscdrscalingicon.png');
+  expect(defaultGameCatalog['rune:5001']?.image).toContain('/statmodshealthplusicon.png');
+  for (const slot of slots) {
+    for (const rune of slot.runes) {
+      expect(defaultGameCatalog[`rune:${rune.id}`]?.image).toBe(rune.icon);
+    }
+  }
+});

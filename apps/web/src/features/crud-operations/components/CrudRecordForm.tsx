@@ -3,6 +3,8 @@ import React, { useEffect, useId, useState } from 'react';
 import { Select } from '../../../shared/components/Selector/Selector.js';
 import { getCrudRecords, recordLabel } from '../api/crud-operations-api.js';
 
+const teamLogoDirectory = '/src/shared/assets/teams_logo/';
+
 export function initialValues(resource: CrudResource, record: CrudRecord | null): CrudRecord {
   return Object.fromEntries(
     resource.fields.map((field) => [
@@ -92,7 +94,7 @@ function RecordField({
   onChange: (value: CrudValue) => void;
 }) {
   const id = useId();
-  const label = `${field.label}${field.required ? ' *' : ''}`;
+  const label = `${field.name === 'logoUrl' ? 'Archivo del escudo' : field.label}${field.required ? ' *' : ''}`;
   if (field.reference)
     return (
       <ReferenceField
@@ -105,7 +107,7 @@ function RecordField({
     );
   return (
     <div className="crud-operations-field">
-      <label htmlFor={id}>{label}</label>
+      {(field.type === 'boolean' || !field.options) && <label htmlFor={id}>{label}</label>}
       {field.type === 'boolean' ? (
         <input
           id={id}
@@ -116,6 +118,7 @@ function RecordField({
         />
       ) : field.options ? (
         <Select
+          label={label}
           variant="form"
           id={id}
           value={String(value ?? '')}
@@ -134,9 +137,22 @@ function RecordField({
       ) : (
         <input
           id={id}
-          type={field.type === 'datetime' ? 'datetime-local' : field.type}
+          type={
+            field.name === 'logoUrl'
+              ? 'text'
+              : field.type === 'datetime'
+                ? 'datetime-local'
+                : field.type
+          }
+          placeholder={field.name === 'logoUrl' ? 'equipo.webp' : undefined}
           step={field.type === 'datetime' ? '1' : undefined}
-          value={field.type === 'datetime' ? localDateTime(value) : String(value ?? '')}
+          value={
+            field.type === 'datetime'
+              ? localDateTime(value)
+              : field.name === 'logoUrl' && String(value ?? '').startsWith(teamLogoDirectory)
+                ? String(value).slice(teamLogoDirectory.length)
+                : String(value ?? '')
+          }
           required={field.required}
           disabled={disabled}
           maxLength={field.maxLength}
@@ -147,11 +163,13 @@ function RecordField({
             onChange(
               !input
                 ? null
-                : field.type === 'number'
-                  ? Number(input)
-                  : field.type === 'datetime'
-                    ? new Date(input).toISOString()
-                    : input
+                : field.name === 'logoUrl' && !/[/:\\]/.test(input)
+                  ? `${teamLogoDirectory}${input}`
+                  : field.type === 'number'
+                    ? Number(input)
+                    : field.type === 'datetime'
+                      ? new Date(input).toISOString()
+                      : input
             );
           }}
         />
@@ -225,10 +243,6 @@ function ReferenceField({
     ];
   return (
     <div className="crud-operations-field">
-      <label htmlFor={id}>
-        {field.label}
-        {field.required ? ' *' : ''}
-      </label>
       {!disabled && (
         <input
           type="search"
@@ -243,6 +257,7 @@ function ReferenceField({
         />
       )}
       <Select
+        label={`${field.label}${field.required ? ' *' : ''}`}
         variant="form"
         id={id}
         value={String(value ?? '')}

@@ -26,7 +26,6 @@
   align-items: center;
   border-bottom: 1px solid var(--line);
   font: 10px var(--mono);
-  letter-spacing: 0.1em;
   color: var(--muted);
   gap: 16px;
   width: 100%;

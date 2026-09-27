@@ -140,39 +140,18 @@ test('Playoffs use the API playoff stage and exclude regular rounds', () => {
   expect(html).not.toContain('Jornada regular');
 });
 
-test('Predictions show only scheduled API matches, without invented votes or scores', () => {
+test('Predictions await server voting state and preserve competition errors', () => {
   const competition = fixture();
-  const html = renderToStaticMarkup(
-    <PredictionsPage
-      competition={{
-        ...competition,
-        calendar: {
-          status: 'ready',
-          data: [
-            match,
-            {
-              ...match,
-              id: 'next',
-              status: 'scheduled',
-              round: { ...playoffRound, name: 'Próxima serie' }
-            }
-          ]
-        }
-      }}
-    />
-  );
-  expect(html).toContain('Lobos');
-  expect(html).toContain('Próxima serie');
-  expect(html).not.toContain('Gran final');
-  expect(html).not.toContain('2–1');
-  expect(html).toContain('Votación no disponible');
+  const html = renderToStaticMarkup(<PredictionsPage competition={competition} />);
+  expect(html).toContain('Cargando');
+  expect(html).toContain('3 puntos totales por serie');
+  expect(html).not.toContain('Lobos');
   const failed = renderToStaticMarkup(
     <PredictionsPage competition={{ ...competition, seasons: { status: 'error', data: [] } }} />
   );
   expect(failed).toContain('Reintentar');
   expect(failed).not.toContain('Lobos');
 });
-
 test('Standings render backend totals and hide them if the season request fails', () => {
   const competition = fixture();
   const html = renderToStaticMarkup(<StandingsPage competition={competition} />);

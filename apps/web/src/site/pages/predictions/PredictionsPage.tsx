@@ -32,15 +32,19 @@ export function PredictionsPage({ competition }: { competition: Competition }) {
       description="Antes de cada jornada, vota quién crees que se lleva cada serie. Cada acierto suma puntos a tu clasificación personal de predictor."
     >
       <PredictionRules />
-      <CompetitionFilters competition={competition}>
-        <span className={`prediction-status${data?.open ? ' is-open' : ''}`}>
-          {data
-            ? data.open
-              ? 'Votaciones abiertas · Hasta el martes 23:59'
-              : 'Votaciones cerradas · Abren el lunes 00:00'
-            : 'Cargando predicciones…'}
-        </span>
-      </CompetitionFilters>
+      <div className="page-toolbar">
+        <CompetitionFilters competition={competition}>
+          <span className={`prediction-status${data?.open ? ' is-open' : ''}`}>
+            {data
+              ? data.open
+                ? 'Votaciones abiertas · Hasta el martes 23:59'
+                : 'Votaciones cerradas · Abren el lunes 00:00'
+              : predictions.error
+                ? 'Predicciones no disponibles'
+                : 'Cargando predicciones…'}
+          </span>
+        </CompetitionFilters>
+      </div>
       {data && (
         <p className="prediction-week eyebrow">
           Semana del{' '}

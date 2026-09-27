@@ -129,10 +129,8 @@ function WeeklyRoundForm({
               <div className="weekly-edit-card" key={player.role}>
                 <span className="eyebrow">{labels[player.role]}</span>
                 <div className="content-field">
-                  <label htmlFor={`weekly-player-${player.role}`}>
-                    Jugador · {labels[player.role]}
-                  </label>
                   <Select
+                    label={`Jugador · ${labels[player.role]}`}
                     variant="form"
                     id={`weekly-player-${player.role}`}
                     value={candidate ? `${candidate.teamId}:${candidate.playerId}` : ''}

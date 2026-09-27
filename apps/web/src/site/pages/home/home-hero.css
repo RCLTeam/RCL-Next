@@ -123,14 +123,12 @@
   text-transform: uppercase;
   font-size: 9px;
   max-width: 300px;
-  letter-spacing: 0.09em;
 }
 
 @media (min-width: 651px) {
   .rcl-site .hero-kicker {
     font-size: 11px;
     max-width: none;
-    letter-spacing: 0.17em;
   }
 }
 
@@ -147,7 +145,6 @@
   font-family: var(--display);
   line-height: 0.9;
   font-weight: 900;
-  letter-spacing: 0;
   margin: 0;
   text-shadow: 0 6px 40px var(--void);
   font-size: clamp(54px, 12vw, 78px);
@@ -192,7 +189,6 @@
   overflow: hidden;
   white-space: nowrap;
   font: 700 16px var(--display2);
-  letter-spacing: 0.04em;
   transform: skewY(-2deg);
   user-select: none;
   margin-bottom: 10px;

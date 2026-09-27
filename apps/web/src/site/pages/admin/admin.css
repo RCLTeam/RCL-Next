@@ -97,8 +97,3 @@
   max-width: 420px;
 }
 
-.rcl-site .crud-operations-resource-selector label {
-  font: 400 12px var(--mono);
-  text-transform: uppercase;
-  color: var(--muted);
-}

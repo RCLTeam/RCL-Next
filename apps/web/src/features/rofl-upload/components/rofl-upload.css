@@ -20,7 +20,6 @@
   font-size: 1.75rem;
   font-weight: 700;
   color: var(--text);
-  letter-spacing: -0.02em;
 }
 
 .rcl-site .admin-rofl-upload-panel-subtitle {
@@ -137,7 +136,6 @@
 .rcl-site .admin-rofl-dropzone-format-badge {
   font-size: 0.75rem;
   font-weight: 700;
-  letter-spacing: 0.05em;
   padding: 0.25rem 0.6rem;
   border-radius: 4px;
   background-color: var(--panel-raised);
@@ -183,7 +181,6 @@
   font-size: 0.75rem;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
 }
 
 .rcl-site .admin-upload-stepper-queue-alert {
@@ -595,7 +592,6 @@
   font-weight: 700;
   color: var(--muted);
   text-transform: uppercase;
-  letter-spacing: 0.05em;
 }
 
 .rcl-site .admin-batch-summary-card-duplicates-section {

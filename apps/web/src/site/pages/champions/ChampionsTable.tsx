@@ -49,18 +49,16 @@ export function ChampionsTable({
             onChange={(event) => setQuery(event.target.value)}
           />
         </label>
-        <label htmlFor={`${selectId}-1`} className="select-field">
-          Ordenar por
-          <Select
-            id={`${selectId}-1`}
-            value={order}
-            onChange={(event) => setOrder(event.target.value as ChampionOrder)}
-          >
-            <option value="games">Más jugados</option>
-            <option value="winRate">Porcentaje de victorias</option>
-            <option value="name">Nombre</option>
-          </Select>
-        </label>
+        <Select
+          label="Ordenar por"
+          id={`${selectId}-1`}
+          value={order}
+          onChange={(event) => setOrder(event.target.value as ChampionOrder)}
+        >
+          <option value="games">Más jugados</option>
+          <option value="winRate">Porcentaje de victorias</option>
+          <option value="name">Nombre</option>
+        </Select>
         <output className="meta">
           {filtered.length} campeones · {rows[0]?.totalGames ?? 0} mapas analizados
         </output>

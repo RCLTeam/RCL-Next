@@ -33,7 +33,6 @@
 .rcl-site .page-heading .section-heading h1 {
   font-size: clamp(48px, 7vw, 84px);
   line-height: 0.95;
-  letter-spacing: 0;
 }
 
 .rcl-site .page-heading .eyebrow {
@@ -48,7 +47,6 @@
   margin: calc(-1 * var(--page-spacing)) calc(-1 * var(--page-gutter)) var(--page-spacing);
   border-bottom: 1px solid var(--line);
   font: 10px var(--mono);
-  letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--muted);
 }
