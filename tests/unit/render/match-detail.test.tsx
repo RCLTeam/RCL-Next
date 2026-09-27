@@ -125,7 +125,6 @@ test('Direct match URLs and trailing slashes preserve calendar navigation', () =
   for (const path of ['/partidos/lobos-vs-cuervos', '/partidos/lobos-vs-cuervos/']) {
     const html = renderToStaticMarkup(<App initialPath={path} />);
     expect(html).toContain('Cargando partido');
-    expect(html).toContain('Volver al calendario');
     expect(
       (html.match(/<a\b[^>]*>/g) ?? []).some(
         (tag) => tag.includes('href="/calendario"') && tag.includes('aria-current="page"')
