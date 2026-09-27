@@ -11,5 +11,5 @@ coverage/
 __pycache__/
 *.py[cod]
 
-# Local PostgreSQL data (Docker volume bind mount, if ever used)
-postgres-data/
+# Uploaded editorial assets
+**/data/editorial-images/

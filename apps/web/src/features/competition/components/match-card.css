@@ -1,0 +1,219 @@
+/* Match card — MatchCard */
+
+.rcl-site .match-row.is-live {
+  border-color: var(--crimson);
+}
+
+.rcl-site .match-date {
+  color: var(--muted);
+  font: 11px/1.6 var(--mono);
+  text-transform: uppercase;
+}
+
+.rcl-site .match-date strong {
+  color: var(--text);
+  font-size: 17px;
+  margin-left: 12px;
+  display: inline;
+}
+
+@media (min-width: 651px) {
+  .rcl-site .match-date strong {
+    margin-left: 0;
+    display: block;
+  }
+}
+
+.rcl-site .match-teams {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+}
+
+@media (min-width: 651px) {
+  .rcl-site .match-teams {
+    gap: 16px;
+  }
+}
+
+.rcl-site .match-teams > span {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+  font-size: 12px;
+  text-align: center;
+  flex-direction: column;
+}
+
+@media (min-width: 651px) {
+  .rcl-site .match-teams > span {
+    font-size: 13px;
+    text-align: left;
+    flex-direction: row;
+  }
+}
+
+.rcl-site .match-teams > span:last-child {
+  justify-content: flex-end;
+  text-align: center;
+  flex-direction: column-reverse;
+}
+
+@media (min-width: 651px) {
+  .rcl-site .match-teams > span:last-child {
+    text-align: right;
+    flex-direction: row;
+  }
+}
+
+.rcl-site .match-score-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  z-index: 2;
+}
+
+.rcl-site .spoiler-toggle {
+  display: none; 
+}
+
+.rcl-site .match-score-spoiler {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  min-width: 180px;
+  min-height: 48px;
+  border-radius: 6px;
+}
+
+.rcl-site .spoiler-cover {
+  position: absolute;
+  inset: 0;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font: 700 11px var(--mono);
+  text-transform: uppercase;
+  border-radius: inherit;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.rcl-site .match-score-spoiler:hover .spoiler-cover {
+  background: var(--panel-raised);
+  color: var(--text);
+}
+
+.rcl-site .spoiler-toggle:checked ~ .spoiler-cover { display: none; }
+
+.rcl-site .match-score {
+  font: 700 28px var(--display2);
+  white-space: nowrap;
+}
+
+.rcl-site .match-meta {
+  gap: 7px;
+  font: 10px/1.5 var(--mono);
+  color: var(--muted);
+  text-transform: uppercase;
+  grid-column: 2;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  display: flex;
+}
+
+@media (min-width: 651px) {
+  .rcl-site .match-meta {
+    justify-content: normal;
+    flex-wrap: nowrap;
+    display: grid;
+  }
+}
+
+@media (min-width: 1151px) {
+  .rcl-site .match-meta {
+    grid-column: auto;
+  }
+}
+
+.rcl-site .match-row {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--purple);
+  position: relative;
+  padding: 18px;
+  flex-direction: column;
+  gap: 18px;
+  align-items: stretch;
+  display: flex;
+}
+
+@media (min-width: 651px) {
+  .rcl-site .match-row {
+    padding: 22px;
+    flex-direction: row;
+    align-items: center;
+    display: grid;
+    grid-template-columns: 70px minmax(0, 1fr);
+  }
+}
+
+@media (min-width: 1151px) {
+  .rcl-site .match-row {
+    grid-template-columns: 80px minmax(0, 1fr) 140px 108px;
+  }
+}
+
+.rcl-site .match-actions {
+  display: grid;
+  gap: 12px;
+}
+
+.rcl-site .match-detail-link::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+}
+
+.rcl-site .match-detail-link:focus-visible::after {
+  outline: 2px solid var(--lime);
+  outline-offset: 3px;
+}
+
+.rcl-site .match-stream-link {
+  position: relative;
+  z-index: 1;
+}
+
+.rcl-site .match-row:has(.match-detail-link):hover {
+  border-color: var(--lime);
+}
+
+.rcl-site .match-row > .text-link {
+  grid-column: 2;
+}
+
+@media (min-width: 1151px) {
+  .rcl-site .match-row > .text-link {
+    grid-column: auto;
+  }
+}
+
+.rcl-site .match-row > .meta {
+  grid-column: 2;
+}
+
+@media (min-width: 1151px) {
+  .rcl-site .match-row > .meta {
+    grid-column: auto;
+  }
+}

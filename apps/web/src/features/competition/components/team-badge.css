@@ -1,0 +1,36 @@
+/* Team badge — TeamBadge */
+
+.rcl-site .team-badge {
+  width: 40px;
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border: 1px solid var(--line);
+  background: var(--panel-raised);
+  color: var(--lime);
+  font: 12px var(--mono);
+  padding: 5px;
+}
+
+.rcl-site .team-badge img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.rcl-site .team-logo-viewport {
+  position: relative;
+  display: block;
+  width: 75%;
+  height: 75%;
+  overflow: hidden;
+}
+
+.rcl-site .team-badge img.team-logo-normalized {
+  position: absolute;
+  max-width: none;
+  max-height: none;
+  object-fit: fill;
+}

@@ -1,0 +1,99 @@
+/* Page-specific styles: admin. Base styles, states and responsive rules stay with their component. */
+
+/* Page layout and heading */
+
+.rcl-site .admin-content {
+  width: 100%;
+  min-height: 65vh;
+  padding: 24px var(--page-gutter);
+}
+
+@media (min-width: 651px) {
+  .rcl-site .admin-content {
+    padding: 40px var(--page-gutter);
+  }
+}
+
+.rcl-site .admin-heading {
+  margin-bottom: 24px;
+}
+
+.rcl-site .admin-heading h1 {
+  font: 900 clamp(48px, 7vw, 84px)/0.95 var(--display);
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.rcl-site .admin-navigation {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 32px;
+}
+
+.rcl-site .admin-navigation a {
+  color: var(--muted);
+  text-decoration: none;
+  padding: 14px 20px;
+  border-bottom: 3px solid transparent;
+  font-weight: 700;
+}
+
+.rcl-site .admin-navigation a:hover, .rcl-site .admin-navigation a[aria-current='page'] {
+  color: var(--lime);
+  border-bottom-color: var(--lime);
+}
+
+.rcl-site .admin-navigation a:focus-visible, .rcl-site .admin-overview a:focus-visible {
+  outline: 2px solid var(--lime);
+  outline-offset: 3px;
+}
+
+.rcl-site .admin-overview {
+  display: grid;
+  gap: 24px;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 751px) {
+  .rcl-site .admin-overview {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.rcl-site .admin-overview > a {
+  display: block;
+  padding: 32px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  text-decoration: none;
+  color: var(--text);
+}
+
+.rcl-site .admin-overview > a:hover {
+  border-color: var(--lime);
+}
+
+.rcl-site .admin-overview h2 {
+  font: 700 44px/1 var(--display2);
+  margin: 18px 0;
+}
+
+.rcl-site .admin-overview p {
+  color: var(--muted);
+  line-height: 1.6;
+  margin-bottom: 28px;
+}
+
+.rcl-site .admin-overview > a > span:last-child {
+  color: var(--lime);
+}
+
+.rcl-site .crud-operations-resource-selector {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 32px;
+  max-width: 420px;
+}
+

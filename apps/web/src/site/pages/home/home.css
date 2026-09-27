@@ -1,0 +1,33 @@
+/* Home sections, in display order. Keep section rules in their own files. */
+@import './components/HomeHero/home-hero.css';
+@import './components/FeaturedMatch/featured-match.css';
+@import './components/WeeklyTeam/weekly-team.css';
+@import './components/EditorialGrid/editorial-grid.css';
+
+.rcl-site .home-division-sticky {
+  position: sticky;
+  top: var(--home-header-height, 0px);
+  z-index: 20;
+  height: 0;
+  pointer-events: none;
+}
+
+.rcl-site .home-division-controls {
+  box-sizing: border-box;
+  width: fit-content;
+  min-width: 0;
+  margin-left: auto;
+  max-width: 100%;
+  background: linear-gradient(
+    to right,
+    transparent 0%,
+    transparent 10%,
+    color-mix(in srgb, var(--void) 97%, transparent) 90%
+  );
+  padding: 12px var(--page-gutter);
+  pointer-events: auto;
+}
+
+.rcl-site .home-division-controls .league-switch {
+  justify-content: flex-end;
+}

@@ -12,7 +12,10 @@
       "**/node_modules/**",
       "**/dist/**",
       "**/coverage/**",
-      "**/packages/database/**",
+      "packages/database/drizzle/**",
+      "**/schema-sync*/**",
+      "**/apps/parser/data/**",
+      "**/apps/parser/result/**",
       "**/*.py"
     ]
   },
@@ -76,10 +79,42 @@
           "level": "error",
           "options": {
             "strictCase": false,
-            "filenameCases": ["camelCase", "export"]
+            "filenameCases": ["camelCase", "kebab-case", "export"]
           }
         }
       }
     }
-  }
+  },
+  "overrides": [
+    {
+      "include": ["**/*.tsx"],
+      "linter": {
+        "rules": {
+          "style": {
+            "useNamingConvention": {
+              "level": "error",
+              "options": {
+                "strictCase": false,
+                "conventions": [
+                  {
+                    "selector": {
+                      "kind": "function"
+                    },
+                    "formats": ["camelCase", "PascalCase"]
+                  }
+                ]
+              }
+            },
+            "useFilenamingConvention": {
+              "level": "error",
+              "options": {
+                "strictCase": false,
+                "filenameCases": ["camelCase", "kebab-case", "PascalCase", "export"]
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
 }

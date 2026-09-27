@@ -3,11 +3,17 @@
   "version": "0.1.0",
   "private": true,
   "packageManager": "pnpm@11.19.0",
+  "type": "module",
   "scripts": {
+    "dev:api": "pnpm build:packages && pnpm --filter @rcl/api dev",
+    "dev:web": "pnpm --filter @rcl/contracts build && pnpm --filter @rcl/web dev",
     "db:generate": "pnpm --filter @rcl/database db:generate",
     "db:migrate": "pnpm --filter @rcl/database db:migrate",
+    "db:seed": "pnpm --filter @rcl/database db:seed",
     "db:studio": "pnpm --filter @rcl/database db:studio",
-    "typecheck": "pnpm -r typecheck",
+    "db:check": "pnpm --filter @rcl/database db:check",
+    "build": "pnpm -r build",
+    "typecheck": "pnpm build:packages && tsc -p tsconfig.json && pnpm -r typecheck",
     "lint": "biome lint .",
     "lint:fix": "biome lint --write .",
     "format": "biome format --write .",
@@ -16,13 +22,25 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "check": "pnpm typecheck && biome check . && vitest run",
-    "prepare": "simple-git-hooks"
+    "prepare": "simple-git-hooks",
+    "build:packages": "pnpm --filter \"./packages/*\" build"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
+    "@electric-sql/pglite": "^0.3.14",
+    "@rcl/contracts": "workspace:*",
+    "@types/adm-zip": "^0.5.8",
+    "@types/node": "^24.3.0",
+    "@types/supertest": "^6.0.3",
+    "@types/ws": "^8.18.1",
     "@vitest/coverage-v8": "^3.0.7",
+    "adm-zip": "^0.6.1",
+    "drizzle-orm": "^0.44.7",
     "simple-git-hooks": "^2.11.1",
-    "vitest": "^3.0.7"
+    "supertest": "^7.1.4",
+    "typescript": "^5.9.2",
+    "vitest": "^3.0.7",
+    "ws": "^8.21.3"
   },
   "simple-git-hooks": {
     "pre-commit": "pnpm biome check --staged --no-errors-on-unmatched"
