@@ -11,7 +11,7 @@ export function LeaguePortal({
   route: ResolvedRoute;
   wsUrl?: string | undefined;
 }) {
-  const competition = useCompetition(route.competition);
+  const competition = useCompetition(route.competition, route.id === 'ligas');
   return (
     <SiteLayout
       {...(route.competition !== false ? { competition } : {})}
