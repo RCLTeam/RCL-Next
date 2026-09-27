@@ -831,6 +831,18 @@
           "primaryKey": false,
           "notNull": false
         },
+        "jornada": {
+          "name": "jornada",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "discord_channel_id": {
+          "name": "discord_channel_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp with time zone",
@@ -999,6 +1011,13 @@
             "id_round",
             "team1_id",
             "team2_id"
+          ]
+        },
+        "matches_discord_channel_id_unique": {
+          "name": "matches_discord_channel_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "discord_channel_id"
           ]
         }
       },
@@ -2626,6 +2645,12 @@
           "notNull": true,
           "default": true
         },
+        "discord_role_id": {
+          "name": "discord_role_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp with time zone",
@@ -2681,6 +2706,13 @@
           "columns": [
             "season_division_id",
             "name"
+          ]
+        },
+        "teams_discord_role_id_unique": {
+          "name": "teams_discord_role_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "discord_role_id"
           ]
         }
       },

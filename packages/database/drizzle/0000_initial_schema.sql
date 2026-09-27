@@ -85,9 +85,11 @@ CREATE TABLE "teams" (
 	"logo_url" text,
 	"color" varchar(7),
 	"is_active" boolean DEFAULT true NOT NULL,
+	"discord_role_id" bigint,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
-	CONSTRAINT "teams_season_division_name_key" UNIQUE ("season_division_id", "name")
+	CONSTRAINT "teams_season_division_name_key" UNIQUE ("season_division_id", "name"),
+	CONSTRAINT "teams_discord_role_id_unique" UNIQUE("discord_role_id")
 );
 --> statement-breakpoint
 CREATE TABLE "team_memberships" (
@@ -139,6 +141,8 @@ CREATE TABLE "matches" (
 	"stream_url" text,
 	"stream_url_live" varchar(255),
 	"notes" text,
+	"jornada" integer,
+	"discord_channel_id" bigint,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
 	CONSTRAINT "matches_different_teams_check" CHECK ("team1_id" <> "team2_id"),
@@ -146,7 +150,8 @@ CREATE TABLE "matches" (
 	CONSTRAINT "matches_scores_check" CHECK ("team1_score" >= 0 AND "team2_score" >= 0),
 	CONSTRAINT "matches_winner_participant_check" CHECK ("winner_team_id" IS NULL OR "winner_team_id" IN ("team1_id", "team2_id")),
 	CONSTRAINT "matches_unique_combination" UNIQUE ("id_season_division", "id_round", "team1_id", "team2_id"),
-	CONSTRAINT "matches_round_fkey" FOREIGN KEY ("id_round", "id_season_division") REFERENCES "public"."rounds"("id", "id_season_division") ON DELETE set null ON UPDATE no action
+	CONSTRAINT "matches_round_fkey" FOREIGN KEY ("id_round", "id_season_division") REFERENCES "public"."rounds"("id", "id_season_division") ON DELETE set null ON UPDATE no action,
+	CONSTRAINT "matches_discord_channel_id_unique" UNIQUE("discord_channel_id")
 );
 --> statement-breakpoint
 CREATE TABLE "match_games" (
