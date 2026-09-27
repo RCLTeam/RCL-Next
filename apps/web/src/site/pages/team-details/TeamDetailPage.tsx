@@ -203,6 +203,11 @@ export function TeamDetailPage({ teamId }: { teamId: string }) {
       title={state.status === 'ready' ? state.data.name : 'Ficha del equipo'}
       subtitle="Una identidad. Una rebelión."
       description="Conoce a los jugadores y al equipo que hay detrás de la competición."
+      toolbar={
+        <SiteLink className="team-back-link" href="/equipos">
+          ← Volver a equipos
+        </SiteLink>
+      }
     >
       {state.status === 'loading' && <output className="empty-state">Cargando equipo…</output>}
       {state.status === 'missing' && (

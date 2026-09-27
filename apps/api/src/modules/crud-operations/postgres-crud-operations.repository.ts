@@ -39,7 +39,10 @@ function storedResource(resource: ResourceDefinition): StoredResource {
   return { ...resource, table };
 }
 const conflict = (message: string) => new AppError(409, 'DATA_CONFLICT', message);
-const records = (value: unknown): CrudRecord[] => JSON.parse(JSON.stringify(value)) as CrudRecord[];
+const records = (value: unknown): CrudRecord[] =>
+  JSON.parse(
+    JSON.stringify(value, (_key, val) => (typeof val === 'bigint' ? val.toString() : val))
+  ) as CrudRecord[];
 function column(table: PgTable, name: string) {
   const result = getTableColumns(table)[name];
   if (!result) throw new Error('Unknown CRUD column.');

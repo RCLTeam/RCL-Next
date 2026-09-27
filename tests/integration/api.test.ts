@@ -213,7 +213,13 @@ test('calendar filters by round and expands teams', async () => {
 test('roster statistics count distinct champions in completed team games', async () => {
   const source = repository();
   source.teamDetail = async () => ({
-    ...(player.teams[0] ?? defaultTeam),
+    id: homeId,
+    divisionId,
+    name: 'A',
+    shortName: null,
+    logoUrl: null,
+    color: null,
+    isActive: true,
     seasonName: 'T1',
     divisionName: 'Premier',
     members: [

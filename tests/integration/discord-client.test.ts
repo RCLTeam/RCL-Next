@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { DiscordOAuthClient } from '../../../apps/api/src/modules/auth/discord.client.js';
+import { DiscordOAuthClient } from '../../apps/api/src/modules/auth/discord.client.js';
 
 describe('Discord provider failures', () => {
   it.each(['network', 'bad-token', 'profile-error', 'bad-profile'])(

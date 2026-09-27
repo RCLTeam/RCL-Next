@@ -21,6 +21,10 @@ import {
   SuggestionsService
 } from './modules/suggestions/index.js';
 
+(BigInt.prototype as unknown as { toJSON: () => string }).toJSON = function () {
+  return this.toString();
+};
+
 const env = loadEnvironment();
 const connection = createDatabase(env.DATABASE_URL);
 connection.pool.on('error', () => console.error('An idle PostgreSQL connection failed.'));
