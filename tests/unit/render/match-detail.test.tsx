@@ -84,7 +84,7 @@ test('Completed calendar matches expose a readable detail link; scheduled ones d
 
 test('Reports expose player runes from matchups, multiple maps and accurate sides with missing data', () => {
   const html = renderToStaticMarkup(<MatchReport match={report} />);
-  expect(html).toContain('2–1');
+  expect(html).toContain('2 – 1');
   expect(html).toContain('Mapa 2');
   expect(html).toContain('25:00');
   expect(html).toContain('Lobos · Lado rojo');

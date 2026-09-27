@@ -1,7 +1,7 @@
 import React from 'react';
 import { renderToString } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
-import { DataState } from '../../../apps/web/src/shared/components/DataState.js';
+import { DataState } from '../../../apps/web/src/shared/components/DataState/DataState.js';
 
 describe('DataState rendering primitive', () => {
   it('renders loading message', () => {
