@@ -1,5 +1,6 @@
 import type { DatabaseImportPreview } from '@rcl/contracts';
 import React, { useEffect, useRef, useState } from 'react';
+import { Modal } from '../../../shared/components/Modal/Modal.js';
 import { useAuth } from '../../auth/components/AuthProvider.js';
 import {
   exportDatabase,
@@ -20,6 +21,7 @@ export function DatabaseTransferPanel() {
   const running = useRef(false);
   const mounted = useRef(true);
   const validation = useRef<AbortController | null>(null);
+
   useEffect(() => {
     mounted.current = true;
     return () => {
@@ -27,6 +29,7 @@ export function DatabaseTransferPanel() {
       validation.current?.abort();
     };
   }, []);
+
   async function run(label: string, action: () => Promise<void>) {
     if (running.current) return;
     running.current = true;
@@ -43,6 +46,7 @@ export function DatabaseTransferPanel() {
       if (mounted.current) setBusy('');
     }
   }
+
   async function download() {
     const blob = await exportDatabase();
     const url = URL.createObjectURL(blob);
@@ -56,12 +60,14 @@ export function DatabaseTransferPanel() {
     if (mounted.current)
       setNotice('Exportación completada. Se ha iniciado la descarga del backup .dump.');
   }
+
   async function validate() {
     if (!file || !owner) return;
     validation.current = new AbortController();
     const result = await previewDatabaseImport(file, validation.current.signal);
     if (mounted.current) setPreview(result);
   }
+
   async function restore() {
     if (!file || !preview || !owner) return;
     try {
@@ -76,6 +82,7 @@ export function DatabaseTransferPanel() {
       throw error;
     }
   }
+
   if (completed)
     return (
       <section className="database-transfer" aria-label="Base de datos">
@@ -89,6 +96,7 @@ export function DatabaseTransferPanel() {
         </a>
       </section>
     );
+
   return (
     <section className="database-transfer" aria-label="Importar y exportar base de datos">
       <div className="content-manager-heading">
@@ -198,32 +206,19 @@ export function DatabaseImportDialog({
   onCancel: () => void;
   onConfirm: () => void;
 }) {
-  const dialog = useRef<HTMLDialogElement>(null);
   const [confirmation, setConfirmation] = useState('');
-  useEffect(() => {
-    const previous = document.activeElement;
-    dialog.current?.showModal();
-    return () => {
-      if (previous instanceof HTMLElement) previous.focus();
-    };
-  }, []);
+
+  const handleClose = () => {
+    if (!busy) onCancel();
+  };
+
   return (
-    <dialog
-      ref={dialog}
-      className="database-import-dialog"
-      aria-labelledby="database-import-title"
-      aria-describedby="database-import-warning"
-      onCancel={(event) => {
-        event.preventDefault();
-        if (!busy) onCancel();
-      }}
-    >
-      <h3 id="database-import-title">Confirmar importación</h3>
+    <Modal title="Confirmar importación" onClose={handleClose}>
       <p>{filename}</p>
       {preview.exportedAt && <p>Fecha del backup: {preview.exportedAt}</p>}
       <p id="database-import-warning">
         Se reemplazarán los datos de todas las tablas indicadas. Esta acción no se puede deshacer
-        desde la web. El esquema se conserva; se cerrarán las sesiones y tu cuenta mantendrá el rol
+        desde la web. El esquema se conserva; se cierran las sesiones y tu cuenta mantendrá el rol
         owner.
       </p>
       <div className="database-import-table">
@@ -258,7 +253,7 @@ export function DatabaseImportDialog({
         onChange={(event) => setConfirmation(event.target.value)}
       />
       <div className="database-transfer-actions">
-        <button type="button" className="btn-ghost" disabled={busy} onClick={onCancel}>
+        <button type="button" className="btn-ghost" disabled={busy} onClick={handleClose}>
           Cancelar
         </button>
         <button
@@ -270,6 +265,6 @@ export function DatabaseImportDialog({
           {busy ? 'Importando…' : 'Confirmar importación'}
         </button>
       </div>
-    </dialog>
+    </Modal>
   );
 }

@@ -1,8 +1,8 @@
 /* Home sections, in display order. Keep section rules in their own files. */
-@import './home-hero.css';
-@import './featured-match.css';
-@import './weekly-team.css';
-@import './editorial-grid.css';
+@import './components/HomeHero/home-hero.css';
+@import './components/FeaturedMatch/featured-match.css';
+@import './components/WeeklyTeam/weekly-team.css';
+@import './components/EditorialGrid/editorial-grid.css';
 
 .rcl-site .home-division-sticky {
   position: sticky;

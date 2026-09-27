@@ -3,10 +3,10 @@ import { safeStreamUrl } from '../../../features/competition/api/competition-api
 import { DivisionSwitch } from '../../../features/competition/components/DivisionSwitch.js';
 import type { Competition } from '../../../features/competition/hooks/useCompetition.js';
 import { EditorialPage } from '../editorial/EditorialPage.js';
-import { EditorialGrid } from './EditorialGrid.js';
-import { HomeFeaturedMatch } from './HomeFeaturedMatch.js';
-import { HomeHero } from './HomeHero.js';
-import { TeamOfTheWeekStrip } from './TeamOfTheWeekStrip.js';
+import { EditorialGrid } from './components/EditorialGrid/EditorialGrid.js';
+import { HomeFeaturedMatch } from './components/FeaturedMatch/FeaturedMatch.js';
+import { HomeHero } from './components/HomeHero/HomeHero.js';
+import { TeamOfTheWeekStrip } from './components/WeeklyTeam/TeamOfTheWeekStrip.js';
 import './home.css';
 
 export function HomePage({

@@ -1,0 +1,74 @@
+.rcl-site .base-dialog {
+  width: calc(100vw - 16px);
+  height: fit-content; 
+  max-height: calc(100dvh - 24px);
+  box-sizing: border-box;
+  padding: 16px;
+  margin: auto;
+  overflow: auto;
+  color: var(--text);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--lime) 50%, transparent) var(--void);
+}
+
+.rcl-site .base-dialog::backdrop {
+  background: color-mix(in srgb, var(--void) 50%, transparent);
+  backdrop-filter: blur(4px);
+}
+
+.rcl-site .base-dialog-toolbar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.rcl-site .base-dialog-toolbar h2 {
+  margin: 0;
+  font-size: 1.125rem;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+
+.rcl-site .base-dialog-toolbar button {
+  flex-shrink: 0;
+}
+
+.rcl-site .base-dialog::-webkit-scrollbar {
+  width: 6px;
+}
+
+.rcl-site .base-dialog::-webkit-scrollbar-track {
+  background: var(--void);
+  border-left: 1px solid var(--line);
+}
+
+.rcl-site .base-dialog::-webkit-scrollbar-thumb {
+  background: var(--lime);
+  border-radius: 0px;
+}
+
+@media (min-width: 768px) {
+  .rcl-site .base-dialog {
+    width: min(var(--dialog-max-width, 800px), calc(100vw - 64px));
+    max-height: min(85dvh, 700px); 
+    padding: clamp(20px, 3vw, 28px);
+  }
+
+  .rcl-site .base-dialog-toolbar {
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+
+  .rcl-site .base-dialog-toolbar h2 {
+    font-size: 1.25rem;
+  }
+
+  .rcl-site .base-dialog::-webkit-scrollbar {
+    width: 8px;
+  }
+}

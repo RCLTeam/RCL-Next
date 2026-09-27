@@ -30,6 +30,13 @@ export function LeagueDivisionGrid({
             href="/clasificacion"
             onClick={() => onSelectDivision(division.id)}
           >
+            Ver formato
+          </SiteLink>
+          <SiteLink
+            className="btn-ghost"
+            href="/clasificacion"
+            onClick={() => onSelectDivision(division.id)}
+          >
             Ver clasificación
           </SiteLink>
         </article>
