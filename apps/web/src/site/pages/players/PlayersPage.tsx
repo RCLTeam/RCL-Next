@@ -64,7 +64,7 @@ export function PlayersPage({ competition }: { competition: Competition }) {
       title="Jugadores"
       subtitle="Protagonistas de la rebelión"
       description="El MVP de la jornada y todos los protagonistas de RCL, con sus estadísticas de temporada."
-      toolbar={<CompetitionFilters competition={competition} divisionControl="select" />}
+      toolbar={<CompetitionFilters competition={competition} />}
     >
       <DataState
         state={resolveCompetitionState(competition, players)}

@@ -70,26 +70,6 @@
   border-left: 3px solid var(--lime);
 }
 
-.rcl-site .database-import-dialog {
-  width: min(900px, calc(100vw - 32px));
-  max-height: calc(100dvh - 48px);
-  overflow: auto;
-  color: var(--text);
-  background: var(--panel);
-  border: 1px solid var(--crimson);
-  padding: 16px;
-}
-
-@media (min-width: 751px) {
-  .rcl-site .database-import-dialog {
-    padding: 28px;
-  }
-}
-
-.rcl-site .database-import-dialog::backdrop {
-  background: rgb(0 0 0 / 75%);
-}
-
 .rcl-site .database-import-table {
   overflow-x: auto;
   margin: 24px 0;

@@ -1,5 +1,6 @@
 import type { MatchParticipant } from '@rcl/contracts';
-import React, { useEffect, useRef } from 'react';
+import React from 'react';
+import { Modal } from '../../../../../shared/components/Modal/Modal.js';
 import { GameIcon } from '../../../../../shared/riot/GameIcon.js';
 import { STAT_SHARD_SLOTS } from '../../../../../shared/riot/data-dragon.service.js';
 import { type GameCatalog, getRuneTrees } from '../../../../../shared/riot/riot-assets.service.js';
@@ -11,34 +12,6 @@ export function MatchRunesDialog({
   catalog,
   onClose
 }: { runePlayer: MatchParticipant; catalog: GameCatalog; onClose: () => void }) {
-  const dialog = useRef<HTMLDialogElement>(null);
-  const titleId = React.useId();
-  const handleBackdropClick = (event: React.MouseEvent<HTMLDialogElement>) => {
-    if (!dialog.current) return;
-    const rect = dialog.current.getBoundingClientRect();
-    const isClickOutside =
-      event.clientX < rect.left ||
-      event.clientX > rect.right ||
-      event.clientY < rect.top ||
-      event.clientY > rect.bottom;
-    if (isClickOutside) {
-      onClose();
-    }
-  };
-  useEffect(() => {
-    const element = dialog.current;
-    const previousFocus = document.activeElement;
-    const previousOverflow = document.body.style.overflow;
-    element?.showModal();
-    document.body.style.overflow = 'hidden';
-    return () => {
-      element?.close();
-      document.body.style.overflow = previousOverflow;
-      if (previousFocus instanceof HTMLElement && previousFocus.isConnected) {
-        previousFocus.focus({ preventScroll: true });
-      }
-    };
-  }, []);
   const selectedRuneIds = new Set(
     runePlayer?.runes
       ? [
@@ -54,38 +27,19 @@ export function MatchRunesDialog({
         ]
       : []
   );
+
   const primaryTreeId = runePlayer?.runes?.primaryPerk
     ? Number(runePlayer.runes.primaryPerk)
     : undefined;
   const secondaryTreeId = runePlayer?.runes?.secundaryRuneId
     ? Number(runePlayer.runes.secundaryRuneId)
     : undefined;
+
   const [primaryTree] = primaryTreeId ? getRuneTrees(catalog, primaryTreeId) : [];
   const [secondaryTree] = secondaryTreeId ? getRuneTrees(catalog, secondaryTreeId) : [];
-  return (
-    <dialog
-      ref={dialog}
-      className="match-runes-dialog"
-      aria-labelledby={titleId}
-      onClick={handleBackdropClick}
-      onKeyDown={(event) => {
-        if (event.key === 'Escape') {
-          event.preventDefault();
-          onClose();
-        }
-      }}
-      onCancel={(event) => {
-        event.preventDefault();
-        onClose();
-      }}
-    >
-      <div className="match-runes-toolbar">
-        <h2 id={titleId}>Runas de {runePlayer.gameName}</h2>
 
-        <button type="button" className="btn-ghost" onClick={onClose} aria-label="Cerrar runas">
-          Cerrar ×
-        </button>
-      </div>
+  return (
+    <Modal title={`Runas de ${runePlayer.gameName}`} onClose={onClose}>
       <article className="match-rune-card">
         <div className="match-rune-card-header">
           <p className="meta">
@@ -166,6 +120,6 @@ export function MatchRunesDialog({
           </div>
         )}
       </article>
-    </dialog>
+    </Modal>
   );
 }

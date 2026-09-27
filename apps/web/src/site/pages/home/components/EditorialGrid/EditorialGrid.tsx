@@ -1,8 +1,8 @@
 import type { EditorialArticle } from '@rcl/contracts';
 import React from 'react';
-import { ContentStatus } from '../../../features/home-content/components/ContentStatus.js';
-import { useHomeContent } from '../../../features/home-content/useHomeContent.js';
-import { SiteLink } from '../../../shared/components/SiteLink.js';
+import { ContentStatus } from '../../../../../features/home-content/components/ContentStatus.js';
+import { useHomeContent } from '../../../../../features/home-content/useHomeContent.js';
+import { SiteLink } from '../../../../../shared/components/SiteLink.js';
 
 export function EditorialGrid() {
   const content = useHomeContent<EditorialArticle[]>('articles');
