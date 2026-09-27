@@ -1,7 +1,7 @@
 import React from 'react';
-import { MatchCard } from '../../../features/competition/components/MatchCard.js';
-import type { Match } from '../../../features/competition/types/competition.types.js';
-import { SiteLink } from '../../../shared/components/SiteLink.js';
+import { MatchCard } from '../../../../../features/competition/components/MatchCard.js';
+import type { Match } from '../../../../../features/competition/types/competition.types.js';
+import { SiteLink } from '../../../../../shared/components/SiteLink.js';
 
 export function HomeFeaturedMatch({ featured }: { featured?: Match | undefined }) {
   return (

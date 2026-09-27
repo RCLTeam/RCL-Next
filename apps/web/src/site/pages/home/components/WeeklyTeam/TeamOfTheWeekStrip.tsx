@@ -1,9 +1,9 @@
 import type { WeeklyTeam } from '@rcl/contracts';
 import React, { useState } from 'react';
-import type { Competition } from '../../../features/competition/hooks/useCompetition.js';
-import { ContentStatus } from '../../../features/home-content/components/ContentStatus.js';
-import { useHomeContent } from '../../../features/home-content/useHomeContent.js';
-import { Select } from '../../../shared/components/Selector/Selector.js';
+import type { Competition } from '../../../../../features/competition/hooks/useCompetition.js';
+import { ContentStatus } from '../../../../../features/home-content/components/ContentStatus.js';
+import { useHomeContent } from '../../../../../features/home-content/useHomeContent.js';
+import { Select } from '../../../../../shared/components/Selector/Selector.js';
 import { WeeklyChampionBackground } from './WeeklyChampionBackground.js';
 
 const roles = ['top', 'jungle', 'mid', 'adc', 'support'] as const;
