@@ -9,29 +9,31 @@ export interface LeagueDivisionGridProps {
   onSelectDivision: (divisionId: string) => void;
 }
 
-export function LeagueDivisionGrid({
-  divisions,
+function LeagueFormatCard({
+  division,
   seasonName,
   onSelectDivision
-}: LeagueDivisionGridProps) {
+}: {
+  division: Division;
+  seasonName?: string | undefined;
+  onSelectDivision: (divisionId: string) => void;
+}) {
+  const name = division.code.trim().toLowerCase();
+  const brand = /^ascend\b/.test(name) ? 'ascend' : 'premier';
+  const videoId = brand === 'ascend' ? '4NpDE3v1k-g' : 'WtXUe4SUu-g';
+  const source = /^(premier|ascend)\b/.test(name)
+    ? `https://www.youtube-nocookie.com/embed/${videoId}`
+    : undefined;
   return (
-    <div className="league-grid">
-      {divisions.map((division, index) => (
-        <article
-          className={`league-card ${index % 2 === 0 ? 'premier' : 'ascend'}`}
-          key={division.id}
-        >
-          <img src={brandAssets[index % 2 === 0 ? 'premier' : 'ascend']} alt="" loading="lazy" />
-          <span className="meta">{seasonName}</span>
+    <article className={`league-card league-format-card ${brand}`}>
+      <div className="league-card-copy">
+        <span className="meta">{seasonName}</span>
+        <div className="league-card-title">
           <h3>{division.name}</h3>
-          <p>Consulta los equipos, las jornadas y la clasificación de esta división.</p>
-          <SiteLink
-            className="btn-ghost"
-            href="/clasificacion"
-            onClick={() => onSelectDivision(division.id)}
-          >
-            Ver formato
-          </SiteLink>
+          <img className="league-card-crown" src={brandAssets[brand]} alt="" loading="lazy" />
+        </div>
+        <p>Consulta los equipos, las jornadas y la clasificación de esta división.</p>
+        <div className="league-card-actions">
           <SiteLink
             className="btn-ghost"
             href="/clasificacion"
@@ -39,7 +41,39 @@ export function LeagueDivisionGrid({
           >
             Ver clasificación
           </SiteLink>
-        </article>
+        </div>
+      </div>
+      {source && (
+        <div className="league-format">
+          <iframe
+            className="league-format-video"
+            src={source}
+            title={`Vídeo del formato de ${division.name}`}
+            loading="lazy"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            allowFullScreen
+            referrerPolicy="strict-origin-when-cross-origin"
+          />
+        </div>
+      )}
+    </article>
+  );
+}
+
+export function LeagueDivisionGrid({
+  divisions,
+  seasonName,
+  onSelectDivision
+}: LeagueDivisionGridProps) {
+  return (
+    <div className="league-grid league-format-grid">
+      {divisions.map((division) => (
+        <LeagueFormatCard
+          key={division.id}
+          division={division}
+          seasonName={seasonName}
+          onSelectDivision={onSelectDivision}
+        />
       ))}
     </div>
   );

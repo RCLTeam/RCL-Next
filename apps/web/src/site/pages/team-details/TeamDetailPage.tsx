@@ -1,4 +1,5 @@
-import React, { useEffect } from 'react';
+import type React from 'react';
+import { useEffect } from 'react';
 import { TeamBadge } from '../../../features/competition/components/TeamBadge.js';
 import { useCompetitionDetail } from '../../../features/competition/hooks/useCompetitionDetail.js';
 import type {
@@ -79,7 +80,10 @@ export function TeamProfile({ team }: { team: TeamDetail }) {
     );
   return (
     <>
-      <header className="team-profile-header">
+      <header
+        className="team-profile-header"
+        style={{ '--team-color': team.color || 'var(--panel)' } as React.CSSProperties}
+      >
         <TeamBadge team={team} />
         <div>
           <span className="eyebrow">{team.divisionName}</span>

@@ -1,5 +1,45 @@
 /* League cards — HomePage / LeaguesPage */
 
+.rcl-site .league-format-video {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  object-fit: contain;
+  background: #000;
+  border: 1px solid var(--line);
+}
+
+.rcl-site .league-format {
+  min-width: 0;
+}
+
+.rcl-site .league-card.league-format-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: center;
+  gap: 28px;
+  transform: none;
+}
+
+.rcl-site .league-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.rcl-site .league-format-video:fullscreen {
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+@media (min-width: 851px) {
+  .rcl-site .league-card.league-format-card {
+    grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+    gap: 16px;
+  }
+}
+
 .rcl-site .league-card p {
   color: var(--muted);
   line-height: 1.7;
@@ -10,6 +50,7 @@
 
 .rcl-site .league-grid {
   display: grid;
+  align-items: start;
   gap: 22px;
   grid-template-columns: 1fr;
 }
@@ -61,11 +102,34 @@
   overflow-wrap: anywhere;
 }
 
+.rcl-site .league-card-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.rcl-site .league-card-title h3 {
+  min-width: 0;
+}
+
+.rcl-site .league-card img.league-card-crown {
+  position: static;
+  width: clamp(64px, 7vw, 110px);
+  height: auto;
+  flex-shrink: 0;
+  transform: translateY(-20px) rotate(20deg);
+  pointer-events: none;
+}
+
 .rcl-site a.league-card:hover {
-  border-color: var(--lime);
+  border-color: var(--purple);
 }
 
 .rcl-site .league-card:hover {
   transform: translateY(-5px);
+  border-color: var(--purple);
+}
+
+.rcl-site .league-card.ascend:hover {
   border-color: var(--lime);
 }
