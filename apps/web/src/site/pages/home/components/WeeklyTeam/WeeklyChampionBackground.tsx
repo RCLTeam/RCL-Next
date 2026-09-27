@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { getGameAsset } from '../../../shared/riot/riot-assets.service.js';
-import { useGameCatalog } from '../../../shared/riot/useGameCatalog.js';
+import { getGameAsset } from '../../../../../shared/riot/riot-assets.service.js';
+import { useGameCatalog } from '../../../../../shared/riot/useGameCatalog.js';
 
 export function WeeklyChampionBackground({ champions }: { champions: string[] }) {
   const catalog = useGameCatalog();

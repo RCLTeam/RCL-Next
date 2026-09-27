@@ -1,5 +1,5 @@
 import React from 'react';
-import { SiteLink } from '../../../shared/components/SiteLink.js';
+import { SiteLink } from '../../../../../shared/components/SiteLink.js';
 
 export interface HomeHeroProps {
   seasonName?: string | undefined;
