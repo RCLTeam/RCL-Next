@@ -44,7 +44,7 @@ export function App({ initialPath, wsUrl }: AppProps) {
     <AuthProvider>
       <NavigationContext.Provider value={{ path, navigate }}>
         {route ? (
-          <LeaguePortal route={route} wsUrl={wsUrl} />
+          <LeaguePortal key={path} route={route} wsUrl={wsUrl} />
         ) : (
           <SiteLayout>
             <NotFoundPage />

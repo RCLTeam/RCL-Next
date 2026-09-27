@@ -11,6 +11,8 @@ export type {
 export interface Season {
   id: string;
   name: string;
+  startsOn?: string | null;
+  endsOn?: string | null;
 }
 export interface Division {
   id: string;

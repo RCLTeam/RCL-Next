@@ -1,9 +1,8 @@
 import type { CrudField, CrudRecord, CrudResource, CrudValue } from '@rcl/contracts';
 import React, { useEffect, useId, useState } from 'react';
 import { Select } from '../../../shared/components/Selector/Selector.js';
+import { normalizeTeamLogoPath, teamLogoDirectory } from '../../../shared/resources/team-logos.js';
 import { getCrudRecords, recordLabel } from '../api/crud-operations-api.js';
-
-const teamLogoDirectory = '/src/shared/assets/teams_logo/';
 
 export function initialValues(resource: CrudResource, record: CrudRecord | null): CrudRecord {
   return Object.fromEntries(
@@ -149,8 +148,9 @@ function RecordField({
           value={
             field.type === 'datetime'
               ? localDateTime(value)
-              : field.name === 'logoUrl' && String(value ?? '').startsWith(teamLogoDirectory)
-                ? String(value).slice(teamLogoDirectory.length)
+              : field.name === 'logoUrl' &&
+                  normalizeTeamLogoPath(String(value ?? '')).startsWith(teamLogoDirectory)
+                ? normalizeTeamLogoPath(String(value)).slice(teamLogoDirectory.length)
                 : String(value ?? '')
           }
           required={field.required}
