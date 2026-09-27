@@ -1,83 +1,54 @@
-.rcl-site .player-back-link {
-  color: var(--lime);
-}
-
+.rcl-site .player-back-link { color: var(--lime); }
+.rcl-site .player-detail-profile { min-width: 0; }
 .rcl-site .player-profile-header {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 28px;
-  padding: 24px;
-  border: 1px solid var(--line);
-  border-left: 3px solid var(--purple);
-  background: var(--panel);
-  overflow-wrap: anywhere;
-}
-
-@media (min-width: 651px) {
-  .rcl-site .player-profile-header {
-    padding: 32px;
-  }
-}
-
-.rcl-site .player-profile-header .player-monogram {
-  margin: 0;
-}
-
-.rcl-site .player-profile-header h2 {
-  margin: 12px 0;
-  font: 700 36px var(--display2);
-}
-
-.rcl-site .player-profile-header p {
-  margin: 0;
-  color: var(--muted);
-}
-
-.rcl-site .player-profile-info {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  margin: 20px 0 40px;
+  gap: 32px;
+  padding: clamp(24px, 4vw, 48px);
   border: 1px solid var(--line);
-}
-
-@media (min-width: 480px) {
-  .rcl-site .player-profile-info {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (min-width: 651px) {
-  .rcl-site .player-profile-info {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-}
-
-.rcl-site .player-profile-info div {
-  padding: 20px;
-}
-
-.rcl-site .player-profile-info dt {
-  font: 11px var(--mono);
-  color: var(--lime);
-  text-transform: uppercase;
-}
-
-.rcl-site .player-profile-info dd {
-  margin: 10px 0 0;
+  border-top: 2px solid var(--profile-color);
+  background: linear-gradient(115deg, var(--panel) 35%, color-mix(in srgb, var(--profile-color) 18%, var(--panel)));
   overflow-wrap: anywhere;
 }
-
-.rcl-site .player-teams > h2 {
-  font: 700 30px var(--display2);
-  text-transform: uppercase;
-}
-
-.rcl-site .player-teams > p {
-  margin-bottom: 24px;
-}
-
-.rcl-site .player-team-card .team-badge {
-  width: 64px;
-  height: 64px;
+.rcl-site .player-profile-identity { min-width: 0; }
+.rcl-site .player-profile-header h2 { margin: 20px 0 12px; font: 900 clamp(48px, 7vw, 92px)/0.95 var(--display); text-transform: uppercase; }
+.rcl-site .player-profile-header p { margin: 8px 0; color: var(--muted); font-size: 14px; }
+.rcl-site .player-profile-header .player-profile-riot { color: var(--text); font: 12px var(--mono); }
+.rcl-site .player-profile-labels { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 24px; }
+.rcl-site .player-profile-labels > span { padding: 7px 10px; border: 1px solid var(--line); background: var(--void); font: 10px var(--mono); text-transform: uppercase; }
+.rcl-site .player-profile-labels .player-captain-label { color: var(--lime); border-color: var(--lime); }
+.rcl-site .player-profile-opgg { display: inline-flex; align-items: center; gap: 12px; min-height: 44px; margin-top: 20px; color: var(--muted); font: 10px var(--mono); text-decoration: none; }
+.rcl-site .player-profile-opgg img { width: 60px; height: 28px; object-fit: contain; }
+.rcl-site .player-profile-team { display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 14px; text-align: center; color: var(--text); text-decoration: none; }
+.rcl-site .player-profile-team .team-badge { width: 150px; height: 150px; padding: 0; border: 0; background: transparent; }
+.rcl-site .player-profile-team strong { font: 700 30px/1.1 var(--display2); text-transform: uppercase; }
+.rcl-site .player-profile-initials { align-self: center; text-align: center; font: 900 140px/1 var(--display); color: var(--muted); opacity: 0.3; }
+.rcl-site .player-profile-info { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); margin: 0 0 44px; border: 1px solid var(--line); border-top: 0; }
+.rcl-site .player-profile-info > div { padding: 20px; min-width: 0; }
+.rcl-site .player-profile-info dt { color: var(--muted); font: 10px var(--mono); text-transform: uppercase; }
+.rcl-site .player-profile-info dd { margin: 10px 0 0; overflow-wrap: anywhere; font-size: 14px; }
+.rcl-site .player-detail-section-heading { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 20px; }
+.rcl-site .player-detail-section-heading h2 { margin: 0; font: 700 36px/1 var(--display2); text-transform: uppercase; }
+.rcl-site .player-performance { margin-bottom: 44px; }
+.rcl-site .player-performance-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px; margin: 0; border: 1px solid var(--line); background: var(--line); }
+.rcl-site .player-performance-grid > div { display: flex; flex-direction: column-reverse; gap: 12px; padding: 24px 20px; background: var(--panel); min-width: 0; }
+.rcl-site .player-performance-grid dt { font: 10px/1.5 var(--mono); text-transform: uppercase; color: var(--muted); }
+.rcl-site .player-performance-grid dd { margin: 0; font: 700 clamp(32px, 4vw, 48px)/1 var(--display2); color: var(--lime); overflow-wrap: anywhere; }
+.rcl-site .player-signature-champion { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; padding: 18px 0; margin: 0; border-bottom: 1px solid var(--line); }
+.rcl-site .player-signature-champion strong { font: 700 26px var(--display2); }
+.rcl-site .player-performance-empty { padding: 28px; border-left: 2px solid var(--profile-color); background: var(--panel); }
+.rcl-site .player-performance-empty h3 { margin: 16px 0 12px; font: 700 32px var(--display2); text-transform: uppercase; }
+.rcl-site .player-performance-empty p { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.7; }
+.rcl-site .player-profile-team-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 16px; }
+.rcl-site .player-profile-membership { display: flex; align-items: center; gap: 20px; padding: 24px; color: var(--text); text-decoration: none; background: var(--panel); border: 1px solid var(--line); overflow-wrap: anywhere; }
+.rcl-site .player-profile-membership > div { min-width: 0; }
+.rcl-site .player-profile-membership .team-badge { width: 68px; height: 68px; border: 0; padding: 0; background: transparent; }
+.rcl-site .player-profile-membership h3 { margin: 10px 0; font: 700 28px/1 var(--display2); text-transform: uppercase; }
+.rcl-site .player-profile-membership p { margin: 0; color: var(--lime); font: 11px/1.6 var(--mono); }
+.rcl-site .player-profile-membership:hover { border-color: var(--profile-color); }
+.rcl-site .player-detail-profile a:focus-visible { outline: 2px solid var(--lime); outline-offset: 4px; }
+.rcl-site .player-profile-team:hover strong, .rcl-site .player-profile-opgg:hover { color: var(--lime); }
+@media (min-width: 701px) {
+  .rcl-site .player-profile-header { grid-template-columns: minmax(0, 1fr) minmax(200px, 0.5fr); }
+  .rcl-site .player-profile-info, .rcl-site .player-performance-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 }

@@ -122,10 +122,6 @@ export function PlayersPage({ competition }: { competition: Competition }) {
               ))}
             </Select>
           </div>
-          <p className="players-stat-note">
-            De mayor a menor · Estadísticas de temporada · Participación: (kills + asistencias) /
-            kills del equipo. Visión y daño mitigado: media por mapa.
-          </p>
           <PlayerGrid players={filtered} sort={sort} catalog={catalog} />
         </section>
       </DataState>
@@ -163,11 +159,28 @@ export function filterPlayers(
 
 function PlayerArt({ player, catalog }: { player: Player; catalog: GameCatalog }) {
   const champion = getGameAsset('champion', player.competition?.champion ?? null, catalog);
+  const noChampion = !player.competition?.champion;
+  const teamLogo = resolveTeamLogo(player.competition?.team?.logoUrl);
   return (
-    <div className="player-art">
+    <div
+      className={`player-art${noChampion ? ' player-art-unplayed' : ''}`}
+      style={
+        {
+          '--player-team-color': player.competition?.team?.color || 'var(--purple)'
+        } as React.CSSProperties
+      }
+    >
       <span className="player-art-fallback" aria-hidden="true">
         {player.gameName.slice(0, 2).toUpperCase()}
       </span>
+      {noChampion && (
+        <>
+          {teamLogo && (
+            <img className="player-unplayed-team" src={teamLogo} alt="" loading="lazy" />
+          )}
+          <span className="player-unplayed-label">Sin campeón registrado</span>
+        </>
+      )}
       {champion?.splashImage && (
         <img
           src={champion.splashImage}
@@ -227,7 +240,6 @@ export function FeaturedPlayer({
                 </div>
               ))}
             </dl>
-            <span className="player-card-action">Ver jugador →</span>
           </div>
         </SiteLink>
       ) : (
@@ -260,16 +272,19 @@ export function PlayerGrid({
           <div className="player-card-body">
             <PlayerTeam player={player} />
             <h3>{player.gameName}</h3>
-            <div className="player-card-stats">
-              <span>
-                {playerSortOptions.find(([key]) => key === sort)?.[1]}{' '}
-                <strong>{formatPlayerStat(player.competition?.stats, sort)}</strong>
-              </span>
-              {sort !== 'winRate' && (
-                <span>{formatPlayerStat(player.competition?.stats, 'winRate')} WR</span>
-              )}
-            </div>
-            <span className="player-card-action">Ver jugador →</span>
+            {!player.competition?.champion && !player.competition?.stats ? (
+              <p className="player-pending-stats">Estadísticas pendientes.</p>
+            ) : (
+              <div className="player-card-stats">
+                <span>
+                  {playerSortOptions.find(([key]) => key === sort)?.[1]}{' '}
+                  <strong>{formatPlayerStat(player.competition?.stats, sort)}</strong>
+                </span>
+                {sort !== 'winRate' && (
+                  <span>{formatPlayerStat(player.competition?.stats, 'winRate')} WR</span>
+                )}
+              </div>
+            )}
           </div>
         </SiteLink>
       ))}

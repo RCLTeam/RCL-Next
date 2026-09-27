@@ -148,10 +148,113 @@ test('regular standings exclude playoffs and unfinished matches', async () => {
   const playoffs = await new CompetitionService(repository()).standings(divisionId, 'playoffs');
   assert.equal(playoffs[0]?.team.id, awayId);
 });
+
+test('regular BO3 standings award the score difference for all four results', async () => {
+  for (const [homeScore, awayScore, difference] of [
+    [2, 0, 2],
+    [2, 1, 1],
+    [0, 2, -2],
+    [1, 2, -1]
+  ] as const) {
+    const source = repository();
+    const otherMatches = (await source.matches(divisionId)).slice(1);
+    source.matches = async () => [
+      {
+        ...match,
+        bestOf: 3,
+        homeScore,
+        awayScore,
+        winnerTeamId: homeScore === 2 ? homeId : awayId
+      },
+      ...otherMatches
+    ];
+    const rows = await new CompetitionService(source).standings(divisionId);
+    const home = rows.find((row) => row.team.id === homeId);
+    const away = rows.find((row) => row.team.id === awayId);
+    assert.equal(home?.mapDifference, difference);
+    assert.equal(away?.mapDifference, -difference);
+    assert.equal(home?.played, 1);
+    assert.equal(away?.played, 1);
+    assert.equal(home?.wins, Number(homeScore === 2));
+    assert.equal(home?.losses, Number(awayScore === 2));
+  }
+});
+test('standings prioritize accumulated difference over series wins', async () => {
+  const source = repository();
+  source.matches = async () => [
+    { ...match, id: 'series-1', bestOf: 3, homeScore: 2, awayScore: 0 },
+    { ...match, id: 'series-2', bestOf: 3, homeScore: 2, awayScore: 0 },
+    ...['series-3', 'series-4', 'series-5'].map((id) => ({
+      ...match,
+      id,
+      bestOf: 3,
+      homeScore: 1,
+      awayScore: 2,
+      winnerTeamId: awayId
+    }))
+  ];
+  const rows = await new CompetitionService(source).standings(divisionId);
+  assert.equal(rows[0]?.team.id, homeId);
+  assert.equal(rows[0]?.mapDifference, 1);
+  assert.equal(rows[0]?.wins, 2);
+  assert.equal(rows[0]?.played, 5);
+  assert.equal(rows[1]?.mapDifference, -1);
+  assert.equal(rows[1]?.wins, 3);
+});
+
 test('calendar filters by round and expands teams', async () => {
   const result = await request(app)
     .get(`/api/v1/divisions/${divisionId}/calendar?roundId=${roundId}`)
     .expect(200);
   assert.equal(result.body.data.length, 2);
   assert.equal(result.body.data[0].homeTeam.name, 'A');
+});
+
+test('roster statistics count distinct champions in completed team games', async () => {
+  const source = repository();
+  source.teamDetail = async () => ({
+    ...(player.teams[0] ?? defaultTeam),
+    seasonName: 'T1',
+    divisionName: 'Premier',
+    members: [
+      {
+        id: 'member',
+        playerId: homeId,
+        name: 'Jugador',
+        role: 'mid',
+        isCaptain: true,
+        gameName: 'Jugador',
+        riotTag: 'EUW',
+        countryCode: 'es'
+      }
+    ]
+  });
+  source.matches = async () => [match];
+  source.matchGames = async () =>
+    ['Ahri', 'Ahri', 'Orianna'].map((champion, index) => ({
+      id: `game-${index}`,
+      gameNumber: index + 1,
+      blueTeamId: homeId,
+      redTeamId: awayId,
+      winnerTeamId: homeId,
+      durationSeconds: 1800,
+      participants: [
+        {
+          id: `participant-${index}`,
+          playerId: homeId,
+          gameName: 'Jugador',
+          riotTag: 'EUW',
+          teamId: homeId,
+          side: 'blue',
+          champion,
+          position: 'mid',
+          build: null,
+          stats: null,
+          runes: null
+        }
+      ]
+    }));
+  const detail = await new CompetitionService(source).teamDetail(homeId);
+  assert.equal(detail.members[0]?.rosterStats?.games, 3);
+  assert.equal(detail.members[0]?.rosterStats?.champions, 2);
 });

@@ -169,7 +169,8 @@ export class PostgresCompetitionRepository implements CompetitionRepository {
           id: teams.id,
           name: teams.name,
           shortName: teams.shortName,
-          logoUrl: teams.logoUrl
+          logoUrl: teams.logoUrl,
+          color: teams.color
         },
         position: sql<
           string | null
@@ -244,7 +245,13 @@ export class PostgresCompetitionRepository implements CompetitionRepository {
       .select({
         playerId: players.id,
         role: teamMemberships.role,
-        team: { id: teams.id, name: teams.name, shortName: teams.shortName, logoUrl: teams.logoUrl }
+        team: {
+          id: teams.id,
+          name: teams.name,
+          shortName: teams.shortName,
+          logoUrl: teams.logoUrl,
+          color: teams.color
+        }
       })
       .from(players)
       .innerJoin(teamMemberships, eq(teamMemberships.discordUserId, players.discordUserId))
@@ -282,6 +289,8 @@ export class PostgresCompetitionRepository implements CompetitionRepository {
         logoUrl: teams.logoUrl,
         seasonName: seasonsDivisions.seasonName,
         divisionName: seasonsDivisions.divisionName,
+        divisionId: teams.seasonDivisionId,
+        color: teams.color,
         role: teamMemberships.role,
         isCaptain: teamMemberships.isCaptain,
         isActive: teams.isActive
