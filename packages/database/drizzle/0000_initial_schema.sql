@@ -137,6 +137,7 @@ CREATE TABLE "matches" (
 	"team1_score" smallint DEFAULT 0 NOT NULL,
 	"team2_score" smallint DEFAULT 0 NOT NULL,
 	"stream_url" text,
+	"stream_url_live" varchar(255),
 	"notes" text,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,

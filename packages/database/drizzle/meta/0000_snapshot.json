@@ -819,6 +819,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "stream_url_live": {
+          "name": "stream_url_live",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
         "notes": {
           "name": "notes",
           "type": "text",

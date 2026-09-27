@@ -122,13 +122,13 @@ function fixture(): Competition {
 
 test('Match cards distinguish scheduled matches from played scores and omit unsafe stream links', () => {
   const completed = renderToStaticMarkup(<MatchCard match={match} />);
-  expect(completed).toContain('2–1');
+  expect(completed).toContain('2 – 1');
   expect(completed).toContain('Finalizado');
   const scheduled = renderToStaticMarkup(
     <MatchCard match={{ ...match, status: 'scheduled', streamUrl: 'javascript:alert(1)' }} />
   );
   expect(scheduled).toContain('>VS<');
-  expect(scheduled).not.toContain('2–1');
+  expect(scheduled).not.toContain('2 – 1');
   expect(scheduled).not.toContain('javascript:');
 });
 
