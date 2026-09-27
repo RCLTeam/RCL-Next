@@ -14,12 +14,15 @@ import { databaseTransferRouter } from './modules/database-transfer/database-tra
 import { DatabaseTransferService } from './modules/database-transfer/database-transfer.service.js';
 import { DiscordBridgeClient } from './modules/discord-bridge/discord-bridge.client.js';
 import { createDiscordBridgeRouter } from './modules/discord-bridge/discord-bridge.router.js';
+import { EditorialImageStore } from './modules/home-content/editorial-image.store.js';
 import type { HomeContentRepository } from './modules/home-content/home-content.repository.js';
 import { homeContentRouter } from './modules/home-content/home-content.router.js';
 import { HomeContentService } from './modules/home-content/home-content.service.js';
 import type { MemberRolesRepository } from './modules/member-roles/member-roles.repository.js';
 import { memberRolesRouter } from './modules/member-roles/member-roles.router.js';
 import { MemberRolesService } from './modules/member-roles/member-roles.service.js';
+import type { PredictionsRepository } from './modules/predictions/predictions.repository.js';
+import { predictionsRouter } from './modules/predictions/predictions.router.js';
 import { IncidentLogger } from './modules/suggestions/incident-logger.js';
 import { SuggestionStore } from './modules/suggestions/suggestion.store.js';
 import { createSuggestionsRouter } from './modules/suggestions/suggestions.router.js';
@@ -28,6 +31,7 @@ import { errorHandler } from './shared/http.js';
 
 export function createApp(options: {
   repository: CompetitionRepository;
+  predictionsRepository?: PredictionsRepository;
   checkDatabase: () => Promise<void>;
   corsOrigin: string;
   auth?: AuthOptions;
@@ -35,6 +39,7 @@ export function createApp(options: {
   memberRolesRepository?: MemberRolesRepository;
   databaseTransferRepository?: DatabaseTransferRepository;
   homeContentRepository?: HomeContentRepository;
+  editorialImageDirectory?: string;
   bridgeClient?: DiscordBridgeClient;
   suggestionsService?: SuggestionsService;
   suggestionStore?: SuggestionStore;
@@ -63,10 +68,17 @@ export function createApp(options: {
     );
   }
   app.use(express.json({ limit: '1mb' }));
+  if (options.predictionsRepository)
+    app.use('/api/v1/predictions', predictionsRouter(options.predictionsRepository, options.auth));
   if (options.homeContentRepository) {
+    const images = new EditorialImageStore(options.editorialImageDirectory);
     app.use(
       '/api/v1/home-content',
-      homeContentRouter(new HomeContentService(options.homeContentRepository), options.auth)
+      homeContentRouter(
+        new HomeContentService(options.homeContentRepository, images),
+        options.auth,
+        images
+      )
     );
   }
   if (options.auth && options.memberRolesRepository) {

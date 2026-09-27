@@ -1,0 +1,10 @@
+/* Category badge shared by home cards and article views. */
+
+.rcl-site .news-tag {
+  color: var(--lime);
+  border: 1px solid var(--lime);
+  font: 11px var(--mono);
+  text-transform: uppercase;
+  padding: 6px 10px;
+  width: fit-content;
+}

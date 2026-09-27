@@ -73,8 +73,8 @@ export const siteRoutes = [
     path: '/jugadores',
     id: 'jugadores',
     title: 'Jugadores',
-    competition: false,
-    render: () => <PlayersPage />
+    competition: ['calendar'],
+    render: ({ competition }) => <PlayersPage competition={competition} />
   },
   {
     path: '/campeones',

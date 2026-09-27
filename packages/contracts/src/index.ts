@@ -1,4 +1,5 @@
 export type { AuthUser } from './auth.js';
+export type * from './predictions.js';
 export type * from './match-detail.js';
 export type * from './member-roles.js';
 export type * from './database-transfer.js';
@@ -10,6 +11,7 @@ export type {
   EditorialInput,
   EditorialArticle,
   WeeklyPlayer,
+  WeeklyCandidate,
   WeeklyTeamInput,
   WeeklyTeam
 } from './home-content.js';

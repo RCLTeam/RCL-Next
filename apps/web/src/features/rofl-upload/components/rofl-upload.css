@@ -20,7 +20,6 @@
   font-size: 1.75rem;
   font-weight: 700;
   color: var(--text);
-  letter-spacing: -0.02em;
 }
 
 .rcl-site .admin-rofl-upload-panel-subtitle {
@@ -89,7 +88,7 @@
 .rcl-site .admin-rofl-dropzone-container-disabled {
   opacity: 0.5;
   cursor: not-allowed;
-  border-color: var(--stone);
+  border-color: var(--line);
 }
 
 .rcl-site .admin-rofl-dropzone-icon-wrapper {
@@ -137,7 +136,6 @@
 .rcl-site .admin-rofl-dropzone-format-badge {
   font-size: 0.75rem;
   font-weight: 700;
-  letter-spacing: 0.05em;
   padding: 0.25rem 0.6rem;
   border-radius: 4px;
   background-color: var(--panel-raised);
@@ -183,7 +181,6 @@
   font-size: 0.75rem;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
 }
 
 .rcl-site .admin-upload-stepper-queue-alert {
@@ -318,7 +315,7 @@
 }
 
 .rcl-site .admin-upload-stepper-log-index {
-  color: var(--stone);
+  color: var(--line);
   user-select: none;
   min-width: 24px;
   text-align: right;
@@ -420,7 +417,7 @@
 .rcl-site .admin-anomaly-alerts-icon {
   width: 22px;
   height: 22px;
-  stroke: var(--amber);
+  stroke: var(--lime);
   fill: none;
   flex-shrink: 0;
 }
@@ -429,7 +426,7 @@
   margin: 0;
   font-size: 1.15rem;
   font-weight: 700;
-  color: var(--amber);
+  color: var(--lime);
 }
 
 .rcl-site .admin-anomaly-alerts-subtitle {
@@ -446,8 +443,8 @@
 
 .rcl-site .admin-anomaly-alerts-card {
   background-color: var(--panel);
-  border: 1px solid color-mix(in srgb, var(--amber) 30%, transparent);
-  border-left: 4px solid var(--amber);
+  border: 1px solid color-mix(in srgb, var(--lime) 30%, transparent);
+  border-left: 4px solid var(--lime);
   border-radius: 8px;
   padding: 1.25rem;
 }
@@ -477,7 +474,7 @@
 
 .rcl-site .admin-anomaly-alerts-discord-user {
   font-weight: 700;
-  color: var(--amber);
+  color: var(--lime);
 }
 
 .rcl-site .admin-anomaly-alerts-accounts-list {
@@ -523,8 +520,8 @@
 
 .rcl-site .admin-batch-summary-card-card {
   background-color: var(--panel);
-  border: 1px solid color-mix(in srgb, var(--win) 40%, transparent);
-  border-top: 4px solid var(--win);
+  border: 1px solid color-mix(in srgb, var(--lime) 40%, transparent);
+  border-top: 4px solid var(--lime);
   border-radius: 12px;
   padding: 2rem;
   margin-bottom: 1.5rem;
@@ -549,7 +546,7 @@
 .rcl-site .admin-batch-summary-card-icon {
   width: 28px;
   height: 28px;
-  stroke: var(--win);
+  stroke: var(--lime);
   fill: none;
 }
 
@@ -595,7 +592,6 @@
   font-weight: 700;
   color: var(--muted);
   text-transform: uppercase;
-  letter-spacing: 0.05em;
 }
 
 .rcl-site .admin-batch-summary-card-duplicates-section {

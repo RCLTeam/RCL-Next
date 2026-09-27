@@ -15,6 +15,9 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'node',
+    // Embedded PostgreSQL startup competes for CPU when the full suite runs in parallel.
+    maxWorkers: 4,
+    testTimeout: 30_000,
     include: [
       'tests/**/*.{test,spec}.{ts,tsx}',
       'apps/*/src/**/*.{test,spec}.{ts,tsx}',

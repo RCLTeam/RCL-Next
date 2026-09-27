@@ -17,7 +17,7 @@ test('Detail routes retain encoded parameters and their parent navigation', () =
 });
 
 test('Routes only request their own data and the visible live-match header', () => {
-  expect(resolveSiteRoute('/jugadores')?.competition).toBe(false);
+  expect(resolveSiteRoute('/jugadores')?.competition).toEqual(['calendar']);
   expect(resolveSiteRoute('/equipos')?.competition).toEqual(['calendar', 'teams']);
   expect(resolveSiteRoute('/clasificacion')?.competition).toEqual(['calendar', 'standings']);
   expect(resolveSiteRoute('/calendario')?.competition).toEqual(['calendar', 'rounds']);

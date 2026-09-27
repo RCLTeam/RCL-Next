@@ -6,7 +6,7 @@ import {
 import { CompetitionFilters } from '../../../features/competition/components/CompetitionFilters.js';
 import { RoundFilter } from '../../../features/competition/components/RoundFilter.js';
 import type { Competition } from '../../../features/competition/hooks/useCompetition.js';
-import { PageLayout } from '../../../shared/components/PageLayout.js';
+import { PageLayout } from '../../../shared/components/PageLayout/PageLayout.js';
 import { MatchList } from './MatchList.js';
 import './calendar.css';
 

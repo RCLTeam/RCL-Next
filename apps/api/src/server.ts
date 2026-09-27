@@ -12,6 +12,7 @@ import { PostgresDatabaseTransferRepository } from './modules/database-transfer/
 import { DiscordBridgeClient } from './modules/discord-bridge/discord-bridge.client.js';
 import { PostgresHomeContentRepository } from './modules/home-content/postgres-home-content.repository.js';
 import { PostgresMemberRolesRepository } from './modules/member-roles/postgres-member-roles.repository.js';
+import { PredictionsRepository } from './modules/predictions/predictions.repository.js';
 import { PostgresRoflUploadRepository } from './modules/rofl-upload/persistence/postgres-rofl-upload.repository.js';
 import { attachRoflUploadGateway } from './modules/rofl-upload/websocket/rofl-upload.gateway.js';
 import {
@@ -63,6 +64,7 @@ const suggestionsService = new SuggestionsService({
 });
 
 const app = createApp({
+  predictionsRepository: new PredictionsRepository(connection.db),
   homeContentRepository: new PostgresHomeContentRepository(connection.db),
   databaseTransferRepository: new PostgresDatabaseTransferRepository(
     connection.db,

@@ -21,13 +21,29 @@ export interface WeeklyPlayer {
   name: string;
   team: string;
   imageUrl: string;
+  playerId?: string;
+  teamId?: string;
+  champions?: string[];
 }
 export interface WeeklyTeamInput {
+  roundId: number;
   label: string;
   published: boolean;
   players: WeeklyPlayer[];
 }
-export interface WeeklyTeam extends WeeklyTeamInput {
+export interface WeeklyTeam extends Omit<WeeklyTeamInput, 'roundId'> {
+  roundId: number | null;
   divisionId: string;
   updatedAt: string;
+}
+
+export interface WeeklyCandidate {
+  playerId: string;
+  teamId: string;
+  memberId: string;
+  name: string;
+  team: string;
+  tag: string | null;
+  champions: string[];
+  roles: WeeklyPlayer['role'][];
 }

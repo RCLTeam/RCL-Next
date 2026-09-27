@@ -4,7 +4,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { expect, test } from 'vitest';
 import { App } from '../../../apps/web/src/App.js';
 import { MatchCard } from '../../../apps/web/src/features/competition/components/MatchCard.js';
-import { MatchReport } from '../../../apps/web/src/site/pages/match-details/MatchReport.js';
+import { MatchReport } from '../../../apps/web/src/site/pages/match-details/MatchDetailPage.js';
 import {
   formatMatchStat,
   matchPosition,
@@ -82,27 +82,21 @@ test('Completed calendar matches expose a readable detail link; scheduled ones d
   ).not.toContain('/partidos/');
 });
 
-test('Reports render three ordered sections, multiple maps and accurate sides with missing data', () => {
+test('Reports expose player runes from matchups, multiple maps and accurate sides with missing data', () => {
   const html = renderToStaticMarkup(<MatchReport match={report} />);
-  expect(html).toContain('2–1');
+  expect(html).toContain('2 – 1');
   expect(html).toContain('Mapa 2');
   expect(html).toContain('25:00');
   expect(html).toContain('Lobos · Lado rojo');
   expect(html).toContain('Mid Player');
   expect(html).toContain('role="tablist"');
   expect(html).toContain('aria-selected="true"');
-  expect(html).toMatch(/id="estadisticas"[^>]*hidden=""/);
-  expect(html).toMatch(/id="runas"[^>]*hidden=""/);
-  expect(html).toContain('Seleccionar jugador para runas');
+  expect(html).not.toContain('tab-runas');
+  expect(html).toContain('aria-haspopup="dialog"');
+  expect(html).toContain('Ver runas de Mid Player#EUW');
   expect(html).toContain('Build no disponible');
-  expect(html).toContain('Runas no disponibles');
-  expect(html).toContain('No hay estadísticas registradas');
-  expect(html.indexOf('id="enfrentamientos"')).toBeLessThan(html.indexOf('id="estadisticas"'));
-  expect(html.indexOf('id="estadisticas"')).toBeLessThan(html.indexOf('id="runas"'));
   const empty = renderToStaticMarkup(<MatchReport match={{ ...report, games: [] }} />);
   expect(empty).toContain('todavía no se han importado');
-  expect(empty).toContain('Estadísticas pendientes');
-  expect(empty).toContain('Runas pendientes');
 });
 
 test('Duration stats display minutes and seconds while other values remain numeric', () => {
@@ -131,7 +125,6 @@ test('Direct match URLs and trailing slashes preserve calendar navigation', () =
   for (const path of ['/partidos/lobos-vs-cuervos', '/partidos/lobos-vs-cuervos/']) {
     const html = renderToStaticMarkup(<App initialPath={path} />);
     expect(html).toContain('Cargando partido');
-    expect(html).toContain('Volver al calendario');
     expect(
       (html.match(/<a\b[^>]*>/g) ?? []).some(
         (tag) => tag.includes('href="/calendario"') && tag.includes('aria-current="page"')

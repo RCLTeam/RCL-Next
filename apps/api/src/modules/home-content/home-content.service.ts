@@ -1,9 +1,11 @@
 import { z } from 'zod';
 import { notFound } from '../../shared/app-error.js';
+import { EditorialImageStore } from './editorial-image.store.js';
 import type { HomeContentRepository } from './home-content.repository.js';
 
 const imageUrl = z.union([
   z.literal(''),
+  z.string().regex(/^\/api\/v1\/home-content\/images\/[a-f0-9-]{36}\.(png|jpg|webp)$/),
   z
     .string()
     .url()
@@ -21,7 +23,11 @@ const articleInput = z
     coverAlt: z.string().trim().max(240),
     published: z.boolean(),
     showOnHome: z.boolean(),
-    homeOrder: z.number().int().min(0).max(9999)
+    homeOrder: z.number().int().min(0).max(9999),
+    uploadedImages: z
+      .array(z.string().regex(/^\/api\/v1\/home-content\/images\/[a-f0-9-]{36}\.(png|jpg|webp)$/))
+      .max(100)
+      .default([])
   })
   .strict()
   .refine(
@@ -30,6 +36,7 @@ const articleInput = z
   );
 const teamInput = z
   .object({
+    roundId: z.number().int().min(1).max(32767),
     label: z.string().trim().min(1).max(120),
     published: z.boolean(),
     players: z
@@ -39,7 +46,10 @@ const teamInput = z
             role: z.enum(['top', 'jungle', 'mid', 'adc', 'support']),
             name: z.string().trim().min(1).max(80),
             team: z.string().trim().min(1).max(120),
-            imageUrl
+            imageUrl,
+            playerId: z.string().uuid(),
+            teamId: z.string().uuid(),
+            champions: z.array(z.string().max(64)).default([])
           })
           .strict()
       )
@@ -52,7 +62,10 @@ const teamInput = z
   );
 
 export class HomeContentService {
-  constructor(private readonly repository: HomeContentRepository) {}
+  constructor(
+    private readonly repository: HomeContentRepository,
+    private readonly images = new EditorialImageStore()
+  ) {}
   listArticles(admin = false) {
     return this.repository.listArticles(admin);
   }
@@ -61,19 +74,44 @@ export class HomeContentService {
     if (!article?.published) throw notFound('Article');
     return article;
   }
-  saveArticle(actor: string, id: unknown, body: unknown) {
-    return this.repository.saveArticle(
-      actor,
-      id === null ? null : z.string().uuid().parse(id),
-      articleInput.parse(body)
+  async saveArticle(actor: string, id: unknown, body: unknown) {
+    const articleId = id === null ? null : z.string().uuid().parse(id);
+    const { uploadedImages, ...input } = articleInput.parse(body);
+    const previous = articleId ? await this.repository.getArticle(articleId) : null;
+    const saved = await this.repository.saveArticle(actor, articleId, input);
+    await this.repository.removeUnusedImages(
+      [...this.imageUrls(previous), ...uploadedImages],
+      (url) => this.images.remove(url)
+    );
+    return saved;
+  }
+  async deleteArticle(actor: string, id: unknown) {
+    const articleId = z.string().uuid().parse(id);
+    const previous = await this.repository.getArticle(articleId);
+    await this.repository.deleteArticle(actor, articleId);
+    await this.repository.removeUnusedImages(this.imageUrls(previous), (url) =>
+      this.images.remove(url)
     );
   }
-  deleteArticle(actor: string, id: unknown) {
-    return this.repository.deleteArticle(actor, z.string().uuid().parse(id));
+  private imageUrls(article: { coverUrl: string; body: string } | null): string[] {
+    if (!article) return [];
+    return (
+      `${article.coverUrl}\n${article.body}`.match(
+        /\/api\/v1\/home-content\/images\/[a-f0-9-]{36}\.(?:png|jpg|webp)/g
+      ) ?? []
+    );
+  }
+  weeklyCandidates(id: unknown, roundId: unknown) {
+    return this.repository.weeklyCandidates(
+      z.string().uuid().parse(id),
+      z.coerce.number().int().min(1).max(32767).parse(roundId)
+    );
+  }
+  listWeeklyTeams(id: unknown, admin = false) {
+    return this.repository.listWeeklyTeams(z.string().uuid().parse(id), admin);
   }
   async weeklyTeam(id: unknown, admin = false) {
-    const team = await this.repository.getWeeklyTeam(z.string().uuid().parse(id));
-    return admin || team?.published ? team : null;
+    return (await this.listWeeklyTeams(id, admin))[0] ?? null;
   }
   saveWeeklyTeam(actor: string, id: unknown, body: unknown) {
     return this.repository.saveWeeklyTeam(

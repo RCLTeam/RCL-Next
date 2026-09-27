@@ -1,5 +1,7 @@
 import type { CrudField, CrudRecord, CrudResource, CrudValue } from '@rcl/contracts';
 import React, { useEffect, useId, useState } from 'react';
+import { Select } from '../../../shared/components/Selector/Selector.js';
+import { normalizeTeamLogoPath, teamLogoDirectory } from '../../../shared/resources/team-logos.js';
 import { getCrudRecords, recordLabel } from '../api/crud-operations-api.js';
 
 export function initialValues(resource: CrudResource, record: CrudRecord | null): CrudRecord {
@@ -91,7 +93,7 @@ function RecordField({
   onChange: (value: CrudValue) => void;
 }) {
   const id = useId();
-  const label = `${field.label}${field.required ? ' *' : ''}`;
+  const label = `${field.name === 'logoUrl' ? 'Archivo del escudo' : field.label}${field.required ? ' *' : ''}`;
   if (field.reference)
     return (
       <ReferenceField
@@ -104,7 +106,7 @@ function RecordField({
     );
   return (
     <div className="crud-operations-field">
-      <label htmlFor={id}>{label}</label>
+      {(field.type === 'boolean' || !field.options) && <label htmlFor={id}>{label}</label>}
       {field.type === 'boolean' ? (
         <input
           id={id}
@@ -114,7 +116,9 @@ function RecordField({
           onChange={(event) => onChange(event.target.checked)}
         />
       ) : field.options ? (
-        <select
+        <Select
+          label={label}
+          variant="form"
           id={id}
           value={String(value ?? '')}
           required={field.required}
@@ -128,13 +132,27 @@ function RecordField({
               {option}
             </option>
           ))}
-        </select>
+        </Select>
       ) : (
         <input
           id={id}
-          type={field.type === 'datetime' ? 'datetime-local' : field.type}
+          type={
+            field.name === 'logoUrl'
+              ? 'text'
+              : field.type === 'datetime'
+                ? 'datetime-local'
+                : field.type
+          }
+          placeholder={field.name === 'logoUrl' ? 'equipo.webp' : undefined}
           step={field.type === 'datetime' ? '1' : undefined}
-          value={field.type === 'datetime' ? localDateTime(value) : String(value ?? '')}
+          value={
+            field.type === 'datetime'
+              ? localDateTime(value)
+              : field.name === 'logoUrl' &&
+                  normalizeTeamLogoPath(String(value ?? '')).startsWith(teamLogoDirectory)
+                ? normalizeTeamLogoPath(String(value)).slice(teamLogoDirectory.length)
+                : String(value ?? '')
+          }
           required={field.required}
           disabled={disabled}
           maxLength={field.maxLength}
@@ -145,11 +163,13 @@ function RecordField({
             onChange(
               !input
                 ? null
-                : field.type === 'number'
-                  ? Number(input)
-                  : field.type === 'datetime'
-                    ? new Date(input).toISOString()
-                    : input
+                : field.name === 'logoUrl' && !/[/:\\]/.test(input)
+                  ? `${teamLogoDirectory}${input}`
+                  : field.type === 'number'
+                    ? Number(input)
+                    : field.type === 'datetime'
+                      ? new Date(input).toISOString()
+                      : input
             );
           }}
         />
@@ -223,10 +243,6 @@ function ReferenceField({
     ];
   return (
     <div className="crud-operations-field">
-      <label htmlFor={id}>
-        {field.label}
-        {field.required ? ' *' : ''}
-      </label>
       {!disabled && (
         <input
           type="search"
@@ -240,7 +256,9 @@ function ReferenceField({
           }}
         />
       )}
-      <select
+      <Select
+        label={`${field.label}${field.required ? ' *' : ''}`}
+        variant="form"
         id={id}
         value={String(value ?? '')}
         required={field.required}
@@ -264,7 +282,7 @@ function ReferenceField({
             {recordLabel(row)}
           </option>
         ))}
-      </select>
+      </Select>
       {loading && <output>Cargando opciones…</output>}
       {error && (
         <span role="alert">

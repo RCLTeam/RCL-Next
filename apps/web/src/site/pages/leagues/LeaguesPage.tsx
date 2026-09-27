@@ -1,8 +1,7 @@
 import React from 'react';
 import { DataState } from '../../../features/competition/components/CompetitionDataState.js';
-import { CompetitionFilters } from '../../../features/competition/components/CompetitionFilters.js';
 import type { Competition } from '../../../features/competition/hooks/useCompetition.js';
-import { PageLayout } from '../../../shared/components/PageLayout.js';
+import { PageLayout } from '../../../shared/components/PageLayout/PageLayout.js';
 import { CompetitionFormat } from './CompetitionFormat.js';
 import { LeagueDivisionGrid } from './LeagueDivisionGrid.js';
 import './league-cards.css';
@@ -18,9 +17,9 @@ export function LeaguesPage({ competition }: { competition: Competition }) {
       description="Descubre las divisiones, el formato de la competición y el camino hacia la corona."
     >
       <DataState
-        state={competition.seasons}
+        state={{ ...competition.seasons, data: competition.season ? [competition.season] : [] }}
         retry={competition.retry}
-        empty="Todavía no hay temporadas publicadas."
+        empty="Actualmente no hay ninguna liga en curso."
       >
         <DataState
           state={competition.divisions}

@@ -1,4 +1,7 @@
 import { createHash } from 'node:crypto';
+import { existsSync, mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { PGlite } from '@electric-sql/pglite';
 import { drizzle } from 'drizzle-orm/pglite';
@@ -14,11 +17,13 @@ import { PostgresHomeContentRepository } from '../../apps/api/src/modules/home-c
 import * as schema from '../../packages/database/src/schema.js';
 
 describe('home content publication, authorization and persistence', () => {
+  const imageDirectory = mkdtempSync(join(tmpdir(), 'rcl-editorial-test-'));
   const client = new PGlite();
   const db = drizzle(client, { schema });
   const origin = 'http://localhost:5173';
   const tokens = { admin: 'a'.repeat(64), viewer: 'b'.repeat(64) };
   const app = createApp({
+    editorialImageDirectory: imageDirectory,
     repository: new PostgresCompetitionRepository(db),
     homeContentRepository: new PostgresHomeContentRepository(db),
     checkDatabase: async () => {},
@@ -49,10 +54,15 @@ describe('home content publication, authorization and persistence', () => {
     showOnHome: true,
     homeOrder: 2
   };
+  const teamIdA = '11111111-1111-4111-8111-111111111111';
+  const teamIdB = '22222222-2222-4222-8222-222222222222';
   const team = {
+    roundId: 1,
     label: 'Jornada 3',
     published: true,
-    players: ['top', 'jungle', 'mid', 'adc', 'support'].map((role) => ({
+    players: ['top', 'jungle', 'mid', 'adc', 'support'].map((role, index) => ({
+      playerId: `33333333-3333-4333-8333-${String(index + 1).padStart(12, '0')}`,
+      teamId: teamIdA,
       role,
       name: `Player ${role}`,
       team: 'Rebels',
@@ -93,8 +103,200 @@ describe('home content publication, authorization and persistence', () => {
       { id: divisionA, seasonName: 'Season', divisionName: 'Alpha' },
       { id: divisionB, seasonName: 'Season', divisionName: 'Beta' }
     ]);
+    await db
+      .insert(schema.players)
+      .values(team.players.map((player) => ({ id: player.playerId, gameName: player.name })));
+    for (const [divisionId, homeId] of [
+      [divisionA, teamIdA],
+      [divisionB, teamIdB]
+    ] as const) {
+      const [away] = await db
+        .insert(schema.teams)
+        .values({ name: 'Away', seasonDivisionId: divisionId })
+        .returning();
+      if (!away) throw new Error('Missing fixture team');
+      await db
+        .insert(schema.teams)
+        .values({ id: homeId, name: 'Rebels', seasonDivisionId: divisionId });
+      for (const roundId of [1, 2, 3]) {
+        await db.insert(schema.rounds).values({ id: roundId, idSeasonDivision: divisionId });
+        if (roundId === 3) continue;
+        const [match] = await db
+          .insert(schema.matches)
+          .values({
+            idSeasonDivision: divisionId,
+            idRound: roundId,
+            team1Id: homeId,
+            team2Id: away.id
+          })
+          .returning();
+        if (!match) throw new Error('Missing fixture match');
+        for (const [gameIndex, champion] of (roundId === 1
+          ? ['Ahri']
+          : ['Ahri', 'Ashe', 'Garen', 'Jhin', 'Lux']
+        ).entries()) {
+          const [game] = await db
+            .insert(schema.matchGames)
+            .values({
+              matchesId: match.id,
+              gameNumber: gameIndex + 1,
+              blueTeamId: homeId,
+              redTeamId: away.id
+            })
+            .returning();
+          if (!game) throw new Error('Missing fixture game');
+          await db.transaction(async (tx) => {
+            const infos = await tx
+              .insert(schema.playerGameInfo)
+              .values(
+                team.players.map((player) => ({
+                  matchGameId: game.id,
+                  playerId: player.playerId,
+                  teamId: homeId,
+                  side: 'blue' as const,
+                  champion,
+                  position:
+                    roundId === 2 && gameIndex === 1 && player.role === 'top'
+                      ? 'MIDDLE'
+                      : {
+                          top: 'TOP',
+                          jungle: 'JUNGLE',
+                          mid: 'MIDDLE',
+                          adc: 'BOTTOM',
+                          support: 'UTILITY'
+                        }[player.role]
+                }))
+              )
+              .returning();
+            for (const { id } of infos) {
+              await tx.insert(schema.playerGameStats).values({ id });
+              await tx.insert(schema.playerGameBuild).values({ id });
+              await tx.insert(schema.playerGameRunes).values({
+                id,
+                primaryKeystoneId: 0,
+                secundaryRuneId: 0,
+                primaryPerk: 0,
+                primaryPerk1: 0,
+                primaryPerk2: 0,
+                primaryPerk3: 0,
+                secundaryPerk1: 0,
+                secundaryPerk2: 0,
+                statPerkOffense: 0,
+                statPerkFlex: 0,
+                statPerkDefense: 0
+              });
+            }
+          });
+        }
+      }
+    }
   });
-  afterAll(() => client.close());
+  afterAll(async () => {
+    await client.close();
+    rmSync(imageDirectory, { recursive: true, force: true });
+  });
+  it('uploads images with authorization and persists cover and inline references', async () => {
+    const png = Buffer.from(
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aX1sAAAAASUVORK5CYII=',
+      'base64'
+    );
+    await request(app)
+      .post(`${root}/admin/images`)
+      .set('Content-Type', 'image/png')
+      .send(png)
+      .expect(401);
+    await request(app)
+      .post(`${root}/admin/images`)
+      .set('Cookie', cookie('viewer'))
+      .set('Origin', origin)
+      .set('Content-Type', 'image/png')
+      .send(png)
+      .expect(403);
+    await request(app)
+      .post(`${root}/admin/images`)
+      .set('Cookie', cookie('admin'))
+      .set('Origin', 'https://evil.example')
+      .set('Content-Type', 'image/png')
+      .send(png)
+      .expect(403);
+    await request(app)
+      .post(`${root}/admin/images`)
+      .set('Cookie', cookie('admin'))
+      .set('Origin', origin)
+      .set('Content-Type', 'image/png')
+      .send(Buffer.from('<svg></svg>'))
+      .expect(422);
+    await request(app)
+      .post(`${root}/admin/images`)
+      .set('Cookie', cookie('admin'))
+      .set('Origin', origin)
+      .set('Content-Type', 'image/png')
+      .send(Buffer.alloc(5 * 1024 * 1024 + 1))
+      .expect(413);
+    const uploaded = await request(app)
+      .post(`${root}/admin/images`)
+      .set('Cookie', cookie('admin'))
+      .set('Origin', origin)
+      .set('Content-Type', 'image/png')
+      .send(png)
+      .expect(201);
+    const url = uploaded.body.data.url as string;
+    const fetched = await request(app)
+      .get(url)
+      .expect(200)
+      .expect('Content-Type', /image\/png/);
+    expect(fetched.body).toEqual(png);
+    await request(app).get(`${root}/images/invalid.png`).expect(404);
+    const created = await post({
+      ...article,
+      coverUrl: url,
+      coverAlt: 'La final',
+      body: `Crónica.\n\n![La final](${url})`,
+      published: true,
+      showOnHome: false
+    }).expect(201);
+    const read = await request(app).get(`${root}/articles/${created.body.data.id}`).expect(200);
+    expect(read.body.data.coverUrl).toBe(url);
+    expect(read.body.data.body).toContain(`![La final](${url})`);
+    await put(`articles/${created.body.data.id}`, { ...article, title: '', coverUrl: '' }).expect(
+      422
+    );
+    await request(app).get(url).expect(200);
+    // Removing the cover must retain the same image used inside the article.
+    await put(`articles/${created.body.data.id}`, {
+      ...article,
+      body: `![La final](${url})`
+    }).expect(200);
+    await request(app).get(url).expect(200);
+    const shared = await post({ ...article, coverUrl: url, coverAlt: 'Compartida' }).expect(201);
+    await put(`articles/${created.body.data.id}`, article).expect(200);
+    await request(app).get(url).expect(200);
+    await request(app)
+      .delete(`${root}/admin/articles/${shared.body.data.id}`)
+      .set('Cookie', cookie('admin'))
+      .set('Origin', origin)
+      .expect(200);
+    await request(app).get(url).expect(404);
+    expect(existsSync(join(imageDirectory, url.split('/').at(-1) ?? ''))).toBe(false);
+    const unused = await request(app)
+      .post(`${root}/admin/images`)
+      .set('Cookie', cookie('admin'))
+      .set('Origin', origin)
+      .set('Content-Type', 'image/png')
+      .send(png)
+      .expect(201);
+    await put(`articles/${created.body.data.id}`, {
+      ...article,
+      uploadedImages: [unused.body.data.url]
+    }).expect(200);
+    await request(app).get(unused.body.data.url).expect(404);
+
+    await request(app)
+      .delete(`${root}/admin/articles/${created.body.data.id}`)
+      .set('Cookie', cookie('admin'))
+      .set('Origin', origin)
+      .expect(200);
+  });
   it('protects administration and rejects untrusted mutations', async () => {
     await request(app).get(`${root}/admin/articles`).expect(401);
     await request(app).get(`${root}/admin/articles`).set('Cookie', cookie('viewer')).expect(403);
@@ -153,6 +355,7 @@ describe('home content publication, authorization and persistence', () => {
     await put(`weekly-teams/${divisionB}`, {
       ...team,
       label: 'Beta week',
+      players: team.players.map((player) => ({ ...player, teamId: teamIdB })),
       published: false
     }).expect(200);
     expect((await request(app).get(`${root}/weekly-teams/${divisionA}`)).body.data.label).toBe(
@@ -168,6 +371,72 @@ describe('home content publication, authorization and persistence', () => {
     ).toBe('Beta week');
     await put(`weekly-teams/${divisionA}`, { ...team, published: false }).expect(200);
     expect((await request(app).get(`${root}/weekly-teams/${divisionA}`)).body.data).toBeNull();
+  });
+  it('lists only published rounds, preserves previous weeks and validates historical picks', async () => {
+    await put(`weekly-teams/${divisionA}`, team).expect(200);
+    await put(`weekly-teams/${divisionA}`, { ...team, roundId: 2, label: 'Second week' }).expect(
+      200
+    );
+    const published = await request(app)
+      .get(`${root}/weekly-teams/${divisionA}/rounds`)
+      .expect(200);
+    expect(published.body.data.map((item: { roundId: number }) => item.roundId)).toEqual([2, 1]);
+    expect(published.body.data[1].players[0].champions).toEqual(['Ahri']);
+    expect(published.body.data[0].players[0].champions).toEqual([
+      'Ahri',
+      'Ashe',
+      'Garen',
+      'Jhin',
+      'Lux'
+    ]);
+    await put(`weekly-teams/${divisionA}`, { ...team, roundId: 2, published: false }).expect(200);
+    expect(
+      (await request(app).get(`${root}/weekly-teams/${divisionA}/rounds`)).body.data.map(
+        (item: { roundId: number }) => item.roundId
+      )
+    ).toEqual([1]);
+    const candidates = await request(app)
+      .get(`${root}/admin/weekly-teams/${divisionA}/candidates/1`)
+      .set('Cookie', cookie('admin'))
+      .expect(200);
+    expect(candidates.body.data).toHaveLength(5);
+    expect(candidates.body.data[0].champions).toEqual(['Ahri']);
+    expect(
+      candidates.body.data.find(
+        (item: { playerId: string }) => item.playerId === team.players[0]?.playerId
+      ).roles
+    ).toEqual(['top']);
+    const secondRound = await request(app)
+      .get(`${root}/admin/weekly-teams/${divisionA}/candidates/2`)
+      .set('Cookie', cookie('admin'))
+      .expect(200);
+    expect(
+      secondRound.body.data
+        .find((item: { playerId: string }) => item.playerId === team.players[0]?.playerId)
+        .roles.sort()
+    ).toEqual(['mid', 'top']);
+    await put(`weekly-teams/${divisionA}`, {
+      ...team,
+      players: team.players.map((player) => ({
+        ...player,
+        role: player.role === 'top' ? 'mid' : player.role === 'mid' ? 'top' : player.role
+      }))
+    }).expect(422);
+    await request(app).get(`${root}/admin/weekly-teams/${divisionA}/candidates/1`).expect(401);
+    await put(`weekly-teams/${divisionA}`, { ...team, roundId: 3 }).expect(422);
+    await put(`weekly-teams/${divisionA}`, {
+      ...team,
+      players: team.players.map((player) => ({ ...player, champions: ['UnusedChampion'] }))
+    }).expect(200);
+    expect(
+      (await request(app).get(`${root}/weekly-teams/${divisionA}`)).body.data.players[0].champions
+    ).toEqual(['Ahri']);
+    await put(`weekly-teams/${divisionB}`, team).expect(422);
+    await put(`weekly-teams/${divisionA}`, {
+      ...team,
+      players: team.players.map((player) => ({ ...player, playerId: team.players[0]?.playerId }))
+    }).expect(422);
+    await put(`weekly-teams/${divisionA}`, { ...team, roundId: 99 }).expect(404);
   });
   it('validates content, image schemes, duplicate roles and missing divisions', async () => {
     await post({ ...article, title: ' ' }).expect(422);

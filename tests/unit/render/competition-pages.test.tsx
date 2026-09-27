@@ -122,13 +122,13 @@ function fixture(): Competition {
 
 test('Match cards distinguish scheduled matches from played scores and omit unsafe stream links', () => {
   const completed = renderToStaticMarkup(<MatchCard match={match} />);
-  expect(completed).toContain('2–1');
+  expect(completed).toContain('2 – 1');
   expect(completed).toContain('Finalizado');
   const scheduled = renderToStaticMarkup(
     <MatchCard match={{ ...match, status: 'scheduled', streamUrl: 'javascript:alert(1)' }} />
   );
   expect(scheduled).toContain('>VS<');
-  expect(scheduled).not.toContain('2–1');
+  expect(scheduled).not.toContain('2 – 1');
   expect(scheduled).not.toContain('javascript:');
 });
 
@@ -140,39 +140,18 @@ test('Playoffs use the API playoff stage and exclude regular rounds', () => {
   expect(html).not.toContain('Jornada regular');
 });
 
-test('Predictions show only scheduled API matches, without invented votes or scores', () => {
+test('Predictions await server voting state and preserve competition errors', () => {
   const competition = fixture();
-  const html = renderToStaticMarkup(
-    <PredictionsPage
-      competition={{
-        ...competition,
-        calendar: {
-          status: 'ready',
-          data: [
-            match,
-            {
-              ...match,
-              id: 'next',
-              status: 'scheduled',
-              round: { ...playoffRound, name: 'Próxima serie' }
-            }
-          ]
-        }
-      }}
-    />
-  );
-  expect(html).toContain('Lobos');
-  expect(html).toContain('Próxima serie');
-  expect(html).not.toContain('Gran final');
-  expect(html).not.toContain('2–1');
-  expect(html).toContain('Votación no disponible');
+  const html = renderToStaticMarkup(<PredictionsPage competition={competition} />);
+  expect(html).toContain('Cargando');
+  expect(html).toContain('3 puntos totales por serie');
+  expect(html).not.toContain('Lobos');
   const failed = renderToStaticMarkup(
     <PredictionsPage competition={{ ...competition, seasons: { status: 'error', data: [] } }} />
   );
   expect(failed).toContain('Reintentar');
   expect(failed).not.toContain('Lobos');
 });
-
 test('Standings render backend totals and hide them if the season request fails', () => {
   const competition = fixture();
   const html = renderToStaticMarkup(<StandingsPage competition={competition} />);
@@ -286,7 +265,9 @@ test('Centralized tournament components render correctly', () => {
 
   const teamCardHtml = renderToStaticMarkup(<TeamCard team={home} divisionName="Premier" />);
   expect(teamCardHtml).toContain('Lobos');
-  expect(teamCardHtml).toContain('Premier');
+  expect(teamCardHtml).not.toContain('Premier');
+  expect(teamCardHtml).toContain('team-card-abbreviation');
+  expect(teamCardHtml).not.toContain('Ver equipo →');
   expect(teamCardHtml).toContain('LOB');
   expect(teamCardHtml).toContain('href="/equipos/home"');
   expect(

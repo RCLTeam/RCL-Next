@@ -5,9 +5,10 @@ import { useCompetitionSelection } from './useCompetitionSelection.js';
 export type CompetitionResource = 'teams' | 'rounds' | 'calendar' | 'standings';
 
 export function useCompetition(
-  resources: readonly CompetitionResource[] | false = ['teams', 'rounds', 'calendar', 'standings']
+  resources: readonly CompetitionResource[] | false = ['teams', 'rounds', 'calendar', 'standings'],
+  currentOnly = false
 ) {
-  const selection = useCompetitionSelection(resources !== false);
+  const selection = useCompetitionSelection(resources !== false, currentOnly);
   const { division, revision } = selection;
   const prefix = division ? `divisions/${encodeURIComponent(division.id)}` : null;
   const path = (resource: CompetitionResource, suffix: string = resource) =>

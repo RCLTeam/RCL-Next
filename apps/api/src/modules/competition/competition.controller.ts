@@ -16,8 +16,11 @@ export class CompetitionController {
       )
     });
   };
-  players: RequestHandler = async (_req, res) => {
-    res.json({ data: await this.service.players() });
+  players: RequestHandler = async (req, res) => {
+    const divisionId = req.params.divisionId
+      ? z.string().uuid().parse(req.params.divisionId)
+      : undefined;
+    res.json({ data: await this.service.players(divisionId) });
   };
   playerDetail: RequestHandler = async (req, res) => {
     res.json({

@@ -1,0 +1,18 @@
+/* Featured match */
+.rcl-site .featured-match {
+  padding: 30px var(--page-gutter);
+  background: var(--panel);
+}
+
+.rcl-site .featured-match .eyebrow {
+  margin-bottom: 14px;
+}
+
+.rcl-site .featured-empty {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  flex-wrap: wrap;
+  color: var(--muted);
+  font-size: 14px;
+}

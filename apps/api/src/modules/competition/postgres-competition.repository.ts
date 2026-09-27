@@ -18,6 +18,7 @@ import type * as schema from '@rcl/database/schema';
 import { and, asc, desc, eq, getTableColumns, inArray, isNotNull, sql } from 'drizzle-orm';
 import type { PgDatabase, PgQueryResultHKT } from 'drizzle-orm/pg-core';
 import type { CompetitionRepository } from './competition.repository.js';
+import { enrichPlayers } from './player-statistics.js';
 
 // Keep the public DTOs stable: season id is now its name; division id is
 // the seasons_divisions UUID. Round identifiers are scoped to that UUID.
@@ -101,7 +102,9 @@ export class PostgresCompetitionRepository implements CompetitionRepository {
         teamId: playerGameInfo.teamId,
         side: playerGameInfo.side,
         champion: playerGameInfo.champion,
-        position: playerGameInfo.position,
+        position: sql<
+          string | null
+        >`coalesce(${playerGameInfo.position}, ${teamMemberships.role}::text)`,
         stats,
         build,
         runes
@@ -109,6 +112,13 @@ export class PostgresCompetitionRepository implements CompetitionRepository {
       .from(playerGameInfo)
       .innerJoin(matchGames, eq(playerGameInfo.matchGameId, matchGames.id))
       .innerJoin(players, eq(playerGameInfo.playerId, players.id))
+      .leftJoin(
+        teamMemberships,
+        and(
+          eq(teamMemberships.discordUserId, players.discordUserId),
+          eq(teamMemberships.teamId, playerGameInfo.teamId)
+        )
+      )
       .leftJoin(playerGameStats, eq(playerGameStats.id, playerGameInfo.id))
       .leftJoin(playerGameBuild, eq(playerGameBuild.id, playerGameInfo.id))
       .leftJoin(playerGameRunes, eq(playerGameRunes.id, playerGameInfo.id))
@@ -140,12 +150,121 @@ export class PostgresCompetitionRepository implements CompetitionRepository {
     isMain: players.isMain,
     displayName: sql<string | null>`coalesce(${discordUsers.globalName}, ${discordUsers.username})`
   };
-  players() {
-    return this.db
+  async players(divisionId?: string) {
+    const directory = await this.db
       .select(this.playerSelection)
       .from(players)
       .leftJoin(discordUsers, eq(players.discordUserId, discordUsers.discordId))
       .orderBy(asc(players.gameName), asc(players.riotTag), asc(players.id));
+    if (!divisionId) return directory;
+    const rows = await this.db
+      .select({
+        playerId: playerGameInfo.playerId,
+        gameId: matchGames.id,
+        matchId: matches.id,
+        divisionId: matches.idSeasonDivision,
+        roundId: matches.idRound,
+        teamId: playerGameInfo.teamId,
+        team: {
+          id: teams.id,
+          name: teams.name,
+          shortName: teams.shortName,
+          logoUrl: teams.logoUrl
+        },
+        position: sql<
+          string | null
+        >`coalesce(${playerGameInfo.position}, ${teamMemberships.role}::text)`,
+        champion: playerGameInfo.champion,
+        durationSeconds: matchGames.durationSeconds,
+        winnerTeamId: matchGames.winnerTeamId,
+        kills: playerGameStats.kills,
+        deaths: playerGameStats.deaths,
+        assists: playerGameStats.assists,
+        cs: playerGameStats.cs,
+        damageToChampions: playerGameStats.damageToChampions,
+        visionScore: playerGameStats.visionScore,
+        damageMitigated: playerGameStats.damageMitigated
+      })
+      .from(playerGameInfo)
+      .innerJoin(playerGameStats, eq(playerGameStats.id, playerGameInfo.id))
+      .innerJoin(players, eq(players.id, playerGameInfo.playerId))
+      .leftJoin(
+        teamMemberships,
+        and(
+          eq(teamMemberships.discordUserId, players.discordUserId),
+          eq(teamMemberships.teamId, playerGameInfo.teamId)
+        )
+      )
+      .innerJoin(matchGames, eq(matchGames.id, playerGameInfo.matchGameId))
+      .innerJoin(matches, eq(matches.id, matchGames.matchesId))
+      .innerJoin(teams, eq(teams.id, playerGameInfo.teamId))
+      .innerJoin(seasonsDivisions, eq(seasonsDivisions.id, matches.idSeasonDivision))
+      .where(
+        and(
+          eq(matches.idSeasonDivision, divisionId),
+          eq(matches.status, 'completed'),
+          isNotNull(matchGames.winnerTeamId)
+        )
+      )
+      .orderBy(
+        asc(matches.finishedAt),
+        asc(matches.scheduledAt),
+        asc(matches.id),
+        asc(matchGames.gameNumber)
+      );
+    const scheduledRounds = await this.db
+      .select({
+        divisionId: rounds.idSeasonDivision,
+        id: rounds.id,
+        name: rounds.name,
+        startsAt: rounds.startsAt
+      })
+      .from(rounds)
+      .innerJoin(seasonsDivisions, eq(seasonsDivisions.id, rounds.idSeasonDivision))
+      .where(eq(rounds.idSeasonDivision, divisionId));
+    const now = Date.now();
+    const currentRounds = [...new Set(scheduledRounds.map((round) => round.divisionId))].flatMap(
+      (divisionId) => {
+        const candidates = scheduledRounds.filter(
+          (round) =>
+            round.divisionId === divisionId &&
+            ((round.startsAt && round.startsAt.getTime() <= now) ||
+              rows.some((row) => row.divisionId === divisionId && row.roundId === round.id))
+        );
+        candidates.sort(
+          (a, b) => (b.startsAt?.getTime() ?? 0) - (a.startsAt?.getTime() ?? 0) || b.id - a.id
+        );
+        const round = candidates[0];
+        return round ? [{ ...round, name: round.name ?? `Jornada ${round.id}` }] : [];
+      }
+    );
+    const enriched = enrichPlayers(directory, rows, currentRounds);
+    // Registered players without games still get their roster role and team.
+    const memberships = await this.db
+      .select({
+        playerId: players.id,
+        role: teamMemberships.role,
+        team: { id: teams.id, name: teams.name, shortName: teams.shortName, logoUrl: teams.logoUrl }
+      })
+      .from(players)
+      .innerJoin(teamMemberships, eq(teamMemberships.discordUserId, players.discordUserId))
+      .innerJoin(teams, eq(teams.id, teamMemberships.teamId))
+      .innerJoin(seasonsDivisions, eq(seasonsDivisions.id, teams.seasonDivisionId))
+      .where(eq(teams.seasonDivisionId, divisionId))
+      .orderBy(asc(teams.id));
+    return enriched
+      .filter(
+        (player) =>
+          player.competition?.stats || memberships.some((row) => row.playerId === player.id)
+      )
+      .map((player) => {
+        const membership = memberships.find((row) => row.playerId === player.id);
+        if (!player.competition || player.competition.team || !membership) return player;
+        return {
+          ...player,
+          competition: { ...player.competition, role: membership.role, team: membership.team }
+        };
+      });
   }
   async playerDetail(id: string) {
     const [player] = await this.db

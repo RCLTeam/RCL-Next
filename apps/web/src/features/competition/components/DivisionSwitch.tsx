@@ -9,6 +9,7 @@ export function DivisionSwitch({ competition }: { competition: Competition }) {
       {competition.divisions.data.map((division) => (
         <button
           key={division.id}
+          className="btn-selector"
           type="button"
           aria-pressed={competition.division?.id === division.id}
           data-division={division.code.toLowerCase()}

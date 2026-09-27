@@ -50,23 +50,23 @@
   width: min(100%, 440px);
 }
 
-.rcl-site .member-roles :is(input, select) {
+.rcl-site .member-roles input {
   width: 100%;
   min-height: 44px;
   padding: 10px 12px;
   background: var(--void);
   color: var(--text);
-  border: 1px solid var(--stone);
+  border: 1px solid var(--line);
   font: inherit;
   color-scheme: dark;
 }
 
-.rcl-site .member-roles :is(input, select, button):focus-visible {
+.rcl-site .member-roles :is(input, button):focus-visible {
   outline: 2px solid var(--lime);
   outline-offset: 3px;
 }
 
-.rcl-site .member-roles :disabled {
+.rcl-site .member-roles :disabled:not(.rcl-select) {
   opacity: 0.5;
   cursor: not-allowed;
 }
@@ -114,7 +114,7 @@
 .rcl-site .member-roles-confirmation {
   margin-bottom: 24px;
   background: var(--panel);
-  border: 1px solid var(--stone);
+  border: 1px solid var(--line);
   border-top: 3px solid var(--lime);
   padding: 16px;
 }
@@ -132,8 +132,8 @@
 .rcl-site .member-roles-success {
   display: block;
   padding: 12px;
-  color: var(--win);
-  border-left: 3px solid var(--win);
+  color: var(--lime);
+  border-left: 3px solid var(--lime);
   margin-bottom: 16px;
 }
 
