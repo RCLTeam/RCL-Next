@@ -177,7 +177,9 @@ function PlayerArt({ player, catalog }: { player: Player; catalog: GameCatalog }
       {noChampion && (
         <>
           {teamLogo && (
-            <img className="player-unplayed-team" src={teamLogo} alt="" loading="lazy" />
+            <span className="player-unplayed-team">
+              <TeamBadge team={player.competition?.team} />
+            </span>
           )}
           <span className="player-unplayed-label">Sin campeón registrado</span>
         </>
@@ -206,9 +208,7 @@ function PlayerTeam({ player }: { player: Player }) {
   const team = player.competition?.team;
   return (
     <span className="player-team">
-      {resolveTeamLogo(team?.logoUrl) && (
-        <img src={resolveTeamLogo(team?.logoUrl)} alt="" loading="lazy" />
-      )}
+      {resolveTeamLogo(team?.logoUrl) && <TeamBadge team={team} />}
       <span>{team?.name ?? 'Sin equipo'}</span>
     </span>
   );

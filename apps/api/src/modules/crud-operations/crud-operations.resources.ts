@@ -143,6 +143,34 @@ export const crudResources: ResourceDefinition[] = [
       text('name', 'Nombre', 120),
       date('startsAt', 'Fecha de inicio')
     ]
+  },
+  {
+    name: 'matches',
+    label: 'Encuentros',
+    description:
+      'Calendario y resultados de las series. Para registrar un resultado sin ROFL, indica el marcador, el ganador y el estado completed.',
+    keys: ['id'],
+    fields: [
+      ref('idSeasonDivision', 'Competición', 'competitions'),
+      ref('idRound', 'Jornada', 'rounds', false),
+      ref('team1Id', 'Equipo 1', 'teams'),
+      ref('team2Id', 'Equipo 2', 'teams'),
+      { ...number('bestOf', 'Al mejor de', 1, 5, 1), options: ['1', '3', '5'] },
+      options(
+        'status',
+        'Estado',
+        ['scheduled', 'live', 'completed', 'forfeit', 'cancelled'],
+        'scheduled'
+      ),
+      number('team1Score', 'Partidas ganadas — equipo 1'),
+      number('team2Score', 'Partidas ganadas — equipo 2'),
+      ref('winnerTeamId', 'Ganador', 'teams', false),
+      date('scheduledAt', 'Fecha programada'),
+      date('finishedAt', 'Fecha de finalización'),
+      { ...text('streamUrl', 'URL de retransmisión (stream_url)', 2048), type: 'url' },
+      { ...text('streamUrlLive', 'URL del directo (stream_url_live)', 255), type: 'url' },
+      text('notes', 'Notas', 10000)
+    ]
   }
 ];
 

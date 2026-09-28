@@ -129,20 +129,20 @@ describe('admin CRUD with HTTP sessions and PostgreSQL constraints', () => {
     }
     const catalog = await request(app).get(endpoint('resources')).set('Cookie', cookie).expect(200);
     expect(catalog.headers['cache-control']).toBe('no-store');
-    expect(catalog.body.data).toHaveLength(7);
+    expect(catalog.body.data).toHaveLength(8);
     expect(JSON.stringify(catalog.body)).not.toContain('tokenHash');
     await request(app).get(endpoint('auth_sessions')).set('Cookie', cookie).expect(404);
   });
 
-  it('excludes members and matches from CRUD but provides protected read-only Discord references', async () => {
+  it('excludes members from CRUD but provides protected read-only Discord references', async () => {
     const catalog = await request(app).get(endpoint('resources')).set('Cookie', cookie).expect(200);
     expect(catalog.body.data.map((resource: { name: string }) => resource.name)).not.toContain(
       'users'
     );
-    expect(catalog.body.data.map((resource: { name: string }) => resource.name)).not.toContain(
+    expect(catalog.body.data.map((resource: { name: string }) => resource.name)).toContain(
       'matches'
     );
-    for (const resource of ['users', 'matches']) {
+    for (const resource of ['users']) {
       await request(app).get(endpoint(resource)).set('Cookie', cookie).expect(404);
       for (const method of ['post', 'put', 'delete'] as const)
         await send(method, resource, {}).expect(404);
@@ -164,8 +164,52 @@ describe('admin CRUD with HTTP sessions and PostgreSQL constraints', () => {
     expect(references.body.data.records[0]).not.toHaveProperty('tokenHash');
     for (const method of ['post', 'put', 'delete'] as const)
       await send(method, 'references/users', {}).expect(404);
-    await request(app).get(endpoint('references/matches')).set('Cookie', cookie).expect(404);
+    await request(app).get(endpoint('references/matches')).set('Cookie', cookie).expect(200);
     expect(await db.select().from(schema.discordUsers)).toHaveLength(2);
+  });
+
+  it('records a completed series without ROFL and rejects inconsistent results', async () => {
+    // Local databases can omit Discord integration columns unrelated to CRUD.
+    await db.execute(sql`ALTER TABLE teams DROP COLUMN discord_role_id`);
+    const record = await create('matches', { ...matchValues, bestOf: 3 });
+    for (const changes of [
+      { status: 'completed', team1Score: 1, team2Score: 0, winnerTeamId: team1 },
+      { status: 'completed', team1Score: 2, team2Score: 1, winnerTeamId: team2 },
+      { status: 'completed', team1Score: 2, team2Score: 2, winnerTeamId: team1 }
+    ])
+      await send('put', 'matches', updateBody('matches', record, changes)).expect(422);
+    const response = await send(
+      'put',
+      'matches',
+      updateBody('matches', record, {
+        status: 'completed',
+        team1Score: 2,
+        team2Score: 1,
+        winnerTeamId: team1
+      })
+    ).expect(200);
+    const [stored] = await db
+      .select()
+      .from(schema.matches)
+      .where(eq(schema.matches.id, String(record.id)));
+    expect(stored).toMatchObject({
+      status: 'completed',
+      team1Score: 2,
+      team2Score: 1,
+      winnerTeamId: team1
+    });
+    expect(
+      await db
+        .select()
+        .from(schema.matchGames)
+        .where(eq(schema.matchGames.matchesId, String(record.id)))
+    ).toHaveLength(0);
+    const listed = await request(app).get(endpoint('matches')).set('Cookie', cookie).expect(200);
+    expect(listed.body.data.records).toContainEqual(
+      expect.objectContaining({ id: record.id, team1IdLabel: 'Home', team2IdLabel: 'Away' })
+    );
+    await send('delete', 'matches', deleteBody('matches', response.body.data)).expect(204);
+    await db.execute(sql`ALTER TABLE teams ADD COLUMN discord_role_id bigint`);
   });
 
   it.each([

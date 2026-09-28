@@ -31,7 +31,8 @@ const resourceTables: Record<string, PgTable> = {
   users: schema.discordUsers,
   players: schema.players,
   memberships: schema.teamMemberships,
-  rounds: schema.rounds
+  rounds: schema.rounds,
+  matches: schema.matches
 };
 function storedResource(resource: ResourceDefinition): StoredResource {
   const table = resourceTables[resource.name];
@@ -125,6 +126,24 @@ async function validateRelations(
   next: CrudRecord,
   before?: CrudRecord
 ) {
+  if (resource.name === 'matches') {
+    const participants = await db
+      .select({ id: teams.id, seasonDivisionId: teams.seasonDivisionId })
+      .from(teams)
+      .where(or(eq(teams.id, String(next.team1Id)), eq(teams.id, String(next.team2Id))));
+    if (
+      participants.length !== 2 ||
+      participants.some((team) => team.seasonDivisionId !== next.idSeasonDivision)
+    )
+      throw conflict(
+        'Los dos equipos deben ser distintos y pertenecer a la competición seleccionada.'
+      );
+    if (
+      before &&
+      ['idSeasonDivision', 'team1Id', 'team2Id'].some((field) => next[field] !== before[field])
+    )
+      await assertNoDependents(db, resource.table, before);
+  }
   for (const field of resource.fields) {
     if (before && field.immutable && next[field.name] !== before[field.name])
       throw conflict('This field cannot be changed after creation.');
@@ -224,7 +243,13 @@ export class PostgresCrudOperationsRepository implements CrudOperationsRepositor
       if (!references.length) continue;
       const related = records(
         await this.db
-          .select()
+          .select(
+            Object.fromEntries(
+              [...new Set([...target.keys, ...target.fields.map((entry) => entry.name)])].map(
+                (name) => [name, column(target.table, name)]
+              )
+            )
+          )
           .from(target.table)
           .where(or(...references.map((row) => condition(target.table, lookupKey(row)))))
       );

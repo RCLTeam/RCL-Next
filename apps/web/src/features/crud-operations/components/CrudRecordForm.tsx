@@ -192,10 +192,7 @@ function ReferenceField({
   onChange: (value: CrudValue) => void;
 }) {
   const id = useId();
-  const [search, setSearch] = useState('');
-  const [offset, setOffset] = useState(0);
   const [rows, setRows] = useState<CrudRecord[]>([]);
-  const [hasMore, setHasMore] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
   const [retry, setRetry] = useState(0);
@@ -205,27 +202,39 @@ function ReferenceField({
     const controller = new AbortController();
     setLoading(true);
     setError('');
-    const timer = window.setTimeout(() => {
-      getCrudRecords(`references/${field.reference ?? ''}`, search, offset, controller.signal)
-        .then((result) => {
-          setRows((previous) => (offset ? [...previous, ...result.records] : result.records));
-          setHasMore(result.hasMore);
-        })
-        .catch((error: unknown) => {
-          if (!controller.signal.aborted)
-            setError(
-              error instanceof Error ? error.message : 'No se pudieron cargar las opciones.'
-            );
-        })
-        .finally(() => {
-          if (!controller.signal.aborted) setLoading(false);
-        });
-    }, 200);
+    setRows([]);
+    // Native selects support typing to find an option. Load every page so that
+    // keyboard search also reaches references beyond the first 50 records.
+    const loadOptions = async () => {
+      const allRows: CrudRecord[] = [];
+      let offset = 0;
+      while (!controller.signal.aborted) {
+        const result = await getCrudRecords(
+          `references/${field.reference ?? ''}`,
+          '',
+          offset,
+          controller.signal
+        );
+        allRows.push(...result.records);
+        if (!result.hasMore) {
+          if (!controller.signal.aborted) setRows(allRows);
+          return;
+        }
+        offset += 50;
+      }
+    };
+    void loadOptions()
+      .catch((error: unknown) => {
+        if (!controller.signal.aborted)
+          setError(error instanceof Error ? error.message : 'No se pudieron cargar las opciones.');
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setLoading(false);
+      });
     return () => {
-      window.clearTimeout(timer);
       controller.abort();
     };
-  }, [field.reference, search, offset, retry]);
+  }, [field.reference, retry]);
   const eligible = rows.filter((row) => {
     if (field.reference === 'rounds') return row.idSeasonDivision === scope;
     if (field.reference === 'teams' && scope && row.seasonDivisionId !== scope) return false;
@@ -243,19 +252,6 @@ function ReferenceField({
     ];
   return (
     <div className="crud-operations-field">
-      {!disabled && (
-        <input
-          type="search"
-          aria-label={`Buscar ${field.label}`}
-          placeholder="Buscar opciones…"
-          value={search}
-          maxLength={120}
-          onChange={(event) => {
-            setSearch(event.target.value);
-            setOffset(0);
-          }}
-        />
-      )}
       <Select
         label={`${field.label}${field.required ? ' *' : ''}`}
         variant="form"
@@ -291,16 +287,6 @@ function ReferenceField({
             Reintentar
           </button>
         </span>
-      )}
-      {hasMore && !disabled && (
-        <button
-          type="button"
-          className="btn-ghost"
-          disabled={loading}
-          onClick={() => setOffset(offset + 50)}
-        >
-          Más opciones
-        </button>
       )}
       {field.reference === 'rounds' && <small>Solo jornadas de la competición seleccionada.</small>}
     </div>
