@@ -1,6 +1,6 @@
 # Rebel Crown Legacy
 
-Base de la refactorización en TypeScript, Express y PostgreSQL con Drizzle. Incluye esquema, migraciones, datos de prueba, API de consulta y autenticación Discord con sesiones PostgreSQL. Las siguientes etapas son administración, perfiles/estadísticas, Pick'em y React.
+Base de la refactorización en TypeScript, Express y PostgreSQL con Drizzle. Incluye esquema, migraciones, datos de prueba, API de consulta y autenticación Discord con sesiones PostgreSQL. Incluye también el cliente React y la subida de repeticiones ROFL. Las siguientes etapas se detallan en [el roadmap](docs/architecture/roadmap.md).
 
 ## Administración
 
@@ -10,7 +10,7 @@ Los cambios se guardan en PostgreSQL con auditoría y validación. Los borrados 
 
 ## Inicio de sesión con Discord
 
-Configura `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET` y `DISCORD_REDIRECT_URI` en `.env`, aplica `pnpm db:migrate` y abre `/api/v1/auth/discord` en la API. Consulta [la guía de autenticación](docs/authentication.md) para registrar el callback, probar la sesión y conectar el futuro frontend. Sin credenciales, la API pública sigue disponible y las rutas de autenticación devuelven 503.
+Configura `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET` y `DISCORD_REDIRECT_URI` en `.env`, aplica `pnpm db:migrate`, arranca `pnpm dev:api` y `pnpm dev:web` en terminales separadas y abre `http://localhost:5173`. La cabecera incluye **Entrar con Discord**, el usuario conectado y el cierre de sesión. Consulta [la guía de autenticación](docs/authentication.md) para registrar el callback y probar el acceso. Sin credenciales, la API pública sigue disponible y las rutas de autenticación devuelven 503.
 
 ## Dónde está la base de datos
 

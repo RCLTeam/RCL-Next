@@ -1,6 +1,7 @@
 // Synchronized with drizzle migrations. SQL triggers remain in the baseline migration.
 import { sql } from 'drizzle-orm';
 import {
+  bigint,
   boolean,
   check,
   date,
@@ -189,6 +190,7 @@ export const teams = pgTable(
     logoUrl: text('logo_url'),
     color: varchar('color', { length: 7 }),
     isActive: boolean('is_active').notNull().default(true),
+    discordRoleId: bigint('discord_role_id', { mode: 'bigint' }).unique(),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
   },
@@ -312,6 +314,8 @@ export const matches = pgTable(
     streamUrl: text('stream_url'),
     streamUrlLive: varchar('stream_url_live', { length: 255 }),
     notes: text('notes'),
+    jornada: integer('jornada'),
+    discordChannelId: bigint('discord_channel_id', { mode: 'bigint' }).unique(),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
   },
