@@ -215,6 +215,8 @@
 }
 
 .rcl-site .players-cards .player-card {
+  display: flex;
+  flex-direction: column;
   padding: 0;
   border-top: 1px solid var(--line);
   border-bottom: 2px solid color-mix(in srgb, var(--player-team-color) 55%, var(--line));
@@ -230,6 +232,7 @@
 }
 
 .rcl-site .players-cards .player-card-body {
+  flex: 1;
   padding: 20px;
   background: linear-gradient(to top, color-mix(in srgb, var(--player-team-color) 16%, transparent), transparent);
 }
