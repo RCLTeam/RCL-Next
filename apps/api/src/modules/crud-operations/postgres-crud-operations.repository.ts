@@ -234,25 +234,111 @@ export class PostgresCrudOperationsRepository implements CrudOperationsRepositor
       )
     );
 
-    const searchableFields = resource.fields
-      .filter(
-        (field) => field.type !== 'datetime' && field.type !== 'boolean' && field.type !== 'number'
-      )
-      .map((field) => field.name);
+    const searchEscaped = search.replace(/[\\%_]/g, '\\$&');
+    const searchPattern = `%${searchEscaped}%`;
+    const conditions: ReturnType<typeof sql>[] = [];
 
-    const searchable = searchableFields
-      .map((fieldName) => {
-        const col = column(resource.table, fieldName);
-        return col ? sql`${col} ILIKE ${`%${search.replace(/[\\%_]/g, '\\$&')}%`}` : null;
-      })
-      .filter((expr): expr is ReturnType<typeof sql> => expr !== null);
+    if (search) {
+      const searchableNames = [
+        ...new Set([
+          ...resource.keys,
+          ...resource.fields
+            .filter(
+              (field) => field.type === 'text' || field.type === 'select' || field.type === 'url'
+            )
+            .map((field) => field.name)
+        ])
+      ];
+
+      for (const fieldName of searchableNames) {
+        try {
+          const col = column(resource.table, fieldName);
+          if (col) {
+            conditions.push(sql`${col}::text ILIKE ${searchPattern}`);
+          }
+        } catch {
+          // Ignore if the column does not exist in the physical table
+        }
+      }
+      for (const field of resource.fields) {
+        if (!field.reference) continue;
+
+        const refDescriptor = [...crudResources, ...crudReferences].find(
+          (entry) => entry.name === field.reference
+        );
+        if (!refDescriptor) continue;
+
+        const target = storedResource(refDescriptor);
+        const localCol = column(resource.table, field.name);
+        const primaryKeyName = target.keys[0];
+        if (!localCol || !primaryKeyName) continue;
+
+        const targetKeyCol = column(target.table, primaryKeyName);
+
+        const targetSearchFields = target.fields
+          .filter(
+            (f) =>
+              f.type === 'text' ||
+              f.name === 'name' ||
+              f.name === 'username' ||
+              f.name === 'globalName'
+          )
+          .map((f) => f.name);
+
+        const targetConditions: ReturnType<typeof sql>[] = [];
+        for (const tName of targetSearchFields) {
+          try {
+            const tCol = column(target.table, tName);
+            if (tCol) {
+              targetConditions.push(sql`${tCol}::text ILIKE ${searchPattern}`);
+            }
+          } catch {
+            // Ignore missing columns
+          }
+        }
+
+        if (target.name === 'competitions') {
+          targetConditions.push(
+            sql`("seasonName" ILIKE ${searchPattern} OR "divisionName" ILIKE ${searchPattern})`
+          );
+        }
+
+        if (targetConditions.length > 0) {
+          conditions.push(
+            sql`EXISTS (
+              SELECT 1 FROM ${target.table}
+              WHERE ${targetKeyCol} = ${localCol}
+                AND (${or(...targetConditions)})
+            )`
+          );
+        }
+      }
+    }
+
+    const orderByClauses: ReturnType<typeof sql>[] = [];
+    const primaryNameField = resource.fields.find(
+      (f) => f.name === 'name' || f.name === 'username'
+    )?.name;
+
+    if (search && primaryNameField) {
+      const nameCol = column(resource.table, primaryNameField);
+      orderByClauses.push(
+        sql`CASE 
+          WHEN ${nameCol}::text ILIKE ${`${searchEscaped}%`} THEN 0 
+          WHEN ${nameCol}::text ILIKE ${searchPattern} THEN 1 
+          ELSE 2 
+        END`
+      );
+    }
+
+    orderByClauses.push(...resource.keys.map((key) => asc(column(resource.table, key))));
 
     const result = records(
       await this.db
         .select({ ...projection, updatedAt: selection(resource.table).updatedAt })
         .from(resource.table)
-        .where(search && searchable.length > 0 ? or(...searchable) : undefined)
-        .orderBy(...resource.keys.map((key) => asc(column(resource.table, key))))
+        .where(search && conditions.length > 0 ? or(...conditions) : undefined)
+        .orderBy(...orderByClauses)
         .limit(51)
         .offset(offset)
     );
