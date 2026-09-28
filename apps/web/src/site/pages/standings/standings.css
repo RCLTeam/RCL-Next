@@ -60,7 +60,7 @@
 }
 
 .rcl-site #clasificacion .standings-table tbody tr:hover {
-  background: color-mix(in srgb, var(--purple) 8%, var(--void));
+  background: var(--panel);
 }
 
 .rcl-site #clasificacion .standings-table .wins {
@@ -86,7 +86,7 @@
 }
 
 .rcl-site #clasificacion .standings-team-link:hover {
-  color: var(--purple);
+  color: var(--lime);
 }
 
 .rcl-site #clasificacion .standings-team-link:focus-visible {

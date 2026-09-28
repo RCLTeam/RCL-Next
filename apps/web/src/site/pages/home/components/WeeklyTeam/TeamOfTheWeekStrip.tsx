@@ -4,6 +4,7 @@ import type { Competition } from '../../../../../features/competition/hooks/useC
 import { ContentStatus } from '../../../../../features/home-content/components/ContentStatus.js';
 import { useHomeContent } from '../../../../../features/home-content/useHomeContent.js';
 import { Select } from '../../../../../shared/components/Selector/Selector.js';
+import { displayName } from '../../../../../shared/display-name.js';
 import { WeeklyChampionBackground } from './WeeklyChampionBackground.js';
 
 const roles = ['top', 'jungle', 'mid', 'adc', 'support'] as const;
@@ -65,7 +66,7 @@ export function TeamOfTheWeekStrip({ competition }: { competition: Competition }
                       ♜
                     </div>
                   )}
-                  <h3>{player?.name ?? 'Por anunciar'}</h3>
+                  <h3>{displayName(player?.name ?? 'Por anunciar')}</h3>
                   <p>{player?.team ?? 'Próxima selección'}</p>
                 </div>
               </article>

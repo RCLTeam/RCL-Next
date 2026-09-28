@@ -8,6 +8,7 @@ import type {
 } from '../../../features/competition/types/competition.types.js';
 import { PageLayout } from '../../../shared/components/PageLayout/PageLayout.js';
 import { SiteLink } from '../../../shared/components/SiteLink.js';
+import { displayName } from '../../../shared/display-name.js';
 import './team-details.css';
 
 const roleLabels: Record<TeamMember['role'], string> = {
@@ -87,10 +88,10 @@ function MemberSection({
                       className="team-member-profile-link"
                       href={`/jugadores/${encodeURIComponent(member.playerSlug ?? member.playerId)}`}
                     >
-                      {member.name}
+                      {displayName(member.name)}
                     </SiteLink>
                   ) : (
-                    member.name
+                    displayName(member.name)
                   )}
                 </h3>
                 {team && (
@@ -205,11 +206,6 @@ export function TeamDetailPage({ teamId }: { teamId: string }) {
       title={state.status === 'ready' ? state.data.name : 'Ficha del equipo'}
       subtitle="Una identidad. Una rebelión."
       description="Conoce a los jugadores y al equipo que hay detrás de la competición."
-      toolbar={
-        <SiteLink className="team-back-link" href="/equipos">
-          ← Volver a equipos
-        </SiteLink>
-      }
     >
       {state.status === 'loading' && <output className="empty-state">Cargando equipo…</output>}
       {state.status === 'missing' && (
