@@ -169,7 +169,8 @@ export class PostgresCompetitionRepository implements CompetitionRepository {
           id: teams.id,
           name: teams.name,
           shortName: teams.shortName,
-          logoUrl: teams.logoUrl
+          logoUrl: teams.logoUrl,
+          color: teams.color
         },
         position: sql<
           string | null
@@ -244,7 +245,14 @@ export class PostgresCompetitionRepository implements CompetitionRepository {
       .select({
         playerId: players.id,
         role: teamMemberships.role,
-        team: { id: teams.id, name: teams.name, shortName: teams.shortName, logoUrl: teams.logoUrl }
+        isCaptain: teamMemberships.isCaptain,
+        team: {
+          id: teams.id,
+          name: teams.name,
+          shortName: teams.shortName,
+          logoUrl: teams.logoUrl,
+          color: teams.color
+        }
       })
       .from(players)
       .innerJoin(teamMemberships, eq(teamMemberships.discordUserId, players.discordUserId))
@@ -258,11 +266,20 @@ export class PostgresCompetitionRepository implements CompetitionRepository {
           player.competition?.stats || memberships.some((row) => row.playerId === player.id)
       )
       .map((player) => {
-        const membership = memberships.find((row) => row.playerId === player.id);
-        if (!player.competition || player.competition.team || !membership) return player;
+        const membership = memberships.find(
+          (row) =>
+            row.playerId === player.id &&
+            (!player.competition?.team || row.team.id === player.competition.team.id)
+        );
+        if (!player.competition || !membership) return player;
         return {
           ...player,
-          competition: { ...player.competition, role: membership.role, team: membership.team }
+          competition: {
+            ...player.competition,
+            role: player.competition.role ?? membership.role,
+            isCaptain: membership.isCaptain,
+            team: player.competition.team ?? membership.team
+          }
         };
       });
   }
@@ -282,6 +299,8 @@ export class PostgresCompetitionRepository implements CompetitionRepository {
         logoUrl: teams.logoUrl,
         seasonName: seasonsDivisions.seasonName,
         divisionName: seasonsDivisions.divisionName,
+        divisionId: teams.seasonDivisionId,
+        color: teams.color,
         role: teamMemberships.role,
         isCaptain: teamMemberships.isCaptain,
         isActive: teams.isActive

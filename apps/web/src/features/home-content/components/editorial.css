@@ -1,225 +1,110 @@
 @import "./editorial-tag.css";
 
-.rcl-site .editorial-page {
-  min-height: 60vh;
+.rcl-site .editorial-page { min-height: 60vh; }
+.rcl-site .editorial-back { display: inline-flex; align-items: center; min-height: 44px; margin-bottom: 32px; }
+.rcl-site .editorial-article { min-width: 0; overflow-wrap: anywhere; }
+
+.rcl-site .editorial-dialog-label {
+  display: block;
+  color: var(--muted);
+  font: 400 10px/1.6 var(--mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
 }
 
-.rcl-site .editorial-back {
-  display: inline-flex;
-  align-items: center;
-  min-height: 44px;
-  margin-bottom: 32px;
-}
-
-.rcl-site .editorial-article {
-  min-width: 0;
-  overflow-wrap: anywhere;
+/* Only article contents are styled here; the shared dialog owns its shell. */
+.rcl-site .editorial-modal-content {
+  padding: clamp(20px, 4vw, 48px) 0 12px;
+  border-top: 2px solid var(--purple);
 }
 
 .rcl-site .editorial-header {
-  max-width: 920px;
-  margin: 0 auto 32px;
+  max-width: 820px;
+  margin: 0 auto 28px;
 }
 
-.rcl-site .editorial-header .eyebrow {
-  display: block;
-  margin-bottom: 24px;
-}
+.rcl-site .editorial-header .eyebrow { display: block; margin-bottom: 24px; }
+.rcl-site .editorial-modal-content .editorial-header > .eyebrow { display: none; }
 
 .rcl-site .editorial-header h1 {
-  font: 900 clamp(36px, 6vw, 80px)/1.03 var(--display);
+  margin: 24px 0 20px;
+  font: 900 clamp(42px, 6vw, 80px)/0.98 var(--display);
   text-transform: uppercase;
-  margin: 24px 0;
+  text-wrap: balance;
 }
 
 .rcl-site .editorial-excerpt {
+  max-width: 65ch;
+  margin: 0 0 28px;
   color: var(--muted);
-  font-size: clamp(17px, 2vw, 23px);
-  line-height: 1.6;
+  font-size: clamp(16px, 2vw, 20px);
+  line-height: 1.65;
 }
 
 .rcl-site .editorial-byline {
   display: flex;
   flex-wrap: wrap;
   gap: 12px 24px;
-  padding-top: 20px;
-  border-top: 1px solid var(--line);
-  font: 11px var(--mono);
+  padding: 18px 0;
+  border-block: 1px solid var(--line);
+  font: 11px/1.6 var(--mono);
   color: var(--muted);
 }
 
-.rcl-site .editorial-cover {
-  margin: 32px auto;
-  max-width: 1120px;
-}
-
+.rcl-site .editorial-byline > span:first-child { color: var(--text); }
+.rcl-site .editorial-cover { margin: 32px auto; max-width: 920px; }
 .rcl-site .editorial-cover img {
+  display: block;
   width: 100%;
-  max-height: 620px;
+  max-height: 520px;
   object-fit: cover;
   aspect-ratio: 16 / 9;
 }
 
-.rcl-site .editorial-cover figcaption {
+.rcl-site .editorial-cover figcaption,
+.rcl-site .editorial-inline-image figcaption {
   margin-top: 12px;
   color: var(--muted);
-  font: 11px var(--mono);
+  font: 11px/1.6 var(--mono);
 }
 
 .rcl-site .editorial-body {
-  max-width: 720px;
-  margin: 40px auto;
-  font-size: 17px;
+  max-width: 680px;
+  margin: 36px auto;
+  font-size: clamp(16px, 1.8vw, 18px);
   line-height: 1.85;
 }
 
-.rcl-site .editorial-body p {
-  white-space: pre-line;
-  margin: 0 0 24px;
-}
-
+.rcl-site .editorial-body p { white-space: pre-line; margin: 0 0 24px; }
 .rcl-site .editorial-body h2 {
-  font: 700 clamp(28px, 4vw, 40px)/1.15 var(--display2);
-  margin: 40px 0 20px;
+  margin: 40px 0 18px;
+  font: 700 clamp(30px, 4vw, 44px)/1.1 var(--display2);
+  text-transform: uppercase;
 }
 
 .rcl-site .editorial-body blockquote {
-  border-left: 4px solid var(--lime);
   margin: 32px 0;
-  padding: 8px 24px;
-  font-size: 24px;
+  padding: 20px clamp(16px, 3vw, 28px);
+  border-left: 3px solid var(--lime);
+  background: color-mix(in srgb, var(--lime) 4%, transparent);
   color: var(--lime);
+  font: 700 clamp(26px, 3vw, 36px)/1.25 var(--display2);
   white-space: pre-line;
 }
 
 .rcl-site .editorial-footer {
-  max-width: 720px;
-  margin: 48px auto 0;
+  max-width: 680px;
+  margin: 40px auto 0;
   padding-top: 24px;
   border-top: 1px solid var(--line);
   color: var(--muted);
+  font-size: 13px;
 }
 
-@media (min-width: 651px) {
-  .rcl-site .editorial-body {
-    font-size: 19px;
-  }
-
-}
-.rcl-site .editorial-modal {
-  width: min(720px, calc(100vw - 24px));
-  max-width: none;
-  max-height: min(820px, 88dvh);
-  padding: 0;
-  margin: auto;
-  border: 1px solid var(--line);
-  background: var(--panel);
-  color: var(--text);
-  box-shadow: 0 24px 100px #0009;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-}
-
-.rcl-site .editorial-modal::backdrop {
-  background: #000b;
-  backdrop-filter: blur(5px);
-}
-
-.rcl-site .editorial-modal-toolbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 16px;
-  position: sticky;
-  top: 0;
-  z-index: 1;
-  background: var(--panel);
-  border-bottom: 1px solid var(--line);
-  padding: 8px 16px;
-}
-
-.rcl-site .editorial-modal-toolbar .eyebrow {
-  margin: 0;
-}
-
-.rcl-site .editorial-modal-toolbar button {
-  min-height: 44px;
-  padding: 8px 12px;
-  background: transparent;
-  color: var(--text);
-  border: 1px solid var(--line);
-  cursor: pointer;
-}
-
-.rcl-site .editorial-modal-toolbar button:focus-visible {
-  outline: 2px solid var(--lime);
-  outline-offset: 2px;
-}
-
-.rcl-site .editorial-modal-content {
-  padding: 24px 20px;
-}
-
-.rcl-site .editorial-modal .editorial-header > .eyebrow {
-  display: none;
-}
-
-.rcl-site .editorial-modal .editorial-header h1 {
-  font-size: clamp(28px, 5vw, 42px);
-  margin: 20px 0 12px;
-}
-
-.rcl-site .editorial-modal .editorial-excerpt {
-  font-size: 17px;
-}
-
-.rcl-site .editorial-modal .editorial-body {
-  font-size: 16px;
-  margin: 24px 0;
-  line-height: 1.75;
-}
-
-.rcl-site .editorial-modal .editorial-body h2 {
-  font-size: 26px;
-}
-
-.rcl-site .editorial-modal .editorial-body blockquote {
-  font-size: 20px;
-}
-
-.rcl-site .editorial-modal .editorial-cover {
-  margin: 24px 0;
-}
-
-.rcl-site .editorial-modal .editorial-cover img {
-  max-height: 300px;
-}
-
-.rcl-site .editorial-modal .editorial-footer {
-  margin-top: 28px;
-}
-
-@media (min-width: 651px) {
-  .rcl-site .editorial-modal-content {
-    padding: 32px;
-  }
-}
-
-
-.rcl-site .editorial-inline-image {
-  margin: 24px 0;
-}
-
+.rcl-site .editorial-inline-image { margin: 28px 0; }
 .rcl-site .editorial-inline-image img {
   display: block;
   width: 100%;
   max-height: 520px;
   object-fit: contain;
-}
-
-.rcl-site .editorial-inline-image figcaption {
-  font-size: 13px;
-  line-height: 1.5;
-  margin-top: 8px;
-  overflow-wrap: anywhere;
 }

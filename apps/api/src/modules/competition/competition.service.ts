@@ -37,13 +37,13 @@ export function calculateStandings(teams: Team[], matches: Match[]) {
       team.mapDifference = team.mapsWon - team.mapsLost;
     }
   }
-  // Preserve the legacy ordering. No extra tiebreak rule is assumed.
+  // BO3 points are the accumulated map difference; retain existing tie ordering.
   return [...totals.values()]
     .sort(
       (a, b) =>
+        b.mapDifference - a.mapDifference ||
         b.wins - a.wins ||
         a.losses - b.losses ||
-        b.mapDifference - a.mapDifference ||
         a.team.name.localeCompare(b.team.name, 'es')
     )
     .map((row, index) => ({ position: index + 1, ...row }));
@@ -132,9 +132,14 @@ export class CompetitionService {
     if (!id) throw notFound('Player');
     const player = await this.repository.playerDetail(id);
     if (!player) throw notFound('Player');
+    const divisionId = player.teams[0]?.divisionId;
+    const competition = divisionId
+      ? (await this.repository.players(divisionId)).find((entry) => entry.id === id)?.competition
+      : player.competition;
     const teamSlugs = await this.teamSlugs();
     return {
       ...player,
+      ...(competition ? { competition } : {}),
       slug: slugs.get(id),
       teams: player.teams.map((team) => ({ ...team, slug: teamSlugs.get(team.id) }))
     };
@@ -145,12 +150,33 @@ export class CompetitionService {
     if (!id) throw notFound('Team');
     const team = await this.repository.teamDetail(id);
     if (!team) throw notFound('Team');
+    const matches = (await this.repository.matches(team.divisionId)).filter(
+      (match) =>
+        match.status === 'completed' && (match.homeTeamId === id || match.awayTeamId === id)
+    );
+    const series = await Promise.all(matches.map((match) => this.repository.matchGames(match.id)));
+    const mvps = series.map((games) => matchMvpPlayerId(games));
+    const appearances = series
+      .flat()
+      .filter((game) => game.winnerTeamId)
+      .flatMap((game) => game.participants.filter((player) => player.teamId === id));
     const { slugs: playerSlugs } = await this.playerDirectory();
     return {
       ...team,
       slug: slugs.get(id),
       members: team.members.map((member) => ({
         ...member,
+        rosterStats: {
+          games: appearances.filter((player) => player.playerId === member.playerId).length,
+          mvps: member.playerId
+            ? mvps.filter((playerId) => playerId === member.playerId).length
+            : 0,
+          champions: new Set(
+            appearances
+              .filter((player) => player.playerId === member.playerId)
+              .map((player) => player.champion)
+          ).size
+        },
         playerSlug: member.playerId ? playerSlugs.get(member.playerId) : undefined
       }))
     };

@@ -34,6 +34,21 @@ test('PostgreSQL migrations, fixtures and relational constraints', async (t) => 
     assert.ok(schema.matches.streamUrlLive);
     assert.equal(schema.matches.streamUrlLive.name, 'stream_url_live');
   });
+  await t.test('teams schema defines discord_role_id column', () => {
+    assert.ok(schema.teams.discordRoleId);
+    assert.equal(schema.teams.discordRoleId.name, 'discord_role_id');
+    assert.equal(schema.teams.discordRoleId.dataType, 'bigint');
+    assert.equal(schema.teams.discordRoleId.isUnique, true);
+  });
+  await t.test('matches schema defines discord_channel_id and jornada columns', () => {
+    assert.ok(schema.matches.discordChannelId);
+    assert.equal(schema.matches.discordChannelId.name, 'discord_channel_id');
+    assert.equal(schema.matches.discordChannelId.dataType, 'bigint');
+    assert.equal(schema.matches.discordChannelId.isUnique, true);
+    assert.ok(schema.matches.jornada);
+    assert.equal(schema.matches.jornada.name, 'jornada');
+    assert.equal(schema.matches.jornada.dataType, 'number');
+  });
   await t.test('seed twice in transactions without duplicate data', async () => {
     for (let i = 0; i < 2; i++) await client.transaction((tx) => tx.exec(seed));
     assert.equal((await db.select().from(schema.players)).length, 20);

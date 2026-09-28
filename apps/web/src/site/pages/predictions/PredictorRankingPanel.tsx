@@ -37,10 +37,26 @@ export function PredictorRankingPanel({
           ))}
         </ol>
       ) : (
-        <p className="section-intro">
-          Todavía no hay predicciones resueltas esta temporada. Los primeros resultados estrenarán
-          el ranking.
-        </p>
+        <>
+          <table className="predictor-placeholder" aria-label="Ranking pendiente de resultados">
+            <thead>
+              <tr>
+                <th scope="col">#</th>
+                <th scope="col">Predictor</th>
+                <th scope="col">Puntos</th>
+              </tr>
+            </thead>
+            <tbody>
+              {[1, 2, 3, 4, 5].map((position) => (
+                <tr key={position}>
+                  <td className="predictor-position">{position}</td>
+                  <td>Por clasificar</td>
+                  <td>—</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </>
       )}
     </section>
   );

@@ -7,6 +7,7 @@ export interface TeamSummary {
   color?: string | null;
 }
 export interface TeamMember {
+  rosterStats?: { games: number; mvps: number; champions: number };
   playerSlug?: string | undefined;
   playerId?: string | null;
   id: string;
@@ -37,6 +38,7 @@ export interface TeamDetail extends TeamSummary {
 
 export interface Player {
   competition?: {
+    isCaptain?: boolean;
     role: string | null;
     team: TeamSummary | null;
     champion: string | null;
@@ -63,6 +65,7 @@ export interface PlayerStatistics {
   damageMitigated: number | null;
 }
 export interface PlayerTeam extends TeamSummary {
+  divisionId?: string;
   seasonName: string;
   divisionName: string;
   role: TeamMember['role'];

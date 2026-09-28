@@ -33,10 +33,12 @@ export function EditorialGrid() {
                 loading="lazy"
               />
             )}
-            <div>
+            <div className="news-hero-copy">
               <h2>{featured.title}</h2>
               <p>{featured.excerpt}</p>
-              <span className="meta">{featured.author}</span>
+              <div className="news-hero-footer">
+                <span className="meta">{featured.author}</span>
+              </div>
             </div>
           </SiteLink>
           {articles.length > 0 && (

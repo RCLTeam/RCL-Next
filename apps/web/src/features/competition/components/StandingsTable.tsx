@@ -1,4 +1,5 @@
 import React from 'react';
+import { SiteLink } from '../../../shared/components/SiteLink.js';
 import type { Standing } from '../types/competition.types.js';
 import { TeamBadge } from './TeamBadge.js';
 
@@ -22,10 +23,13 @@ export function StandingsTable({ rows }: { rows: Standing[] }) {
             <tr key={row.team.id}>
               <td className="rank">{row.position}</td>
               <th scope="row">
-                <span className="team-cell">
+                <SiteLink
+                  className="team-cell standings-team-link"
+                  href={`/equipos/${encodeURIComponent(row.team.slug ?? row.team.id)}`}
+                >
                   <TeamBadge team={row.team} />
                   {row.team.name}
-                </span>
+                </SiteLink>
               </th>
               <td>{row.played ?? 0}</td>
               <td className="wins">{row.wins ?? 0}</td>

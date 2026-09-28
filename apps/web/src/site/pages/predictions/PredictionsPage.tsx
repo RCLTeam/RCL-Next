@@ -31,7 +31,6 @@ export function PredictionsPage({ competition }: { competition: Competition }) {
       subtitle="Predicciones de la comunidad"
       description="Antes de cada jornada, vota quién crees que se lleva cada serie. Cada acierto suma puntos a tu clasificación personal de predictor."
     >
-      <PredictionRules />
       <div className="page-toolbar">
         <CompetitionFilters competition={competition}>
           <span className={`prediction-status${data?.open ? ' is-open' : ''}`}>
@@ -94,6 +93,7 @@ export function PredictionsPage({ competition }: { competition: Competition }) {
           userId={userId}
         />
       )}
+      <PredictionRules />
     </PageLayout>
   );
 }

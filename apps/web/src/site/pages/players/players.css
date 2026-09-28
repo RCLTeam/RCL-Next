@@ -49,15 +49,37 @@
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(transparent 55%, rgba(0,0,0,.65));
+  background: linear-gradient(to top, var(--void) 0%, color-mix(in srgb, var(--void) 80%, transparent) 30%, transparent 60%);
   pointer-events: none;
 }
 
-.rcl-site .player-art .role-chip {
+.rcl-site .player-art-labels {
   position: absolute;
   bottom: 14px;
   left: 14px;
   z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  right: 14px;
+}
+
+.rcl-site .player-art-labels .role-chip {
+  border-color: color-mix(in srgb, var(--player-team-color) 30%, transparent);
+  color: var(--player-team-color);
+  background: color-mix(in srgb, var(--player-team-color) 7%, transparent);
+}
+
+.rcl-site .player-art-labels .player-captain-chip {
+  border-color: var(--player-team-color);
+  background: var(--player-team-color);
+  color: var(--void);
+}
+
+.rcl-site .featured-player-card .role-chip:not(.player-captain-chip) {
+  border-color: color-mix(in srgb, var(--lime) 30%, transparent);
+  color: var(--lime);
+  background: color-mix(in srgb, var(--lime) 7%, transparent);
 }
 
 .rcl-site .player-team {
@@ -141,6 +163,7 @@
 }
 
 .rcl-site .players-controls {
+  margin-bottom: 24px;
   display: flex;
   align-items: end;
   flex-wrap: wrap;
@@ -194,10 +217,42 @@
 .rcl-site .players-cards .player-card {
   padding: 0;
   border-top: 1px solid var(--line);
+  border-bottom: 2px solid color-mix(in srgb, var(--player-team-color) 55%, var(--line));
+}
+
+.rcl-site .players-cards .player-card:hover,
+.rcl-site .players-cards .player-card:focus-visible {
+  border-color: var(--player-team-color);
+}
+
+.rcl-site .players-cards .player-card:focus-visible {
+  outline-color: var(--player-team-color);
 }
 
 .rcl-site .players-cards .player-card-body {
   padding: 20px;
+  background: linear-gradient(to top, color-mix(in srgb, var(--player-team-color) 16%, transparent), transparent);
+}
+
+.rcl-site .player-card-identity {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.rcl-site .player-card-identity > div {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.rcl-site .player-card-identity .team-badge {
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
 }
 
 .rcl-site .players-cards .player-card h3 {
@@ -214,7 +269,7 @@
 }
 
 .rcl-site .player-card-stats strong {
-  color: var(--lime);
+  color: var(--player-team-color);
 }
 
 @media (min-width: 701px) {
@@ -226,4 +281,53 @@
   .rcl-site .featured-player-stats {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
+}
+
+/* A deliberate identity card for players with no champion history yet. */
+.rcl-site .player-art-unplayed {
+  background:
+    linear-gradient(135deg, transparent 58%, color-mix(in srgb, var(--player-team-color) 10%, transparent) 58%),
+    linear-gradient(to top, var(--panel), color-mix(in srgb, var(--player-team-color) 12%, var(--void)));
+  border-bottom: 1px solid var(--line);
+}
+
+.rcl-site .player-art-unplayed::after {
+  background: none;
+}
+
+.rcl-site .player-art-unplayed .player-art-fallback {
+  inset: 42px auto auto 20px;
+  display: block;
+  font: 900 88px/1 var(--display);
+  color: var(--text);
+  opacity: 0.9;
+  letter-spacing: 0.02em;
+}
+
+.rcl-site .player-art-unplayed > .player-unplayed-team {
+  inset: 28px 18px auto auto;
+  width: 64px;
+  height: 64px;
+  object-fit: contain;
+}
+
+.rcl-site .player-unplayed-label {
+  position: absolute;
+  left: 20px;
+  right: 20px;
+  bottom: 58px;
+  color: var(--muted);
+  font: 9px/1.5 var(--mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.rcl-site .player-art-unplayed .player-art-labels {
+  left: 20px;
+}
+
+.rcl-site .players-cards .player-pending-stats {
+  margin: 0;
+  color: var(--muted);
+  font: 11px/1.6 var(--mono);
 }

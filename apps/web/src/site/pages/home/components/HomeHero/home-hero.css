@@ -189,6 +189,7 @@
   overflow: hidden;
   white-space: nowrap;
   font: 700 16px var(--display2);
+  text-transform: uppercase;
   transform: skewY(-2deg);
   user-select: none;
   margin-bottom: 10px;

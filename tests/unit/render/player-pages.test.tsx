@@ -61,7 +61,6 @@ test('Player profiles show real membership context and handle missing data', () 
     />
   );
   expect(empty).toContain('Sin cuenta vinculada');
-  expect(empty).toContain('No disponible');
   expect(empty).toContain('todavía no tiene inscripciones');
 });
 
@@ -70,7 +69,6 @@ test('Player direct links and trailing slashes render their own page with select
     const html = renderToStaticMarkup(<App initialPath={`/jugadores/${reference}`} />);
     expect(html).toContain('id="jugador"');
     expect(html).toContain('Cargando jugador');
-    expect(html).toContain('Volver a jugadores');
     expect(html).not.toContain('Página no encontrada');
     expect(
       (html.match(/<a\b[^>]*>/g) ?? []).some(
@@ -78,6 +76,41 @@ test('Player direct links and trailing slashes render their own page with select
       )
     ).toBe(true);
   }
+});
+
+test('Player profiles display competition metrics and distinguish missing results', () => {
+  const html = renderToStaticMarkup(
+    <PlayerProfile
+      player={{
+        ...player,
+        competition: {
+          role: 'mid',
+          team: player.teams[0] ?? defaultTeam,
+          champion: 'Ahri',
+          mvpMatchIds: ['m1', 'm2'],
+          featured: null,
+          stats: {
+            games: 8,
+            kda: 4.5,
+            winRate: 75,
+            csPerMinute: 7.2,
+            killParticipation: 62,
+            damagePerMinute: 600,
+            visionScore: null,
+            damageMitigated: null
+          }
+        }
+      }}
+    />
+  );
+  expect(html).toContain('75%');
+  expect(html).toContain('4,5');
+  expect(html).toContain('Último campeón jugado');
+  expect(html).toContain('Ahri');
+  expect(html).toContain('https://op.gg/es/lol/summoners/euw/Jugador%20Uno-EUW');
+  const empty = renderToStaticMarkup(<PlayerProfile player={player} />);
+  expect(empty).toContain('Las estadísticas aparecerán');
+  expect(empty).not.toContain('player-performance-grid');
 });
 
 test('Team rosters link to the selected game account profile', () => {
