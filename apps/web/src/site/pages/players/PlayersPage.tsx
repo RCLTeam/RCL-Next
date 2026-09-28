@@ -150,6 +150,16 @@ export function filterPlayers(
       const right = b.competition?.stats?.[sort];
       if (left == null && right != null) return 1;
       if (right == null && left != null) return -1;
+      if (left == null && right == null) {
+        const leftTeam = a.competition?.team;
+        const rightTeam = b.competition?.team;
+        if (!leftTeam && rightTeam) return 1;
+        if (!rightTeam && leftTeam) return -1;
+        const teamOrder =
+          (leftTeam?.name ?? '').localeCompare(rightTeam?.name ?? '', 'es') ||
+          (leftTeam?.id ?? '').localeCompare(rightTeam?.id ?? '');
+        if (teamOrder) return teamOrder;
+      }
       return (
         (right ?? 0) - (left ?? 0) ||
         a.gameName.localeCompare(b.gameName, 'es') ||
