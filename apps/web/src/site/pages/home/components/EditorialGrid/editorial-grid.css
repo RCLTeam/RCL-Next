@@ -1,111 +1,100 @@
 @import "../../../../../features/home-content/components/editorial-tag.css";
 
-/* Article cards and featured story. */
-
-.rcl-site .news-hero-link {
-  color: inherit;
-  text-decoration: none;
+.rcl-site .news-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 32px;
-  overflow-wrap: anywhere;
+  align-items: start;
 }
 
-.rcl-site .news-hero-link:hover {
-  border-color: var(--purple);
+.rcl-site .news-grid > * { min-width: 0; }
+
+.rcl-site .news-hero {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: clamp(20px, 3vw, 30px);
+  border: 1px solid var(--line);
+  border-top: 2px solid var(--purple);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--purple) 12%, transparent), transparent 65%), var(--panel);
+  color: var(--text);
+  text-decoration: none;
+  overflow-wrap: anywhere;
 }
 
 .rcl-site .news-hero-cover {
+  display: block;
   width: 100%;
   height: 180px;
   object-fit: cover;
-  -webkit-mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 40%, rgba(0, 0, 0, 0) 100%);
-  mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 40%, rgba(0, 0, 0, 0) 100%);
-  border: 1px solid var(--line);
-}
-
-.rcl-site .news-item > div {
-  min-width: 0;
-  overflow-wrap: anywhere;
-}
-
-.rcl-site .news-grid > * {
-  min-width: 0;
-}
-
-.rcl-site .news-hero {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  border: 1px solid var(--line);
-  background: linear-gradient(0deg, var(--panel) 10%, transparent), radial-gradient(ellipse at 75% 10%, color-mix(in srgb, var(--purple) 30%, var(--panel)), var(--panel) 65%);
-  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 30px), calc(100% - 30px) 100%, 0 100%);
-  padding: 24px;
-  min-height: 360px;
-}
-
-@media (min-width: 651px) {
-  .rcl-site .news-hero {
-    padding: 30px;
-    min-height: 420px;
-  }
+  -webkit-mask-image: linear-gradient(to bottom, #000 35%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 35%, transparent 100%);
 }
 
 .rcl-site .news-hero h2 {
+  margin: 0 0 16px;
   font: 900 clamp(34px, 4vw, 54px)/1.05 var(--display);
   text-transform: uppercase;
-  margin-bottom: 16px;
+  text-wrap: balance;
 }
 
 .rcl-site .news-hero p {
+  max-width: 58ch;
+  margin: 0 0 20px;
   color: var(--muted);
-  line-height: 1.7;
   font-size: 14px;
+  line-height: 1.75;
 }
 
-/* News */
-
-.rcl-site .news-grid {
-  display: grid;
-  gap: 24px;
-  grid-template-columns: 1fr;
-}
-
-@media (min-width: 851px) {
-  .rcl-site .news-grid {
-    grid-template-columns: 1.3fr 1fr;
-  }
+.rcl-site .news-hero-footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
 }
 
 .rcl-site .news-side {
-  display: grid;
-  gap: 16px;
+  border-top: 2px solid var(--purple);
 }
 
 .rcl-site .news-item {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-  background: var(--panel);
-  border: 1px solid var(--line);
-  padding: 18px;
-}
-
-@media (min-width: 651px) {
-  .rcl-site .news-item {
-    padding: 22px;
-  }
-}
-
-.rcl-site .news-item:hover {
-  border-color: var(--purple);
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr);
+  align-items: start;
+  gap: 16px;
+  padding: 26px 0;
+  border-bottom: 1px solid var(--line);
+  color: var(--text);
+  text-decoration: none;
+  overflow-wrap: anywhere;
 }
 
 .rcl-site .news-number {
-  font: 700 42px var(--display2);
-  color: var(--purple);
+  font: 700 38px/1 var(--display2);
+  color: var(--muted);
 }
 
 .rcl-site .news-item h3 {
-  font-size: 16px;
-  line-height: 1.4;
-  margin: 8px 0;
+  margin: 10px 0 0;
+  font: 700 clamp(26px, 2.8vw, 36px)/1.08 var(--display2);
+  text-transform: uppercase;
+}
+
+.rcl-site .news-hero-link:hover h2,
+.rcl-site .news-item:hover h3 {
+  color: var(--lime);
+}
+
+.rcl-site .news-hero-link:focus-visible,
+.rcl-site .news-item:focus-visible {
+  outline: 2px solid var(--lime);
+  outline-offset: 6px;
+}
+
+@media (min-width: 851px) {
+  .rcl-site .news-grid { grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); }
 }

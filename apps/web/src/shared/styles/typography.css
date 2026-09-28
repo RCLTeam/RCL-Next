@@ -56,11 +56,13 @@
   text-transform: uppercase;
   margin-bottom: 24px;
   font-size: 9px;
+  letter-spacing: 0.09em;
 }
 
 @media (min-width: 651px) {
   .rcl-site .eyebrow {
     font-size: 11px;
+    letter-spacing: 0.16em;
   }
 }
 

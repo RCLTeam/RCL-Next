@@ -1,19 +1,127 @@
-/* Page-specific styles: standings. Base styles, states and responsive rules stay with their component. */
+/* Standings follow the site's display typography and brand accents. */
+.rcl-site #clasificacion .table-scroll {
+  border: 0;
+  border-top: 2px solid var(--purple);
+  background: var(--void);
+  scrollbar-color: var(--purple) var(--panel);
+}
 
-/* standings page and components */
-.rcl-site .standings-table .rank {
-  font: 700 24px var(--display2);
+.rcl-site #clasificacion .table-scroll:focus-visible {
+  outline: 2px solid var(--purple);
+  outline-offset: 4px;
+}
+
+.rcl-site #clasificacion .standings-table {
+  min-width: 760px;
+}
+
+.rcl-site #clasificacion .standings-table thead th {
+  padding: 18px 20px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--line);
+  font: 400 10px var(--mono);
+  letter-spacing: 0.1em;
+}
+
+.rcl-site #clasificacion .standings-table td,
+.rcl-site #clasificacion .standings-table tbody th {
+  padding: 20px;
+  border-bottom: 1px solid var(--line);
+}
+
+.rcl-site #clasificacion .standings-table thead th:not(:nth-child(2)),
+.rcl-site #clasificacion .standings-table td {
+  text-align: center;
+}
+
+.rcl-site #clasificacion .standings-table tbody th {
+  width: 40%;
+  min-width: 260px;
+  font: 700 28px/1.1 var(--display2);
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+  white-space: normal;
+}
+
+.rcl-site #clasificacion .standings-table td {
+  font-size: 14px;
+  font-weight: 400;
   color: var(--muted);
 }
 
-.rcl-site .standings-table .wins {
-  color: var(--lime);
+.rcl-site #clasificacion .standings-table .rank {
+  width: 76px;
+  font: 700 36px/1 var(--display2);
+  color: var(--muted);
 }
 
-.rcl-site .standings-table .losses {
-  color: var(--crimson);
+.rcl-site #clasificacion .standings-table tbody tr {
+  transition: background-color 160ms ease;
 }
 
-.rcl-site #clasificacion .table-scroll {
-  background: var(--void);
+.rcl-site #clasificacion .standings-table tbody tr:hover {
+  background: color-mix(in srgb, var(--purple) 8%, var(--void));
+}
+
+.rcl-site #clasificacion .standings-table .wins {
+  font-weight: 700;
+}
+
+.rcl-site #clasificacion .standings-table .losses {
+  color: var(--muted);
+}
+
+.rcl-site #clasificacion .standings-table td:last-child {
+  color: var(--purple);
+  font-weight: 700;
+}
+
+.rcl-site #clasificacion .team-cell {
+  gap: 18px;
+}
+
+.rcl-site #clasificacion .standings-team-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.rcl-site #clasificacion .standings-team-link:hover {
+  color: var(--purple);
+}
+
+.rcl-site #clasificacion .standings-team-link:focus-visible {
+  color: var(--purple);
+  outline: 2px solid var(--purple);
+  outline-offset: 6px;
+}
+
+.rcl-site #clasificacion .team-badge {
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+@media (max-width: 650px) {
+  .rcl-site #clasificacion .standings-table thead th,
+  .rcl-site #clasificacion .standings-table td,
+  .rcl-site #clasificacion .standings-table tbody th {
+    padding: 16px 12px;
+  }
+
+  .rcl-site #clasificacion .standings-table tbody th {
+    font-size: 24px;
+    min-width: 220px;
+  }
+
+  .rcl-site #clasificacion .team-cell {
+    gap: 12px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rcl-site #clasificacion .standings-table tbody tr {
+    transition: none;
+  }
 }

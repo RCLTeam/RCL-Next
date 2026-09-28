@@ -14,12 +14,7 @@ export function EditorialPage({ articleId }: { articleId: string }) {
     navigate('/');
   };
   const modalTitle = (
-    <div>
-      <span className="eyebrow" style={{ display: 'block', fontSize: '0.75rem' }}>
-        Editorial RCL
-      </span>
-      {content.data?.title ?? 'Editorial'}
-    </div>
+    <span className="editorial-dialog-label">Editorial · Crónica de la Rebelión</span>
   );
 
   return (

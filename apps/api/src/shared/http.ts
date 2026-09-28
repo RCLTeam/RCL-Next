@@ -30,6 +30,7 @@ export const errorHandler: ErrorRequestHandler = (error: unknown, _req, res, _ne
     });
     return;
   }
+  console.error('Unhandled API Error:', error);
   // Do not expose SQL, connection credentials or stack traces to clients.
   res
     .status(500)
