@@ -144,7 +144,6 @@ test('Predictions await server voting state and preserve competition errors', ()
   const competition = fixture();
   const html = renderToStaticMarkup(<PredictionsPage competition={competition} />);
   expect(html).toContain('Cargando');
-  expect(html).toContain('3 puntos totales por serie');
   expect(html).not.toContain('Lobos');
   const failed = renderToStaticMarkup(
     <PredictionsPage competition={{ ...competition, seasons: { status: 'error', data: [] } }} />

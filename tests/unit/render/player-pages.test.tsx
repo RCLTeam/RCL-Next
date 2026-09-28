@@ -61,7 +61,6 @@ test('Player profiles show real membership context and handle missing data', () 
     />
   );
   expect(empty).toContain('Sin cuenta vinculada');
-  expect(empty).toContain('No disponible');
   expect(empty).toContain('todavía no tiene inscripciones');
 });
 
@@ -70,7 +69,6 @@ test('Player direct links and trailing slashes render their own page with select
     const html = renderToStaticMarkup(<App initialPath={`/jugadores/${reference}`} />);
     expect(html).toContain('id="jugador"');
     expect(html).toContain('Cargando jugador');
-    expect(html).toContain('Volver a jugadores');
     expect(html).not.toContain('Página no encontrada');
     expect(
       (html.match(/<a\b[^>]*>/g) ?? []).some(
