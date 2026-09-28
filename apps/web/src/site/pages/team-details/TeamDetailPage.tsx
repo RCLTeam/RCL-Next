@@ -88,19 +88,13 @@ function MemberSection({
                       className="team-member-profile-link"
                       href={`/jugadores/${encodeURIComponent(member.playerSlug ?? member.playerId)}`}
                     >
-                      {displayName(member.name)}
+                      {displayName(member.gameName ?? member.name)}
                     </SiteLink>
                   ) : (
-                    displayName(member.name)
+                    displayName(member.gameName ?? member.name)
                   )}
                 </h3>
-                {team && (
-                  <p>
-                    {member.gameName
-                      ? `${member.gameName}${member.riotTag ? `#${member.riotTag.replace(/^#/, '')}` : ''}`
-                      : 'Cuenta de juego no disponible'}
-                  </p>
-                )}
+                {team && <p>{displayName(member.name)}</p>}
                 {team && member.gameName && member.riotTag?.replace(/^#/, '').trim() && (
                   <a
                     className="team-member-opgg"

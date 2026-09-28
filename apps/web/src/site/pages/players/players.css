@@ -116,7 +116,9 @@
   font: 900 clamp(44px, 5vw, 76px)/1 var(--display);
   text-transform: uppercase;
   margin: 14px 0;
-  overflow-wrap: anywhere;
+  white-space: nowrap; 
+  overflow: hidden; 
+  text-overflow: ellipsis; 
 }
 
 .rcl-site .featured-player-body p {
@@ -216,6 +218,7 @@
 .rcl-site .players-cards .player-card {
   display: flex;
   flex-direction: column;
+  height: 100%;
   padding: 0;
   border-top: 1px solid var(--line);
   border-bottom: 2px solid color-mix(in srgb, var(--player-team-color) 55%, var(--line));
@@ -232,6 +235,9 @@
 
 .rcl-site .players-cards .player-card-body {
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between; 
   padding: 20px;
   background: linear-gradient(to top, color-mix(in srgb, var(--player-team-color) 16%, transparent), transparent);
 }
@@ -260,6 +266,10 @@
 .rcl-site .players-cards .player-card h3 {
   font: 700 30px var(--display2);
   margin: 14px 0;
+  line-height: 1.1;
+  white-space: nowrap; 
+  overflow: hidden; 
+  text-overflow: ellipsis; 
 }
 
 .rcl-site .player-card-stats {

@@ -32,7 +32,8 @@ const roles = [
   ['jungle', 'Jungla'],
   ['mid', 'Mid'],
   ['adc', 'ADC'],
-  ['support', 'Support']
+  ['support', 'Support'],
+  ['substitute', 'Suplente']
 ] as const;
 const roleLabel = (role: string | null | undefined) =>
   roles.find(([key]) => key === role)?.[1] ?? 'Sin posición';
@@ -130,6 +131,7 @@ export function PlayersPage({ competition }: { competition: Competition }) {
   );
 }
 
+const VALID_PLAYER_ROLES = ['top', 'jungle', 'mid', 'adc', 'support', 'substitute'];
 export function filterPlayers(
   players: Player[],
   query: string,
@@ -138,13 +140,28 @@ export function filterPlayers(
 ) {
   const search = query.trim().toLocaleLowerCase('es');
   return players
-    .filter(
-      (player) =>
-        (role === 'all' || player.competition?.role === role) &&
+    .filter((player) => {
+      const playerRole = player.competition?.role;
+
+      let matchesRole = false;
+      if (role === 'all') {
+        matchesRole =
+          VALID_PLAYER_ROLES.includes(playerRole ?? '') ||
+          playerRole === 'substitute' ||
+          player.isMain === false;
+      } else if (role === 'substitute') {
+        matchesRole = playerRole === 'substitute' || player.isMain === false;
+      } else {
+        matchesRole = playerRole === role && player.isMain !== false;
+      }
+
+      const matchesQuery =
         `${player.gameName}${player.riotTag ? `#${player.riotTag}` : ''} ${player.displayName ?? ''}`
           .toLocaleLowerCase('es')
-          .includes(search)
-    )
+          .includes(search);
+
+      return matchesRole && matchesQuery;
+    })
     .sort((a, b) => {
       const left = a.competition?.stats?.[sort];
       const right = b.competition?.stats?.[sort];

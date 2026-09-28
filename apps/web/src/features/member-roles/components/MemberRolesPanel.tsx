@@ -1,6 +1,7 @@
 import type { MemberRole, MemberRolesPage, RoleMember } from '@rcl/contracts';
 import React, { useEffect, useState } from 'react';
 import { Select } from '../../../shared/components/Selector/Selector.js';
+import { displayName } from '../../../shared/display-name.js';
 import { useAuth } from '../../auth/components/AuthProvider.js';
 import { changeMemberRole, getRoleMembers } from '../api/member-roles-api.js';
 import './member-roles.css';
@@ -233,7 +234,7 @@ export function MemberRolesTable({
           {members.map((member) => (
             <tr key={member.discordId}>
               <td>
-                <strong>{member.globalName ?? member.username}</strong>
+                <strong>{displayName(member.globalName ?? member.username)}</strong>
                 <small>{member.username}</small>
               </td>
               <td>{member.discordId}</td>
