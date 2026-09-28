@@ -81,15 +81,15 @@ export function ChampionsTable({
           <tbody>
             {filtered.map((row, index) => (
               <tr key={row.champion}>
-                <td>{index + 1}</td>
+                <td className="rank">{index + 1}</td>
                 <th scope="row">
                   <GameIcon kind="champion" id={row.champion} catalog={catalog} label />
                 </th>
                 <td>{percent(row.pickRate)}</td>
-                <td>{percent(row.winRate)}</td>
-                <td>{row.games}</td>
+                <td className="highlight-stat">{percent(row.winRate)}</td>
+                <td className="wins">{row.games}</td>
                 <td>{row.wins}</td>
-                <td>{row.losses}</td>
+                <td className="losses">{row.losses}</td>
               </tr>
             ))}
             {!filtered.length && (
