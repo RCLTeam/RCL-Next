@@ -245,6 +245,7 @@ export class PostgresCompetitionRepository implements CompetitionRepository {
       .select({
         playerId: players.id,
         role: teamMemberships.role,
+        isCaptain: teamMemberships.isCaptain,
         team: {
           id: teams.id,
           name: teams.name,
@@ -265,11 +266,20 @@ export class PostgresCompetitionRepository implements CompetitionRepository {
           player.competition?.stats || memberships.some((row) => row.playerId === player.id)
       )
       .map((player) => {
-        const membership = memberships.find((row) => row.playerId === player.id);
-        if (!player.competition || player.competition.team || !membership) return player;
+        const membership = memberships.find(
+          (row) =>
+            row.playerId === player.id &&
+            (!player.competition?.team || row.team.id === player.competition.team.id)
+        );
+        if (!player.competition || !membership) return player;
         return {
           ...player,
-          competition: { ...player.competition, role: membership.role, team: membership.team }
+          competition: {
+            ...player.competition,
+            role: player.competition.role ?? membership.role,
+            isCaptain: membership.isCaptain,
+            team: player.competition.team ?? membership.team
+          }
         };
       });
   }

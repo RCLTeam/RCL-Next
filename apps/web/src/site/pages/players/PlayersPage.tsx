@@ -5,6 +5,7 @@ import {
   resolveCompetitionState
 } from '../../../features/competition/components/CompetitionDataState.js';
 import { CompetitionFilters } from '../../../features/competition/components/CompetitionFilters.js';
+import { TeamBadge } from '../../../features/competition/components/TeamBadge.js';
 import { useCollection } from '../../../features/competition/hooks/useCollection.js';
 import type { Competition } from '../../../features/competition/hooks/useCompetition.js';
 import { PageLayout } from '../../../shared/components/PageLayout/PageLayout.js';
@@ -191,7 +192,12 @@ function PlayerArt({ player, catalog }: { player: Player; catalog: GameCatalog }
           }}
         />
       )}
-      <span className="role-chip">{roleLabel(player.competition?.role)}</span>
+      <div className="player-art-labels">
+        <span className="role-chip">{roleLabel(player.competition?.role)}</span>
+        {player.competition?.isCaptain && (
+          <span className="role-chip player-captain-chip">Capitán</span>
+        )}
+      </div>
     </div>
   );
 }
@@ -265,13 +271,25 @@ export function PlayerGrid({
         <SiteLink
           key={player.id}
           className="player-card"
+          style={
+            {
+              '--player-team-color': player.competition?.team?.color || 'var(--purple)'
+            } as React.CSSProperties
+          }
           href={playerHref(player)}
           aria-label={`Ver jugador ${player.gameName}${player.riotTag ? `#${player.riotTag}` : ''}`}
         >
           <PlayerArt player={player} catalog={catalog} />
           <div className="player-card-body">
-            <PlayerTeam player={player} />
-            <h3>{player.gameName}</h3>
+            <div className="player-card-identity">
+              <div>
+                <span className="player-team">
+                  {player.competition?.team?.name ?? 'Sin equipo'}
+                </span>
+                <h3>{player.gameName}</h3>
+              </div>
+              {player.competition?.team && <TeamBadge team={player.competition.team} />}
+            </div>
             {!player.competition?.champion && !player.competition?.stats ? (
               <p className="player-pending-stats">Estadísticas pendientes.</p>
             ) : (

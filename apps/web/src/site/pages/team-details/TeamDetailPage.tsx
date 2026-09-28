@@ -73,7 +73,9 @@ function MemberSection({
               )}
               <div className="team-member-role">
                 <span className="meta">{roleLabels[member.role]}</span>
-                {team && <span className="meta">{member.countryCode?.toUpperCase() || '—'}</span>}
+                {team && member.countryCode && (
+                  <span className="meta">{member.countryCode.toUpperCase()}</span>
+                )}
               </div>
               <div className="team-member-identity">
                 {(!team || !playerRoles.includes(member.role)) && member.isCaptain && (

@@ -178,6 +178,11 @@
   gap: 12px;
 }
 
+.rcl-site .match-detail-link {
+  position: absolute;
+  inset: 0;
+}
+
 .rcl-site .match-detail-link::after {
   content: '';
   position: absolute;

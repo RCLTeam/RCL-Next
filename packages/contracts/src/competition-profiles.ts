@@ -38,6 +38,7 @@ export interface TeamDetail extends TeamSummary {
 
 export interface Player {
   competition?: {
+    isCaptain?: boolean;
     role: string | null;
     team: TeamSummary | null;
     champion: string | null;

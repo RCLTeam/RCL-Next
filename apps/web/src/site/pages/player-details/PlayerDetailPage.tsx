@@ -50,25 +50,28 @@ export function PlayerProfile({ player }: { player: PlayerDetail }) {
             {player.isMain ? 'Cuenta principal' : 'Cuenta registrada'}
           </span>
           <h2>{player.gameName}</h2>
-          <p className="player-profile-riot">{riotId}</p>
-          <p>{player.displayName ?? 'Jugador RCL'}</p>
+          <div className="player-profile-account">
+            <div className="player-profile-account-names">
+              <p className="player-profile-riot">{riotId}</p>
+              <p>{player.displayName ?? 'Jugador RCL'}</p>
+            </div>
+            {tag && (
+              <a
+                className="player-profile-opgg"
+                href={`https://op.gg/es/lol/summoners/euw/${encodeURIComponent(player.gameName)}-${encodeURIComponent(tag)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={`Ver OP.GG de ${player.gameName} (nueva pestaña)`}
+              >
+                <img src="/images/brand/opgg.webp" alt="OP.GG" />
+              </a>
+            )}
+          </div>
           <div className="player-profile-labels">
             {latestTeam && <span>{roleLabels[latestTeam.role]}</span>}
             {latestTeam?.isCaptain && <span className="player-captain-label">Capitán</span>}
-            <span>{player.countryCode?.toUpperCase() ?? 'País no disponible'}</span>
+            {player.countryCode && <span>{player.countryCode.toUpperCase()}</span>}
           </div>
-          {tag && (
-            <a
-              className="player-profile-opgg"
-              href={`https://op.gg/es/lol/summoners/euw/${encodeURIComponent(player.gameName)}-${encodeURIComponent(tag)}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label={`Ver OP.GG de ${player.gameName} (nueva pestaña)`}
-            >
-              <img src="/images/brand/opgg.webp" alt="OP.GG" />
-              <span>Consultar en EUW ↗</span>
-            </a>
-          )}
         </div>
         {latestTeam ? (
           <SiteLink
@@ -93,10 +96,12 @@ export function PlayerProfile({ player }: { player: PlayerDetail }) {
           <dt>Riot ID</dt>
           <dd>{riotId}</dd>
         </div>
-        <div>
-          <dt>País</dt>
-          <dd>{player.countryCode?.toUpperCase() ?? 'No disponible'}</dd>
-        </div>
+        {player.countryCode && (
+          <div>
+            <dt>País</dt>
+            <dd>{player.countryCode.toUpperCase()}</dd>
+          </div>
+        )}
         <div>
           <dt>Comunidad</dt>
           <dd>{player.displayName ?? 'Sin cuenta vinculada'}</dd>
@@ -187,11 +192,6 @@ export function PlayerDetailPage({ playerId }: { playerId: string }) {
       title={state.status === 'ready' ? state.data.gameName : 'Ficha del jugador'}
       subtitle="Protagonistas de la rebelión"
       description="Conoce al jugador y sus inscripciones en la competición."
-      toolbar={
-        <SiteLink className="player-back-link" href="/jugadores">
-          ← Volver a jugadores
-        </SiteLink>
-      }
     >
       {state.status === 'loading' && <output className="empty-state">Cargando jugador…</output>}
       {state.status === 'missing' && (

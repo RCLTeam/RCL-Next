@@ -23,6 +23,13 @@ export function MatchCard({ match }: { match: Match }) {
       className={`match-row ${match.status === 'live' ? 'is-live' : ''}`}
       aria-label={`${match.homeTeam?.name ?? 'Por definir'} contra ${match.awayTeam?.name ?? 'Por definir'}`}
     >
+      {['completed', 'forfeit'].includes(match.status) && (
+        <SiteLink
+          className="match-detail-link"
+          href={`/partidos/${encodeURIComponent(match.slug ?? match.id)}`}
+          aria-label={`Ver partido ${match.homeTeam?.name ?? ''} contra ${match.awayTeam?.name ?? ''}`}
+        />
+      )}
       <div className="match-date">
         {validDate ? (
           <time dateTime={match.scheduledAt ?? undefined}>
@@ -67,15 +74,6 @@ export function MatchCard({ match }: { match: Match }) {
         </span>
       </div>
       <div className="match-actions">
-        {['completed', 'forfeit'].includes(match.status) && (
-          <SiteLink
-            className="text-link match-detail-link"
-            href={`/partidos/${encodeURIComponent(match.slug ?? match.id)}`}
-            aria-label={`Ver partido ${match.homeTeam?.name ?? ''} contra ${match.awayTeam?.name ?? ''}`}
-          >
-            Ver partido →
-          </SiteLink>
-        )}
         {stream ? (
           <a className="text-link match-stream-link" href={stream} target="_blank" rel="noreferrer">
             Ver emisión ↗
