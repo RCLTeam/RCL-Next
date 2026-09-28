@@ -299,7 +299,7 @@ export class PostgresCrudOperationsRepository implements CrudOperationsRepositor
 
         if (target.name === 'competitions') {
           targetConditions.push(
-            sql`("seasonName" ILIKE ${searchPattern} OR "divisionName" ILIKE ${searchPattern})`
+            sql`(${column(target.table, 'seasonName')} ILIKE ${searchPattern} OR ${column(target.table, 'divisionName')} ILIKE ${searchPattern})`
           );
         }
 

@@ -395,6 +395,58 @@ describe('admin CRUD with HTTP sessions and PostgreSQL constraints', () => {
     }).expect(409);
   });
 
+  it('searches teams by their competition season and division and preserves reference labels', async () => {
+    for (const search of ['base SEASON', 'base DIVISION']) {
+      const response = await request(app)
+        .get(endpoint('teams'))
+        .query({ search })
+        .set('Cookie', cookie)
+        .expect(200);
+      expect(response.body.data.records).toEqual([
+        expect.objectContaining({
+          id: team1,
+          name: 'Home',
+          seasonDivisionIdLabel: 'Base season · Base division'
+        }),
+        expect.objectContaining({
+          id: team2,
+          name: 'Away',
+          seasonDivisionIdLabel: 'Base season · Base division'
+        })
+      ]);
+      expect(response.body.data.hasMore).toBe(false);
+    }
+    for (const search of ["' OR 1=1 --", '%', '_', '\\']) {
+      const response = await request(app)
+        .get(endpoint('teams'))
+        .query({ search })
+        .set('Cookie', cookie)
+        .expect(200);
+      expect(response.body.data.records).toEqual([]);
+    }
+  });
+
+  it('ranks name prefixes before substring matches with stable pagination', async () => {
+    await db
+      .insert(schema.divisions)
+      .values([
+        { name: 'A SearchRank suffix' },
+        { name: 'SearchRank B' },
+        { name: 'SearchRank A' }
+      ]);
+    for (const offset of [0, 1]) {
+      const response = await request(app)
+        .get(endpoint('divisions'))
+        .query({ search: 'searchrank', offset })
+        .set('Cookie', cookie)
+        .expect(200);
+      expect(response.body.data.records.map((record: CrudRecord) => record.name)).toEqual(
+        ['SearchRank A', 'SearchRank B', 'A SearchRank suffix'].slice(offset)
+      );
+      expect(response.body.data.hasMore).toBe(false);
+    }
+  });
+
   it('paginates and searches literally without SQL interpolation', async () => {
     await db.insert(schema.divisions).values(
       Array.from({ length: 52 }, (_, index) => ({
