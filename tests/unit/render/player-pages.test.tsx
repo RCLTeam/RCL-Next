@@ -145,7 +145,7 @@ test('Player profiles display competition metrics and distinguish missing result
   );
   expect(html).toContain('75%');
   expect(html).toContain('4,5');
-  expect(html).toContain('Último campeón jugado');
+  expect(html).toContain('Campeón más jugado');
   expect(html).toContain('Ahri');
   expect(html).toContain('https://op.gg/es/lol/summoners/euw/Jugador%20Uno-EUW');
   const empty = renderToStaticMarkup(<PlayerProfile player={player} />);

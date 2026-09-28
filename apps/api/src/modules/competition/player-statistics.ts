@@ -193,6 +193,20 @@ export function enrichPlayers(
   return players.map((player) => {
     const games = byPlayer.get(player.id) ?? [];
     const latest = games.at(-1);
+    const championCounts = new Map<string, number>();
+    for (const game of games) {
+      championCounts.set(game.champion, (championCounts.get(game.champion) ?? 0) + 1);
+    }
+    // Rows arrive chronologically; the latest pick wins ties in total games played.
+    let champion: string | null = null;
+    let mostGames = 0;
+    for (const game of games) {
+      const count = championCounts.get(game.champion) ?? 0;
+      if (count >= mostGames) {
+        champion = game.champion;
+        mostGames = count;
+      }
+    }
     const round =
       featured?.playerId === player.id
         ? rounds.find(
@@ -204,7 +218,7 @@ export function enrichPlayers(
       competition: {
         role: playerRole(latest?.position ?? null),
         team: latest?.team ?? null,
-        champion: latest?.champion ?? null,
+        champion,
         stats: games.length ? aggregatePlayerStats(games, rows) : null,
         mvpMatchIds: awards
           .filter((award) => award.playerId === player.id)

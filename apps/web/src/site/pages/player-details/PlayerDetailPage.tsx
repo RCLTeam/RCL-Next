@@ -133,7 +133,7 @@ export function PlayerProfile({ player }: { player: PlayerDetail }) {
             </dl>
             {player.competition?.champion && (
               <p className="player-signature-champion">
-                <span className="meta">Último campeón jugado</span>
+                <span className="meta">Campeón más jugado</span>
                 <strong>{player.competition.champion}</strong>
               </p>
             )}

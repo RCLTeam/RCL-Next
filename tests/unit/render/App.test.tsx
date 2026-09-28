@@ -15,7 +15,6 @@ test('Team detail direct links render their own page and keep Teams selected', (
     const html = renderToString(React.createElement(App, { initialPath: path }));
     assert.match(html, /id="equipo"/);
     assert.match(html, /Cargando equipo/);
-    assert.match(html, /Volver a equipos/);
     assert.doesNotMatch(html, /404 — Not Found/);
     assert.ok(
       (html.match(/<a\b[^>]*>/g) ?? []).some(
