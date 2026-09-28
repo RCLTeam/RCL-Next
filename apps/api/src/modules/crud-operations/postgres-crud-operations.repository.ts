@@ -23,6 +23,7 @@ import {
 
 type Database = PgDatabase<PgQueryResultHKT, typeof schema>;
 type StoredResource = ResourceDefinition & { table: PgTable };
+
 const resourceTables: Record<string, PgTable> = {
   seasons: schema.seasons,
   divisions: schema.divisions,
@@ -34,28 +35,46 @@ const resourceTables: Record<string, PgTable> = {
   rounds: schema.rounds,
   matches: schema.matches
 };
+
 function storedResource(resource: ResourceDefinition): StoredResource {
   const table = resourceTables[resource.name];
   if (!table) throw notFound('CRUD resource');
   return { ...resource, table };
 }
+
 const conflict = (message: string) => new AppError(409, 'DATA_CONFLICT', message);
-const records = (value: unknown): CrudRecord[] =>
-  JSON.parse(
-    JSON.stringify(value, (_key, val) => (typeof val === 'bigint' ? val.toString() : val))
-  ) as CrudRecord[];
+
+function normalizeRecord(obj: Record<string, unknown>): CrudRecord {
+  const result: CrudRecord = {};
+  for (const key in obj) {
+    if (Object.prototype.hasOwnProperty.call(obj, key)) {
+      const val = obj[key];
+      result[key] = typeof val === 'bigint' ? val.toString() : (val as CrudValue);
+    }
+  }
+  return result;
+}
+
+function records(value: unknown): CrudRecord[] {
+  if (!Array.isArray(value)) return [];
+  return value.map((item) => normalizeRecord(item as Record<string, unknown>));
+}
+
 function column(table: PgTable, name: string) {
   const result = getTableColumns(table)[name];
   if (!result) throw new Error('Unknown CRUD column.');
   return result;
 }
+
 const selection = (table: PgTable) => ({
   ...getTableColumns(table),
   updatedAt: sql<string>`to_char(${column(table, 'updatedAt')} AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"')`
 });
+
 const condition = (table: PgTable, key: CrudRecord) => {
   return and(...Object.entries(key).map(([name, value]) => eq(column(table, name), value)));
 };
+
 const project = (resource: ResourceDefinition, record: CrudRecord): CrudRecord =>
   Object.fromEntries(
     [
@@ -214,33 +233,50 @@ export class PostgresCrudOperationsRepository implements CrudOperationsRepositor
         (name) => [name, column(resource.table, name)]
       )
     );
-    const searchable = Object.values(projection).map(
-      (column) => sql`${column}::text ILIKE ${`%${search.replace(/[\\%_]/g, '\\$&')}%`}`
-    );
+
+    const searchableFields = resource.fields
+      .filter(
+        (field) => field.type !== 'datetime' && field.type !== 'boolean' && field.type !== 'number'
+      )
+      .map((field) => field.name);
+
+    const searchable = searchableFields
+      .map((fieldName) => {
+        const col = column(resource.table, fieldName);
+        return col ? sql`${col} ILIKE ${`%${search.replace(/[\\%_]/g, '\\$&')}%`}` : null;
+      })
+      .filter((expr): expr is ReturnType<typeof sql> => expr !== null);
+
     const result = records(
       await this.db
         .select({ ...projection, updatedAt: selection(resource.table).updatedAt })
         .from(resource.table)
-        .where(search ? or(...searchable) : undefined)
+        .where(search && searchable.length > 0 ? or(...searchable) : undefined)
         .orderBy(...resource.keys.map((key) => asc(column(resource.table, key))))
         .limit(51)
         .offset(offset)
     );
+
     const page = result.slice(0, 50);
-    for (const field of resource.fields) {
+
+    const referencePromises = resource.fields.map(async (field) => {
       const reference = [...crudResources, ...crudReferences].find(
         (entry) => entry.name === field.reference
       );
-      if (!reference || !page.length) continue;
+      if (!reference || !page.length) return null;
+
       const target = storedResource(reference);
       const key = target.keys[0];
-      if (!key) continue;
+      if (!key) return null;
+
       const lookupKey = (row: CrudRecord): CrudRecord => ({
         [key]: row[field.name] ?? null,
         ...(target.name === 'rounds' ? { idSeasonDivision: row.idSeasonDivision ?? null } : {})
       });
+
       const references = page.filter((row) => row[field.name] !== null);
-      if (!references.length) continue;
+      if (!references.length) return null;
+
       const related = records(
         await this.db
           .select(
@@ -253,20 +289,32 @@ export class PostgresCrudOperationsRepository implements CrudOperationsRepositor
           .from(target.table)
           .where(or(...references.map((row) => condition(target.table, lookupKey(row)))))
       );
+
+      return { field, target, lookupKey, related };
+    });
+
+    const referenceResults = await Promise.all(referencePromises);
+
+    for (const res of referenceResults) {
+      if (!res) continue;
+      const { field, target, lookupKey, related } = res;
+
       for (const row of page) {
         const identity = lookupKey(row);
         const match = related.find((entry) =>
           Object.entries(identity).every(([name, value]) => entry[name] === value)
         );
-        if (match)
+        if (match) {
           row[`${field.name}Label`] =
             target.name === 'competitions'
               ? `${match.seasonName} · ${match.divisionName}`
               : target.name === 'users'
                 ? `${match.username} · ${match.discordId}`
                 : String(match.name ?? `Jornada ${match.id} · ${match.stage}`);
+        }
       }
     }
+
     return { records: page, hasMore: result.length > 50 };
   }
 
