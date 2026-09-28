@@ -171,45 +171,50 @@ describe('admin CRUD with HTTP sessions and PostgreSQL constraints', () => {
   it('records a completed series without ROFL and rejects inconsistent results', async () => {
     // Local databases can omit Discord integration columns unrelated to CRUD.
     await db.execute(sql`ALTER TABLE teams DROP COLUMN discord_role_id`);
-    const record = await create('matches', { ...matchValues, bestOf: 3 });
-    for (const changes of [
-      { status: 'completed', team1Score: 1, team2Score: 0, winnerTeamId: team1 },
-      { status: 'completed', team1Score: 2, team2Score: 1, winnerTeamId: team2 },
-      { status: 'completed', team1Score: 2, team2Score: 2, winnerTeamId: team1 }
-    ])
-      await send('put', 'matches', updateBody('matches', record, changes)).expect(422);
-    const response = await send(
-      'put',
-      'matches',
-      updateBody('matches', record, {
+    try {
+      const record = await create('matches', { ...matchValues, bestOf: 3 });
+      for (const changes of [
+        { status: 'completed', team1Score: 1, team2Score: 0, winnerTeamId: team1 },
+        { status: 'completed', team1Score: 2, team2Score: 1, winnerTeamId: team2 },
+        { status: 'completed', team1Score: 2, team2Score: 2, winnerTeamId: team1 }
+      ])
+        await send('put', 'matches', updateBody('matches', record, changes)).expect(422);
+      const response = await send(
+        'put',
+        'matches',
+        updateBody('matches', record, {
+          status: 'completed',
+          team1Score: 2,
+          team2Score: 1,
+          winnerTeamId: team1
+        })
+      ).expect(200);
+      const [stored] = await db
+        .select()
+        .from(schema.matches)
+        .where(eq(schema.matches.id, String(record.id)));
+      expect(stored).toMatchObject({
         status: 'completed',
         team1Score: 2,
         team2Score: 1,
         winnerTeamId: team1
-      })
-    ).expect(200);
-    const [stored] = await db
-      .select()
-      .from(schema.matches)
-      .where(eq(schema.matches.id, String(record.id)));
-    expect(stored).toMatchObject({
-      status: 'completed',
-      team1Score: 2,
-      team2Score: 1,
-      winnerTeamId: team1
-    });
-    expect(
-      await db
-        .select()
-        .from(schema.matchGames)
-        .where(eq(schema.matchGames.matchesId, String(record.id)))
-    ).toHaveLength(0);
-    const listed = await request(app).get(endpoint('matches')).set('Cookie', cookie).expect(200);
-    expect(listed.body.data.records).toContainEqual(
-      expect.objectContaining({ id: record.id, team1IdLabel: 'Home', team2IdLabel: 'Away' })
-    );
-    await send('delete', 'matches', deleteBody('matches', response.body.data)).expect(204);
-    await db.execute(sql`ALTER TABLE teams ADD COLUMN discord_role_id bigint`);
+      });
+      expect(
+        await db
+          .select()
+          .from(schema.matchGames)
+          .where(eq(schema.matchGames.matchesId, String(record.id)))
+      ).toHaveLength(0);
+      const listed = await request(app).get(endpoint('matches')).set('Cookie', cookie).expect(200);
+      expect(listed.body.data.records).toContainEqual(
+        expect.objectContaining({ id: record.id, team1IdLabel: 'Home', team2IdLabel: 'Away' })
+      );
+      await send('delete', 'matches', deleteBody('matches', response.body.data)).expect(204);
+    } finally {
+      await db.execute(
+        sql`ALTER TABLE teams ADD COLUMN discord_role_id bigint CONSTRAINT teams_discord_role_id_unique UNIQUE`
+      );
+    }
   });
 
   it.each([

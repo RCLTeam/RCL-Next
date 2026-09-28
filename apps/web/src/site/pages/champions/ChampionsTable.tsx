@@ -87,8 +87,8 @@ export function ChampionsTable({
                 </th>
                 <td>{percent(row.pickRate)}</td>
                 <td className="highlight-stat">{percent(row.winRate)}</td>
-                <td className="wins">{row.games}</td>
-                <td>{row.wins}</td>
+                <td>{row.games}</td>
+                <td className="wins">{row.wins}</td>
                 <td className="losses">{row.losses}</td>
               </tr>
             ))}

@@ -196,6 +196,9 @@ function ReferenceField({
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
   const [retry, setRetry] = useState(0);
+  const [search, setSearch] = useState('');
+  const [offset, setOffset] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
   const scope = values.idSeasonDivision;
   // biome-ignore lint/correctness/useExhaustiveDependencies: Retry explicitly reloads reference options.
   useEffect(() => {
@@ -203,38 +206,35 @@ function ReferenceField({
     setLoading(true);
     setError('');
     setRows([]);
-    // Native selects support typing to find an option. Load every page so that
-    // keyboard search also reaches references beyond the first 50 records.
-    const loadOptions = async () => {
-      const allRows: CrudRecord[] = [];
-      let offset = 0;
-      while (!controller.signal.aborted) {
-        const result = await getCrudRecords(
-          `references/${field.reference ?? ''}`,
-          '',
-          offset,
-          controller.signal
-        );
-        allRows.push(...result.records);
-        if (!result.hasMore) {
-          if (!controller.signal.aborted) setRows(allRows);
-          return;
-        }
-        offset += 50;
-      }
-    };
-    void loadOptions()
-      .catch((error: unknown) => {
-        if (!controller.signal.aborted)
-          setError(error instanceof Error ? error.message : 'No se pudieron cargar las opciones.');
-      })
-      .finally(() => {
-        if (!controller.signal.aborted) setLoading(false);
-      });
+    setHasMore(false);
+    const timer = setTimeout(() => {
+      void getCrudRecords(
+        `references/${field.reference ?? ''}`,
+        search.trim(),
+        offset,
+        controller.signal
+      )
+        .then((result) => {
+          if (!controller.signal.aborted) {
+            setRows(result.records);
+            setHasMore(result.hasMore);
+          }
+        })
+        .catch((error: unknown) => {
+          if (!controller.signal.aborted)
+            setError(
+              error instanceof Error ? error.message : 'No se pudieron cargar las opciones.'
+            );
+        })
+        .finally(() => {
+          if (!controller.signal.aborted) setLoading(false);
+        });
+    }, 300);
     return () => {
+      clearTimeout(timer);
       controller.abort();
     };
-  }, [field.reference, retry]);
+  }, [field.reference, retry, search, offset]);
   const eligible = rows.filter((row) => {
     if (field.reference === 'rounds') return row.idSeasonDivision === scope;
     if (field.reference === 'teams' && scope && row.seasonDivisionId !== scope) return false;
@@ -252,6 +252,18 @@ function ReferenceField({
     ];
   return (
     <div className="crud-operations-field">
+      <label htmlFor={`${id}-search`}>Buscar {field.label.toLocaleLowerCase('es')}</label>
+      <input
+        id={`${id}-search`}
+        type="search"
+        value={search}
+        disabled={disabled}
+        placeholder="Escribe para buscar opciones"
+        onChange={(event) => {
+          setSearch(event.target.value);
+          setOffset(0);
+        }}
+      />
       <Select
         label={`${field.label}${field.required ? ' *' : ''}`}
         variant="form"
@@ -279,6 +291,25 @@ function ReferenceField({
           </option>
         ))}
       </Select>
+      <div className="crud-operations-actions">
+        <button
+          type="button"
+          disabled={disabled || loading || offset === 0}
+          onClick={() => setOffset((previous) => Math.max(0, previous - 50))}
+        >
+          Anteriores
+        </button>
+        <button
+          type="button"
+          disabled={disabled || loading || !hasMore}
+          onClick={() => setOffset((previous) => previous + 50)}
+        >
+          Siguientes
+        </button>
+      </div>
+      {!loading && !error && eligible.length === 0 && (
+        <output>No hay opciones en esta página. Prueba otra búsqueda o página.</output>
+      )}
       {loading && <output>Cargando opciones…</output>}
       {error && (
         <span role="alert">
