@@ -8,6 +8,7 @@ import type {
 } from '../../../features/competition/types/competition.types.js';
 import { PageLayout } from '../../../shared/components/PageLayout/PageLayout.js';
 import { SiteLink } from '../../../shared/components/SiteLink.js';
+import { displayName } from '../../../shared/display-name.js';
 import './player-details.css';
 
 const roleLabels: Record<TeamMember['role'], string> = {
@@ -53,7 +54,7 @@ export function PlayerProfile({ player }: { player: PlayerDetail }) {
           <div className="player-profile-account">
             <div className="player-profile-account-names">
               <p className="player-profile-riot">{riotId}</p>
-              <p>{player.displayName ?? 'Jugador RCL'}</p>
+              <p>{displayName(player.displayName ?? 'Jugador RCL')}</p>
             </div>
             {tag && (
               <a
@@ -104,7 +105,7 @@ export function PlayerProfile({ player }: { player: PlayerDetail }) {
         )}
         <div>
           <dt>Comunidad</dt>
-          <dd>{player.displayName ?? 'Sin cuenta vinculada'}</dd>
+          <dd>{displayName(player.displayName ?? 'Sin cuenta vinculada')}</dd>
         </div>
         <div>
           <dt>Inscripciones</dt>
@@ -132,7 +133,7 @@ export function PlayerProfile({ player }: { player: PlayerDetail }) {
             </dl>
             {player.competition?.champion && (
               <p className="player-signature-champion">
-                <span className="meta">Último campeón jugado</span>
+                <span className="meta">Campeón más jugado</span>
                 <strong>{player.competition.champion}</strong>
               </p>
             )}

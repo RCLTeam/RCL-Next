@@ -150,6 +150,16 @@ export function filterPlayers(
       const right = b.competition?.stats?.[sort];
       if (left == null && right != null) return 1;
       if (right == null && left != null) return -1;
+      if (left == null && right == null) {
+        const leftTeam = a.competition?.team;
+        const rightTeam = b.competition?.team;
+        if (!leftTeam && rightTeam) return 1;
+        if (!rightTeam && leftTeam) return -1;
+        const teamOrder =
+          (leftTeam?.name ?? '').localeCompare(rightTeam?.name ?? '', 'es') ||
+          (leftTeam?.id ?? '').localeCompare(rightTeam?.id ?? '');
+        if (teamOrder) return teamOrder;
+      }
       return (
         (right ?? 0) - (left ?? 0) ||
         a.gameName.localeCompare(b.gameName, 'es') ||
@@ -177,7 +187,9 @@ function PlayerArt({ player, catalog }: { player: Player; catalog: GameCatalog }
       {noChampion && (
         <>
           {teamLogo && (
-            <img className="player-unplayed-team" src={teamLogo} alt="" loading="lazy" />
+            <span className="player-unplayed-team">
+              <TeamBadge team={player.competition?.team} />
+            </span>
           )}
           <span className="player-unplayed-label">Sin campeón registrado</span>
         </>
@@ -206,9 +218,7 @@ function PlayerTeam({ player }: { player: Player }) {
   const team = player.competition?.team;
   return (
     <span className="player-team">
-      {resolveTeamLogo(team?.logoUrl) && (
-        <img src={resolveTeamLogo(team?.logoUrl)} alt="" loading="lazy" />
-      )}
+      {resolveTeamLogo(team?.logoUrl) && <TeamBadge team={team} />}
       <span>{team?.name ?? 'Sin equipo'}</span>
     </span>
   );

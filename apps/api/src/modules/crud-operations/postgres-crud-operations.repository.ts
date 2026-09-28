@@ -23,6 +23,7 @@ import {
 
 type Database = PgDatabase<PgQueryResultHKT, typeof schema>;
 type StoredResource = ResourceDefinition & { table: PgTable };
+
 const resourceTables: Record<string, PgTable> = {
   seasons: schema.seasons,
   divisions: schema.divisions,
@@ -31,30 +32,49 @@ const resourceTables: Record<string, PgTable> = {
   users: schema.discordUsers,
   players: schema.players,
   memberships: schema.teamMemberships,
-  rounds: schema.rounds
+  rounds: schema.rounds,
+  matches: schema.matches
 };
+
 function storedResource(resource: ResourceDefinition): StoredResource {
   const table = resourceTables[resource.name];
   if (!table) throw notFound('CRUD resource');
   return { ...resource, table };
 }
+
 const conflict = (message: string) => new AppError(409, 'DATA_CONFLICT', message);
-const records = (value: unknown): CrudRecord[] =>
-  JSON.parse(
-    JSON.stringify(value, (_key, val) => (typeof val === 'bigint' ? val.toString() : val))
-  ) as CrudRecord[];
+
+function normalizeRecord(obj: Record<string, unknown>): CrudRecord {
+  const result: CrudRecord = {};
+  for (const key in obj) {
+    if (Object.prototype.hasOwnProperty.call(obj, key)) {
+      const val = obj[key];
+      result[key] = typeof val === 'bigint' ? val.toString() : (val as CrudValue);
+    }
+  }
+  return result;
+}
+
+function records(value: unknown): CrudRecord[] {
+  if (!Array.isArray(value)) return [];
+  return value.map((item) => normalizeRecord(item as Record<string, unknown>));
+}
+
 function column(table: PgTable, name: string) {
   const result = getTableColumns(table)[name];
   if (!result) throw new Error('Unknown CRUD column.');
   return result;
 }
+
 const selection = (table: PgTable) => ({
   ...getTableColumns(table),
   updatedAt: sql<string>`to_char(${column(table, 'updatedAt')} AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"')`
 });
+
 const condition = (table: PgTable, key: CrudRecord) => {
   return and(...Object.entries(key).map(([name, value]) => eq(column(table, name), value)));
 };
+
 const project = (resource: ResourceDefinition, record: CrudRecord): CrudRecord =>
   Object.fromEntries(
     [
@@ -125,6 +145,24 @@ async function validateRelations(
   next: CrudRecord,
   before?: CrudRecord
 ) {
+  if (resource.name === 'matches') {
+    const participants = await db
+      .select({ id: teams.id, seasonDivisionId: teams.seasonDivisionId })
+      .from(teams)
+      .where(or(eq(teams.id, String(next.team1Id)), eq(teams.id, String(next.team2Id))));
+    if (
+      participants.length !== 2 ||
+      participants.some((team) => team.seasonDivisionId !== next.idSeasonDivision)
+    )
+      throw conflict(
+        'Los dos equipos deben ser distintos y pertenecer a la competición seleccionada.'
+      );
+    if (
+      before &&
+      ['idSeasonDivision', 'team1Id', 'team2Id'].some((field) => next[field] !== before[field])
+    )
+      await assertNoDependents(db, resource.table, before);
+  }
   for (const field of resource.fields) {
     if (before && field.immutable && next[field.name] !== before[field.name])
       throw conflict('This field cannot be changed after creation.');
@@ -195,53 +233,174 @@ export class PostgresCrudOperationsRepository implements CrudOperationsRepositor
         (name) => [name, column(resource.table, name)]
       )
     );
-    const searchable = Object.values(projection).map(
-      (column) => sql`${column}::text ILIKE ${`%${search.replace(/[\\%_]/g, '\\$&')}%`}`
-    );
+
+    const searchEscaped = search.replace(/[\\%_]/g, '\\$&');
+    const searchPattern = `%${searchEscaped}%`;
+    const conditions: ReturnType<typeof sql>[] = [];
+
+    if (search) {
+      const searchableNames = [
+        ...new Set([
+          ...resource.keys,
+          ...resource.fields
+            .filter(
+              (field) => field.type === 'text' || field.type === 'select' || field.type === 'url'
+            )
+            .map((field) => field.name)
+        ])
+      ];
+
+      for (const fieldName of searchableNames) {
+        try {
+          const col = column(resource.table, fieldName);
+          if (col) {
+            conditions.push(sql`${col}::text ILIKE ${searchPattern}`);
+          }
+        } catch {
+          // Ignore if the column does not exist in the physical table
+        }
+      }
+      for (const field of resource.fields) {
+        if (!field.reference) continue;
+
+        const refDescriptor = [...crudResources, ...crudReferences].find(
+          (entry) => entry.name === field.reference
+        );
+        if (!refDescriptor) continue;
+
+        const target = storedResource(refDescriptor);
+        const localCol = column(resource.table, field.name);
+        const primaryKeyName = target.keys[0];
+        if (!localCol || !primaryKeyName) continue;
+
+        const targetKeyCol = column(target.table, primaryKeyName);
+
+        const targetSearchFields = target.fields
+          .filter(
+            (f) =>
+              f.type === 'text' ||
+              f.name === 'name' ||
+              f.name === 'username' ||
+              f.name === 'globalName'
+          )
+          .map((f) => f.name);
+
+        const targetConditions: ReturnType<typeof sql>[] = [];
+        for (const tName of targetSearchFields) {
+          try {
+            const tCol = column(target.table, tName);
+            if (tCol) {
+              targetConditions.push(sql`${tCol}::text ILIKE ${searchPattern}`);
+            }
+          } catch {
+            // Ignore missing columns
+          }
+        }
+
+        if (target.name === 'competitions') {
+          targetConditions.push(
+            sql`(${column(target.table, 'seasonName')} ILIKE ${searchPattern} OR ${column(target.table, 'divisionName')} ILIKE ${searchPattern})`
+          );
+        }
+
+        if (targetConditions.length > 0) {
+          conditions.push(
+            sql`EXISTS (
+              SELECT 1 FROM ${target.table}
+              WHERE ${targetKeyCol} = ${localCol}
+                AND (${or(...targetConditions)})
+            )`
+          );
+        }
+      }
+    }
+
+    const orderByClauses: ReturnType<typeof sql>[] = [];
+    const primaryNameField = resource.fields.find(
+      (f) => f.name === 'name' || f.name === 'username'
+    )?.name;
+
+    if (search && primaryNameField) {
+      const nameCol = column(resource.table, primaryNameField);
+      orderByClauses.push(
+        sql`CASE 
+          WHEN ${nameCol}::text ILIKE ${`${searchEscaped}%`} THEN 0 
+          WHEN ${nameCol}::text ILIKE ${searchPattern} THEN 1 
+          ELSE 2 
+        END`
+      );
+    }
+
+    orderByClauses.push(...resource.keys.map((key) => asc(column(resource.table, key))));
+
     const result = records(
       await this.db
         .select({ ...projection, updatedAt: selection(resource.table).updatedAt })
         .from(resource.table)
-        .where(search ? or(...searchable) : undefined)
-        .orderBy(...resource.keys.map((key) => asc(column(resource.table, key))))
+        .where(search && conditions.length > 0 ? or(...conditions) : undefined)
+        .orderBy(...orderByClauses)
         .limit(51)
         .offset(offset)
     );
+
     const page = result.slice(0, 50);
-    for (const field of resource.fields) {
+
+    const referencePromises = resource.fields.map(async (field) => {
       const reference = [...crudResources, ...crudReferences].find(
         (entry) => entry.name === field.reference
       );
-      if (!reference || !page.length) continue;
+      if (!reference || !page.length) return null;
+
       const target = storedResource(reference);
       const key = target.keys[0];
-      if (!key) continue;
+      if (!key) return null;
+
       const lookupKey = (row: CrudRecord): CrudRecord => ({
         [key]: row[field.name] ?? null,
         ...(target.name === 'rounds' ? { idSeasonDivision: row.idSeasonDivision ?? null } : {})
       });
+
       const references = page.filter((row) => row[field.name] !== null);
-      if (!references.length) continue;
+      if (!references.length) return null;
+
       const related = records(
         await this.db
-          .select()
+          .select(
+            Object.fromEntries(
+              [...new Set([...target.keys, ...target.fields.map((entry) => entry.name)])].map(
+                (name) => [name, column(target.table, name)]
+              )
+            )
+          )
           .from(target.table)
           .where(or(...references.map((row) => condition(target.table, lookupKey(row)))))
       );
+
+      return { field, target, lookupKey, related };
+    });
+
+    const referenceResults = await Promise.all(referencePromises);
+
+    for (const res of referenceResults) {
+      if (!res) continue;
+      const { field, target, lookupKey, related } = res;
+
       for (const row of page) {
         const identity = lookupKey(row);
         const match = related.find((entry) =>
           Object.entries(identity).every(([name, value]) => entry[name] === value)
         );
-        if (match)
+        if (match) {
           row[`${field.name}Label`] =
             target.name === 'competitions'
               ? `${match.seasonName} · ${match.divisionName}`
               : target.name === 'users'
                 ? `${match.username} · ${match.discordId}`
                 : String(match.name ?? `Jornada ${match.id} · ${match.stage}`);
+        }
       }
     }
+
     return { records: page, hasMore: result.length > 50 };
   }
 

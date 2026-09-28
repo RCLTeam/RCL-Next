@@ -60,3 +60,54 @@ test('featured stats and selected card metric render without internal MVP scores
   expect(grid).toContain('700');
   expect(renderToStaticMarkup(<FeaturedPlayer player={undefined} />)).toContain('se anunciará');
 });
+
+test('players missing the selected statistic sort by team, then name, with no team last', () => {
+  const makePlayer = (id: string, gameName: string, teamName: string | null) => ({
+    ...player,
+    id,
+    gameName,
+    competition: {
+      ...player.competition,
+      stats: null,
+      team: teamName ? { id: teamName, name: teamName, shortName: null, logoUrl: null } : null
+    }
+  });
+  const roster = [
+    makePlayer('none', 'A sin equipo', null),
+    makePlayer('wolves', 'Ana', 'Lobos'),
+    makePlayer('eagles-z', 'Zoe', 'Águilas'),
+    makePlayer('eagles-a', 'Álex', 'Águilas')
+  ];
+  const originalOrder = roster.map((p) => p.id);
+  for (const [sort] of playerSortOptions) {
+    expect(filterPlayers(roster, '', 'all', sort).map((p) => p.id)).toEqual([
+      'eagles-a',
+      'eagles-z',
+      'wolves',
+      'none'
+    ]);
+  }
+  expect(roster.map((p) => p.id)).toEqual(originalOrder);
+  const zero = {
+    ...player,
+    id: 'zero',
+    competition: { ...player.competition, stats: { ...stats, kda: 0 } }
+  };
+  expect(filterPlayers([...roster, zero], '').map((p) => p.id)).toEqual([
+    'zero',
+    'eagles-a',
+    'eagles-z',
+    'wolves',
+    'none'
+  ]);
+  const partial = roster.map((p) => ({
+    ...p,
+    competition: { ...p.competition, stats: { ...stats, visionScore: null } }
+  }));
+  expect(filterPlayers(partial, '', 'all', 'visionScore').map((p) => p.id)).toEqual([
+    'eagles-a',
+    'eagles-z',
+    'wolves',
+    'none'
+  ]);
+});

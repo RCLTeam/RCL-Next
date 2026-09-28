@@ -31,6 +31,46 @@ const player: PlayerDetail = {
   ]
 };
 
+test('normalizes roster display names without changing source data, Riot IDs or links', () => {
+  const member = Object.freeze({
+    id: 'coach-1',
+    playerId: player.id,
+    playerSlug: player.slug,
+    name: '𝑶𝒛𝒂𝒓𝒖',
+    role: 'coach' as const,
+    isCaptain: false,
+    gameName: '𝑶zaru',
+    riotTag: 'UZA',
+    countryCode: null
+  });
+  const html = renderToStaticMarkup(
+    <TeamProfile
+      team={{
+        id: 'team-1',
+        name: 'Lobos',
+        shortName: null,
+        logoUrl: null,
+        seasonName: 'T1',
+        divisionName: 'Premier',
+        isActive: true,
+        members: [member]
+      }}
+    />
+  );
+  expect(html).toContain('>Ozaru</a>');
+  expect(html).toContain('𝑶zaru#UZA');
+  expect(html).toContain(
+    `https://op.gg/es/lol/summoners/euw/${encodeURIComponent(member.gameName)}-UZA`
+  );
+  expect(html).toContain(`href="/jugadores/${player.slug}"`);
+  expect(member.name).toBe('𝑶𝒛𝒂𝒓𝒖');
+  const profile = renderToStaticMarkup(
+    <PlayerProfile player={{ ...player, displayName: member.name }} />
+  );
+  expect(profile).toContain('>Ozaru</p>');
+  expect(profile).toContain('>Ozaru</dd>');
+});
+
 test('Player cards link to individual profiles and search matches names and Riot IDs', () => {
   const html = renderToStaticMarkup(<PlayerGrid players={[player]} />);
   expect(html).toContain('href="/jugadores/jugador-uno-euw"');
@@ -105,7 +145,7 @@ test('Player profiles display competition metrics and distinguish missing result
   );
   expect(html).toContain('75%');
   expect(html).toContain('4,5');
-  expect(html).toContain('Último campeón jugado');
+  expect(html).toContain('Campeón más jugado');
   expect(html).toContain('Ahri');
   expect(html).toContain('https://op.gg/es/lol/summoners/euw/Jugador%20Uno-EUW');
   const empty = renderToStaticMarkup(<PlayerProfile player={player} />);

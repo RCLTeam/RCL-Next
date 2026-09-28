@@ -1,5 +1,6 @@
 import type { PredictorStanding } from '@rcl/contracts';
 import React from 'react';
+import { displayName } from '../../../shared/display-name.js';
 export function PredictorRankingPanel({
   ranking,
   season,
@@ -24,7 +25,7 @@ export function PredictorRankingPanel({
               <div>
                 <strong>
                   {row.userId === userId ? 'tú, ' : ''}
-                  {row.name}
+                  {displayName(row.name)}
                 </strong>
                 <small>
                   {row.correct} de {row.total} aciertos

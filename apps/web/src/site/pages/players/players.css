@@ -91,10 +91,9 @@
   text-transform: uppercase;
 }
 
-.rcl-site .player-team img {
+.rcl-site .player-team .team-badge {
   width: 26px;
   height: 26px;
-  object-fit: contain;
 }
 
 .rcl-site .featured-player-card .player-team {
@@ -215,6 +214,8 @@
 }
 
 .rcl-site .players-cards .player-card {
+  display: flex;
+  flex-direction: column;
   padding: 0;
   border-top: 1px solid var(--line);
   border-bottom: 2px solid color-mix(in srgb, var(--player-team-color) 55%, var(--line));
@@ -230,6 +231,7 @@
 }
 
 .rcl-site .players-cards .player-card-body {
+  flex: 1;
   padding: 20px;
   background: linear-gradient(to top, color-mix(in srgb, var(--player-team-color) 16%, transparent), transparent);
 }
@@ -305,10 +307,15 @@
 }
 
 .rcl-site .player-art-unplayed > .player-unplayed-team {
+  position: absolute;
   inset: 28px 18px auto auto;
   width: 64px;
   height: 64px;
-  object-fit: contain;
+}
+
+.rcl-site .player-unplayed-team .team-badge {
+  width: 100%;
+  height: 100%;
 }
 
 .rcl-site .player-unplayed-label {

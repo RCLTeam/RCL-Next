@@ -78,6 +78,31 @@ export class CrudOperationsService {
       }
     }
     if (action !== 'delete') {
+      if (name === 'matches') {
+        const fail = (message: string) => {
+          throw new AppError(422, 'INVALID_RESULT', message);
+        };
+        const home = Number(values.team1Score);
+        const away = Number(values.team2Score);
+        const threshold = Math.floor(Number(values.bestOf) / 2) + 1;
+        if (![1, 3, 5].includes(Number(values.bestOf))) fail('El formato debe ser BO1, BO3 o BO5.');
+        if (values.team1Id === values.team2Id) fail('Selecciona dos equipos distintos.');
+        if (values.winnerTeamId && ![values.team1Id, values.team2Id].includes(values.winnerTeamId))
+          fail('El ganador debe ser uno de los equipos del encuentro.');
+        if (values.status === 'completed') {
+          const winner = home > away ? values.team1Id : values.team2Id;
+          if (
+            Math.max(home, away) !== threshold ||
+            Math.min(home, away) >= threshold ||
+            values.winnerTeamId !== winner
+          )
+            fail(
+              'El marcador y el ganador deben corresponder a una serie finalizada según su formato.'
+            );
+        }
+        if (values.status === 'forfeit' && !values.winnerTeamId)
+          fail('Selecciona el ganador de la victoria por incomparecencia.');
+      }
       if (name === 'seasons' && values.startsOn && values.endsOn && values.endsOn < values.startsOn)
         throw new AppError(422, 'INVALID_DATES', 'End date must follow start date.');
     }

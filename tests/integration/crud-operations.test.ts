@@ -129,20 +129,20 @@ describe('admin CRUD with HTTP sessions and PostgreSQL constraints', () => {
     }
     const catalog = await request(app).get(endpoint('resources')).set('Cookie', cookie).expect(200);
     expect(catalog.headers['cache-control']).toBe('no-store');
-    expect(catalog.body.data).toHaveLength(7);
+    expect(catalog.body.data).toHaveLength(8);
     expect(JSON.stringify(catalog.body)).not.toContain('tokenHash');
     await request(app).get(endpoint('auth_sessions')).set('Cookie', cookie).expect(404);
   });
 
-  it('excludes members and matches from CRUD but provides protected read-only Discord references', async () => {
+  it('excludes members from CRUD but provides protected read-only Discord references', async () => {
     const catalog = await request(app).get(endpoint('resources')).set('Cookie', cookie).expect(200);
     expect(catalog.body.data.map((resource: { name: string }) => resource.name)).not.toContain(
       'users'
     );
-    expect(catalog.body.data.map((resource: { name: string }) => resource.name)).not.toContain(
+    expect(catalog.body.data.map((resource: { name: string }) => resource.name)).toContain(
       'matches'
     );
-    for (const resource of ['users', 'matches']) {
+    for (const resource of ['users']) {
       await request(app).get(endpoint(resource)).set('Cookie', cookie).expect(404);
       for (const method of ['post', 'put', 'delete'] as const)
         await send(method, resource, {}).expect(404);
@@ -164,8 +164,57 @@ describe('admin CRUD with HTTP sessions and PostgreSQL constraints', () => {
     expect(references.body.data.records[0]).not.toHaveProperty('tokenHash');
     for (const method of ['post', 'put', 'delete'] as const)
       await send(method, 'references/users', {}).expect(404);
-    await request(app).get(endpoint('references/matches')).set('Cookie', cookie).expect(404);
+    await request(app).get(endpoint('references/matches')).set('Cookie', cookie).expect(200);
     expect(await db.select().from(schema.discordUsers)).toHaveLength(2);
+  });
+
+  it('records a completed series without ROFL and rejects inconsistent results', async () => {
+    // Local databases can omit Discord integration columns unrelated to CRUD.
+    await db.execute(sql`ALTER TABLE teams DROP COLUMN discord_role_id`);
+    try {
+      const record = await create('matches', { ...matchValues, bestOf: 3 });
+      for (const changes of [
+        { status: 'completed', team1Score: 1, team2Score: 0, winnerTeamId: team1 },
+        { status: 'completed', team1Score: 2, team2Score: 1, winnerTeamId: team2 },
+        { status: 'completed', team1Score: 2, team2Score: 2, winnerTeamId: team1 }
+      ])
+        await send('put', 'matches', updateBody('matches', record, changes)).expect(422);
+      const response = await send(
+        'put',
+        'matches',
+        updateBody('matches', record, {
+          status: 'completed',
+          team1Score: 2,
+          team2Score: 1,
+          winnerTeamId: team1
+        })
+      ).expect(200);
+      const [stored] = await db
+        .select()
+        .from(schema.matches)
+        .where(eq(schema.matches.id, String(record.id)));
+      expect(stored).toMatchObject({
+        status: 'completed',
+        team1Score: 2,
+        team2Score: 1,
+        winnerTeamId: team1
+      });
+      expect(
+        await db
+          .select()
+          .from(schema.matchGames)
+          .where(eq(schema.matchGames.matchesId, String(record.id)))
+      ).toHaveLength(0);
+      const listed = await request(app).get(endpoint('matches')).set('Cookie', cookie).expect(200);
+      expect(listed.body.data.records).toContainEqual(
+        expect.objectContaining({ id: record.id, team1IdLabel: 'Home', team2IdLabel: 'Away' })
+      );
+      await send('delete', 'matches', deleteBody('matches', response.body.data)).expect(204);
+    } finally {
+      await db.execute(
+        sql`ALTER TABLE teams ADD COLUMN discord_role_id bigint CONSTRAINT teams_discord_role_id_unique UNIQUE`
+      );
+    }
   });
 
   it.each([
@@ -349,6 +398,58 @@ describe('admin CRUD with HTTP sessions and PostgreSQL constraints', () => {
       gameName: 'Missing member',
       discordUserId: '999999999999999999'
     }).expect(409);
+  });
+
+  it('searches teams by their competition season and division and preserves reference labels', async () => {
+    for (const search of ['base SEASON', 'base DIVISION']) {
+      const response = await request(app)
+        .get(endpoint('teams'))
+        .query({ search })
+        .set('Cookie', cookie)
+        .expect(200);
+      expect(response.body.data.records).toEqual([
+        expect.objectContaining({
+          id: team1,
+          name: 'Home',
+          seasonDivisionIdLabel: 'Base season · Base division'
+        }),
+        expect.objectContaining({
+          id: team2,
+          name: 'Away',
+          seasonDivisionIdLabel: 'Base season · Base division'
+        })
+      ]);
+      expect(response.body.data.hasMore).toBe(false);
+    }
+    for (const search of ["' OR 1=1 --", '%', '_', '\\']) {
+      const response = await request(app)
+        .get(endpoint('teams'))
+        .query({ search })
+        .set('Cookie', cookie)
+        .expect(200);
+      expect(response.body.data.records).toEqual([]);
+    }
+  });
+
+  it('ranks name prefixes before substring matches with stable pagination', async () => {
+    await db
+      .insert(schema.divisions)
+      .values([
+        { name: 'A SearchRank suffix' },
+        { name: 'SearchRank B' },
+        { name: 'SearchRank A' }
+      ]);
+    for (const offset of [0, 1]) {
+      const response = await request(app)
+        .get(endpoint('divisions'))
+        .query({ search: 'searchrank', offset })
+        .set('Cookie', cookie)
+        .expect(200);
+      expect(response.body.data.records.map((record: CrudRecord) => record.name)).toEqual(
+        ['SearchRank A', 'SearchRank B', 'A SearchRank suffix'].slice(offset)
+      );
+      expect(response.body.data.hasMore).toBe(false);
+    }
   });
 
   it('paginates and searches literally without SQL interpolation', async () => {

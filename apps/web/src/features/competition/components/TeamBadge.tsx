@@ -4,7 +4,11 @@ import { resolveTeamLogo } from '../../../shared/resources/team-logos.js';
 import type { Team } from '../types/competition.types.js';
 import './team-badge.css';
 
-export function TeamBadge({ team }: { team: Team | undefined }) {
+interface TeamBadgeProps {
+  team?: Team | null | undefined;
+}
+
+export function TeamBadge({ team }: TeamBadgeProps) {
   const [failedUrl, setFailedUrl] = useState<string | null>(null);
   const url = resolveTeamLogo(team?.logoUrl);
   const bounds = url?.startsWith('/images/teams_logo/')

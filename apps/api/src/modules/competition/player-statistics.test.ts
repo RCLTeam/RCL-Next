@@ -37,6 +37,24 @@ const player = (id: string): Player => ({
   isMain: true
 });
 
+test('splash champion uses most played, breaking ties by the latest pick', () => {
+  for (const [picks, expected] of [
+    [[], null],
+    [['Ahri'], 'Ahri'],
+    [['Ahri', 'Ahri', 'Garen'], 'Ahri'],
+    [['Ahri', 'Garen', 'Ashe'], 'Ashe'],
+    [['Ahri', 'Garen', 'Garen', 'Ahri', 'Ashe'], 'Ahri']
+  ] as const) {
+    const rows = picks.map((champion, index) => row({ champion, gameId: `g${index}` }));
+    rows.push(row({ playerId: 'other', champion: 'Lux' }));
+    const result = enrichPlayers([player('a')], rows, []);
+    expect(result[0]?.competition?.champion).toBe(expected);
+    expect(rows.filter((game) => game.playerId === 'a').map((game) => game.champion)).toEqual(
+      picks
+    );
+  }
+});
+
 test('aggregates rates by elapsed time, participation by team kills, and averages nullable metrics', () => {
   const rows = [
     row(),
