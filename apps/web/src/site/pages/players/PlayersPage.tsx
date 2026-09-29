@@ -142,15 +142,11 @@ export function filterPlayers(
   return players
     .filter((player) => {
       const playerRole = player.competition?.role;
+      const hasStats = Boolean(player.competition?.stats);
 
       let matchesRole = false;
       if (role === 'all') {
-        matchesRole =
-          VALID_PLAYER_ROLES.includes(playerRole ?? '') ||
-          playerRole === 'substitute' ||
-          player.isMain === false;
-      } else if (role === 'substitute') {
-        matchesRole = playerRole === 'substitute' || player.isMain === false;
+        matchesRole = VALID_PLAYER_ROLES.includes(playerRole ?? '') || hasStats;
       } else {
         matchesRole = playerRole === role && player.isMain !== false;
       }
