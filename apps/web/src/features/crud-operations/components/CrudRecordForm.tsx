@@ -196,28 +196,19 @@ function ReferenceField({
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
   const [retry, setRetry] = useState(0);
-  const [search, setSearch] = useState('');
-  const [offset, setOffset] = useState(0);
-  const [hasMore, setHasMore] = useState(false);
   const scope = values.idSeasonDivision;
+
   // biome-ignore lint/correctness/useExhaustiveDependencies: Retry explicitly reloads reference options.
   useEffect(() => {
     const controller = new AbortController();
     setLoading(true);
     setError('');
     setRows([]);
-    setHasMore(false);
     const timer = setTimeout(() => {
-      void getCrudRecords(
-        `references/${field.reference ?? ''}`,
-        search.trim(),
-        offset,
-        controller.signal
-      )
+      void getCrudRecords(`references/${field.reference ?? ''}`, '', 0, controller.signal)
         .then((result) => {
           if (!controller.signal.aborted) {
             setRows(result.records);
-            setHasMore(result.hasMore);
           }
         })
         .catch((error: unknown) => {
@@ -234,14 +225,19 @@ function ReferenceField({
       clearTimeout(timer);
       controller.abort();
     };
-  }, [field.reference, retry, search, offset]);
+  }, [field.reference, retry]);
+
   const eligible = rows.filter((row) => {
     if (field.reference === 'rounds') return row.idSeasonDivision === scope;
-    if (field.reference === 'teams' && scope && row.seasonDivisionId !== scope) return false;
+    if (field.reference === 'teams') {
+      if (!scope) return false;
+      if (row.seasonDivisionId !== scope) return false;
+    }
     if (field.name === 'winnerTeamId')
       return [values.team1Id, values.team2Id].includes(row.id ?? null);
     return true;
   });
+
   const optionValue = (row: CrudRecord) =>
     row[
       field.reference === 'users'
@@ -250,20 +246,9 @@ function ReferenceField({
           ? 'name'
           : 'id'
     ];
+
   return (
     <div className="crud-operations-field">
-      <label htmlFor={`${id}-search`}>Buscar {field.label.toLocaleLowerCase('es')}</label>
-      <input
-        id={`${id}-search`}
-        type="search"
-        value={search}
-        disabled={disabled}
-        placeholder="Escribe para buscar opciones"
-        onChange={(event) => {
-          setSearch(event.target.value);
-          setOffset(0);
-        }}
-      />
       <Select
         label={`${field.label}${field.required ? ' *' : ''}`}
         variant="form"
@@ -291,25 +276,8 @@ function ReferenceField({
           </option>
         ))}
       </Select>
-      <div className="crud-operations-actions">
-        <button
-          type="button"
-          disabled={disabled || loading || offset === 0}
-          onClick={() => setOffset((previous) => Math.max(0, previous - 50))}
-        >
-          Anteriores
-        </button>
-        <button
-          type="button"
-          disabled={disabled || loading || !hasMore}
-          onClick={() => setOffset((previous) => previous + 50)}
-        >
-          Siguientes
-        </button>
-      </div>
-      {!loading && !error && eligible.length === 0 && (
-        <output>No hay opciones en esta página. Prueba otra búsqueda o página.</output>
-      )}
+
+      {!loading && !error && eligible.length === 0 && <output>No hay opciones disponibles.</output>}
       {loading && <output>Cargando opciones…</output>}
       {error && (
         <span role="alert">
@@ -319,7 +287,6 @@ function ReferenceField({
           </button>
         </span>
       )}
-      {field.reference === 'rounds' && <small>Solo jornadas de la competición seleccionada.</small>}
     </div>
   );
 }
