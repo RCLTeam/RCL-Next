@@ -122,7 +122,7 @@ test('missing time and optional stats remain unavailable; zero deaths and zero k
   expect(mvpScore(rows, rows)).toBe(0);
 });
 
-test('one MVP per series with deterministic ties and no score inflation from repeated maps', () => {
+test('one MVP per series with deterministic ties, no score inflation, and accumulated series KDA', () => {
   const rows = [row({ deaths: 0 }), row({ playerId: 'b', deaths: 0 })];
   const repeated = [
     ...rows.map((r) => ({ ...r, gameId: 'g1' })),
@@ -134,7 +134,7 @@ test('one MVP per series with deterministic ties and no score inflation from rep
       repeated.filter((r) => r.playerId === 'a'),
       repeated
     )
-  ).toBeGreaterThan(0);
+  ).toBe(104.4);
 
   expect(matchMvps(repeated).map((award) => award.playerId)).toEqual(['a']);
   expect(matchMvps([...repeated].reverse()).map((award) => award.playerId)).toEqual(['a']);
