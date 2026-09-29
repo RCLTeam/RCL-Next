@@ -48,8 +48,21 @@ export function MatchCard({ match }: { match: Match }) {
       </div>
       <div className="match-teams">
         <span>
-          <TeamBadge team={match.homeTeam} />
-          {match.homeTeam?.name ?? 'Por definir'}
+          {match.homeTeam ? (
+            <SiteLink
+              className="team-link"
+              href={`/equipos/${encodeURIComponent(match.homeTeam.slug ?? match.homeTeam.id)}`}
+              aria-label={`Ver perfil de ${match.homeTeam.name}`}
+            >
+              <TeamBadge team={match.homeTeam} />
+              {match.homeTeam.name}
+            </SiteLink>
+          ) : (
+            <>
+              <TeamBadge team={match.homeTeam} />
+              Por definir
+            </>
+          )}
         </span>
         <div className="match-score-container">
           {showScore ? (
@@ -63,8 +76,21 @@ export function MatchCard({ match }: { match: Match }) {
           )}
         </div>
         <span>
-          {match.awayTeam?.name ?? 'Por definir'}
-          <TeamBadge team={match.awayTeam} />
+          {match.awayTeam ? (
+            <SiteLink
+              className="team-link"
+              href={`/equipos/${encodeURIComponent(match.awayTeam.slug ?? match.awayTeam.id)}`}
+              aria-label={`Ver perfil de ${match.awayTeam.name}`}
+            >
+              {match.awayTeam.name}
+              <TeamBadge team={match.awayTeam} />
+            </SiteLink>
+          ) : (
+            <>
+              Por definir
+              <TeamBadge team={match.awayTeam} />
+            </>
+          )}
         </span>
       </div>
       <div className="match-meta">

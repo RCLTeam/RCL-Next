@@ -222,3 +222,19 @@
     grid-column: auto;
   }
 }
+
+.rcl-site .team-link {
+  display: inherit;
+  flex-direction: inherit;
+  align-items: inherit;
+  justify-content: inherit;
+  gap: inherit;
+  color: inherit;
+  text-decoration: none;
+  position: relative;
+  z-index: 2;
+}
+
+.rcl-site .team-link:hover {
+  color: var(--lime);
+}
