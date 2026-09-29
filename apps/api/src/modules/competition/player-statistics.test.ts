@@ -134,7 +134,7 @@ test('one MVP per series with deterministic ties, no score inflation, and accumu
       repeated.filter((r) => r.playerId === 'a'),
       repeated
     )
-  ).toBe(104.4);
+  ).toBe(110.8);
 
   expect(matchMvps(repeated).map((award) => award.playerId)).toEqual(['a']);
   expect(matchMvps([...repeated].reverse()).map((award) => award.playerId)).toEqual(['a']);

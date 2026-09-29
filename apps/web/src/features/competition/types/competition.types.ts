@@ -26,6 +26,7 @@ export interface Round {
   sequence: number;
   stage: string;
   name: string | null;
+  startsAt?: string | null;
 }
 export interface Match {
   slug?: string | undefined;

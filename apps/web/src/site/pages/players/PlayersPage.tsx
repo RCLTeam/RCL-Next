@@ -148,7 +148,7 @@ export function filterPlayers(
       if (role === 'all') {
         matchesRole = VALID_PLAYER_ROLES.includes(playerRole ?? '') || hasStats;
       } else {
-        matchesRole = playerRole === role && player.isMain !== false;
+        matchesRole = playerRole === role;
       }
 
       const matchesQuery =
