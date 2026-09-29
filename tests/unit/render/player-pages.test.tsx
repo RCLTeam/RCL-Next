@@ -58,12 +58,14 @@ test('normalizes roster display names without changing source data, Riot IDs or 
     />
   );
   expect(html).toContain('>Ozaru</a>');
-  expect(html).toContain('𝑶zaru#UZA');
+  expect(html).toContain('<p>Ozaru</p>');
   expect(html).toContain(
     `https://op.gg/es/lol/summoners/euw/${encodeURIComponent(member.gameName)}-UZA`
   );
   expect(html).toContain(`href="/jugadores/${player.slug}"`);
   expect(member.name).toBe('𝑶𝒛𝒂𝒓𝒖');
+  expect(member.gameName).toBe('𝑶zaru');
+  expect(member.riotTag).toBe('UZA');
   const profile = renderToStaticMarkup(
     <PlayerProfile player={{ ...player, displayName: member.name }} />
   );
@@ -72,12 +74,23 @@ test('normalizes roster display names without changing source data, Riot IDs or 
 });
 
 test('Player cards link to individual profiles and search matches names and Riot IDs', () => {
-  const html = renderToStaticMarkup(<PlayerGrid players={[player]} />);
+  const rosterPlayer = {
+    ...player,
+    competition: {
+      role: 'mid',
+      team: null,
+      champion: null,
+      stats: null,
+      mvpMatchIds: [],
+      featured: null
+    }
+  };
+  const html = renderToStaticMarkup(<PlayerGrid players={[rosterPlayer]} />);
   expect(html).toContain('href="/jugadores/jugador-uno-euw"');
   expect(html).toContain('Jugador Uno');
-  expect(filterPlayers([player], '  jugador uno#euw  ')).toHaveLength(1);
-  expect(filterPlayers([player], 'PÚBLICO')).toHaveLength(1);
-  expect(filterPlayers([player], 'missing')).toHaveLength(0);
+  expect(filterPlayers([rosterPlayer], '  jugador uno#euw  ')).toHaveLength(1);
+  expect(filterPlayers([rosterPlayer], 'PÚBLICO')).toHaveLength(1);
+  expect(filterPlayers([rosterPlayer], 'missing')).toHaveLength(0);
   expect(renderToStaticMarkup(<PlayerGrid players={[]} />)).toContain(
     'No hay jugadores que coincidan'
   );
