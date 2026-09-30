@@ -45,6 +45,7 @@ export interface Match {
   scheduledAt: Date | null;
   finishedAt: Date | null;
   streamUrl: string | null;
+  streamUrlLive: string | null;
 }
 export interface ChampionPick {
   gameId: string;

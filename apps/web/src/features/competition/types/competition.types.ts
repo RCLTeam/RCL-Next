@@ -39,6 +39,7 @@ export interface Match {
   bestOf: number;
   scheduledAt: string | null;
   streamUrl: string | null;
+  streamUrlLive: string | null;
   round: Round | null;
 }
 export interface Standing {

@@ -13,7 +13,8 @@ const match: Match = {
   homeScore: 0,
   awayScore: 0,
   round: null,
-  streamUrl: null
+  streamUrl: null,
+  streamUrlLive: null
 };
 test('percentages stay hidden even if supplied while voting is open; closed cards have no form', () => {
   const summary = { matchId: 'm', open: true, closed: false, homePercent: 73, votes: 100 };
