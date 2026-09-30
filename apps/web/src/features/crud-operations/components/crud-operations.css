@@ -64,7 +64,7 @@
   background: var(--void);
   color: var(--text);
   border: 1px solid var(--line);
-  border-radius: 4px;
+  border-radius: 2px;
   padding: 10px 12px;
   font: inherit;
   color-scheme: dark;
@@ -141,6 +141,11 @@
   font-size: 14px;
   font-weight: 500;
   color: var(--text);
+}
+
+.rcl-site .crud-operations-field input[type='search'] + label,
+.rcl-site .crud-operations-field input + label {
+  margin-top: 12px;
 }
 
 .rcl-site .crud-operations-field:has(input[type='checkbox']) {

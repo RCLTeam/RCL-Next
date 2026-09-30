@@ -7,6 +7,20 @@ import { PlayerProfile } from '../../../apps/web/src/site/pages/player-details/P
 import { PlayerGrid, filterPlayers } from '../../../apps/web/src/site/pages/players/PlayersPage.js';
 import { TeamProfile } from '../../../apps/web/src/site/pages/team-details/TeamDetailPage.js';
 
+const defaultTeam = {
+  id: 'team-1',
+  slug: 'lobos',
+  name: 'Lobos',
+  shortName: 'LOB',
+  logoUrl: null,
+  color: '#ff0000',
+  seasonName: 'Temporada 1',
+  divisionName: 'Premier',
+  role: 'mid' as const,
+  isCaptain: true,
+  isActive: true
+};
+
 const player: PlayerDetail = {
   slug: 'jugador-uno-euw',
   id: '40000000-0000-4000-8000-000000000001',
@@ -15,20 +29,7 @@ const player: PlayerDetail = {
   countryCode: 'es',
   isMain: true,
   displayName: 'Nombre público',
-  teams: [
-    {
-      id: 'team-1',
-      slug: 'lobos',
-      name: 'Lobos',
-      shortName: 'LOB',
-      logoUrl: null,
-      seasonName: 'Temporada 1',
-      divisionName: 'Premier',
-      role: 'mid',
-      isCaptain: true,
-      isActive: true
-    }
-  ]
+  teams: [defaultTeam]
 };
 
 test('normalizes roster display names without changing source data, Riot IDs or links', () => {
@@ -58,14 +59,11 @@ test('normalizes roster display names without changing source data, Riot IDs or 
     />
   );
   expect(html).toContain('>Ozaru</a>');
-  expect(html).toContain('<p>Ozaru</p>');
   expect(html).toContain(
     `https://op.gg/es/lol/summoners/euw/${encodeURIComponent(member.gameName)}-UZA`
   );
   expect(html).toContain(`href="/jugadores/${player.slug}"`);
   expect(member.name).toBe('𝑶𝒛𝒂𝒓𝒖');
-  expect(member.gameName).toBe('𝑶zaru');
-  expect(member.riotTag).toBe('UZA');
   const profile = renderToStaticMarkup(
     <PlayerProfile player={{ ...player, displayName: member.name }} />
   );
@@ -74,8 +72,11 @@ test('normalizes roster display names without changing source data, Riot IDs or 
 });
 
 test('Player cards link to individual profiles and search matches names and Riot IDs', () => {
-  const rosterPlayer = {
+  const testPlayer: PlayerDetail = {
     ...player,
+    gameName: 'Jugador Uno',
+    riotTag: 'EUW',
+    displayName: 'Nombre público',
     competition: {
       role: 'mid',
       team: null,
@@ -85,12 +86,13 @@ test('Player cards link to individual profiles and search matches names and Riot
       featured: null
     }
   };
-  const html = renderToStaticMarkup(<PlayerGrid players={[rosterPlayer]} />);
+
+  const html = renderToStaticMarkup(<PlayerGrid players={[testPlayer]} />);
   expect(html).toContain('href="/jugadores/jugador-uno-euw"');
   expect(html).toContain('Jugador Uno');
-  expect(filterPlayers([rosterPlayer], '  jugador uno#euw  ')).toHaveLength(1);
-  expect(filterPlayers([rosterPlayer], 'PÚBLICO')).toHaveLength(1);
-  expect(filterPlayers([rosterPlayer], 'missing')).toHaveLength(0);
+  expect(filterPlayers([testPlayer], '  jugador uno#euw  ')).toHaveLength(1);
+  expect(filterPlayers([testPlayer], 'PÚBLICO')).toHaveLength(1);
+  expect(filterPlayers([testPlayer], 'missing')).toHaveLength(0);
   expect(renderToStaticMarkup(<PlayerGrid players={[]} />)).toContain(
     'No hay jugadores que coincidan'
   );

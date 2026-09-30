@@ -46,7 +46,6 @@ function YoutubeIcon(props: React.SVGProps<SVGSVGElement>) {
 }
 
 export function MatchCard({ match }: { match: Match }) {
-  console.log('Objeto match recibido:', match);
   const rawStreamUrl =
     match.status === 'live'
       ? match.streamUrlLive
@@ -141,23 +140,33 @@ export function MatchCard({ match }: { match: Match }) {
       </div>
       <div className="match-actions">
         {stream ? (
-          <a
-            className="text-link match-stream-link"
-            href={stream}
-            target="_blank"
-            rel="noreferrer"
-            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}
-          >
-            {match.status === 'live' ? (
-              <>
-                <TwitchIcon /> Twitch
-              </>
-            ) : (
-              <>
-                <YoutubeIcon /> YouTube
-              </>
-            )}
-          </a>
+          (() => {
+            const lowerStream = stream.toLowerCase();
+            const isYouTube =
+              lowerStream.includes('youtube.com') || lowerStream.includes('youtu.be');
+            const isTwitch = lowerStream.includes('twitch.tv');
+
+            return (
+              <a
+                className="text-link match-stream-link"
+                href={stream}
+                target="_blank"
+                rel="noreferrer"
+              >
+                {isYouTube ? (
+                  <>
+                    <YoutubeIcon /> YouTube
+                  </>
+                ) : isTwitch ? (
+                  <>
+                    <TwitchIcon /> Twitch
+                  </>
+                ) : (
+                  <>{match.status === 'live' ? <TwitchIcon /> : <YoutubeIcon />} Directo</>
+                )}
+              </a>
+            );
+          })()
         ) : (
           <span className="meta">Sin emisión</span>
         )}

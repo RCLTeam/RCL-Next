@@ -8,7 +8,7 @@ interface TeamBadgeProps {
   team?: Team | null | undefined;
 }
 
-const DEFAULT_LOGO_URL = '../../../../public/images/teams_logo/placeholder.webp';
+const DEFAULT_LOGO_URL = '/images/teams_logo/placeholder.webp';
 
 export function TeamBadge({ team }: TeamBadgeProps) {
   const [failedUrls, setFailedUrls] = useState<Set<string>>(new Set());
