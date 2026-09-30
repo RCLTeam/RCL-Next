@@ -64,7 +64,7 @@
   background: var(--void);
   color: var(--text);
   border: 1px solid var(--line);
-  border-radius: 4px;
+  border-radius: 2px;
   padding: 10px 12px;
   font: inherit;
   color-scheme: dark;
@@ -96,8 +96,22 @@
 }
 
 .rcl-site .crud-operations-editor h3 {
-  margin: 0;
+  margin: 0 0 8px 0;
   font-size: 24px;
+}
+
+.rcl-site .crud-operations-editor > p {
+  margin: 0 0 20px 0;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.rcl-site .crud-operations-editor .crud-operations-actions {
+  margin-top: 32px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+  justify-content: flex-start;
 }
 
 .rcl-site .crud-operations-fields {
@@ -120,11 +134,42 @@
   flex-direction: column;
   gap: 8px;
   min-width: 0;
+  justify-content: flex-start;
 }
 
-.rcl-site .crud-operations-field small, .rcl-site .crud-operations-field [role='status'] {
+.rcl-site .crud-operations-field > label {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.rcl-site .crud-operations-field input[type='search'] + label,
+.rcl-site .crud-operations-field input + label {
+  margin-top: 12px;
+}
+
+.rcl-site .crud-operations-field:has(input[type='checkbox']) {
+  flex-direction: row-reverse;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: auto;
+  padding-top: 8px;
+}
+
+.rcl-site .crud-operations-field:has(input[type='checkbox']) > label {
+  cursor: pointer;
+  user-select: none;
+}
+
+.rcl-site .crud-operations-field output,
+.rcl-site .crud-operations-field small,
+.rcl-site .crud-operations-field [role='status'] {
   color: var(--muted);
-  font-size: 12px;
+  font-size: 13px;
+  line-height: 1.3;
+  display: block;
+  margin-top: 2px;
 }
 
 .rcl-site .crud-operations-field input:disabled {
@@ -171,8 +216,24 @@
   margin-bottom: 20px;
 }
 
-.rcl-site .crud-operations-error p, .rcl-site .crud-operations-field [role='alert'] {
+.rcl-site .crud-operations-error p,
+.rcl-site .crud-operations-field [role='alert'] {
   color: var(--crimson);
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.rcl-site .crud-operations-field [role='alert'] button {
+  background: transparent;
+  border: none;
+  color: var(--lime);
+  text-decoration: underline;
+  cursor: pointer;
+  font-size: 13px;
+  padding: 0;
 }
 
 .rcl-site .crud-operations-data .crud-operations-success {

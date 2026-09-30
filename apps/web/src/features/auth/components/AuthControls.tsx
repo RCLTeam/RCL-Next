@@ -1,4 +1,5 @@
 import React from 'react';
+import { displayName } from '../../../shared/display-name.js';
 import { discordLoginUrl } from '../api/auth-api.js';
 import { type AuthState, useAuth } from './AuthProvider.js';
 import './auth.css';
@@ -39,15 +40,19 @@ export function AuthControlsView({
                 src={`https://cdn.discordapp.com/avatars/${state.user.discordId}/${state.user.avatarHash}.${
                   state.user.avatarHash.startsWith('a_') ? 'gif' : 'png'
                 }`}
-                alt={state.user.globalName || state.user.username}
+                alt={displayName(state.user.globalName || state.user.username)}
               />
             ) : (
               <span className="auth-avatar" aria-hidden="true">
-                {(state.user.globalName || state.user.username).slice(0, 2).toUpperCase()}
+                {displayName(state.user.globalName || state.user.username)
+                  .slice(0, 2)
+                  .toUpperCase()}
               </span>
             )}
             <div className="auth-user">
-              <span className="auth-name">{state.user.globalName || state.user.username}</span>
+              <span className="auth-name">
+                {displayName(state.user.globalName || state.user.username)}
+              </span>
               <span className="auth-hint">
                 {state.user.role === 'owner'
                   ? 'Owner'

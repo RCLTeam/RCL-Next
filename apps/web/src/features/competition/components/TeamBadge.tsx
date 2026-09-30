@@ -8,28 +8,43 @@ interface TeamBadgeProps {
   team?: Team | null | undefined;
 }
 
+const DEFAULT_LOGO_URL = '/images/teams_logo/placeholder.webp';
+
 export function TeamBadge({ team }: TeamBadgeProps) {
-  const [failedUrl, setFailedUrl] = useState<string | null>(null);
-  const url = resolveTeamLogo(team?.logoUrl);
-  const bounds = url?.startsWith('/images/teams_logo/')
-    ? teamLogoBounds[url.slice('/images/teams_logo/'.length)]
+  const [failedUrls, setFailedUrls] = useState<Set<string>>(new Set());
+  const resolvedUrl = resolveTeamLogo(team?.logoUrl);
+  let activeUrl: string | null = null;
+  if (resolvedUrl && !failedUrls.has(resolvedUrl)) {
+    activeUrl = resolvedUrl;
+  } else if (!failedUrls.has(DEFAULT_LOGO_URL)) {
+    activeUrl = DEFAULT_LOGO_URL;
+  }
+
+  const bounds = activeUrl?.startsWith('/images/teams_logo/')
+    ? teamLogoBounds[activeUrl.slice('/images/teams_logo/'.length)]
     : undefined;
+
   return (
     <span className="team-badge" aria-hidden="true">
-      {url && url !== failedUrl ? (
-        <span className="team-logo-viewport">
-          <img
-            className={bounds ? 'team-logo-normalized' : undefined}
-            style={bounds}
-            src={url}
-            alt=""
-            loading="lazy"
-            onError={() => setFailedUrl(url)}
-          />
-        </span>
-      ) : (
-        (team?.shortName ?? team?.name ?? '?').slice(0, 3).toUpperCase()
-      )}
+      {activeUrl
+        ? (() => {
+            const currentUrl = activeUrl;
+            return (
+              <span className="team-logo-viewport">
+                <img
+                  className={bounds ? 'team-logo-normalized' : undefined}
+                  style={bounds}
+                  src={currentUrl}
+                  alt=""
+                  loading="lazy"
+                  onError={() => {
+                    setFailedUrls((prev) => new Set(prev).add(currentUrl));
+                  }}
+                />
+              </span>
+            );
+          })()
+        : (team?.shortName ?? team?.name ?? '?').slice(0, 3).toUpperCase()}
     </span>
   );
 }

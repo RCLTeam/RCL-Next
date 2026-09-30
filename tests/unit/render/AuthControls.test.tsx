@@ -15,6 +15,16 @@ const user: AuthUser = {
 
 describe('Discord header controls', () => {
   const callbacks = { onLogout: () => {}, onRetry: () => {} };
+  it('normalizes Discord display names and initials without changing the account', () => {
+    const account = Object.freeze({ ...user, globalName: '𝑶𝒛𝒂𝒓𝒖' });
+    const html = renderToString(
+      <AuthControlsView state={{ status: 'authenticated', user: account }} {...callbacks} />
+    );
+    expect(html).toContain('>Ozaru</span>');
+    expect(html).toContain('>OZ</span>');
+    expect(html).not.toContain(account.globalName);
+    expect(account.globalName).toBe('𝑶𝒛𝒂𝒓𝒖');
+  });
   it('uses a navigation link to start OAuth', () => {
     const html = renderToString(
       <AuthControlsView state={{ status: 'anonymous' }} {...callbacks} />

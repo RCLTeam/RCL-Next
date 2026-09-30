@@ -36,7 +36,8 @@ const match: Match = {
   bestOf: 1,
   scheduledAt: null,
   finishedAt: null,
-  streamUrl: null
+  streamUrl: null,
+  streamUrlLive: null
 };
 function repository(): CompetitionRepository {
   const season = { id: seasonId, name: 'Demo', startsOn: null, endsOn: null };

@@ -26,6 +26,7 @@ export interface Round {
   sequence: number;
   stage: string;
   name: string | null;
+  startsAt?: string | null;
 }
 export interface Match {
   slug?: string | undefined;
@@ -38,6 +39,7 @@ export interface Match {
   bestOf: number;
   scheduledAt: string | null;
   streamUrl: string | null;
+  streamUrlLive: string | null;
   round: Round | null;
 }
 export interface Standing {
