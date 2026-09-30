@@ -24,7 +24,7 @@ const player = {
   displayName: null,
   isMain: true,
   competition: {
-    role: 'mid',
+    role: null,
     team: null,
     champion: 'Ahri',
     stats,
