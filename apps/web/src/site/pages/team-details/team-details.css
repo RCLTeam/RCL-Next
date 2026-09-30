@@ -112,11 +112,13 @@
 
 .rcl-site .team-member-card {
   position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
   padding: 24px;
   background: var(--panel);
   border: 1px solid var(--line);
   border-bottom: 2px solid color-mix(in srgb, var(--team-color) 40%, var(--line));
-  overflow-wrap: anywhere;
 }
 
 .rcl-site .team-member-profile-link {
@@ -171,11 +173,18 @@
 .rcl-site .team-member-card h3 {
   font: 700 26px var(--display2);
   margin: 24px 0 8px;
+  line-height: 1.1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .rcl-site .team-member-card p {
   margin: 0 0 12px;
   font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .rcl-site .team-member-country {
@@ -269,6 +278,9 @@
   grid-column: 1;
   margin: 0;
   font-size: 24px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .rcl-site .team-player-card p {
@@ -276,6 +288,9 @@
   margin: 0;
   color: var(--muted);
   font: 10px/1.6 var(--mono);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .rcl-site .team-player-card .team-member-opgg {

@@ -197,6 +197,9 @@
 .rcl-site .match-stream-link {
   position: relative;
   z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
 }
 
 .rcl-site .match-row:has(.match-detail-link):hover {
@@ -221,4 +224,20 @@
   .rcl-site .match-row > .meta {
     grid-column: auto;
   }
+}
+
+.rcl-site .team-link {
+  display: inherit;
+  flex-direction: inherit;
+  align-items: inherit;
+  justify-content: inherit;
+  gap: inherit;
+  color: inherit;
+  text-decoration: none;
+  position: relative;
+  z-index: 2;
+}
+
+.rcl-site .team-link:hover {
+  color: var(--lime);
 }

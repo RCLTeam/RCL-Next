@@ -32,7 +32,8 @@ const roles = [
   ['jungle', 'Jungla'],
   ['mid', 'Mid'],
   ['adc', 'ADC'],
-  ['support', 'Support']
+  ['support', 'Support'],
+  ['substitute', 'Suplente']
 ] as const;
 const roleLabel = (role: string | null | undefined) =>
   roles.find(([key]) => key === role)?.[1] ?? 'Sin posición';
@@ -130,6 +131,7 @@ export function PlayersPage({ competition }: { competition: Competition }) {
   );
 }
 
+const VALID_PLAYER_ROLES = ['top', 'jungle', 'mid', 'adc', 'support', 'substitute'];
 export function filterPlayers(
   players: Player[],
   query: string,
@@ -138,13 +140,24 @@ export function filterPlayers(
 ) {
   const search = query.trim().toLocaleLowerCase('es');
   return players
-    .filter(
-      (player) =>
-        (role === 'all' || player.competition?.role === role) &&
+    .filter((player) => {
+      const playerRole = player.competition?.role;
+      const hasStats = Boolean(player.competition?.stats);
+
+      let matchesRole = false;
+      if (role === 'all') {
+        matchesRole = VALID_PLAYER_ROLES.includes(playerRole ?? '') || hasStats;
+      } else {
+        matchesRole = playerRole === role;
+      }
+
+      const matchesQuery =
         `${player.gameName}${player.riotTag ? `#${player.riotTag}` : ''} ${player.displayName ?? ''}`
           .toLocaleLowerCase('es')
-          .includes(search)
-    )
+          .includes(search);
+
+      return matchesRole && matchesQuery;
+    })
     .sort((a, b) => {
       const left = a.competition?.stats?.[sort];
       const right = b.competition?.stats?.[sort];
@@ -155,15 +168,18 @@ export function filterPlayers(
         const rightTeam = b.competition?.team;
         if (!leftTeam && rightTeam) return 1;
         if (!rightTeam && leftTeam) return -1;
-        const teamOrder =
+
+        return (
           (leftTeam?.name ?? '').localeCompare(rightTeam?.name ?? '', 'es') ||
-          (leftTeam?.id ?? '').localeCompare(rightTeam?.id ?? '');
-        if (teamOrder) return teamOrder;
+          (leftTeam?.id ?? '').localeCompare(rightTeam?.id ?? '') ||
+          a.gameName.localeCompare(b.gameName, 'es') ||
+          a.id.localeCompare(b.id)
+        );
       }
+      const numLeft = left ?? 0;
+      const numRight = right ?? 0;
       return (
-        (right ?? 0) - (left ?? 0) ||
-        a.gameName.localeCompare(b.gameName, 'es') ||
-        a.id.localeCompare(b.id)
+        numRight - numLeft || a.gameName.localeCompare(b.gameName, 'es') || a.id.localeCompare(b.id)
       );
     });
 }

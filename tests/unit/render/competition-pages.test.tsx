@@ -62,7 +62,9 @@ test('Team profiles group members and handle an unpublished roster', () => {
       }}
     />
   );
-  expect(html).toContain('RiotName#EUW');
+  expect(html).toContain('<h3>RiotName</h3>');
+  expect(html).toContain('<p>Jugador</p>');
+  expect(html).toContain('https://op.gg/es/lol/summoners/euw/RiotName-EUW');
   expect(html).toContain('Capitán');
   expect(html).toMatch(/aria-label="Coach"[\s\S]*Entrenador/);
   expect(html).toMatch(/aria-label="Staff"[\s\S]*Manager/);

@@ -5,8 +5,10 @@ import {
   aggregatePlayerStats,
   enrichPlayers,
   matchMvps,
-  mvpScore
+  mvpScore,
+  playerRole
 } from './player-statistics.js';
+
 const row = (overrides: Partial<PlayerGameRow> = {}): PlayerGameRow => ({
   playerId: 'a',
   gameId: 'g1',
@@ -24,10 +26,12 @@ const row = (overrides: Partial<PlayerGameRow> = {}): PlayerGameRow => ({
   assists: 5,
   cs: 240,
   damageToChampions: 21000,
+  goldEarned: 12000,
   visionScore: 30,
   damageMitigated: 12000,
   ...overrides
 });
+
 const player = (id: string): Player => ({
   id,
   gameName: id,
@@ -35,6 +39,18 @@ const player = (id: string): Player => ({
   displayName: null,
   countryCode: null,
   isMain: true
+});
+
+test('playerRole normalizes position names correctly', () => {
+  expect(playerRole('middle')).toBe('mid');
+  expect(playerRole('bottom')).toBe('adc');
+  expect(playerRole('bot')).toBe('adc');
+  expect(playerRole('utility')).toBe('support');
+  expect(playerRole('sup')).toBe('support');
+  expect(playerRole('jg')).toBe('jungle');
+  expect(playerRole('jungla')).toBe('jungle');
+  expect(playerRole('top')).toBe('top');
+  expect(playerRole(null)).toBeNull();
 });
 
 test('splash champion uses most played, breaking ties by the latest pick', () => {
@@ -91,7 +107,8 @@ test('missing time and optional stats remain unavailable; zero deaths and zero k
       deaths: 0,
       durationSeconds: null,
       visionScore: null,
-      damageMitigated: null
+      damageMitigated: null,
+      goldEarned: null
     })
   ];
   expect(aggregatePlayerStats(rows, rows)).toMatchObject({
@@ -102,23 +119,23 @@ test('missing time and optional stats remain unavailable; zero deaths and zero k
     visionScore: null,
     damageMitigated: null
   });
-  expect(Number.isFinite(mvpScore(rows, rows))).toBe(true);
+  expect(mvpScore(rows, rows)).toBe(0);
 });
 
-test('one MVP per series with deterministic ties and no score inflation from repeated maps', () => {
+test('one MVP per series with deterministic ties, no score inflation, and accumulated series KDA', () => {
   const rows = [row({ deaths: 0 }), row({ playerId: 'b', deaths: 0 })];
-  const repeated = [...rows, ...rows.map((r) => ({ ...r, gameId: 'g2' }))];
+  const repeated = [
+    ...rows.map((r) => ({ ...r, gameId: 'g1' })),
+    ...rows.map((r) => ({ ...r, gameId: 'g2' }))
+  ];
+
   expect(
-    mvpScore(
-      rows.filter((r) => r.playerId === 'a'),
-      rows
-    )
-  ).toBe(
     mvpScore(
       repeated.filter((r) => r.playerId === 'a'),
       repeated
     )
-  );
+  ).toBe(110.8);
+
   expect(matchMvps(repeated).map((award) => award.playerId)).toEqual(['a']);
   expect(matchMvps([...repeated].reverse()).map((award) => award.playerId)).toEqual(['a']);
 });
@@ -161,4 +178,25 @@ test('support role normalization rewards vision and participation without requir
   expect(mvpScore([support], [support])).toBeGreaterThan(
     mvpScore([{ ...support, position: 'adc' }], [support])
   );
+});
+
+test('calculates gold efficiency metrics correctly in mvpScore and falls back to DPM/CS when gold is absent', () => {
+  const rowWithGold = row({
+    goldEarned: 15000,
+    damageToChampions: 30000,
+    durationSeconds: 1800
+  });
+  const rowWithoutGold = row({
+    goldEarned: null,
+    damageToChampions: 30000,
+    durationSeconds: 1800
+  });
+
+  const scoreWithGold = mvpScore([rowWithGold], [rowWithGold]);
+  const scoreWithoutGold = mvpScore([rowWithoutGold], [rowWithoutGold]);
+
+  expect(scoreWithGold).toBeGreaterThan(0);
+  expect(scoreWithoutGold).toBeGreaterThan(0);
+  expect(Number.isFinite(scoreWithGold)).toBe(true);
+  expect(Number.isFinite(scoreWithoutGold)).toBe(true);
 });

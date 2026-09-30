@@ -17,7 +17,6 @@ export function RoundFilter({
       onChange={(event) => onChange(event.target.value)}
       disabled={!rounds.length}
     >
-      <option value="">Todas las jornadas</option>
       {rounds.map((round) => (
         <option key={round.id} value={round.id}>
           {round.name ?? `Jornada ${round.sequence}`}

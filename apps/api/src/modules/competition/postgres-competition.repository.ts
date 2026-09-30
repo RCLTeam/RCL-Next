@@ -447,7 +447,8 @@ export class PostgresCompetitionRepository implements CompetitionRepository {
         bestOf: matches.bestOf,
         scheduledAt: matches.scheduledAt,
         finishedAt: matches.finishedAt,
-        streamUrl: matches.streamUrl
+        streamUrl: matches.streamUrl,
+        streamUrlLive: matches.streamUrlLive
       })
       .from(matches)
       .where(eq(matches.idSeasonDivision, divisionId))

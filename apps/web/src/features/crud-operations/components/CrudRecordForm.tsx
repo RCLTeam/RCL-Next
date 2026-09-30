@@ -291,22 +291,6 @@ function ReferenceField({
           </option>
         ))}
       </Select>
-      <div className="crud-operations-actions">
-        <button
-          type="button"
-          disabled={disabled || loading || offset === 0}
-          onClick={() => setOffset((previous) => Math.max(0, previous - 50))}
-        >
-          Anteriores
-        </button>
-        <button
-          type="button"
-          disabled={disabled || loading || !hasMore}
-          onClick={() => setOffset((previous) => previous + 50)}
-        >
-          Siguientes
-        </button>
-      </div>
       {!loading && !error && eligible.length === 0 && (
         <output>No hay opciones en esta página. Prueba otra búsqueda o página.</output>
       )}
@@ -319,7 +303,6 @@ function ReferenceField({
           </button>
         </span>
       )}
-      {field.reference === 'rounds' && <small>Solo jornadas de la competición seleccionada.</small>}
     </div>
   );
 }
