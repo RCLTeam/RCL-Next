@@ -146,7 +146,7 @@ export function filterPlayers(
 
       let matchesRole = false;
       if (role === 'all') {
-        matchesRole = VALID_PLAYER_ROLES.includes(playerRole ?? '') || hasStats;
+        matchesRole = !playerRole || VALID_PLAYER_ROLES.includes(playerRole) || hasStats;
       } else {
         matchesRole = playerRole === role;
       }
@@ -168,15 +168,18 @@ export function filterPlayers(
         const rightTeam = b.competition?.team;
         if (!leftTeam && rightTeam) return 1;
         if (!rightTeam && leftTeam) return -1;
-        const teamOrder =
+
+        return (
           (leftTeam?.name ?? '').localeCompare(rightTeam?.name ?? '', 'es') ||
-          (leftTeam?.id ?? '').localeCompare(rightTeam?.id ?? '');
-        if (teamOrder) return teamOrder;
+          (leftTeam?.id ?? '').localeCompare(rightTeam?.id ?? '') ||
+          a.gameName.localeCompare(b.gameName, 'es') ||
+          a.id.localeCompare(b.id)
+        );
       }
+      const numLeft = left ?? 0;
+      const numRight = right ?? 0;
       return (
-        (right ?? 0) - (left ?? 0) ||
-        a.gameName.localeCompare(b.gameName, 'es') ||
-        a.id.localeCompare(b.id)
+        numRight - numLeft || a.gameName.localeCompare(b.gameName, 'es') || a.id.localeCompare(b.id)
       );
     });
 }
