@@ -411,7 +411,8 @@ export class PostgresCompetitionRepository implements CompetitionRepository {
         shortName: teams.shortName,
         logoUrl: teams.logoUrl,
         color: teams.color,
-        isActive: teams.isActive
+        isActive: teams.isActive,
+        discordRoleId: teams.discordRoleId
       })
       .from(teams)
       .where(eq(teams.seasonDivisionId, divisionId))

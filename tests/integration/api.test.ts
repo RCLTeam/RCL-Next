@@ -21,7 +21,8 @@ const teams: Team[] = [homeId, awayId].map((id, index) => ({
   shortName: null,
   logoUrl: null,
   color: null,
-  isActive: true
+  isActive: true,
+  discordRoleId: null
 }));
 const match: Match = {
   id: '70000000-0000-4000-8000-000000000001',

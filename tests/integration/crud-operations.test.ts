@@ -171,8 +171,10 @@ describe('admin CRUD with HTTP sessions and PostgreSQL constraints', () => {
   it('records a completed series without ROFL and rejects inconsistent results', async () => {
     // Local databases can omit Discord integration columns unrelated to CRUD.
     await db.execute(sql`ALTER TABLE teams DROP COLUMN discord_role_id`);
+    let createdMatchId: string | undefined;
     try {
       const record = await create('matches', { ...matchValues, bestOf: 3 });
+      createdMatchId = String(record.id);
       for (const changes of [
         { status: 'completed', team1Score: 1, team2Score: 0, winnerTeamId: team1 },
         { status: 'completed', team1Score: 2, team2Score: 1, winnerTeamId: team2 },
@@ -211,6 +213,8 @@ describe('admin CRUD with HTTP sessions and PostgreSQL constraints', () => {
       );
       await send('delete', 'matches', deleteBody('matches', response.body.data)).expect(204);
     } finally {
+      if (createdMatchId)
+        await db.delete(schema.matches).where(eq(schema.matches.id, createdMatchId));
       await db.execute(
         sql`ALTER TABLE teams ADD COLUMN discord_role_id bigint CONSTRAINT teams_discord_role_id_unique UNIQUE`
       );

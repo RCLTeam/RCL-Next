@@ -363,13 +363,22 @@ export class PostgresCrudOperationsRepository implements CrudOperationsRepositor
       const references = page.filter((row) => row[field.name] !== null);
       if (!references.length) return null;
 
+      const labelFields =
+        target.name === 'competitions'
+          ? ['seasonName', 'divisionName']
+          : target.name === 'users'
+            ? ['username']
+            : target.name === 'rounds'
+              ? ['name', 'stage']
+              : ['name'];
       const related = records(
         await this.db
           .select(
             Object.fromEntries(
-              [...new Set([...target.keys, ...target.fields.map((entry) => entry.name)])].map(
-                (name) => [name, column(target.table, name)]
-              )
+              [...new Set([...target.keys, ...labelFields])].map((name) => [
+                name,
+                column(target.table, name)
+              ])
             )
           )
           .from(target.table)
