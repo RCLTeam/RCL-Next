@@ -285,12 +285,28 @@ export class PostgresCompetitionRepository implements CompetitionRepository {
   }
   async playerDetail(id: string) {
     const [player] = await this.db
-      .select(this.playerSelection)
+      .select({ ...this.playerSelection, discordUserId: players.discordUserId })
       .from(players)
       .leftJoin(discordUsers, eq(players.discordUserId, discordUsers.discordId))
       .where(eq(players.id, id))
       .limit(1);
     if (!player) return undefined;
+    const { discordUserId, ...publicPlayer } = player;
+    const linkedAccounts = discordUserId
+      ? (
+          await this.db
+            .select(this.playerSelection)
+            .from(players)
+            .leftJoin(discordUsers, eq(players.discordUserId, discordUsers.discordId))
+            .where(eq(players.discordUserId, discordUserId))
+            .orderBy(
+              desc(players.isMain),
+              asc(players.gameName),
+              asc(players.riotTag),
+              asc(players.id)
+            )
+        ).filter((account) => account.id !== id)
+      : [];
     const memberships = await this.db
       .select({
         id: teams.id,
@@ -317,7 +333,7 @@ export class PostgresCompetitionRepository implements CompetitionRepository {
         asc(teams.name),
         asc(teams.id)
       );
-    return { ...player, teams: memberships };
+    return { ...publicPlayer, linkedAccounts, teams: memberships };
   }
   async teamDetail(id: string) {
     const [team] = await this.db
@@ -337,7 +353,7 @@ export class PostgresCompetitionRepository implements CompetitionRepository {
       .where(eq(teams.id, id))
       .limit(1);
     if (!team) return undefined;
-    // One roster entry per person, preferring their main game account.
+    // One roster entry per person; secondary accounts only appear in player details.
     const members = await this.db
       .selectDistinctOn([teamMemberships.discordUserId], {
         id: teamMemberships.discordUserId,
@@ -351,7 +367,10 @@ export class PostgresCompetitionRepository implements CompetitionRepository {
       })
       .from(teamMemberships)
       .innerJoin(discordUsers, eq(teamMemberships.discordUserId, discordUsers.discordId))
-      .leftJoin(players, eq(players.discordUserId, teamMemberships.discordUserId))
+      .leftJoin(
+        players,
+        and(eq(players.discordUserId, teamMemberships.discordUserId), eq(players.isMain, true))
+      )
       .where(eq(teamMemberships.teamId, id))
       .orderBy(asc(teamMemberships.discordUserId), desc(players.isMain), asc(players.id));
     return { ...team, members };

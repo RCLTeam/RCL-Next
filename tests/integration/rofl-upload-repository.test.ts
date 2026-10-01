@@ -112,6 +112,50 @@ test('PostgresRoflUploadRepository complete lifecycle and constraints', async (t
   });
 
   const repo = new PostgresRoflUploadRepository(db);
+  const [secondary] = await db
+    .insert(schema.players)
+    .values({
+      discordUserId: '900000000000000001',
+      gameName: 'Secondary Demo',
+      riotTag: 'ALT',
+      isMain: false
+    })
+    .returning();
+  assert.ok(secondary);
+
+  await t.test(
+    'secondary Riot IDs resolve to the main account and require a unique main',
+    async () => {
+      const identity = [{ gameName: 'secondary demo', riotTag: 'alt' }];
+      const [main] = await repo.findPlayersByRiotIds([
+        { gameName: 'Jugador Demo 1', riotTag: 'DEMO' }
+      ]);
+      const [alternate] = await repo.findPlayersByRiotIds(identity);
+      assert.ok(main);
+      assert.ok(alternate);
+      assert.equal(alternate.playerId, main.playerId);
+      assert.equal(alternate.gameName, 'Secondary Demo');
+      assert.equal(alternate.riotTag, 'ALT');
+      await db
+        .update(schema.players)
+        .set({ isMain: false })
+        .where(eq(schema.players.id, main.playerId));
+      await assert.rejects(repo.findPlayersByRiotIds(identity), /exactamente una cuenta principal/);
+      await db
+        .update(schema.players)
+        .set({ isMain: true })
+        .where(eq(schema.players.id, main.playerId));
+      await db
+        .update(schema.players)
+        .set({ isMain: true })
+        .where(eq(schema.players.id, secondary.id));
+      await assert.rejects(repo.findPlayersByRiotIds(identity), /exactamente una cuenta principal/);
+      await db
+        .update(schema.players)
+        .set({ isMain: false })
+        .where(eq(schema.players.id, secondary.id));
+    }
+  );
 
   await t.test(
     'findPlayersByRiotIds performs case-insensitive search and joins discord username',
@@ -230,12 +274,13 @@ test('PostgresRoflUploadRepository complete lifecycle and constraints', async (t
   await t.test(
     'executeBatchInsert skips duplicate external_game_id and enforces unanimous membership',
     async () => {
-      const allPlayers = await repo.findPlayersByRiotIds(
-        Array.from({ length: 20 }, (_, i) => ({
+      const allPlayers = await repo.findPlayersByRiotIds([
+        ...Array.from({ length: 20 }, (_, i) => ({
           gameName: `Jugador Demo ${i + 1}`,
           riotTag: 'DEMO'
-        }))
-      );
+        })),
+        { gameName: 'Secondary Demo', riotTag: 'ALT' }
+      ]);
       const playerLookupMap = new Map<string, PlayerLookupResult>();
       for (const p of allPlayers) {
         playerLookupMap.set(`${p.gameName.toLowerCase()}#${p.riotTag.toLowerCase()}`, p);
@@ -277,7 +322,7 @@ test('PostgresRoflUploadRepository complete lifecycle and constraints', async (t
 
       // 2. Batch with 1 duplicate game ('DEMO-GAME-001') and 2 valid new games for Match 2 (best_of: 3)
       const validBlueParticipants: ParsedParticipantData[] = [
-        createParticipant('Jugador Demo 1', 'DEMO', 'blue', 'Garen', 'top'),
+        createParticipant('Secondary Demo', 'ALT', 'blue', 'Garen', 'top'),
         createParticipant('Jugador Demo 2', 'DEMO', 'blue', 'Vi', 'jungle'),
         createParticipant('Jugador Demo 3', 'DEMO', 'blue', 'Ahri', 'mid'),
         createParticipant('Jugador Demo 4', 'DEMO', 'blue', 'Jinx', 'adc'),
@@ -325,6 +370,10 @@ test('PostgresRoflUploadRepository complete lifecycle and constraints', async (t
       // Verify player info, stats, runes, build tables have 10 rows per game (demo had 10, now 30)
       const infos = await db.select().from(schema.playerGameInfo);
       assert.equal(infos.length, 30);
+      const main = allPlayers.find((player) => player.gameName === 'Jugador Demo 1');
+      assert.ok(main);
+      assert.equal(infos.filter((info) => info.playerId === secondary.id).length, 0);
+      assert.equal(infos.filter((info) => info.playerId === main.playerId).length, 3);
       const stats = await db.select().from(schema.playerGameStats);
       assert.equal(stats.length, 30);
       const runes = await db.select().from(schema.playerGameRunes);

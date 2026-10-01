@@ -74,5 +74,6 @@ export interface PlayerTeam extends TeamSummary {
   isActive: boolean;
 }
 export interface PlayerDetail extends Player {
+  linkedAccounts?: Player[];
   teams: PlayerTeam[];
 }

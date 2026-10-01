@@ -1,4 +1,5 @@
 export interface PlayerLookupResult {
+  /** Main account receiving the imported data; gameName/riotTag identify the replay account. */
   playerId: string;
   discordUserId: string;
   discordUsername: string;

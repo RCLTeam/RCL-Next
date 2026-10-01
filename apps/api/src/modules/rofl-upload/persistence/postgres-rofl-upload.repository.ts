@@ -62,13 +62,30 @@ export class PostgresRoflUploadRepository implements RoflUploadRepository {
       .innerJoin(discordUsers, eq(players.discordUserId, discordUsers.discordId))
       .where(or(...conditions));
 
-    return rows.map((r) => ({
-      playerId: r.playerId,
-      discordUserId: r.discordUserId ?? '',
-      discordUsername: r.discordUsername,
-      gameName: r.gameName,
-      riotTag: r.riotTag ?? ''
-    }));
+    if (rows.length === 0) return [];
+    const discordIds = rows.flatMap((row) => (row.discordUserId ? [row.discordUserId] : []));
+    const mainAccounts = await this.db
+      .select({ id: players.id, discordUserId: players.discordUserId })
+      .from(players)
+      .where(and(inArray(players.discordUserId, discordIds), eq(players.isMain, true)));
+
+    return rows.map((row) => {
+      const mains = mainAccounts.filter((account) => account.discordUserId === row.discordUserId);
+      const main = mains[0];
+      if (!main || mains.length !== 1) {
+        throw new Error(
+          `No se pueden importar estadísticas de ${row.gameName}#${row.riotTag ?? ''}: debe existir exactamente una cuenta principal para este usuario de Discord.`
+        );
+      }
+      // Keep the replay's Riot ID as the lookup key, but persist all data under its main account.
+      return {
+        playerId: main.id,
+        discordUserId: row.discordUserId ?? '',
+        discordUsername: row.discordUsername,
+        gameName: row.gameName,
+        riotTag: row.riotTag ?? ''
+      };
+    });
   }
 
   async checkExternalGamesExist(externalGameIds: string[]): Promise<string[]> {

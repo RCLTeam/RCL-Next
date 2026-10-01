@@ -112,6 +112,49 @@ export function PlayerProfile({ player }: { player: PlayerDetail }) {
           <dd>{player.teams.length}</dd>
         </div>
       </dl>
+      <section className="player-linked-accounts" aria-labelledby="player-accounts-title">
+        <div className="player-detail-section-heading">
+          <h2 id="player-accounts-title">Cuentas secundarias</h2>
+          <span className="meta">Cuentas del mismo jugador</span>
+        </div>
+        {player.linkedAccounts?.length ? (
+          <div className="player-profile-team-grid">
+            {player.linkedAccounts.map((account) => {
+              const accountTag = account.riotTag?.replace(/^#/, '').trim();
+              return (
+                <div className="player-profile-membership player-linked-account" key={account.id}>
+                  <SiteLink
+                    className="player-linked-account-profile"
+                    href={`/jugadores/${encodeURIComponent(account.slug ?? account.id)}`}
+                  >
+                    <span className="meta">
+                      {account.isMain ? 'Cuenta principal' : 'Cuenta secundaria'}
+                    </span>
+                    <h3>{account.gameName}</h3>
+                    <p>
+                      {account.gameName}
+                      {accountTag ? `#${accountTag}` : ''}
+                    </p>
+                  </SiteLink>
+                  {accountTag && (
+                    <a
+                      className="player-profile-opgg"
+                      href={`https://op.gg/es/lol/summoners/euw/${encodeURIComponent(account.gameName)}-${encodeURIComponent(accountTag)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={`Ver OP.GG de ${account.gameName} (nueva pestaña)`}
+                    >
+                      <img src="/images/brand/opgg.webp" alt="OP.GG" />
+                    </a>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="empty-state">No hay otras cuentas vinculadas a este jugador.</div>
+        )}
+      </section>
       <section className="player-performance" aria-labelledby="player-performance-title">
         <div className="player-detail-section-heading">
           <h2 id="player-performance-title">Rendimiento</h2>

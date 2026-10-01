@@ -76,11 +76,13 @@ test('HTTP -> controller -> service -> real repository -> embedded PostgreSQL', 
   const playerId = captain.playerId as string;
   assert.equal(captain.playerSlug, 'jugador-demo-1-demo');
   const playerList = await request(app).get('/api/v1/players').expect(200);
-  assert.equal(playerList.body.data.length, 21);
+  assert.equal(playerList.body.data.length, 20);
+  assert.ok(playerList.body.data.every((player: { isMain: boolean }) => player.isMain));
   const divisionPlayers = await request(app)
     .get(`/api/v1/divisions/${divisionId}/players`)
     .expect(200);
-  assert.equal(divisionPlayers.body.data.length, 11);
+  assert.equal(divisionPlayers.body.data.length, 10);
+  assert.ok(divisionPlayers.body.data.every((player: { isMain: boolean }) => player.isMain));
   const rankedPlayer = divisionPlayers.body.data.find(
     (player: { id: string }) => player.id === playerId
   );
@@ -163,6 +165,15 @@ test('HTTP -> controller -> service -> real repository -> embedded PostgreSQL', 
   assert.equal(playerDetail.body.data.teams[0].divisionName, 'Premier DEMO');
   assert.equal('puuid' in playerDetail.body.data, false);
   assert.equal('discordUserId' in playerDetail.body.data, false);
+  assert.equal(playerDetail.body.data.linkedAccounts.length, 1);
+  const alternate = playerDetail.body.data.linkedAccounts[0];
+  assert.equal(alternate.gameName, 'Alternate');
+  assert.equal(alternate.isMain, false);
+  assert.equal('discordUserId' in alternate, false);
+  const alternateDetail = await request(app).get(`/api/v1/players/${alternate.slug}`).expect(200);
+  assert.equal(alternateDetail.body.data.linkedAccounts.length, 1);
+  assert.equal(alternateDetail.body.data.linkedAccounts[0].id, playerId);
+  assert.equal(alternateDetail.body.data.linkedAccounts[0].isMain, true);
   const [unlinked] = await db
     .insert(schema.players)
     .values({ gameName: 'Sin vínculo' })
@@ -170,6 +181,7 @@ test('HTTP -> controller -> service -> real repository -> embedded PostgreSQL', 
   const unlinkedDetail = await request(app).get(`/api/v1/players/${unlinked?.id}`).expect(200);
   assert.equal(unlinkedDetail.body.data.displayName, null);
   assert.deepEqual(unlinkedDetail.body.data.teams, []);
+  assert.deepEqual(unlinkedDetail.body.data.linkedAccounts, []);
   await request(app).get('/api/v1/players/not-a-uuid').expect(404);
   await request(app).get('/api/v1/players/invalid%21').expect(422);
   await request(app).get('/api/v1/players/40000000-0000-4000-8000-000000000099').expect(404);
