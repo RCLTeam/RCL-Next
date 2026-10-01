@@ -1,12 +1,11 @@
 import React from 'react';
 import { MatchCard } from '../../../features/competition/components/MatchCard.js';
+import { isTeamVisibleInCalendar } from '../../../features/competition/team-visibility.js';
 import type { Match } from '../../../features/competition/types/competition.types.js';
 
 export function MatchList({ matches }: { matches: Match[] }) {
-  const isTeamExist = (team?: { discordRoleId?: string | null }) =>
-    Boolean(team?.discordRoleId && BigInt(team.discordRoleId) >= -10n);
   const existingMatches = matches.filter(
-    (match) => isTeamExist(match.homeTeam) && isTeamExist(match.awayTeam)
+    (match) => isTeamVisibleInCalendar(match.homeTeam) && isTeamVisibleInCalendar(match.awayTeam)
   );
   return (
     <div className="match-list">

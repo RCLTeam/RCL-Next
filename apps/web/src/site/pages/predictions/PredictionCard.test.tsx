@@ -7,6 +7,14 @@ import { PredictorRankingPanel } from './PredictorRankingPanel.js';
 
 const match: Match = {
   id: 'm',
+  homeTeam: { id: 'home', name: 'Home', shortName: null, logoUrl: null, discordRoleId: '0' },
+  awayTeam: {
+    id: 'away',
+    name: 'Away',
+    shortName: null,
+    logoUrl: null,
+    discordRoleId: '123456789012345678'
+  },
   bestOf: 3,
   status: 'scheduled',
   scheduledAt: '2026-10-02T18:00:00Z',
@@ -35,6 +43,27 @@ test('percentages stay hidden even if supplied while voting is open; closed card
   expect(closed).toContain('27%');
   expect(closed).not.toContain('<form');
 });
+test.each(['-9000', '-11', '-10', '-1', null, undefined])(
+  'inactive participant with role %s cannot receive predictions even with an open summary',
+  (discordRoleId) => {
+    for (const side of ['homeTeam', 'awayTeam'] as const) {
+      const html = renderToStaticMarkup(
+        <PredictionCard
+          match={{
+            ...match,
+            [side]: { id: side, name: 'Inactive', shortName: null, logoUrl: null, discordRoleId }
+          }}
+          summary={{ matchId: 'm', open: true, closed: false, homePercent: null, votes: null }}
+          authenticated
+          save={async () => {}}
+        />
+      );
+      expect(html).not.toContain('<form');
+      expect(html).toContain('Predicciones no disponibles');
+    }
+  }
+);
+
 test('ranking shows the top five and the current user outside them', () => {
   const ranking = Array.from({ length: 8 }, (_, i) => ({
     userId: `${i}`,

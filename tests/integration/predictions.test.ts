@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { PGlite } from '@electric-sql/pglite';
+import { eq } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/pglite';
 import { migrate } from 'drizzle-orm/pglite/migrator';
 import { expect, test, vi } from 'vitest';
@@ -19,6 +20,9 @@ test('predictions persist, hide votes until close, reject late edits and derive 
     );
     await client.exec(
       "UPDATE matches SET scheduled_at = '2026-10-02T18:00:00Z', status = 'scheduled', best_of = 3, winner_team_id = NULL; DELETE FROM predictions;"
+    );
+    await client.exec(
+      'UPDATE teams SET discord_role_id = numbered.role_id FROM (SELECT id, row_number() OVER (ORDER BY id) AS role_id FROM teams) numbered WHERE teams.id = numbered.id'
     );
     const repository = new PredictionsRepository(db);
     const division = '20000000-0000-4000-8000-000000000001';
@@ -43,6 +47,45 @@ test('predictions persist, hide votes until close, reject late edits and derive 
     expect(await repository.mine(division, userId)).toEqual([{ ...pick, awayScore: 1 }]);
     const open = await repository.overview(division);
     expect(open.matches[0]).toMatchObject({ open: true, homePercent: null, votes: null });
+    const [scheduledMatch] = await db
+      .select()
+      .from(schema.matches)
+      .where(eq(schema.matches.id, matchId));
+    if (!scheduledMatch) throw new Error('Missing match fixture');
+    for (const teamId of [scheduledMatch.team1Id, scheduledMatch.team2Id]) {
+      if (!teamId) throw new Error('Missing participant fixture');
+      const [original] = await db.select().from(schema.teams).where(eq(schema.teams.id, teamId));
+      if (!original) throw new Error('Missing team fixture');
+      for (const discordRoleId of [-9000n, -11n, -10n, -1n, null]) {
+        await db.update(schema.teams).set({ discordRoleId }).where(eq(schema.teams.id, teamId));
+        await expect(repository.save(userId, pick)).rejects.toMatchObject({
+          code: 'INACTIVE_TEAMS'
+        });
+        expect(
+          (await repository.overview(division)).matches.some((m) => m.matchId === matchId)
+        ).toBe(false);
+        expect(await repository.mine(division, userId)).toEqual([{ ...pick, awayScore: 1 }]);
+        await db.delete(schema.predictions);
+        await expect(repository.save(userId, pick)).rejects.toMatchObject({
+          code: 'INACTIVE_TEAMS'
+        });
+        expect(await repository.mine(division, userId)).toEqual([]);
+        await db
+          .update(schema.teams)
+          .set({ discordRoleId: original.discordRoleId })
+          .where(eq(schema.teams.id, teamId));
+        await repository.save(userId, { ...pick, awayScore: 1 });
+      }
+      await db.update(schema.teams).set({ discordRoleId: 0n }).where(eq(schema.teams.id, teamId));
+      await repository.save(userId, { ...pick, awayScore: 1 });
+      expect(
+        (await repository.overview(division)).matches.find((m) => m.matchId === matchId)?.open
+      ).toBe(true);
+      await db
+        .update(schema.teams)
+        .set({ discordRoleId: original.discordRoleId })
+        .where(eq(schema.teams.id, teamId));
+    }
     vi.setSystemTime(new Date('2026-09-29T22:00:00Z'));
     await expect(repository.save(userId, pick)).rejects.toMatchObject({
       code: 'PREDICTIONS_CLOSED'

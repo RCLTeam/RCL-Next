@@ -7,6 +7,7 @@ import {
 } from '../../../features/competition/components/CompetitionDataState.js';
 import { CompetitionFilters } from '../../../features/competition/components/CompetitionFilters.js';
 import type { Competition } from '../../../features/competition/hooks/useCompetition.js';
+import { isActiveTeam } from '../../../features/competition/team-visibility.js';
 import { usePredictions } from '../../../features/predictions/usePredictions.js';
 import { PageLayout } from '../../../shared/components/PageLayout/PageLayout.js';
 import { PredictionCard } from './PredictionCard.js';
@@ -21,7 +22,9 @@ export function PredictionsPage({ competition }: { competition: Competition }) {
   const matches =
     data?.matches.flatMap((summary) => {
       const match = competition.calendar.data.find((m) => m.id === summary.matchId);
-      return match ? [{ match, summary }] : [];
+      return match && isActiveTeam(match.homeTeam) && isActiveTeam(match.awayTeam)
+        ? [{ match, summary }]
+        : [];
     }) ?? [];
   return (
     <PageLayout
@@ -75,7 +78,7 @@ export function PredictionsPage({ competition }: { competition: Competition }) {
             const pick = predictions.picks.find((p) => p.matchId === match.id);
             return (
               <PredictionCard
-                key={`${match.id}/${userId}/${pick?.selectedTeamId}/${pick?.homeScore}/${pick?.awayScore}`}
+                key={`${match.id}/${userId}`}
                 match={match}
                 summary={summary}
                 pick={pick}

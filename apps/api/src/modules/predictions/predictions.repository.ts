@@ -1,7 +1,8 @@
 import type { PredictionPick, PredictionsData, PredictorStanding } from '@rcl/contracts';
-import { discordUsers, matches, predictions, seasonsDivisions } from '@rcl/database';
+import { discordUsers, matches, predictions, seasonsDivisions, teams } from '@rcl/database';
 import type * as schema from '@rcl/database/schema';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, gte, inArray } from 'drizzle-orm';
+import { alias } from 'drizzle-orm/pg-core';
 import type { PgDatabase, PgQueryResultHKT } from 'drizzle-orm/pg-core';
 import { AppError, notFound } from '../../shared/app-error.js';
 import { leagueWeek, predictionPoints, predictionWindow } from './prediction-policy.js';
@@ -15,10 +16,20 @@ export class PredictionsRepository {
       .from(seasonsDivisions)
       .where(eq(seasonsDivisions.id, divisionId));
     if (!division) throw notFound('Division');
+    const homeTeam = alias(teams, 'prediction_home_team');
+    const awayTeam = alias(teams, 'prediction_away_team');
     const calendar = await this.db
-      .select()
+      .select({ match: matches })
       .from(matches)
-      .where(eq(matches.idSeasonDivision, divisionId));
+      .innerJoin(homeTeam, eq(homeTeam.id, matches.team1Id))
+      .innerJoin(awayTeam, eq(awayTeam.id, matches.team2Id))
+      .where(
+        and(
+          eq(matches.idSeasonDivision, divisionId),
+          gte(homeTeam.discordRoleId, 0n),
+          gte(awayTeam.discordRoleId, 0n)
+        )
+      );
     const votes = await this.db
       .select({ pick: predictions, match: matches, user: discordUsers })
       .from(predictions)
@@ -49,6 +60,7 @@ export class PredictionsRepository {
     return {
       ...leagueWeek(now),
       matches: calendar
+        .map(({ match }) => match)
         .filter(
           (match) =>
             match.scheduledAt &&
@@ -105,6 +117,25 @@ export class PredictionsRepository {
         .where(eq(matches.id, pick.matchId))
         .for('update');
       if (!match) throw notFound('Match');
+      const participants = await tx
+        .select({ id: teams.id, discordRoleId: teams.discordRoleId })
+        .from(teams)
+        .where(inArray(teams.id, [match.team1Id, match.team2Id]))
+        .for('share');
+      if (
+        !match.team1Id ||
+        !match.team2Id ||
+        ![match.team1Id, match.team2Id].every((id) =>
+          participants.some(
+            (team) => team.id === id && team.discordRoleId !== null && team.discordRoleId >= 0n
+          )
+        )
+      )
+        throw new AppError(
+          409,
+          'INACTIVE_TEAMS',
+          'No se permiten predicciones en encuentros con equipos inactivos o fantasma.'
+        );
       if (!predictionWindow(match.scheduledAt, match.status, new Date()).open)
         throw new AppError(409, 'PREDICTIONS_CLOSED', 'Voting is closed.');
       const home = pick.selectedTeamId === match.team1Id;

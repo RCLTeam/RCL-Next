@@ -1,12 +1,11 @@
 import React from 'react';
 import { SiteLink } from '../../../shared/components/SiteLink.js';
+import { isActiveTeam } from '../team-visibility.js';
 import type { Standing } from '../types/competition.types.js';
 import { TeamBadge } from './TeamBadge.js';
 
 export function StandingsTable({ rows }: { rows: Standing[] }) {
-  const activeRows = rows.filter(
-    (row) => row.team.discordRoleId && BigInt(row.team.discordRoleId) >= 0n
-  );
+  const activeRows = rows.filter((row) => isActiveTeam(row.team));
   return (
     // biome-ignore lint/a11y/noNoninteractiveTabindex: Keyboard users need to scroll wide tables.
     <section className="table-scroll" aria-label="Tabla de clasificación" tabIndex={0}>
@@ -22,9 +21,9 @@ export function StandingsTable({ rows }: { rows: Standing[] }) {
           </tr>
         </thead>
         <tbody>
-          {activeRows.map((row) => (
+          {activeRows.map((row, index) => (
             <tr key={row.team.id}>
-              <td className="rank">{row.position}</td>
+              <td className="rank">{index + 1}</td>
               <th scope="row">
                 <SiteLink
                   className="team-cell standings-team-link"
