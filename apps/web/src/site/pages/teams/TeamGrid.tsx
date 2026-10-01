@@ -9,10 +9,13 @@ export interface TeamGridProps {
 }
 
 export function TeamGrid({ teams, divisionName, query }: TeamGridProps) {
+  const activeTeams = teams.filter(
+    (team) => team.discordRoleId && BigInt(team.discordRoleId) >= 0n
+  );
   return (
     <>
       <div className="team-grid">
-        {teams.map((team) => (
+        {activeTeams.map((team) => (
           <TeamCard key={team.id} team={team} divisionName={divisionName} />
         ))}
       </div>

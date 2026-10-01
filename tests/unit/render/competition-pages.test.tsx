@@ -70,7 +70,13 @@ test('Team profiles group members and handle an unpublished roster', () => {
   expect(html).toMatch(/aria-label="Staff"[\s\S]*Manager/);
 });
 
-const home: Team = { id: 'home', name: 'Lobos', shortName: 'LOB', logoUrl: null };
+const home: Team = {
+  id: 'home',
+  name: 'Lobos',
+  shortName: 'LOB',
+  logoUrl: null,
+  discordRoleId: '123456789012345678'
+};
 const away: Team = { id: 'away', name: 'Cuervos', shortName: 'CUE', logoUrl: null };
 const playoffRound = { id: '3', sequence: 3, stage: 'playoff', name: 'Gran final' };
 const match: Match = {
@@ -285,7 +291,13 @@ test('StandingsTable handles malformed or incomplete data gracefully', () => {
       rows={[
         {
           position: 2,
-          team: { id: 'team2', name: '<script>alert(1)</script>', shortName: 'MAL', logoUrl: null },
+          team: {
+            id: 'team2',
+            name: '<script>alert(1)</script>',
+            shortName: 'MAL',
+            logoUrl: null,
+            discordRoleId: '223456789012345678'
+          },
           // @ts-expect-error forcing undefined for adversarial test
           played: undefined,
           // @ts-expect-error
@@ -305,6 +317,21 @@ test('StandingsTable handles malformed or incomplete data gracefully', () => {
   expect(html).toContain('&lt;script&gt;alert(1)&lt;/script&gt;');
   expect(html).toContain('<td class="wins">0</td>');
   expect(html).not.toContain('undefined');
+});
+
+test('StandingsTable only shows teams with a non-negative Discord role ID', () => {
+  const standing = fixture().standings.data[0];
+  if (!standing) throw new Error('Missing standing fixture');
+  const html = renderToStaticMarkup(
+    <StandingsTable
+      rows={[undefined, null, '', '-1', '0', '123456789012345678'].map((discordRoleId, index) => ({
+        ...standing,
+        team: { ...home, id: `team-${index}`, name: `Team ${index}`, discordRoleId }
+      }))}
+    />
+  );
+  for (const index of [0, 1, 2, 3]) expect(html).not.toContain(`Team ${index}`);
+  for (const index of [4, 5]) expect(html).toContain(`Team ${index}`);
 });
 
 test('PlayoffBracket handles missing teams and scores gracefully', () => {

@@ -5,6 +5,7 @@ export interface TeamSummary {
   shortName: string | null;
   logoUrl: string | null;
   color?: string | null;
+  discordRoleId?: string | null;
 }
 export interface TeamMember {
   rosterStats?: { games: number; mvps: number; champions: number };
