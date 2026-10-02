@@ -171,6 +171,7 @@
 
 .rcl-site .items-group {
   display: grid;
+  direction: rtl;
   grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 4px;
 }
@@ -258,6 +259,10 @@
 }
 
 /* Lado derecho */
+.rcl-site .match-lane-row > .player-summary:last-child .items-group {
+  direction: ltr;
+}
+
 .rcl-site .match-lane-row > .player-summary:last-child {
   background: linear-gradient(to right, color-mix(in srgb, var(--lime) 5%, var(--panel)), var(--panel));
 }
