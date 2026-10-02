@@ -179,18 +179,24 @@ describe('Discord OAuth with real PostgreSQL sessions', () => {
   });
 
   it('handles denied consent and missing codes without creating sessions', async () => {
+    const sessionsBefore = await db.select().from(schema.authSessions);
+    const calls = fetcher.mock.calls.length;
     for (const query of [{ error: 'access_denied' }, {}]) {
       const flow = await begin();
       const result = await request(app)
         .get(`${prefix}/discord/callback`)
         .set('Cookie', flow.cookie)
         .query({ state: flow.state, ...query })
-        .expect(400);
-      expect(result.body.error.code).toBe(
-        'error' in query ? 'DISCORD_ACCESS_DENIED' : 'INVALID_OAUTH_CODE'
-      );
+        .expect('error' in query ? 302 : 400);
+      if ('error' in query) {
+        expect(result.headers.location).toBe(origin);
+      } else {
+        expect(result.body.error.code).toBe('INVALID_OAUTH_CODE');
+      }
       expect(cookieHeaders(result)[0]).toContain('Expires=Thu, 01 Jan 1970');
     }
+    expect(fetcher.mock.calls.length).toBe(calls);
+    expect(await db.select().from(schema.authSessions)).toHaveLength(sessionsBefore.length);
   });
 
   it('rejects callback replay and invalidates the previous flow when login restarts', async () => {
