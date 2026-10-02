@@ -17,6 +17,9 @@ export function MatchReport({
   const [gameChoice, setGameChoice] = useState('');
   const [section, setSection] = useState<'enfrentamientos' | 'estadisticas'>('enfrentamientos');
   const game = match.games.find((item) => item.id === gameChoice) ?? match.games[0];
+  const mvp = match.games
+    .flatMap((item) => item.participants)
+    .find((player) => player.playerId === match.mvpPlayerId);
   const winner =
     game?.winnerTeamId === match.homeTeam.id
       ? match.homeTeam.name
@@ -45,6 +48,15 @@ export function MatchReport({
             <h2>{match.awayTeam.name}</h2>
           </div>
         </div>
+        {mvp && (
+          <div className="match-series-mvp">
+            <span className="meta">MVP del enfrentamiento</span>
+            <SiteLink href={`/jugadores/${encodeURIComponent(mvp.playerId)}`}>
+              {mvp.gameName}
+              {mvp.riotTag ? `#${mvp.riotTag}` : ''}
+            </SiteLink>
+          </div>
+        )}
         <div className="match-subcard-bar">
           <div className="match-context-col">
             {match.seasonName} · {match.divisionName}

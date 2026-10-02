@@ -301,11 +301,11 @@ test('Test 2: Unregistered players abort immediately with descriptive list of mi
   assert.equal(allPlayerInfos.length, 10); // Only demo player infos
 });
 
-test('Test 3: Multi-account anomaly detection and warning event emission without blocking persistence', async (t) => {
+test('Test 3: Multiple main accounts for one Discord user reject the upload without persistence', async (t) => {
   const { client, db } = await setupTestDb();
   t.after(() => client.close());
 
-  // Register all 10 players, but share discordUserId between player 1 and player 2
+  // Both seeded accounts are main accounts, making the shared Discord identity ambiguous.
   await registerAllPlayers(db, { shareDiscordId: true });
 
   const app = createApp({
@@ -356,24 +356,23 @@ test('Test 3: Multi-account anomaly detection and warning event emission without
 
   await completionPromise;
 
-  // 1. Verify anomaly event was emitted with detailed account and champion information
-  const anomalyMsg = messages.find((m) => m.type === 'anomaly');
-  assert.ok(anomalyMsg && anomalyMsg.type === 'anomaly');
-  assert.equal(anomalyMsg.anomaly.discordUserId, '900000000000000001');
-  assert.equal(anomalyMsg.anomaly.accounts.length, 2);
-  const accountNames = anomalyMsg.anomaly.accounts.map((a) => a.account);
-  assert.ok(accountNames.includes('Iron Tou#EUW'));
-  assert.ok(accountNames.includes('Melintavahalma#8835'));
+  const errorMsg = messages.find((m) => m.type === 'error');
+  assert.ok(errorMsg && errorMsg.type === 'error');
+  assert.match(errorMsg.message, /exactamente una cuenta principal/);
+  assert.equal(
+    messages.some((m) => m.type === 'success'),
+    false
+  );
+  assert.equal(
+    messages.some((m) => m.type === 'stage' && m.stage === 'persisting'),
+    false
+  );
 
-  // 2. Verify success event was received (anomaly does not block persistence)
-  const successMsg = messages.find((m) => m.type === 'success');
-  assert.ok(successMsg && successMsg.type === 'success');
-  assert.equal(successMsg.summary.processedGames, 1);
-  assert.equal(successMsg.summary.anomalies.length, 1);
-
-  // 3. Verify data was persisted to database
+  // Only the demo records remain after validation rejects the upload.
   const matchGamesCount = await db.select().from(schema.matchGames);
-  assert.equal(matchGamesCount.length, 2);
+  assert.equal(matchGamesCount.length, 1);
+  const playerInfos = await db.select().from(schema.playerGameInfo);
+  assert.equal(playerInfos.length, 10);
 });
 
 test('Test 4: Batch containing non-ROFL (exit code 11) emitting warning and successfully processing remaining valid replays', async (t) => {

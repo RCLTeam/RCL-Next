@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { TeamBadge } from '../../../features/competition/components/TeamBadge.js';
 import { isActiveTeam } from '../../../features/competition/team-visibility.js';
 import type { Match } from '../../../features/competition/types/competition.types.js';
+import { Select } from '../../../shared/components/Selector/Selector.js';
 export function PredictionCard({
   match,
   summary,
@@ -117,24 +118,22 @@ export function PredictionCard({
               )}
             </div>
           </fieldset>
-          <label>
-            Resultado exacto{' '}
-            <select
-              value={score}
-              disabled={!team || saving}
-              onChange={(event) => {
-                setScore(event.target.value);
-                setMessage('');
-              }}
-            >
-              <option value="">Solo ganador</option>
-              {options.map((value) => (
-                <option key={value} value={value}>
-                  {value.replace(':', ' — ')}
-                </option>
-              ))}
-            </select>
-          </label>
+          <Select
+            label="Resultado exacto"
+            value={score}
+            disabled={!team || saving}
+            onChange={(event) => {
+              setScore(event.target.value);
+              setMessage('');
+            }}
+          >
+            <option value="">Solo ganador</option>
+            {options.map((value) => (
+              <option key={value} value={value}>
+                {value.replace(':', ' — ')}
+              </option>
+            ))}
+          </Select>
           <button type="submit" disabled={!team || saving}>
             {saving ? 'Guardando…' : pick ? 'Actualizar predicción' : 'Guardar predicción'}
           </button>
