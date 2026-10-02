@@ -70,39 +70,121 @@ Indicador visual del estado asíncrono para operaciones de carga y visualizació
 
 ---
 
-### 2.4 `EditorialImagePicker.tsx` (`apps/web/src/features/home-content/components/EditorialImagePicker.tsx:5-78`)
+### 2.4 `EditorialImagePicker.tsx` (`apps/web/src/features/home-content/components/EditorialImagePicker.tsx:4-83`)
 Selector y cargador de imágenes para portadas e inserciones en artículos.
 
 #### Props:
-- `onSelect: (url: string) => void`: Callback invocado con la URL interna de la imagen una vez almacenada con éxito en el servidor.
+- `label`: Etiqueta descriptiva del control.
+- `description?: string`: Valor controlado para la descripción accesible / texto alternativo.
+- `onDescriptionChange?: (value: string) => void`: Callback para actualizar la descripción controlada.
+- `descriptionRequired?: boolean`: Exige texto alternativo antes de seleccionar archivo (por defecto `false`).
+- `onUploaded: (url: string, description: string) => void`: Callback invocado con la URL interna de la imagen una vez almacenada con éxito en el servidor.
 - `onBusy?: (busy: boolean) => void`: Notifica al componente padre si una subida de archivo está en curso.
 
 #### Validaciones del Lado del Cliente:
-- Comprueba que el archivo seleccionado no supere los **5 MiB** (`file.size <= 5 * 1024 * 1024`), notificando al usuario antes de enviar tráfico a la red.
-- Envía el binario crudo mediante `fetch('/api/v1/home-content/admin/images')` con su respectivo `Content-Type`.
+- Comprueba que se haya escrito una descripción antes de subir el archivo (`EditorialImagePicker.tsx:46-49`).
+- Valida que el archivo seleccionado pertenezca a los tipos MIME permitidos (`'image/png'`, `'image/jpeg'`, `'image/webp'`) y no supere los **5 MiB** (`file.size <= 5 * 1024 * 1024`) antes de enviar tráfico a la red (`EditorialImagePicker.tsx:50-56`).
+- Notifica el ciclo asíncrono activando `onBusy(true)` durante la carga y desactivándolo en el bloque `finally` (`EditorialImagePicker.tsx:58, 71`).
+
+#### Aviso de Ciclo de Vida y Caducidad (TTL de 7 días):
+El componente incorpora una indicación explícita para el redactor (`EditorialImagePicker.tsx:76-79`):
+```tsx
+<small>
+  Guarda el artículo para conservar las imágenes. Las subidas sin guardar caducan a los 7
+  días.
+</small>
+```
+Este aviso documenta el contrato de persistencia: las imágenes subidas residen como candidatas temporales en el servidor. Si el redactor abandona la edición sin guardar, la limpieza del cliente solicita su eliminación inmediata; si la solicitud del cliente no llega (por corte de red o cierre forzado), el recolector periódico del servidor las purga tras agotar el período de gracia de 7 días.
 
 ---
 
-### 2.5 `EditorialManager.tsx` (`apps/web/src/features/home-content/components/EditorialManager.tsx:13-336`)
-Panel maestro-detalle para la administración de artículos.
+### 2.5 `EditorialManager.tsx` (`apps/web/src/features/home-content/components/EditorialManager.tsx:27-353`)
+Panel maestro-detalle para la administración de artículos editoriales.
 
 #### Props (`EditorStateProps`):
 - `dirty: boolean`: Estado sucio actual.
 - `onDirty: (dirty: boolean) => void`: Notifica cuando el formulario tiene cambios sin guardar.
 - `onBusy: (busy: boolean) => void`: Notifica cuando se está ejecutando una mutación asíncrona.
 
-#### Características Destacadas:
-- **Protección Frente a Pérdida de Datos:** Si el usuario selecciona otro artículo de la lista teniendo cambios pendientes, solicita confirmación explícita mediante `window.confirm('Hay cambios sin guardar. ¿Quieres descartarlos?')` (`EditorialManager.tsx:31`).
-- **Inserción de Imágenes en la Posición del Cursor:** Utiliza `bodyInput.current?.selectionStart` para insertar el código markdown de la imagen `![alt](url)` exactamente en el punto de edición activo del redactor (`EditorialManager.tsx:284`).
-- **Conmutador de Vista Previa:** Permite alternar instantáneamente entre el editor de texto y la vista renderizada en vivo mediante `ArticleView`.
+#### Características y Mecanismos de Ingeniería:
+1. **Clave de Revisión Compuesta para Reinicio de Estado (`editorRevision`):**
+   ```tsx
+   // EditorialManager.tsx:81-82
+   <ArticleForm
+     key={`${selected === 'new' ? 'new' : selected.id}:${editorRevision}`}
+     initial={selected === 'new' ? null : selected}
+     {...props}
+     // ...
+   />
+   ```
+   En la función `select` (`EditorialManager.tsx:32-37`):
+   ```typescript
+   function select(article: EditorialArticle | 'new' | null) {
+     if (props.dirty && !window.confirm('Hay cambios sin guardar. ¿Quieres descartarlos?')) return;
+     props.onDirty(false);
+     setEditorRevision((value) => value + 1);
+     setSelected(article);
+   }
+   ```
+   Si el redactor selecciona otro artículo teniendo cambios pendientes, se solicita confirmación con `window.confirm`. Al confirmar, se limpia la bandera `dirty` y se incrementa `editorRevision`. La clave compuesta en `ArticleForm` fuerza a React a desmontar la instancia anterior y montar una completamente nueva, asegurando el reinicio total de los estados locales del formulario, errores y previsualización.
+2. **Integración con `PendingImages` y Descarte al Abandonar:**
+   En `ArticleForm` (`EditorialManager.tsx:142-153`):
+   ```typescript
+   const [uploadedImages] = useState(() => new PendingImages(discardImages));
+   useEffect(() => {
+     uploadedImages.resume();
+     const pageHide = (event: PageTransitionEvent) => {
+       if (!event.persisted) uploadedImages.dispose();
+     };
+     window.addEventListener('pagehide', pageHide);
+     return () => {
+       window.removeEventListener('pagehide', pageHide);
+       uploadedImages.dispose();
+     };
+   }, [uploadedImages]);
+   ```
+   El formulario instancia `PendingImages` inyectando `discardImages` (`home-content-api.ts:42-46`). Al desmontarse el formulario o ante el evento `pagehide` sin persistencia en caché (`!event.persisted`), invoca `uploadedImages.dispose()`, desencadenando la eliminación en segundo plano de cualquier imagen subida que no haya sido guardada.
+3. **Persistencia Atómica y Rescate de Imágenes:**
+   Al enviar el formulario (`EditorialManager.tsx:203-205`):
+   ```typescript
+   const article = await uploadedImages.save((urls) =>
+     saveArticle(initial?.id ?? null, form, urls)
+   );
+   ```
+   `uploadedImages.save` pasa la lista de URLs de imágenes subidas a `saveArticle`, permitiendo al servidor vincularlas al artículo y marcar como candidatas de recolección aquellas que hayan sido retiradas del cuerpo.
+4. **Confirmación en Eliminación Definitiva:**
+   En `remove()` (`EditorialManager.tsx:164-177`), antes de ejecutar `deleteArticle(initial.id)`, solicita confirmación explícita mediante `window.confirm(¿Eliminar definitivamente «${initial.title}»?)`.
+5. **Inserción de Imágenes en la Posición del Cursor:**
+   Utiliza `bodyInput.current?.selectionStart` para insertar el código markdown de la imagen `![alt](url)` exactamente en el punto de edición activo del redactor (`EditorialManager.tsx:284-297`).
+6. **Conmutador de Vista Previa:**
+   Permite alternar instantáneamente entre el editor de texto y la vista renderizada en vivo mediante `ArticleView` (`EditorialManager.tsx:182-194`).
 
 ---
 
-### 2.6 `HomeContentPanel.tsx` (`apps/web/src/features/home-content/components/HomeContentPanel.tsx:6-50`)
+### 2.6 `HomeContentPanel.tsx` (`apps/web/src/features/home-content/components/HomeContentPanel.tsx:7-52`)
 Contenedor principal montado en la página de administración (`AdminPage.tsx:52`).
 
-- Ofrece dos pestañas: **Team of the Week** y **Editorial**.
-- Bloquea la conmutación entre pestañas si hay una operación en curso (`busy`) o si existen cambios sin guardar (`dirty`), solicitando confirmación al usuario antes de descartar datos.
+#### Características de Coordinación:
+1. **Guardia a Nivel de Panel con `useEditorLeaveGuard`:**
+   ```typescript
+   // HomeContentPanel.tsx:11
+   useEditorLeaveGuard(dirty, busy);
+   ```
+   Instala la guardia de abandono en el contexto de navegación global, interceptando intentos de salir de la ruta o cerrar la ventana mientras cualquiera de los editores hijos tenga cambios sin guardar o mutaciones activas.
+2. **Protección en Conmutación de Pestañas (`changeTab`):**
+   ```typescript
+   // HomeContentPanel.tsx:12-17
+   function changeTab(value: typeof tab) {
+     if (value === tab || busy) return;
+     if (dirty && !window.confirm('Hay cambios sin guardar. ¿Quieres descartarlos?')) return;
+     setDirty(false);
+     setTab(value);
+   }
+   ```
+   - Si `busy` está activo, bloquea el cambio de pestaña.
+   - Si existen cambios sin guardar (`dirty === true`), solicita confirmación explícita al usuario. Si el usuario cancela, la pestaña actual se mantiene intacta. Si confirma, se limpia `dirty` y se conmutan las pestañas entre **Team of the Week** y **Editorial**.
+3. **Propagación del Estado de Edición (`EditorStateProps`):**
+   Pasa `dirty`, `onDirty={setDirty}` y `onBusy={setBusy}` (`HomeContentPanel.tsx:46, 48`) a los submódulos `WeeklyTeamManager` y `EditorialManager`.
 
 ---
 

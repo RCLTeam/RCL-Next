@@ -23,7 +23,7 @@ El diseño y la implementación del módulo se rigen por los siguientes principi
 
 | Documento | Enlace | Resumen Funcional |
 |---|---|---|
-| **Rutas y Controladores** | [routes.md](routes.md) | Definición de los 13 endpoints HTTP montados bajo `/api/v1/home-content`, cabeceras `Cache-Control: no-store`, control de acceso admin/owner, servicio de estáticos con `nosniff` y códigos de estado. |
+| **Rutas y Controladores** | [routes.md](routes.md) | Definición de los 15 endpoints HTTP montados bajo `/api/v1/home-content`, cabeceras `Cache-Control: no-store`, control de acceso admin/owner, servicio de estáticos con `nosniff` y códigos de estado. |
 | **Lógica de Procesamiento** | [processing.md](processing.md) | Ciclo de vida de artículos (borrador vs. publicado), fechas de publicación deterministas, almacenamiento de imágenes con validación de bytes mágicos, recolección de basura huérfana y normalización de roles deportivos. |
 | **Persistencia y Base de Datos** | [persistence.md](persistence.md) | Operaciones con Drizzle ORM sobre `editorial_articles` y `home_weekly_teams`, bloqueos pesimistas `for('update')`, auditoría en `audit_logs`, exclusión de triggers SQL y advertencia de consultas N+1 en `listWeeklyTeams`. |
 | **Validación y Errores** | [validation.md](validation.md) | Esquemas Zod estrictos (`articleInput`, `teamInput`), reglas de texto alternativo obligatorio para portadas, límite de 5 roles únicos y catálogo de errores de aplicación (400, 401, 403, 404, 413, 422). |

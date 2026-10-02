@@ -156,17 +156,151 @@ Toda mutación administrativa persiste una traza inmutable en `audit_logs`:
 - **`editorial.delete`:** Registra el artículo eliminado completo bajo `before` (`postgres-home-content.repository.ts:137-142`).
 - **`weekly-team.update`:** Registra la división, jornada y jugadores previos y posteriores (`postgres-home-content.repository.ts:289-296`).
 
-### 4.3 Bloqueo Global de Tabla en Recolección de Imágenes
-En `postgres-home-content.repository.ts:64`, la limpieza de imágenes ejecuta:
+---
 
-```sql
-LOCK TABLE editorial_articles IN SHARE ROW EXCLUSIVE MODE;
+### 4.3 Bloqueo de Tabla en Recolección de Imágenes Huérfanas (`removeUnusedImages`)
+
+En `postgres-home-content.repository.ts:61-73`, la purga de imágenes no referenciadas ejecuta un bloqueo transaccional de tabla:
+
+```typescript
+// apps/api/src/modules/home-content/postgres-home-content.repository.ts:61-73
+async removeUnusedImages(urls: string[], remove: (url: string) => Promise<void>) {
+  if (!urls.length) return;
+  await this.db.transaction(async (tx) => {
+    await tx.execute(sql`LOCK TABLE editorial_articles IN SHARE ROW EXCLUSIVE MODE`);
+    const articles = await tx
+      .select({ coverUrl: editorialArticles.coverUrl, body: editorialArticles.body })
+      .from(editorialArticles);
+    for (const url of new Set(urls)) {
+      if (!articles.some((article) => article.coverUrl === url || article.body.includes(url)))
+        await remove(url);
+    }
+  });
+}
 ```
-Este comando adquiere un bloqueo de nivel tabla que impide transacciones concurrentes de escritura en `editorial_articles` mientras se escanea el cuerpo de todos los artículos para determinar si una imagen está huérfana.
+
+#### Fundamento del Modo `SHARE ROW EXCLUSIVE MODE`:
+1. **Compatibilidad con Lecturas Concurrentes:**
+   En la jerarquía de bloqueos de PostgreSQL, el modo `SHARE ROW EXCLUSIVE` es compatible con el bloqueo `ACCESS SHARE`. Esto significa que las peticiones de lectura del público general (`SELECT * FROM editorial_articles`) continúan ejecutándose concurrentemente sin sufrir bloqueos ni latencia durante la recolección de imágenes.
+2. **Exclusión de Escrituras Concurrentes:**
+   El modo `SHARE ROW EXCLUSIVE` entra en conflicto directo con los modos `ROW EXCLUSIVE` (adquiridos automáticamente por sentencias `INSERT`, `UPDATE` y `DELETE`), `SHARE`, `SHARE ROW EXCLUSIVE`, `EXCLUSIVE` y `ACCESS EXCLUSIVE`.
+3. **Prevención de Condiciones de Carrera:**
+   Si un redactor estuviera guardando o actualizando un artículo que hace referencia a una de las imágenes candidatas en el mismo instante en que `removeUnusedImages` inspecciona la tabla, la ausencia de este bloqueo permitiría que el lector de limpieza leyera la tabla antes del `COMMIT` del redactor, concluyera erróneamente que la imagen está huérfana y eliminara el archivo físico del disco. Posteriormente, el artículo se guardaría con éxito, pero quedaría permanentemente roto con un error 404 al intentar cargar la imagen.
+   Al imponer `SHARE ROW EXCLUSIVE MODE`, cualquier transacción de escritura sobre `editorial_articles` queda en espera hasta que la verificación y las eliminaciones físicas del disco hayan concluido, garantizando integridad referencial estricta entre el sistema de archivos y la base de datos.
 
 ---
 
-## 5. Advertencia de Rendimiento: Consulta N+1 en `listWeeklyTeams`
+## 5. Almacén Físico de Imágenes y Recolector Periódico en Servidor
+
+### 5.1 Almacén Físico `EditorialImageStore` (`apps/api/src/modules/home-content/editorial-image.store.ts:6-63`)
+
+La gestión de ficheros estáticos en disco opera de forma local y autónoma:
+
+```typescript
+// apps/api/src/modules/home-content/editorial-image.store.ts:6-22
+export class EditorialImageStore {
+  private readonly directory: string;
+  constructor(directory = process.env.EDITORIAL_IMAGE_DIR ?? 'data/editorial-images') {
+    this.directory = resolve(directory);
+  }
+  path(name: string) {
+    if (!/^[a-f0-9-]{36}\.(png|jpg|webp)$/.test(name)) throw notFound('Image');
+    return resolve(this.directory, name);
+  }
+  async remove(url: string) {
+    const name = url.replace('/api/v1/home-content/images/', '');
+    try {
+      await unlink(this.path(name));
+    } catch (error) {
+      if (!(error instanceof Error && 'code' in error && error.code === 'ENOENT')) throw error;
+    }
+  }
+  // ...
+```
+
+#### Características del Almacén:
+- **Directorio Configurable:** Resuelve `process.env.EDITORIAL_IMAGE_DIR ?? 'data/editorial-images'` de forma absoluta con `path.resolve` (`editorial-image.store.ts:8-10`).
+- **Nomenclatura Segura con UUID v4:** Genera nombres aleatorios mediante `randomUUID()` (`${randomUUID()}.${extension}`, línea 58), previniendo colisiones de nombres y ataques de enumeración.
+- **Protección contra Path Traversal:** El método `path(name)` valida el identificador mediante la expresión regular estricta `/^[a-f0-9-]{36}\.(png|jpg|webp)$/`. Cualquier valor que intente escapar de la ruta (como `../`) arroja inmediatamente una excepción `notFound('Image')` (HTTP 404).
+- **Validación de Bytes Mágicos Binarios en `save` (`editorial-image.store.ts:44-62`):**
+  - **PNG:** Verifica que los primeros 8 bytes coincidan con la firma hexadecimal `89504e470d0a1a0a`.
+  - **JPEG:** Verifica que los primeros 3 bytes coincidan con `ffd8ff`.
+  - **WebP:** Verifica que los bytes 0-4 correspondan a `RIFF` y los bytes 8-12 a `WEBP` en codificación ASCII.
+  - Rechaza cualquier archivo que no coincida con su tipo MIME o supere los 5 MiB con `AppError(422, 'INVALID_IMAGE')`.
+  - Escribe el archivo con la bandera de creación exclusiva `{ flag: 'wx' }` (`editorial-image.store.ts:60`).
+- **Eliminación Idempotente (`remove`):** Al invocar `unlink(this.path(name))`, intercepta el error `ENOENT` (archivo no encontrado en disco) y lo silencia deliberadamente. Esto hace que las operaciones de limpieza sean idempotentes y no fallen si dos procesos intentan purgar la misma URL o si el archivo fue retirado previamente.
+- **Detección de Subidas Caducadas (`expiredUploads`, líneas 23-43):**
+  Inspecciona los ficheros en disco leyendo `stat.mtimeMs`. Si `now - stat.mtimeMs > 7 * 24 * 60 * 60 * 1000` (7 días de gracia), incluye la URL en el listado de candidatas para el recolector de basura.
+
+---
+
+### 5.2 Recolector Periódico Desacoplado (*Scheduled Sweeper*) en `server.ts` (`apps/api/src/server.ts:101-113, 126-148`)
+
+Para prevenir la acumulación de imágenes huérfanas derivadas de desconexiones de red del cliente o cierres de pestaña sin descarte, el proceso del servidor ejecuta un recolector en segundo plano:
+
+```typescript
+// apps/api/src/server.ts:101-113
+const homeContent = new HomeContentService(new PostgresHomeContentRepository(connection.db));
+let imageCleanup: Promise<void> | undefined;
+function cleanupImages() {
+  if (imageCleanup) return;
+  imageCleanup = homeContent
+    .cleanupExpiredImages()
+    .catch((error: unknown) => console.error('Editorial image cleanup failed:', error))
+    .finally(() => {
+      imageCleanup = undefined;
+    });
+}
+const imageCleanupTimer = setInterval(cleanupImages, 60 * 60 * 1000).unref();
+cleanupImages();
+```
+
+#### Mecanismos de Orquestación del Sweeper:
+1. **Mutex de Limpieza en Memoria (`imageCleanup`):**
+   La variable `imageCleanup` almacena la promesa de la tarea en curso. Si un ciclo de limpieza tarda más de lo previsto debido a I/O lento o bloqueos de tabla en la base de datos, las llamadas subsiguientes a `cleanupImages()` retornan de inmediato (`if (imageCleanup) return;`), evitando la concurrencia entre barridos y la contención de recursos.
+2. **Intervalo Desacoplado de 1 Hora:**
+   El recolector se programa cada 60 minutos (`60 * 60 * 1000`). La invocación a `.unref()` marca el temporizador como desreferenciado en el bucle de eventos de Node.js, garantizando que no impida la salida natural del proceso si todos los demás manejadores se cierran.
+3. **Período de Gracia de 7 Días (TTL):**
+   El servicio invoca `cleanupExpiredImages()`, el cual solicita a `images.expiredUploads()` las imágenes cuya fecha de modificación supera los 7 días y delega en `removeUnusedImages` para comprobar bajo `LOCK TABLE` que ninguna de ellas esté referenciada antes de borrarlas físicamente.
+4. **Ejecución Inmediata en Arranque:**
+   Al iniciar el servidor, se invoca `cleanupImages()` de forma directa (`server.ts:113`), procesando cualquier residuo caducado acumulado durante períodos de inactividad o reinicios del backend.
+5. **Apagado Ordenado (*Graceful Shutdown*, `server.ts:126-145`):**
+   ```typescript
+   // apps/api/src/server.ts:126-145
+   let closing = false;
+   function shutdown() {
+     if (closing) return;
+     closing = true;
+     clearInterval(imageCleanupTimer);
+     const timeout = setTimeout(() => process.exit(1), 10000).unref();
+     roflUploadGateway.close(() => {
+       server.close(async () => {
+         try {
+           suggestionStore.close();
+           await bridgeClient.close();
+         } catch (err) {
+           console.error('Error during Discord bridge/suggestion store shutdown:', err);
+         }
+         await imageCleanup;
+         await connection.close();
+         clearTimeout(timeout);
+       });
+     });
+   }
+   process.on('SIGINT', shutdown);
+   process.on('SIGTERM', shutdown);
+   ```
+   Ante señales de terminación (`SIGINT`, `SIGTERM`):
+   - Detiene el temporizador recurrente con `clearInterval(imageCleanupTimer)`.
+   - Establece un temporizador límite de seguridad de 10 segundos (`process.exit(1)`) para evitar bloqueos indefinidos.
+   - Cierra los adaptadores de red y la pasarela de subidas ROFL.
+   - Espera explícitamente a que cualquier tarea de limpieza en vuelo concluya con `await imageCleanup;`.
+   - Cierra el pool de conexiones a PostgreSQL (`await connection.close();`).
+   - Cancela el temporizador de salida forzada con `clearTimeout(timeout)`.
+
+---
+
+## 6. Advertencia de Rendimiento: Consulta N+1 en `listWeeklyTeams`
 
 En `postgres-home-content.repository.ts:207-223`, la recuperación de selecciones semanales adolece de un patrón de consulta N+1 medido:
 
@@ -185,7 +319,7 @@ return Promise.all(
           candidates.find(
             (item) => item.playerId === player.playerId && item.teamId === player.teamId
           )?.champions ?? []
-      }))
+        }))
     };
   })
 );
