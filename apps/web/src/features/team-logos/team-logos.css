@@ -1,0 +1,23 @@
+/* Uses the same typography, actions and square panels as the other admin sections. */
+.rcl-site .team-logos-panel { min-width: 0; }
+.rcl-site .team-logos-panel h2 { font: 700 42px/1 var(--display2); margin: 0 0 12px; }
+.rcl-site .team-logos-panel p, .rcl-site .team-logos-panel small { color: var(--muted); line-height: 1.6; }
+.rcl-site .team-logos-panel form { display: grid; gap: 12px; margin: 24px 0; padding: 20px; background: var(--panel); border: 1px solid var(--line); }
+.rcl-site .team-logos-panel form label { font-size: 13px; font-weight: 600; }
+.rcl-site .team-logos-panel form button { justify-self: start; }
+.rcl-site .team-logos-panel input { box-sizing: border-box; width: 100%; min-width: 0; min-height: 44px; padding: 10px 12px; background: var(--void); color: var(--text); border: 1px solid var(--line); border-radius: 0; font: inherit; color-scheme: dark; }
+.rcl-site .team-logos-panel input::file-selector-button { padding: 8px 12px; margin-right: 12px; background: var(--panel-raised); color: var(--text); border: 1px solid var(--line); font: inherit; cursor: pointer; }
+.rcl-site .team-logos-panel :is(button, input):focus-visible { outline: 2px solid var(--lime); outline-offset: 3px; }
+.rcl-site .team-logos-panel :disabled { cursor: not-allowed; opacity: .5; }
+.rcl-site .team-logos-panel output { display: block; margin: 16px 0; color: var(--lime); }
+.rcl-site .team-logos-panel [role='alert'] { color: #ff9d9d; }
+.rcl-site .team-logos-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(260px, 100%), 1fr)); gap: 20px; padding: 0; list-style: none; }
+.rcl-site .team-logos-grid li { display: grid; gap: 12px; min-width: 0; padding: 20px; background: var(--panel); border: 1px solid var(--line); }
+.rcl-site .team-logos-grid img { width: 100%; height: 120px; object-fit: contain; padding: 12px; box-sizing: border-box; background: var(--void); }
+.rcl-site .team-logos-grid strong { overflow-wrap: anywhere; }
+.rcl-site .team-logos-grid input { font: 400 12px var(--mono); }
+.rcl-site .team-logo-protected { color: var(--lime); font: 400 12px var(--mono); align-self: center; }
+.rcl-site .team-logo-delete { color: #ff9d9d; }
+.rcl-site .team-logo-confirm { min-width: 0; margin: 0 0 24px; padding: 20px; background: var(--panel); border: 1px solid var(--line); border-top: 3px solid var(--lime); }
+.rcl-site .team-logo-confirm button { margin: 6px 12px 0 0; }
+@media (min-width: 651px) { .rcl-site .team-logos-panel form { padding: 28px; } }

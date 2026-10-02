@@ -32,6 +32,17 @@ function renderSession(state: AuthState, signingOut = false, path = '/admin') {
 }
 
 describe('administration access', () => {
+  it('mounts logo management for administrators', () => {
+    const html = renderSession(
+      { status: 'authenticated', user: admin },
+      false,
+      '/admin/team-logos'
+    );
+    expect(html).toContain('Team Logos');
+    expect(html).toContain('Subir logo');
+    expect(html).toContain('Cargando logos');
+    expect(html).toContain('href="/admin/team-logos"');
+  });
   it.each(['admin', 'owner'] as const)(
     'shows member roles to %s and restricts editing to owners',
     (role) => {

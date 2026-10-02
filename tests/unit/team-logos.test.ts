@@ -1,11 +1,11 @@
 import { expect, test } from 'vitest';
 import { resolveTeamLogo } from '../../apps/web/src/shared/resources/team-logos.js';
 
-test('resolves stored legacy logos to their new public location', () => {
+test('resolves stored legacy and public logos to the managed API', () => {
   expect(resolveTeamLogo('/src/shared/assets/teams_logo/AKL.webp')).toBe(
-    '/images/teams_logo/AKL.webp'
+    '/api/v1/team-logos/images/AKL.webp'
   );
-  expect(resolveTeamLogo('/images/teams_logo/AKL.webp')).toBe('/images/teams_logo/AKL.webp');
+  expect(resolveTeamLogo('/images/teams_logo/AKL.webp')).toBe('/api/v1/team-logos/images/AKL.webp');
 });
 
 test('preserves external logos and rejects unsafe URLs', () => {

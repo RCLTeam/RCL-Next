@@ -1,13 +1,15 @@
 import { safeStreamUrl } from '../../features/competition/api/competition-api.js';
 
-export const teamLogoDirectory = '/images/teams_logo/';
+export const teamLogoDirectory = '/api/v1/team-logos/images/';
+const publicTeamLogoDirectory = '/images/teams_logo/';
 const legacyTeamLogoDirectory = '/src/shared/assets/teams_logo/';
 
 // Existing database records can still contain the former asset location.
 export function normalizeTeamLogoPath(path: string): string {
-  return path.startsWith(legacyTeamLogoDirectory)
-    ? `${teamLogoDirectory}${path.slice(legacyTeamLogoDirectory.length)}`
-    : path;
+  const directory = [legacyTeamLogoDirectory, publicTeamLogoDirectory].find((prefix) =>
+    path.startsWith(prefix)
+  );
+  return directory ? `${teamLogoDirectory}${path.slice(directory.length)}` : path;
 }
 
 export function resolveTeamLogo(value: string | null | undefined): string | undefined {

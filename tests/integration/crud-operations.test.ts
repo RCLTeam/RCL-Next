@@ -1,4 +1,7 @@
 import { createHash } from 'node:crypto';
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { PGlite } from '@electric-sql/pglite';
 import type { CrudDeletePreview, CrudRecord } from '@rcl/contracts';
@@ -14,10 +17,12 @@ import { PostgresAuthRepository } from '../../apps/api/src/modules/auth/postgres
 import { PostgresCompetitionRepository } from '../../apps/api/src/modules/competition/postgres-competition.repository.js';
 import { crudResources } from '../../apps/api/src/modules/crud-operations/crud-operations.resources.js';
 import { PostgresCrudOperationsRepository } from '../../apps/api/src/modules/crud-operations/postgres-crud-operations.repository.js';
+import { resolveTeamLogo } from '../../apps/web/src/shared/resources/team-logos.js';
 import * as schema from '../../packages/database/src/schema.js';
 
 describe('admin CRUD with HTTP sessions and PostgreSQL constraints', () => {
   const client = new PGlite();
+  const logoDirectory = mkdtempSync(join(tmpdir(), 'rcl-crud-logos-'));
   const db = drizzle(client, { schema });
   const origin = 'http://localhost:5173';
   const actorId = '123456789012345678';
@@ -29,6 +34,7 @@ describe('admin CRUD with HTTP sessions and PostgreSQL constraints', () => {
   const team1 = '20000000-0000-4000-8000-000000000001';
   const team2 = '20000000-0000-4000-8000-000000000002';
   const app = createApp({
+    teamLogoDirectory: logoDirectory,
     repository: new PostgresCompetitionRepository(db),
     crudOperationsRepository: new PostgresCrudOperationsRepository(db),
     checkDatabase: async () => {},
@@ -104,7 +110,50 @@ describe('admin CRUD with HTTP sessions and PostgreSQL constraints', () => {
     ]);
     await db.insert(schema.rounds).values({ id: 1, idSeasonDivision: competitionId });
   });
-  afterAll(() => client.close());
+  afterAll(async () => {
+    await client.close();
+    rmSync(logoDirectory, { recursive: true, force: true });
+  });
+
+  it('uploads a logo, assigns its copied URL through team CRUD and serves it publicly', async () => {
+    const png = Buffer.from(
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=',
+      'base64'
+    );
+    const uploaded = await request(app)
+      .post('/api/v1/team-logos/admin/crud-flow.png')
+      .set('Cookie', cookie)
+      .set('Origin', origin)
+      .set('Content-Type', 'image/png')
+      .send(png)
+      .expect(201);
+    const team = await create('teams', { name: 'Logo flow', seasonDivisionId: competitionId });
+    try {
+      const saved = await send(
+        'put',
+        'teams',
+        updateBody('teams', team, { logoUrl: uploaded.body.data.url })
+      ).expect(200);
+      expect(saved.body.data.logoUrl).toBe(uploaded.body.data.url);
+      const stored = await db
+        .select()
+        .from(schema.teams)
+        .where(eq(schema.teams.id, String(team.id)));
+      expect(stored[0]?.logoUrl).toBe(uploaded.body.data.url);
+      const published = await request(app)
+        .get(`/api/v1/divisions/${competitionId}/teams`)
+        .expect(200);
+      const publicTeam = published.body.data.find((item: { id: string }) => item.id === team.id);
+      expect(publicTeam.logoUrl).toBe(uploaded.body.data.url);
+      const resolved = resolveTeamLogo(publicTeam.logoUrl);
+      expect(resolved).toBe(uploaded.body.data.url);
+      const image = await request(app).get(String(resolved)).expect(200);
+      expect(image.body).toEqual(png);
+      await send('delete', 'teams', deleteBody('teams', saved.body.data)).expect(204);
+    } finally {
+      await db.delete(schema.teams).where(eq(schema.teams.id, String(team.id)));
+    }
+  });
 
   it('paginates references in batches of 250 and validates limits', async () => {
     await db.insert(schema.seasons).values(

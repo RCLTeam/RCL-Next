@@ -27,6 +27,8 @@ import { IncidentLogger } from './modules/suggestions/incident-logger.js';
 import { SuggestionStore } from './modules/suggestions/suggestion.store.js';
 import { createSuggestionsRouter } from './modules/suggestions/suggestions.router.js';
 import { SuggestionsService } from './modules/suggestions/suggestions.service.js';
+import { teamLogosRouter } from './modules/team-logos/team-logos.router.js';
+import { TeamLogosStore } from './modules/team-logos/team-logos.store.js';
 import { errorHandler } from './shared/http.js';
 
 export function createApp(options: {
@@ -40,6 +42,7 @@ export function createApp(options: {
   databaseTransferRepository?: DatabaseTransferRepository;
   homeContentRepository?: HomeContentRepository;
   editorialImageDirectory?: string;
+  teamLogoDirectory?: string;
   bridgeClient?: DiscordBridgeClient;
   suggestionsService?: SuggestionsService;
   suggestionStore?: SuggestionStore;
@@ -68,6 +71,10 @@ export function createApp(options: {
     );
   }
   app.use(express.json({ limit: '1mb' }));
+  app.use(
+    '/api/v1/team-logos',
+    teamLogosRouter(options.auth, new TeamLogosStore(options.teamLogoDirectory))
+  );
   if (options.predictionsRepository)
     app.use('/api/v1/predictions', predictionsRouter(options.predictionsRepository, options.auth));
   if (options.homeContentRepository) {
