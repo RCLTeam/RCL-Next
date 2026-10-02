@@ -38,9 +38,42 @@ La aplicación web se estructura en nueve características de dominio principale
 | **Contenido Editorial e Inicio** | [home-content/README.md](home-content/README.md) | Visor de artículos de noticias y comunicados oficiales, vista modal de lectura y tarjetas interactivas del quinteto ideal de la jornada (*Team of the Week*). |
 | **Predicciones Comunitarias** | [predictions/README.md](predictions/README.md) | Tarjetas interactivas de votación para series Bo1/Bo3/Bo5, selector de marcadores exactos, termómetros de tendencia comunitaria tras el cierre de jornada y tabla de pronosticadores. |
 
+## 4. Componentes Globales y Sistema de Diseño (Design System)
+
+Más allá de las carpetas específicas por funcionalidad en `apps/web/src/features/`, la plataforma provee un sistema de componentes compartidos (`apps/web/src/shared/`) y tokens de maquetación y movimiento (`apps/web/src/site/layout/`) consumidos transversalmente por toda la interfaz.
+
+### 4.1 Selector Accesible Global (`Selector.tsx`)
+- **Cita:** `apps/web/src/shared/components/Selector/Selector.tsx:1-249`
+- **Responsabilidad:** Proporciona un control de selección avanzado que combina la semántica nativa del navegador con una experiencia de búsqueda instantánea y accesibilidad WAI-ARIA.
+- **Retención del Control Nativo:** Conserva el control `<select>` nativo para soporte de formularios, validación HTML5, referencias (`ref`) y eventos `change`, garantizando compatibilidad total con librerías y componentes estándar.
+- **Despliegue Flotante con HTML Popover API:** Despliega un menú emergente flotante mediante `<dialog popover="auto">` aprovechando la HTML Popover API nativa (`popup.showPopover()`, `popup.hidePopover()`), evitando dependencias pesadas de posicionamiento externo.
+- **Patrón WAI-ARIA Combobox:** Implementa el patrón completo de accesibilidad (`role="combobox"`, `role="listbox"`, `role="option"`, `aria-activedescendant`, `aria-autocomplete="list"`), permitiendo navegación fluida mediante teclado (flechas arriba/abajo, Enter, Escape, Tab).
+- **Búsqueda Reactiva Diacrítica:** Algoritmo de normalización insensible a tildes y caracteres diacríticos:
+  ```typescript
+  const normalize = (text: string) =>
+    text.normalize('NFD').replace(/\p{M}/gu, '').toLocaleLowerCase().trim();
+  ```
+- **Gestión de Cierre Inteligente:** Cierre automático al redimensionar la ventana o al hacer scroll exterior mediante escucha de eventos en fase de captura (`window.addEventListener('scroll', dismiss, true)` y `window.addEventListener('resize', dismissOnWidthChange)`).
+- **Variantes Visuales:** Soporta tres variantes mediante la propiedad `variant`:
+  - `'default'`: Estilo base para controles aislados.
+  - `'form'`: Integración compacta con etiquetas y validación en formularios de edición.
+  - `'resource'`: Estilo específico para cabeceras y filtros de recursos.
+
+### 4.2 Tokens de Navegación y Movimiento (`apps/web/src/site/layout/`)
+- **Navegación Dinámica (`site-navigation.css`):**
+  - **Cita:** `apps/web/src/site/layout/site-navigation.css:1-109`
+  - Enlaces de navegación con animación de subrayado mediante pseudo-elemento `::after` (`scaleX(0)` a `scaleX(1)` con curva `cubic-bezier(0.22, 1, 0.36, 1)` y duración de 320ms).
+  - Soporte de accesibilidad para `:focus-visible` y página activa con `aria-current="page"`.
+  - Elevación sutil en estado hover en dispositivos con cursor preciso (`@media (hover: hover) and (pointer: fine)`) mediante `translateY(-2px)` y sombra difuminada semántica (`text-shadow: 0 0 16px`).
+- **Tokens de Movimiento y Transiciones (`site-motion.css`):**
+  - **Cita:** `apps/web/src/site/layout/site-motion.css:1-33`
+  - Aislado estrictamente bajo `@media (prefers-reduced-motion: no-preference)` para respetar la accesibilidad y preferencias del usuario frente a animaciones continuas.
+  - **Entrada de Vistas:** Anima la entrada de páginas en el contenedor principal (`#main-content`) con `@keyframes page-enter` (`translate: 0 8px` a `0 0`, `opacity: 0` a `1`, 360ms con `cubic-bezier(0.22, 1, 0.36, 1)`).
+  - **Selección Activa:** Transición fluida en la barra de navegación con `@keyframes navigation-select` (`opacity: 0.4` y `scaleX(0.3)` a `opacity: 1` y `scaleX(1)`, 360ms).
+
 ---
 
-## 4. Enlaces Cruzados con Otras Áreas
+## 5. Enlaces Cruzados con Otras Áreas
 
 - **Servicios de Backend API:** Para consultar las especificaciones técnicas de las rutas HTTP y gateways WebSocket consumidos por estos componentes, ver [docs/api/README.md](../api/README.md).
 - **Esquema de Base de Datos:** Para auditar los modelos de datos de PostgreSQL subyacentes, ver [docs/database/README.md](../database/README.md).
