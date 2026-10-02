@@ -10,6 +10,7 @@ import { PostgresCrudOperationsRepository } from './modules/crud-operations/post
 import { NativePostgresBackupTools } from './modules/database-transfer/postgres-backup-tools.js';
 import { PostgresDatabaseTransferRepository } from './modules/database-transfer/postgres-database-transfer.repository.js';
 import { DiscordBridgeClient } from './modules/discord-bridge/discord-bridge.client.js';
+import { HomeContentService } from './modules/home-content/home-content.service.js';
 import { PostgresHomeContentRepository } from './modules/home-content/postgres-home-content.repository.js';
 import { PostgresMemberRolesRepository } from './modules/member-roles/postgres-member-roles.repository.js';
 import { PredictionsRepository } from './modules/predictions/predictions.repository.js';
@@ -68,6 +69,7 @@ const suggestionsService = new SuggestionsService({
 });
 
 const app = createApp({
+  teamLogoDirectory: process.env.TEAM_LOGO_DIR,
   predictionsRepository: new PredictionsRepository(connection.db),
   homeContentRepository: new PostgresHomeContentRepository(connection.db),
   databaseTransferRepository: new PostgresDatabaseTransferRepository(
@@ -96,12 +98,27 @@ const app = createApp({
 const server = http.createServer(app);
 const roflUploadRepo = new PostgresRoflUploadRepository(connection.db);
 const roflUploadGateway = attachRoflUploadGateway(server, roflUploadRepo, { authService });
+const homeContent = new HomeContentService(new PostgresHomeContentRepository(connection.db));
+let imageCleanup: Promise<void> | undefined;
+function cleanupImages() {
+  if (imageCleanup) return;
+  imageCleanup = homeContent
+    .cleanupExpiredImages()
+    .catch((error: unknown) => console.error('Editorial image cleanup failed:', error))
+    .finally(() => {
+      imageCleanup = undefined;
+    });
+}
+const imageCleanupTimer = setInterval(cleanupImages, 60 * 60 * 1000).unref();
+cleanupImages();
 
 server.listen(env.PORT, env.HOST, () => {
   console.info(`RCL API: http://${env.HOST}:${env.PORT}/api/v1/seasons`);
   console.info(`RCL ROFL Upload WS: ws://${env.HOST}:${env.PORT}/ws/rofl-upload`);
 });
 server.on('error', async () => {
+  clearInterval(imageCleanupTimer);
+  await imageCleanup;
   console.error('API could not listen on the configured address.');
   await connection.close();
   process.exitCode = 1;
@@ -110,6 +127,7 @@ let closing = false;
 function shutdown() {
   if (closing) return;
   closing = true;
+  clearInterval(imageCleanupTimer);
   const timeout = setTimeout(() => process.exit(1), 10000).unref();
   roflUploadGateway.close(() => {
     server.close(async () => {
@@ -119,6 +137,7 @@ function shutdown() {
       } catch (err) {
         console.error('Error during Discord bridge/suggestion store shutdown:', err);
       }
+      await imageCleanup;
       await connection.close();
       clearTimeout(timeout);
     });

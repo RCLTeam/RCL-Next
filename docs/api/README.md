@@ -24,7 +24,7 @@ La arquitectura sigue el patrón de **Rebanadas Verticales (*Vertical Slice Arch
 
 ## 3. Catálogo de Módulos de la API
 
-La API de RCL-Next se compone de diez módulos funcionales, cada uno documentado exhaustivamente en su respectiva subcarpeta atómica:
+La API de RCL-Next se compone de once módulos funcionales, cada uno documentado exhaustivamente en su respectiva subcarpeta atómica:
 
 | Módulo | Enlace | Resumen Funcional |
 |---|---|---|
@@ -38,6 +38,7 @@ La API de RCL-Next se compone de diez módulos funcionales, cada uno documentado
 | **Transferencia de Base de Datos** | [database-transfer/README.md](database-transfer/README.md) | Generación y restauración de copias de seguridad PostgreSQL mediante comandos `COPY` nativos, empaquetado gzip, streaming y ordenación topológica de tablas. |
 | **Contenido Editorial e Inicio** | [home-content/README.md](home-content/README.md) | Gestión de noticias, artículos editoriales y selección transaccional del quinteto ideal de cada jornada (*Team of the Week*) para la página de inicio. |
 | **Predicciones Comunitarias** | [predictions/README.md](predictions/README.md) | Quinielas de partidos (Bo1, Bo3, Bo5), control estricto de ventanas de votación en horario peninsular (Madrid), ocultación de tendencias hasta el cierre y ranking. |
+| **Logos de Equipos** | [team-logos/](team-logos/README.md) | Motor de almacenamiento en disco (`TeamLogosStore`), servicio público de imágenes con ETag/304, inspección de magic bytes (PNG, JPEG, WebP), cuota de 5 MiB y protección de `placeholder.webp`. |
 
 ---
 

@@ -73,6 +73,10 @@ export function EditorialImagePicker({
         }}
       />
       <small>{uploading ? 'Subiendo imagen…' : 'PNG, JPEG o WebP · Hasta 5 MB.'}</small>
+      <small>
+        Guarda el artículo para conservar las imágenes. Las subidas sin guardar caducan a los 7
+        días.
+      </small>
       {error && <p role="alert">{error}</p>}
     </div>
   );

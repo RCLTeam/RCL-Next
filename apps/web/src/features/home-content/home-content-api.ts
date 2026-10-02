@@ -39,5 +39,10 @@ export const saveArticle = (
   );
 export const deleteArticle = (id: string) =>
   contentRequest<null>(`admin/articles/${id}`, { method: 'DELETE' });
+export const discardImages = (urls: string[]) =>
+  contentRequest<null>('admin/images/discard', {
+    ...json('POST', { urls }),
+    keepalive: true
+  });
 export const saveWeeklyTeam = (id: string, input: WeeklyTeamInput) =>
   contentRequest<WeeklyTeam>(`admin/weekly-teams/${id}`, json('PUT', input));

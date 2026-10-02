@@ -4,6 +4,7 @@ export interface NavigationContextValue {
   path: string;
   currentPath?: string;
   navigate: (path: string) => void;
+  setLeaveGuard?: (guard: (() => boolean) | null) => void;
 }
 
 // biome-ignore lint/style/useNamingConvention: React context requires PascalCase naming for JSX Provider usage.

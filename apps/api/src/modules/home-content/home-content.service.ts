@@ -93,6 +93,24 @@ export class HomeContentService {
       this.images.remove(url)
     );
   }
+  async discardImages(body: unknown) {
+    const { urls } = z
+      .object({
+        urls: z
+          .array(
+            z.string().regex(/^\/api\/v1\/home-content\/images\/[a-f0-9-]{36}\.(png|jpg|webp)$/)
+          )
+          .max(100)
+      })
+      .strict()
+      .parse(body);
+    await this.repository.removeUnusedImages(urls, (url) => this.images.remove(url));
+  }
+  async cleanupExpiredImages() {
+    await this.repository.removeUnusedImages(await this.images.expiredUploads(), (url) =>
+      this.images.remove(url)
+    );
+  }
   private imageUrls(article: { coverUrl: string; body: string } | null): string[] {
     if (!article) return [];
     return (

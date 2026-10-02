@@ -6,7 +6,7 @@
 
 ## 1. Resumen de la Capa de Transporte
 
-El enrutador de autenticación (`apps/api/src/modules/auth/auth.router.ts:42-88`) se monta bajo el prefijo `/api/v1/auth`. Gestiona el apretón de manos (*handshake*) con el proveedor OAuth2 de Discord, la emisión y revocación de cookies de sesión con atributos de alta seguridad, la resolución del usuario actual y la protección de mutaciones frente a ataques de origen cruzado.
+El enrutador de autenticación (`apps/api/src/modules/auth/auth.router.ts:42-92`) se monta bajo el prefijo `/api/v1/auth`. Gestiona el apretón de manos (*handshake*) con el proveedor OAuth2 de Discord, la emisión y revocación de cookies de sesión con atributos de alta seguridad, la resolución del usuario actual y la protección de mutaciones frente a ataques de origen cruzado.
 
 Todas las rutas del módulo inyectan de forma centralizada las cabeceras HTTP defensivas (`auth.router.ts:52-56`):
 - `Cache-Control: no-store`: Impide que intermediarios, servidores proxy o cachés de navegador almacenen respuestas con datos de identidad o tokens.
@@ -37,27 +37,30 @@ Todas las rutas del módulo inyectan de forma centralizada las cabeceras HTTP de
 ### 2.2 Callback de Autorización de Discord
 
 - **Ruta:** `GET /api/v1/auth/discord/callback`
-- **Controlador:** `auth.router.ts:62-80`
+- **Controlador:** `auth.router.ts:62-84`
 - **Autenticación requerida:** Ninguna (validación por cookie de estado de un solo uso).
 - **Parámetros de consulta (Query String):**
   - `state` (*string*): Token de estado devuelto por Discord para mitigar CSRF.
-  - `code` (*string*): Código de autorización temporal emitido por Discord (`code.length <= 2048`).
-  - `error` (*string, opcional*): Presente si el usuario denegó el acceso o canceló el diálogo en Discord.
+  - `code` (*string, condicional*): Código de autorización temporal emitido por Discord (`code.length <= 2048`). Obligatorio si el usuario otorgó su consentimiento.
+  - `error` (*string, opcional*): Presente si el usuario denegó el acceso (`access_denied`) o canceló el diálogo en Discord.
 - **Cookies entrantes:**
   - `stateCookie` (`__Host-rcl_oauth_state` o `rcl_oauth_state`): Token de estado almacenado en el navegador del usuario.
   - `sessionCookie` (`__Host-rcl_session` o `rcl_session`, opcional): Si existía una sesión previa, se extrae para rotarla e invalidarla en base de datos.
 - **Comportamiento:**
-  1. Extrae la cookie de estado y la elimina de inmediato del cliente mediante `res.clearCookie(stateCookie, cookieOptions)` (`auth.router.ts:64`).
-  2. Valida la coincidencia temporal y criptográfica entre `req.query.state` y la cookie mediante `options.service.validateState(req.query.state, state)` (`auth.router.ts:65`).
-  3. Si `req.query.error` está definido, lanza `AppError(400, 'DISCORD_ACCESS_DENIED')`.
-  4. Si `req.query.code` no es una cadena válida o excede 2048 caracteres, lanza `AppError(400, 'INVALID_OAUTH_CODE')`.
-  5. Ejecuta `options.service.login(req.query.code, previousSession)`: intercambia el código con Discord, obtiene el perfil, actualiza `discord_users`, destruye la sesión anterior e inserta la nueva sesión con expiración de 7 días (`auth.service.ts:49-59`).
-  6. Emite la cookie de sesión con `maxAge: 604800000` ms (7 días).
-  7. Redirige (HTTP 302) a `options.frontendOrigin` (`auth.router.ts:79`). **Inmunidad a redirección abierta**: el destino es fijo y jamás se lee de query parameters.
+  1. Extrae la cookie de estado y la elimina de inmediato del cliente mediante `res.clearCookie(stateCookie, cookieOptions)` (`auth.router.ts:63-64`).
+  2. Valida la coincidencia temporal y criptográfica entre `req.query.state` y la cookie mediante `options.service.validateState(req.query.state, state)` (`auth.router.ts:65`). Si no coincide o caducó, se lanza `AppError(400, 'INVALID_OAUTH_STATE')` antes de evaluar cualquier parámetro de error.
+  3. Si el usuario canceló la autorización en Discord (`req.query.error === 'access_denied'`), la cookie de estado ya ha sido eliminada y se emite de inmediato una redirección limpia HTTP 302 hacia `options.frontendOrigin` (`auth.router.ts:66-69`, `tests/integration/auth.test.ts:181-200`) sin crear sesión en base de datos y sin retornar error al cliente.
+  4. Si `req.query.error` está definido con cualquier otro código de error distinto a `access_denied`, lanza `AppError(400, 'DISCORD_ACCESS_DENIED', 'Discord authorization was not completed.')` (`auth.router.ts:70-72`).
+  5. Si `req.query.code` no es una cadena válida o excede 2048 caracteres, lanza `AppError(400, 'INVALID_OAUTH_CODE')` (`auth.router.ts:73-79`).
+  6. Ejecuta `options.service.login(req.query.code, previousSession)`: intercambia el código con Discord, obtiene el perfil, actualiza `discord_users`, destruye la sesión anterior e inserta la nueva sesión con expiración de 7 días (`auth.service.ts:49-59`).
+  7. Emite la cookie de sesión con `maxAge: 604800000` ms (7 días) (`auth.router.ts:80-81`).
+  8. Redirige (HTTP 302) a `options.frontendOrigin` (`auth.router.ts:83`). **Inmunidad a redirección abierta**: el destino es fijo y jamás se lee de query parameters.
 - **Códigos de Estado:**
-  - `302 Found`: Login exitoso, redirección fija al frontend.
-  - `400 Bad Request` (`INVALID_OAUTH_STATE`): El estado OAuth caducó, no coincide con la cookie o no existe en la base de datos.
-  - `400 Bad Request` (`DISCORD_ACCESS_DENIED`): El usuario rechazó el consentimiento en Discord.
+  - `302 Found`:
+    - Login exitoso: se establece la cookie de sesión y se redirige limpiamente al frontend (`options.frontendOrigin`).
+    - Cancelación voluntaria por el usuario (`error=access_denied`): tras validar criptográficamente el token `state` y purgar la cookie, se redirige a `options.frontendOrigin` sin emitir cookie de sesión ni registrar errores (`tests/integration/auth.test.ts:181-200`).
+  - `400 Bad Request` (`INVALID_OAUTH_STATE`): El estado OAuth caducó, no coincide con la cookie o no existe en la base de datos (se evalúa prioritariamente antes de comprobar `req.query.error`).
+  - `400 Bad Request` (`DISCORD_ACCESS_DENIED`): Se recibió un error de Discord distinto a la cancelación voluntaria `access_denied` (`req.query.error !== undefined && req.query.error !== 'access_denied'`).
   - `400 Bad Request` (`INVALID_OAUTH_CODE`): Código de Discord ausente, vacío o corrupto.
   - `502 Bad Gateway` (`DISCORD_UNAVAILABLE`): Fallo de comunicación o rechazo en la API de Discord al intercambiar el código o solicitar el perfil.
 
@@ -66,7 +69,7 @@ Todas las rutas del módulo inyectan de forma centralizada las cabeceras HTTP de
 ### 2.3 Obtener Usuario Autenticado Actual
 
 - **Ruta:** `GET /api/v1/auth/me`
-- **Controlador:** `auth.router.ts:81`
+- **Controlador:** `auth.router.ts:85`
 - **Middleware:** `requireAuth(options)` (`auth.router.ts:22-30`).
 - **Cookies requeridas:**
   - Cookie de sesión activa (`__Host-rcl_session` o `rcl_session`).
@@ -91,7 +94,7 @@ Todas las rutas del módulo inyectan de forma centralizada las cabeceras HTTP de
 ### 2.4 Cierre de Sesión (Logout)
 
 - **Ruta:** `POST /api/v1/auth/logout`
-- **Controlador:** `auth.router.ts:82-86`
+- **Controlador:** `auth.router.ts:86-90`
 - **Middleware:** `requireTrustedOrigin(options.frontendOrigin)` (`auth.router.ts:33-40`).
 - **Cabeceras obligatorias:**
   - `Origin`: Debe coincidir exactamente con `options.frontendOrigin`.

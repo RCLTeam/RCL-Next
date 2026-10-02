@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useEditorLeaveGuard } from '../useEditorLeaveGuard.js';
 import { EditorialManager } from './EditorialManager.js';
 import { WeeklyTeamManager } from './WeeklyTeamManager.js';
 import './home-content-admin.css';
@@ -7,6 +8,7 @@ export function HomeContentPanel() {
   const [tab, setTab] = useState<'teams' | 'editorial'>('teams');
   const [dirty, setDirty] = useState(false);
   const [busy, setBusy] = useState(false);
+  useEditorLeaveGuard(dirty, busy);
   function changeTab(value: typeof tab) {
     if (value === tab || busy) return;
     if (dirty && !window.confirm('Hay cambios sin guardar. ¿Quieres descartarlos?')) return;

@@ -5,6 +5,7 @@ import { DatabaseTransferPanel } from '../../../features/database-transfer/compo
 import { HomeContentPanel } from '../../../features/home-content/components/HomeContentPanel.js';
 import { MemberRolesPanel } from '../../../features/member-roles/components/MemberRolesPanel.js';
 import { RoflUploadPanel } from '../../../features/rofl-upload/components/RoflUploadPanel.js';
+import { TeamLogosPanel } from '../../../features/team-logos/TeamLogosPanel.js';
 import { SiteLink } from '../../../shared/components/SiteLink.js';
 import './admin.css';
 
@@ -42,13 +43,21 @@ export function AdminPage({
             Roles Management
           </SiteLink>
           <SiteLink
+            href="/admin/team-logos"
+            aria-current={path === '/admin/team-logos' ? 'page' : undefined}
+          >
+            Team Logos
+          </SiteLink>
+          <SiteLink
             href="/admin/database-transfer"
             aria-current={path === '/admin/database-transfer' ? 'page' : undefined}
           >
             Database Transfer
           </SiteLink>
         </nav>
-        {path === '/admin/home-content' ? (
+        {path === '/admin/team-logos' ? (
+          <TeamLogosPanel />
+        ) : path === '/admin/home-content' ? (
           <HomeContentPanel />
         ) : path === '/admin/rofl/upload' ? (
           <RoflUploadPanel wsUrl={wsUrl} />
@@ -91,6 +100,12 @@ export function AdminPage({
                 roles.
               </p>
               <span>Ver miembros →</span>
+            </SiteLink>
+            <SiteLink href="/admin/team-logos">
+              <span className="eyebrow">Equipos</span>
+              <h2>Team Logos</h2>
+              <p>Consulta, sube y elimina los logos de los equipos.</p>
+              <span>Gestionar logos →</span>
             </SiteLink>
             <SiteLink href="/admin/database-transfer">
               <span className="eyebrow">Copias de seguridad</span>

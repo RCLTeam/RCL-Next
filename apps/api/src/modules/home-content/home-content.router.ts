@@ -45,6 +45,10 @@ export function homeContentRouter(
       res.json({ data: await service.weeklyTeam(req.params.id, true) })
     );
     router.use('/admin', requireTrustedOrigin(auth.frontendOrigin));
+    router.post('/admin/images/discard', async (req, res) => {
+      await service.discardImages(req.body);
+      res.json({ data: null });
+    });
     router.post(
       '/admin/images',
       raw({ type: ['image/png', 'image/jpeg', 'image/webp'], limit: '5mb' }),
