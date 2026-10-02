@@ -38,16 +38,42 @@
   margin: 0;
 }
 
+.rcl-site .team-profile-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
 .rcl-site .team-profile-status {
-  margin-left: 0;
   color: var(--lime);
   font: 12px var(--mono);
 }
 
 @media (min-width: 641px) {
-  .rcl-site .team-profile-status {
+  .rcl-site .team-profile-actions {
     margin-left: auto;
   }
+}
+
+.rcl-site .team-profile-opgg {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  flex-shrink: 0;
+  color: var(--muted);
+  font: 10px var(--mono);
+  text-decoration: none;
+}
+
+.rcl-site .team-profile-opgg img {
+  width: 60px;
+  height: 28px;
+  object-fit: contain;
+}
+
+.rcl-site .team-profile-opgg:hover {
+  color: var(--lime);
 }
 
 .rcl-site .team-profile-info {

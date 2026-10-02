@@ -11,7 +11,7 @@ import {
   teamMemberships
 } from '@rcl/database';
 import type * as schema from '@rcl/database/schema';
-import { and, eq, inArray, or, sql } from 'drizzle-orm';
+import { and, asc, eq, inArray, or, sql } from 'drizzle-orm';
 import type { PgDatabase, PgQueryResultHKT } from 'drizzle-orm/pg-core';
 import type {
   ExecuteBatchResult,
@@ -36,6 +36,51 @@ type NewPlayerGameInfo = typeof playerGameInfo.$inferInsert;
 type NewPlayerGameStats = typeof playerGameStats.$inferInsert;
 type NewPlayerGameRunes = typeof playerGameRunes.$inferInsert;
 type NewPlayerGameBuild = typeof playerGameBuild.$inferInsert;
+
+// The caller holds the parent match lock throughout import and renumbering.
+async function orderImportedGames(tx: DatabaseExecutor, matchId: string) {
+  const games = await tx
+    .select({
+      id: matchGames.id,
+      gameNumber: matchGames.gameNumber,
+      externalGameId: matchGames.externalGameId
+    })
+    .from(matchGames)
+    .where(eq(matchGames.matchesId, matchId))
+    .orderBy(asc(matchGames.gameNumber));
+  // Keep maps without a replay identifier in their existing positions.
+  const imported = games.filter((game) => game.externalGameId !== null);
+  const sorted = [...imported].sort((a, b) =>
+    (a.externalGameId ?? '').localeCompare(b.externalGameId ?? '', undefined, {
+      numeric: true,
+      sensitivity: 'base'
+    })
+  );
+  if (sorted.every((game, index) => game.id === imported[index]?.id)) return;
+  const positions = new Map(games.map((game) => [game.id, game.gameNumber]));
+  const occupied = new Set(positions.values());
+  let temporary = 1;
+  while (occupied.has(temporary) && temporary <= 32767) temporary++;
+  if (temporary > 32767) throw new Error('No free position is available to order imported maps.');
+  const move = async (id: string, gameNumber: number) => {
+    await tx
+      .update(matchGames)
+      .set({ gameNumber, updatedAt: new Date() })
+      .where(eq(matchGames.id, id));
+    positions.set(id, gameNumber);
+  };
+  for (const [index, game] of sorted.entries()) {
+    const target = imported[index]?.gameNumber;
+    const current = positions.get(game.id);
+    if (target === undefined || current === undefined || current === target) continue;
+    const other = [...positions].find(([, position]) => position === target)?.[0];
+    if (other) {
+      await move(other, temporary);
+      await move(game.id, target);
+      await move(other, current);
+    } else await move(game.id, target);
+  }
+}
 
 export class PostgresRoflUploadRepository implements RoflUploadRepository {
   constructor(private readonly db: PgDatabase<PgQueryResultHKT, typeof schema>) {}
@@ -62,13 +107,30 @@ export class PostgresRoflUploadRepository implements RoflUploadRepository {
       .innerJoin(discordUsers, eq(players.discordUserId, discordUsers.discordId))
       .where(or(...conditions));
 
-    return rows.map((r) => ({
-      playerId: r.playerId,
-      discordUserId: r.discordUserId ?? '',
-      discordUsername: r.discordUsername,
-      gameName: r.gameName,
-      riotTag: r.riotTag ?? ''
-    }));
+    if (rows.length === 0) return [];
+    const discordIds = rows.flatMap((row) => (row.discordUserId ? [row.discordUserId] : []));
+    const mainAccounts = await this.db
+      .select({ id: players.id, discordUserId: players.discordUserId })
+      .from(players)
+      .where(and(inArray(players.discordUserId, discordIds), eq(players.isMain, true)));
+
+    return rows.map((row) => {
+      const mains = mainAccounts.filter((account) => account.discordUserId === row.discordUserId);
+      const main = mains[0];
+      if (!main || mains.length !== 1) {
+        throw new Error(
+          `Cannot import statistics for ${row.gameName}#${row.riotTag ?? ''}: exactly one main account must exist for this Discord user.`
+        );
+      }
+      // Keep the replay's Riot ID as the lookup key, but persist all data under its main account.
+      return {
+        playerId: main.id,
+        discordUserId: row.discordUserId ?? '',
+        discordUsername: row.discordUsername,
+        gameName: row.gameName,
+        riotTag: row.riotTag ?? ''
+      };
+    });
   }
 
   async checkExternalGamesExist(externalGameIds: string[]): Promise<string[]> {
@@ -454,6 +516,7 @@ export class PostgresRoflUploadRepository implements RoflUploadRepository {
 
         insertedGames += 1;
       }
+      for (const matchId of matchStateMap.keys()) await orderImportedGames(tx, matchId);
     });
 
     return {

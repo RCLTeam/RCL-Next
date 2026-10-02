@@ -1,5 +1,6 @@
 import React from 'react';
 import { TeamCard } from '../../../features/competition/components/TeamCard.js';
+import { isActiveTeam } from '../../../features/competition/team-visibility.js';
 import type { Team } from '../../../features/competition/types/competition.types.js';
 
 export interface TeamGridProps {
@@ -9,14 +10,15 @@ export interface TeamGridProps {
 }
 
 export function TeamGrid({ teams, divisionName, query }: TeamGridProps) {
+  const activeTeams = teams.filter(isActiveTeam);
   return (
     <>
       <div className="team-grid">
-        {teams.map((team) => (
+        {activeTeams.map((team) => (
           <TeamCard key={team.id} team={team} divisionName={divisionName} />
         ))}
       </div>
-      {!teams.length && (
+      {!activeTeams.length && (
         <div className="empty-state">No hay equipos que coincidan con «{query}».</div>
       )}
     </>

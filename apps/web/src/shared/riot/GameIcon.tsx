@@ -31,7 +31,7 @@ export function GameIcon({
         />
       ) : (
         <span className="game-asset-fallback" aria-label={name}>
-          {kind === 'position' ? name : id ? String(id).slice(0, 8) : '—'}
+          {kind === 'position' ? name : id ? String(id).slice(0, 8) : kind === 'item' ? null : '—'}
         </span>
       )}
       {label && <span>{name}</span>}

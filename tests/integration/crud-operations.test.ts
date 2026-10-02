@@ -106,6 +106,127 @@ describe('admin CRUD with HTTP sessions and PostgreSQL constraints', () => {
   });
   afterAll(() => client.close());
 
+  it('paginates references in batches of 250 and validates limits', async () => {
+    await db.insert(schema.seasons).values(
+      Array.from({ length: 251 }, (_, index) => ({
+        name: `Reference page ${String(index).padStart(3, '0')}`
+      }))
+    );
+    try {
+      const read = (resource: string, query: object) =>
+        request(app).get(endpoint(resource)).set('Cookie', cookie).query(query);
+      const first = await read('references/seasons', {
+        search: 'Reference page',
+        limit: 250
+      }).expect(200);
+      expect(first.body.data.records).toHaveLength(250);
+      expect(first.body.data.hasMore).toBe(true);
+      const last = await read('references/seasons', {
+        search: 'Reference page',
+        limit: 250,
+        offset: 250
+      }).expect(200);
+      expect(last.body.data.records).toHaveLength(1);
+      expect(last.body.data.records[0].name).toBe('Reference page 250');
+      expect(last.body.data.hasMore).toBe(false);
+      const normal = await read('seasons', { search: 'Reference page' }).expect(200);
+      expect(normal.body.data.records).toHaveLength(50);
+      for (const limit of [0, 251, 1.5, 'invalid'])
+        await read('references/seasons', { limit }).expect(422);
+      await read('seasons', { limit: 250 }).expect(422);
+    } finally {
+      await db.delete(schema.seasons).where(sql`name LIKE 'Reference page %'`);
+    }
+  });
+
+  it('reorders imported maps atomically, preserving results and rejecting stale or invalid orders', async () => {
+    const match = await create('matches', { ...matchValues, bestOf: 5 });
+    const games = await db
+      .insert(schema.matchGames)
+      .values(
+        [1, 2, 3].map((gameNumber) => ({
+          matchesId: String(match.id),
+          gameNumber,
+          blueTeamId: team1,
+          redTeamId: team2,
+          winnerTeamId: team1,
+          externalGameId: `reorder-${gameNumber}`,
+          durationSeconds: 1800
+        }))
+      )
+      .returning();
+    const path = `matches/${match.id}/maps`;
+    const initial = games.map((game) => game.id);
+    const reversed = [...initial].reverse();
+    const body = { expectedOrder: initial, gameIds: reversed };
+    await request(app).get(endpoint(path)).expect(401);
+    await request(app).get(endpoint(path)).set('Cookie', `rcl_session=${viewerToken}`).expect(403);
+    await request(app)
+      .put(endpoint(`${path}/order`))
+      .set('Cookie', `rcl_session=${viewerToken}`)
+      .set('Origin', origin)
+      .send(body)
+      .expect(403);
+    await request(app)
+      .put(endpoint(`${path}/order`))
+      .set('Cookie', cookie)
+      .send(body)
+      .expect(403);
+    const read = () => request(app).get(endpoint(path)).set('Cookie', cookie).expect(200);
+    expect((await read()).body.data.map((game: { id: string }) => game.id)).toEqual(initial);
+    await send('put', `${path}/order`, {
+      ...body,
+      gameIds: [initial[0], initial[0], initial[2]]
+    }).expect(422);
+    await send('put', `${path}/order`, {
+      expectedOrder: initial.slice(1),
+      gameIds: initial.slice(1)
+    }).expect(409);
+    const [originalMatch] = await db
+      .select()
+      .from(schema.matches)
+      .where(eq(schema.matches.id, String(match.id)));
+    await send('put', `${path}/order`, body).expect(204);
+    const saved = (await read()).body.data;
+    expect(saved.map((game: { id: string }) => game.id)).toEqual(reversed);
+    expect(saved.map((game: { gameNumber: number }) => game.gameNumber)).toEqual([1, 2, 3]);
+    const after = await db
+      .select()
+      .from(schema.matchGames)
+      .where(eq(schema.matchGames.matchesId, String(match.id)));
+    for (const game of games) {
+      const changed = after.find((item) => item.id === game.id);
+      expect(changed).toMatchObject({
+        ...game,
+        gameNumber: reversed.indexOf(game.id) + 1,
+        updatedAt: expect.any(Date)
+      });
+    }
+    expect(
+      (
+        await db
+          .select()
+          .from(schema.matches)
+          .where(eq(schema.matches.id, String(match.id)))
+      )[0]
+    ).toEqual(originalMatch);
+    await send('put', `${path}/order`, body).expect(409);
+    expect((await read()).body.data).toEqual(saved);
+    // Exercise a three-way rotation, not just a swap.
+    const rotated = [reversed[1], reversed[2], reversed[0]];
+    await send('put', `${path}/order`, { expectedOrder: reversed, gameIds: rotated }).expect(204);
+    expect((await read()).body.data.map((game: { id: string }) => game.id)).toEqual(rotated);
+    expect(
+      await db
+        .select()
+        .from(schema.auditLogs)
+        .where(eq(schema.auditLogs.entityId, String(match.id)))
+    ).toEqual(expect.arrayContaining([expect.objectContaining({ action: 'admin.reorder-maps' })]));
+    // Keep unrelated tests' fixtures unchanged.
+    await db.delete(schema.matchGames).where(eq(schema.matchGames.matchesId, String(match.id)));
+    await db.delete(schema.matches).where(eq(schema.matches.id, String(match.id)));
+  });
+
   it('requires admin sessions for reads and writes and trusted origins for every mutation', async () => {
     for (const method of ['get', 'post', 'put', 'delete'] as const) {
       await request(app)[method](endpoint('seasons')).expect(401);
@@ -171,8 +292,10 @@ describe('admin CRUD with HTTP sessions and PostgreSQL constraints', () => {
   it('records a completed series without ROFL and rejects inconsistent results', async () => {
     // Local databases can omit Discord integration columns unrelated to CRUD.
     await db.execute(sql`ALTER TABLE teams DROP COLUMN discord_role_id`);
+    let createdMatchId: string | undefined;
     try {
       const record = await create('matches', { ...matchValues, bestOf: 3 });
+      createdMatchId = String(record.id);
       for (const changes of [
         { status: 'completed', team1Score: 1, team2Score: 0, winnerTeamId: team1 },
         { status: 'completed', team1Score: 2, team2Score: 1, winnerTeamId: team2 },
@@ -211,6 +334,8 @@ describe('admin CRUD with HTTP sessions and PostgreSQL constraints', () => {
       );
       await send('delete', 'matches', deleteBody('matches', response.body.data)).expect(204);
     } finally {
+      if (createdMatchId)
+        await db.delete(schema.matches).where(eq(schema.matches.id, createdMatchId));
       await db.execute(
         sql`ALTER TABLE teams ADD COLUMN discord_role_id bigint CONSTRAINT teams_discord_role_id_unique UNIQUE`
       );

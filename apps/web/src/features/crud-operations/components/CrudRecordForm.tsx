@@ -196,9 +196,6 @@ function ReferenceField({
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
   const [retry, setRetry] = useState(0);
-  const [search, setSearch] = useState('');
-  const [offset, setOffset] = useState(0);
-  const [hasMore, setHasMore] = useState(false);
   const scope = values.idSeasonDivision;
   // biome-ignore lint/correctness/useExhaustiveDependencies: Retry explicitly reloads reference options.
   useEffect(() => {
@@ -206,35 +203,33 @@ function ReferenceField({
     setLoading(true);
     setError('');
     setRows([]);
-    setHasMore(false);
-    const timer = setTimeout(() => {
-      void getCrudRecords(
-        `references/${field.reference ?? ''}`,
-        search.trim(),
-        offset,
-        controller.signal
-      )
-        .then((result) => {
-          if (!controller.signal.aborted) {
-            setRows(result.records);
-            setHasMore(result.hasMore);
-          }
-        })
-        .catch((error: unknown) => {
-          if (!controller.signal.aborted)
-            setError(
-              error instanceof Error ? error.message : 'No se pudieron cargar las opciones.'
-            );
-        })
-        .finally(() => {
-          if (!controller.signal.aborted) setLoading(false);
-        });
-    }, 300);
-    return () => {
-      clearTimeout(timer);
-      controller.abort();
-    };
-  }, [field.reference, retry, search, offset]);
+    async function loadOptions() {
+      const records: CrudRecord[] = [];
+      try {
+        // The dropdown searches locally, so include every reference page.
+        let hasMore = true;
+        while (hasMore && !controller.signal.aborted) {
+          const page = await getCrudRecords(
+            `references/${field.reference ?? ''}`,
+            '',
+            records.length,
+            controller.signal,
+            250
+          );
+          records.push(...page.records);
+          hasMore = page.hasMore && page.records.length > 0;
+        }
+        if (!controller.signal.aborted) setRows(records);
+      } catch (error: unknown) {
+        if (!controller.signal.aborted)
+          setError(error instanceof Error ? error.message : 'No se pudieron cargar las opciones.');
+      } finally {
+        if (!controller.signal.aborted) setLoading(false);
+      }
+    }
+    void loadOptions();
+    return () => controller.abort();
+  }, [field.reference, retry]);
   const eligible = rows.filter((row) => {
     if (field.reference === 'rounds') return row.idSeasonDivision === scope;
     if (field.reference === 'teams' && scope && row.seasonDivisionId !== scope) return false;
@@ -252,25 +247,13 @@ function ReferenceField({
     ];
   return (
     <div className="crud-operations-field">
-      <label htmlFor={`${id}-search`}>Buscar {field.label.toLocaleLowerCase('es')}</label>
-      <input
-        id={`${id}-search`}
-        type="search"
-        value={search}
-        disabled={disabled}
-        placeholder="Escribe para buscar opciones"
-        onChange={(event) => {
-          setSearch(event.target.value);
-          setOffset(0);
-        }}
-      />
       <Select
         label={`${field.label}${field.required ? ' *' : ''}`}
         variant="form"
         id={id}
         value={String(value ?? '')}
         required={field.required}
-        disabled={disabled}
+        disabled={disabled || loading}
         onChange={(event) =>
           onChange(
             !event.target.value
@@ -291,9 +274,7 @@ function ReferenceField({
           </option>
         ))}
       </Select>
-      {!loading && !error && eligible.length === 0 && (
-        <output>No hay opciones en esta página. Prueba otra búsqueda o página.</output>
-      )}
+      {!loading && !error && eligible.length === 0 && <output>No hay opciones disponibles.</output>}
       {loading && <output>Cargando opciones…</output>}
       {error && (
         <span role="alert">

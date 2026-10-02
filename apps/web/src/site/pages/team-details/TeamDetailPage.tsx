@@ -125,6 +125,15 @@ export function TeamProfile({ team }: { team: TeamDetail }) {
         playerRoles.indexOf(a.role) - playerRoles.indexOf(b.role) ||
         a.name.localeCompare(b.name, 'es')
     );
+  const summoners = players.flatMap((player) => {
+    const gameName = player.gameName?.trim();
+    const tag = player.riotTag?.trim().replace(/^#/, '').trim();
+    return gameName && tag ? [`${gameName}#${tag}`] : [];
+  });
+  const multiOpggUrl = summoners.length
+    ? `https://op.gg/es/lol/multisearch/euw?${new URLSearchParams({ summoners: [...new Set(summoners)].join(',') })}`
+    : null;
+
   return (
     <>
       <header
@@ -137,9 +146,23 @@ export function TeamProfile({ team }: { team: TeamDetail }) {
           <h2>{team.shortName ?? team.name}</h2>
           <p>{team.seasonName}</p>
         </div>
-        <span className="team-profile-status">
-          {team.isActive ? 'Equipo activo' : 'Equipo inactivo'}
-        </span>
+        <div className="team-profile-actions">
+          <span className="team-profile-status">
+            {team.isActive ? 'Equipo activo' : 'Equipo inactivo'}
+          </span>
+          {multiOpggUrl && (
+            <a
+              className="team-profile-opgg"
+              href={multiOpggUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={`Ver Multi OP.GG de ${team.name} (nueva pestaña)`}
+              title="Multi OP.GG"
+            >
+              <img src="/images/brand/opgg.webp" alt="OP.GG" />
+            </a>
+          )}
+        </div>
       </header>
       <dl className="team-profile-info">
         <div>

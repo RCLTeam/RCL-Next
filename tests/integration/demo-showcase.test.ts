@@ -12,6 +12,10 @@ test('showcase is complete, consistent and safe to rerun', async () => {
       await tx.exec(base);
       await tx.exec(extra);
     });
+    expect(
+      (await db.query('SELECT id FROM teams WHERE discord_role_id IS NULL OR discord_role_id < 0'))
+        .rows
+    ).toEqual([]);
     const snapshot = async () =>
       (await db.query<Record<string, unknown>>('SELECT * FROM player_game_stats ORDER BY id')).rows;
     const before = await snapshot();

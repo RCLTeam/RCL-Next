@@ -1,4 +1,4 @@
-import type { CrudDeleteDependency, CrudRecord, CrudValue } from '@rcl/contracts';
+import type { CrudDeleteDependency, CrudRecord, CrudValue, MatchMapOrder } from '@rcl/contracts';
 import { auditLogs, rosterMovements, teams } from '@rcl/database';
 import * as schema from '@rcl/database/schema';
 import { and, asc, eq, getTableColumns, is, or, sql } from 'drizzle-orm';
@@ -206,6 +206,92 @@ async function recordMovement(
 export class PostgresCrudOperationsRepository implements CrudOperationsRepository {
   constructor(private readonly db: Database) {}
 
+  async matchMaps(matchId: string) {
+    const { matches, matchGames } = schema;
+    const [match] = await this.db
+      .select({ id: matches.id })
+      .from(matches)
+      .where(eq(matches.id, matchId));
+    if (!match) throw notFound('Match');
+    return this.db
+      .select({
+        id: matchGames.id,
+        gameNumber: matchGames.gameNumber,
+        externalGameId: matchGames.externalGameId,
+        durationSeconds: matchGames.durationSeconds,
+        winner: teams.name
+      })
+      .from(matchGames)
+      .leftJoin(teams, eq(teams.id, matchGames.winnerTeamId))
+      .where(eq(matchGames.matchesId, matchId))
+      .orderBy(asc(matchGames.gameNumber));
+  }
+
+  async reorderMaps(matchId: string, order: MatchMapOrder, actorId: string) {
+    const { matches, matchGames } = schema;
+    await this.db.transaction(async (tx) => {
+      // Use the same parent lock as ROFL imports before reading the map sequence.
+      const [match] = await tx
+        .select({ id: matches.id })
+        .from(matches)
+        .where(eq(matches.id, matchId))
+        .for('update');
+      if (!match) throw notFound('Match');
+      const before = await tx
+        .select({ id: matchGames.id, gameNumber: matchGames.gameNumber })
+        .from(matchGames)
+        .where(eq(matchGames.matchesId, matchId))
+        .orderBy(asc(matchGames.gameNumber))
+        .for('update');
+      if (
+        before.length !== order.expectedOrder.length ||
+        before.some((game, index) => game.id !== order.expectedOrder[index])
+      )
+        throw conflict('The maps have changed. Reload the order before saving.');
+      if (
+        order.gameIds.length !== before.length ||
+        new Set(order.gameIds).size !== before.length ||
+        order.gameIds.some((id) => !before.some((game) => game.id === id))
+      )
+        throw new AppError(422, 'INVALID_MAP_ORDER', 'Include all maps exactly once');
+      // Move one row at a time through a free positive smallint to respect the unique constraint.
+      const positions = new Map(before.map((game) => [game.id, game.gameNumber]));
+      const occupied = new Set(positions.values());
+      let temporary = 1;
+      while (occupied.has(temporary) && temporary <= 32767) temporary++;
+      if (temporary > 32767) throw conflict('No free position is available to reorder the maps.');
+      const move = async (id: string, gameNumber: number) => {
+        await tx
+          .update(matchGames)
+          .set({ gameNumber, updatedAt: new Date() })
+          .where(eq(matchGames.id, id));
+        positions.set(id, gameNumber);
+      };
+      for (const [index, id] of order.gameIds.entries()) {
+        const target = index + 1;
+        const current = positions.get(id);
+        if (current === target) continue;
+        const other = [...positions].find(([, position]) => position === target)?.[0];
+        if (other) {
+          await move(other, temporary);
+          await move(id, target);
+          await move(other, current as number);
+        } else {
+          await move(id, target);
+          if (temporary === target) temporary = current as number;
+        }
+      }
+      await tx.insert(auditLogs).values({
+        actorDiscordUserId: actorId,
+        action: 'admin.reorder-maps',
+        entityType: 'matches',
+        entityId: matchId,
+        before,
+        after: order.gameIds.map((id, index) => ({ id, gameNumber: index + 1 }))
+      });
+    });
+  }
+
   async previewDelete(descriptor: ResourceDefinition, mutation: CrudMutation) {
     const resource = storedResource(descriptor);
     return this.db.transaction(async (tx) => {
@@ -226,7 +312,7 @@ export class PostgresCrudOperationsRepository implements CrudOperationsRepositor
     });
   }
 
-  async list(descriptor: ResourceDefinition, offset: number, search: string) {
+  async list(descriptor: ResourceDefinition, offset: number, search: string, limit = 50) {
     const resource = storedResource(descriptor);
     const projection = Object.fromEntries(
       [...new Set([...resource.keys, ...resource.fields.map((field) => field.name)])].map(
@@ -339,11 +425,11 @@ export class PostgresCrudOperationsRepository implements CrudOperationsRepositor
         .from(resource.table)
         .where(search && conditions.length > 0 ? or(...conditions) : undefined)
         .orderBy(...orderByClauses)
-        .limit(51)
+        .limit(limit + 1)
         .offset(offset)
     );
 
-    const page = result.slice(0, 50);
+    const page = result.slice(0, limit);
 
     const referencePromises = resource.fields.map(async (field) => {
       const reference = [...crudResources, ...crudReferences].find(
@@ -363,13 +449,22 @@ export class PostgresCrudOperationsRepository implements CrudOperationsRepositor
       const references = page.filter((row) => row[field.name] !== null);
       if (!references.length) return null;
 
+      const labelFields =
+        target.name === 'competitions'
+          ? ['seasonName', 'divisionName']
+          : target.name === 'users'
+            ? ['username']
+            : target.name === 'rounds'
+              ? ['name', 'stage']
+              : ['name'];
       const related = records(
         await this.db
           .select(
             Object.fromEntries(
-              [...new Set([...target.keys, ...target.fields.map((entry) => entry.name)])].map(
-                (name) => [name, column(target.table, name)]
-              )
+              [...new Set([...target.keys, ...labelFields])].map((name) => [
+                name,
+                column(target.table, name)
+              ])
             )
           )
           .from(target.table)
@@ -401,7 +496,7 @@ export class PostgresCrudOperationsRepository implements CrudOperationsRepositor
       }
     }
 
-    return { records: page, hasMore: result.length > 50 };
+    return { records: page, hasMore: result.length > limit };
   }
 
   async mutate(descriptor: ResourceDefinition, mutation: CrudMutation) {

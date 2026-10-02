@@ -1,9 +1,11 @@
 import type {
+  AdminMatchMap,
   CrudDeleteDependency,
   CrudDeletePreview,
   CrudPageResult,
   CrudRecord,
-  CrudResource
+  CrudResource,
+  MatchMapOrder
 } from '@rcl/contracts';
 
 export class CrudDependenciesError extends Error {
@@ -41,14 +43,23 @@ async function crudRequest<T>(path: string, init: RequestInit = {}): Promise<T> 
 }
 export const getCrudResources = (signal: AbortSignal) =>
   crudRequest<CrudResource[]>('resources', { signal });
+export const getMatchMaps = (matchId: string, signal: AbortSignal) =>
+  crudRequest<AdminMatchMap[]>(`matches/${matchId}/maps`, { signal });
+export const saveMatchMapOrder = (matchId: string, order: MatchMapOrder) =>
+  crudRequest<void>(`matches/${matchId}/maps/order`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(order)
+  });
 export const getCrudRecords = (
   resource: string,
   search: string,
   offset: number,
-  signal: AbortSignal
+  signal: AbortSignal,
+  limit = 50
 ) =>
   crudRequest<CrudPageResult>(
-    `${resource}?${new URLSearchParams({ search, offset: String(offset) })}`,
+    `${resource}?${new URLSearchParams({ search, offset: String(offset), limit: String(limit) })}`,
     { signal }
   );
 export function saveCrudRecord(

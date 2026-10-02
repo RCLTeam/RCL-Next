@@ -32,6 +32,31 @@ const player: PlayerDetail = {
   teams: [defaultTeam]
 };
 
+test('Player profiles link secondary accounts and identify the main account', () => {
+  const secondary = {
+    ...player,
+    id: 'secondary',
+    slug: 'secondary-euw',
+    gameName: 'Secondary',
+    isMain: false
+  };
+  const mainHtml = renderToStaticMarkup(
+    <PlayerProfile player={{ ...player, linkedAccounts: [secondary] }} />
+  );
+  expect(mainHtml).toContain('Cuentas secundarias');
+  expect(mainHtml).toContain('Cuenta secundaria');
+  expect(mainHtml).toContain('Secondary#EUW');
+  expect(mainHtml).toContain('href="/jugadores/secondary-euw"');
+  const secondaryHtml = renderToStaticMarkup(
+    <PlayerProfile player={{ ...secondary, linkedAccounts: [player] }} />
+  );
+  expect(secondaryHtml).toContain('Cuenta principal');
+  expect(secondaryHtml).toContain('href="/jugadores/jugador-uno-euw"');
+  expect(
+    renderToStaticMarkup(<PlayerProfile player={{ ...player, linkedAccounts: [] }} />)
+  ).toContain('No hay otras cuentas vinculadas');
+});
+
 test('normalizes roster display names without changing source data, Riot IDs or links', () => {
   const member = Object.freeze({
     id: 'coach-1',
