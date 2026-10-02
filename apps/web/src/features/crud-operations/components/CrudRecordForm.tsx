@@ -213,7 +213,8 @@ function ReferenceField({
             `references/${field.reference ?? ''}`,
             '',
             records.length,
-            controller.signal
+            controller.signal,
+            250
           );
           records.push(...page.records);
           hasMore = page.hasMore && page.records.length > 0;

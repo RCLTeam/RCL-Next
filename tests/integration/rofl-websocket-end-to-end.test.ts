@@ -358,7 +358,7 @@ test('Test 3: Multiple main accounts for one Discord user reject the upload with
 
   const errorMsg = messages.find((m) => m.type === 'error');
   assert.ok(errorMsg && errorMsg.type === 'error');
-  assert.match(errorMsg.message, /exactamente una cuenta principal/);
+  assert.match(errorMsg.message, /exactly one main account/);
   assert.equal(
     messages.some((m) => m.type === 'success'),
     false

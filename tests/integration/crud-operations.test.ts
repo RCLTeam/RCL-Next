@@ -106,6 +106,39 @@ describe('admin CRUD with HTTP sessions and PostgreSQL constraints', () => {
   });
   afterAll(() => client.close());
 
+  it('paginates references in batches of 250 and validates limits', async () => {
+    await db.insert(schema.seasons).values(
+      Array.from({ length: 251 }, (_, index) => ({
+        name: `Reference page ${String(index).padStart(3, '0')}`
+      }))
+    );
+    try {
+      const read = (resource: string, query: object) =>
+        request(app).get(endpoint(resource)).set('Cookie', cookie).query(query);
+      const first = await read('references/seasons', {
+        search: 'Reference page',
+        limit: 250
+      }).expect(200);
+      expect(first.body.data.records).toHaveLength(250);
+      expect(first.body.data.hasMore).toBe(true);
+      const last = await read('references/seasons', {
+        search: 'Reference page',
+        limit: 250,
+        offset: 250
+      }).expect(200);
+      expect(last.body.data.records).toHaveLength(1);
+      expect(last.body.data.records[0].name).toBe('Reference page 250');
+      expect(last.body.data.hasMore).toBe(false);
+      const normal = await read('seasons', { search: 'Reference page' }).expect(200);
+      expect(normal.body.data.records).toHaveLength(50);
+      for (const limit of [0, 251, 1.5, 'invalid'])
+        await read('references/seasons', { limit }).expect(422);
+      await read('seasons', { limit: 250 }).expect(422);
+    } finally {
+      await db.delete(schema.seasons).where(sql`name LIKE 'Reference page %'`);
+    }
+  });
+
   it('reorders imported maps atomically, preserving results and rejecting stale or invalid orders', async () => {
     const match = await create('matches', { ...matchValues, bestOf: 5 });
     const games = await db

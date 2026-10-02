@@ -54,10 +54,14 @@ export function Select({
       if (event.target instanceof Node && popupRef.current?.contains(event.target)) return;
       popupRef.current?.hidePopover();
     };
-    window.addEventListener('resize', dismiss);
+    const width = window.innerWidth;
+    const dismissOnWidthChange = (event: Event) => {
+      if (window.innerWidth !== width) dismiss(event);
+    };
+    window.addEventListener('resize', dismissOnWidthChange);
     window.addEventListener('scroll', dismiss, true);
     return () => {
-      window.removeEventListener('resize', dismiss);
+      window.removeEventListener('resize', dismissOnWidthChange);
       window.removeEventListener('scroll', dismiss, true);
     };
   }, [open]);

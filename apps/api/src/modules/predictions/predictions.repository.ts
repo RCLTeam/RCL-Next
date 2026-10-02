@@ -134,7 +134,7 @@ export class PredictionsRepository {
         throw new AppError(
           409,
           'INACTIVE_TEAMS',
-          'No se permiten predicciones en encuentros con equipos inactivos o fantasma.'
+          'Predictions are not allowed for matches with inactive or ghost teams.'
         );
       if (!predictionWindow(match.scheduledAt, match.status, new Date()).open)
         throw new AppError(409, 'PREDICTIONS_CLOSED', 'Voting is closed.');

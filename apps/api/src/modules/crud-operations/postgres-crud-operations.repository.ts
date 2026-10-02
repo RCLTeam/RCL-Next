@@ -212,7 +212,7 @@ export class PostgresCrudOperationsRepository implements CrudOperationsRepositor
       .select({ id: matches.id })
       .from(matches)
       .where(eq(matches.id, matchId));
-    if (!match) throw notFound('Encuentro');
+    if (!match) throw notFound('Match');
     return this.db
       .select({
         id: matchGames.id,
@@ -236,7 +236,7 @@ export class PostgresCrudOperationsRepository implements CrudOperationsRepositor
         .from(matches)
         .where(eq(matches.id, matchId))
         .for('update');
-      if (!match) throw notFound('Encuentro');
+      if (!match) throw notFound('Match');
       const before = await tx
         .select({ id: matchGames.id, gameNumber: matchGames.gameNumber })
         .from(matchGames)
@@ -247,19 +247,19 @@ export class PostgresCrudOperationsRepository implements CrudOperationsRepositor
         before.length !== order.expectedOrder.length ||
         before.some((game, index) => game.id !== order.expectedOrder[index])
       )
-        throw conflict('Los mapas han cambiado. Recarga el orden antes de guardar.');
+        throw conflict('The maps have changed. Reload the order before saving.');
       if (
         order.gameIds.length !== before.length ||
         new Set(order.gameIds).size !== before.length ||
         order.gameIds.some((id) => !before.some((game) => game.id === id))
       )
-        throw new AppError(422, 'INVALID_MAP_ORDER', 'Incluye todos los mapas una sola vez.');
+        throw new AppError(422, 'INVALID_MAP_ORDER', 'Include all maps exactly once');
       // Move one row at a time through a free positive smallint to respect the unique constraint.
       const positions = new Map(before.map((game) => [game.id, game.gameNumber]));
       const occupied = new Set(positions.values());
       let temporary = 1;
       while (occupied.has(temporary) && temporary <= 32767) temporary++;
-      if (temporary > 32767) throw conflict('No hay una posición libre para reordenar los mapas.');
+      if (temporary > 32767) throw conflict('No free position is available to reorder the maps.');
       const move = async (id: string, gameNumber: number) => {
         await tx
           .update(matchGames)
@@ -312,7 +312,7 @@ export class PostgresCrudOperationsRepository implements CrudOperationsRepositor
     });
   }
 
-  async list(descriptor: ResourceDefinition, offset: number, search: string) {
+  async list(descriptor: ResourceDefinition, offset: number, search: string, limit = 50) {
     const resource = storedResource(descriptor);
     const projection = Object.fromEntries(
       [...new Set([...resource.keys, ...resource.fields.map((field) => field.name)])].map(
@@ -425,11 +425,11 @@ export class PostgresCrudOperationsRepository implements CrudOperationsRepositor
         .from(resource.table)
         .where(search && conditions.length > 0 ? or(...conditions) : undefined)
         .orderBy(...orderByClauses)
-        .limit(51)
+        .limit(limit + 1)
         .offset(offset)
     );
 
-    const page = result.slice(0, 50);
+    const page = result.slice(0, limit);
 
     const referencePromises = resource.fields.map(async (field) => {
       const reference = [...crudResources, ...crudReferences].find(
@@ -496,7 +496,7 @@ export class PostgresCrudOperationsRepository implements CrudOperationsRepositor
       }
     }
 
-    return { records: page, hasMore: result.length > 50 };
+    return { records: page, hasMore: result.length > limit };
   }
 
   async mutate(descriptor: ResourceDefinition, mutation: CrudMutation) {

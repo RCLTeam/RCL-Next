@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { PGlite } from '@electric-sql/pglite';
-import { eq } from 'drizzle-orm';
+import { asc, eq } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/pglite';
 import { migrate } from 'drizzle-orm/pglite/migrator';
 import { PostgresRoflUploadRepository } from '../../apps/api/src/modules/rofl-upload/persistence/postgres-rofl-upload.repository.js';
@@ -140,7 +140,7 @@ test('PostgresRoflUploadRepository complete lifecycle and constraints', async (t
         .update(schema.players)
         .set({ isMain: false })
         .where(eq(schema.players.id, main.playerId));
-      await assert.rejects(repo.findPlayersByRiotIds(identity), /exactamente una cuenta principal/);
+      await assert.rejects(repo.findPlayersByRiotIds(identity), /exactly one main account/);
       await db
         .update(schema.players)
         .set({ isMain: true })
@@ -149,7 +149,7 @@ test('PostgresRoflUploadRepository complete lifecycle and constraints', async (t
         .update(schema.players)
         .set({ isMain: true })
         .where(eq(schema.players.id, secondary.id));
-      await assert.rejects(repo.findPlayersByRiotIds(identity), /exactamente una cuenta principal/);
+      await assert.rejects(repo.findPlayersByRiotIds(identity), /exactly one main account/);
       await db
         .update(schema.players)
         .set({ isMain: false })
@@ -397,3 +397,84 @@ test('PostgresRoflUploadRepository complete lifecycle and constraints', async (t
     }
   );
 });
+
+for (const individually of [true, false]) {
+  test(`ROFL maps are ordered across ${individually ? 'individual uploads' : 'a batch'}`, async (t) => {
+    const client = new PGlite();
+    t.after(() => client.close());
+    const db = drizzle(client, { schema });
+    await migrate(db, {
+      migrationsFolder: fileURLToPath(new URL('../../packages/database/drizzle', import.meta.url))
+    });
+    await client.exec(await readFile('packages/database/seed/demo.sql', 'utf8'));
+    const matchId = '70000000-0000-4000-8000-000000000002';
+    await db.update(schema.matches).set({ bestOf: 5 }).where(eq(schema.matches.id, matchId));
+    const repo = new PostgresRoflUploadRepository(db);
+    const players = await repo.findPlayersByRiotIds([
+      { gameName: 'Jugador Demo 1', riotTag: 'DEMO' },
+      { gameName: 'Jugador Demo 6', riotTag: 'DEMO' }
+    ]);
+    const lookup = new Map(
+      players.map((player) => [
+        `${player.gameName.toLowerCase()}#${player.riotTag.toLowerCase()}`,
+        player
+      ])
+    );
+    const teams = await repo.findTeamMembershipsForDiscordUsers(
+      players.map((player) => player.discordUserId)
+    );
+    const games: ParsedGameData[] = [10, 2, 1].map((id) => ({
+      fileName: `EUW1-${id}.rofl`,
+      externalGameId: `EUW1-${id}`,
+      durationSeconds: 1800,
+      winnerSide: 'blue',
+      participants: [
+        createParticipant('Jugador Demo 1', 'DEMO', 'blue', 'Garen', 'top'),
+        createParticipant('Jugador Demo 6', 'DEMO', 'red', 'Ornn', 'top')
+      ]
+    }));
+    const read = () =>
+      db
+        .select()
+        .from(schema.matchGames)
+        .where(eq(schema.matchGames.matchesId, matchId))
+        .orderBy(asc(schema.matchGames.gameNumber));
+    let originalId: string | undefined;
+    if (individually) {
+      for (const game of games) {
+        await repo.executeBatchInsert([game], lookup, teams);
+        const rows = await read();
+        const original = rows.find((row) => row.externalGameId === 'EUW1-10');
+        if (originalId) assert.equal(original?.id, originalId);
+        else originalId = original?.id;
+        assert.deepEqual(
+          rows.map((row) => row.gameNumber),
+          rows.map((_, index) => index + 1)
+        );
+      }
+    } else await repo.executeBatchInsert(games, lookup, teams);
+    const ordered = await read();
+    assert.deepEqual(
+      ordered.map((row) => row.externalGameId),
+      ['EUW1-1', 'EUW1-2', 'EUW1-10']
+    );
+    assert.deepEqual(
+      ordered.map((row) => row.gameNumber),
+      [1, 2, 3]
+    );
+    for (const game of ordered) {
+      const info = await db
+        .select()
+        .from(schema.playerGameInfo)
+        .where(eq(schema.playerGameInfo.matchGameId, game.id));
+      assert.equal(info.length, 2);
+    }
+    const duplicate = await repo.executeBatchInsert(games, lookup, teams);
+    assert.equal(duplicate.insertedGames, 0);
+    assert.equal(duplicate.skippedDuplicates.length, 3);
+    assert.deepEqual(await read(), ordered);
+    const [match] = await db.select().from(schema.matches).where(eq(schema.matches.id, matchId));
+    assert.equal(match?.team2Score, 3);
+    assert.equal(match?.status, 'completed');
+  });
+}

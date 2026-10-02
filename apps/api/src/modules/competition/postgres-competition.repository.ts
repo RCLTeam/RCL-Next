@@ -431,7 +431,7 @@ export class PostgresCompetitionRepository implements CompetitionRepository {
         logoUrl: teams.logoUrl,
         color: teams.color,
         isActive: teams.isActive,
-        discordRoleId: teams.discordRoleId
+        discordRoleId: sql<string | null>`${teams.discordRoleId}::text`
       })
       .from(teams)
       .where(eq(teams.seasonDivisionId, divisionId))

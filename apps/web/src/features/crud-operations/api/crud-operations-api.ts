@@ -55,10 +55,11 @@ export const getCrudRecords = (
   resource: string,
   search: string,
   offset: number,
-  signal: AbortSignal
+  signal: AbortSignal,
+  limit = 50
 ) =>
   crudRequest<CrudPageResult>(
-    `${resource}?${new URLSearchParams({ search, offset: String(offset) })}`,
+    `${resource}?${new URLSearchParams({ search, offset: String(offset), limit: String(limit) })}`,
     { signal }
   );
 export function saveCrudRecord(

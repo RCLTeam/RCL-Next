@@ -26,7 +26,7 @@ export class CrudOperationsService {
       order.gameIds.length !== order.expectedOrder.length ||
       order.gameIds.some((id) => !order.expectedOrder.includes(id))
     )
-      throw new AppError(422, 'INVALID_MAP_ORDER', 'Incluye todos los mapas una sola vez.');
+      throw new AppError(422, 'INVALID_MAP_ORDER', 'Include all maps exactly once');
     return this.repository.reorderMaps(z.string().uuid().parse(matchId), order, actorId);
   }
   private resource(name: string) {
@@ -38,14 +38,20 @@ export class CrudOperationsService {
     const resource = reference
       ? (crudReferences.find((item) => item.name === name) ?? this.resource(name))
       : this.resource(name);
-    const { offset, search } = z
+    const { offset, search, limit } = z
       .object({
+        limit: z.coerce
+          .number()
+          .int()
+          .min(1)
+          .max(reference ? 250 : 50)
+          .default(50),
         offset: z.coerce.number().int().min(0).max(1000000).default(0),
         search: z.string().trim().max(120).default('')
       })
       .strict()
       .parse(query);
-    return this.repository.list(resource, offset, search);
+    return this.repository.list(resource, offset, search, limit);
   }
   previewDelete(name: string, body: unknown, actorId: string) {
     const resource = this.resource(name);

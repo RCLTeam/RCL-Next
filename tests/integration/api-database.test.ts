@@ -40,6 +40,7 @@ test('HTTP -> controller -> service -> real repository -> embedded PostgreSQL', 
   const standings = await request(app).get(`/api/v1/divisions/${divisionId}/standings`).expect(200);
   assert.equal(standings.body.data[0].team.name, 'Lobos DEMO');
   assert.equal(standings.body.data[0].wins, 1);
+  assert.equal(standings.body.data[0].team.discordRoleId, '910000000000000001');
   assert.equal(standings.body.data[1].losses, 1);
   const teamId = standings.body.data[0].team.id as string;
   const teamList = await request(app).get(`/api/v1/divisions/${divisionId}/teams`).expect(200);
