@@ -274,7 +274,9 @@ function ReferenceField({
           </option>
         ))}
       </Select>
-      {!loading && !error && eligible.length === 0 && <output>No hay opciones disponibles.</output>}
+      {!loading && !error && eligible.length === 0 && (
+        <output>No hay opciones en esta página. Prueba otra búsqueda o página.</output>
+      )}
       {loading && <output>Cargando opciones…</output>}
       {error && (
         <span role="alert">
