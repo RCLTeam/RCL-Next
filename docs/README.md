@@ -99,13 +99,18 @@ docs/
 │   │   ├── persistence.md                       # Tablas editorial_articles y home_weekly_teams
 │   │   ├── validation.md                        # Restricciones de 5 roles únicos en quinteto ideal
 │   │   └── contracts.md                         # DTOs de artículos y composición del equipo ideal
-│   └── predictions/                             # Rebanada: Quinielas y predicciones comunitarias
-│       ├── README.md                            # Resumen de pronósticos con límite horario Europe/Madrid
-│       ├── routes.md                            # Endpoints de votación, consulta de resultados y rankings
-│       ├── processing.md                        # Puntuación (1 pt ganador, 3 pts marcador exacto)
-│       ├── persistence.md                       # Tabla predictions, bloqueo de inactivos y agregación de aciertos
-│       ├── validation.md                        # Bloqueo temporal automático antes del primer mapa
-│       └── contracts.md                         # Tipos de papeleta de predicción y tabla de líderes
+│   ├── predictions/                             # Rebanada: Quinielas y predicciones comunitarias
+│   │   ├── README.md                            # Resumen de pronósticos con límite horario Europe/Madrid
+│   │   ├── routes.md                            # Endpoints de votación, consulta de resultados y rankings
+│   │   ├── processing.md                        # Puntuación (1 pt ganador, 3 pts marcador exacto)
+│   │   ├── persistence.md                       # Tabla predictions, bloqueo de inactivos y agregación de aciertos
+│   │   ├── validation.md                        # Bloqueo temporal automático antes del primer mapa
+│   │   └── contracts.md                         # Tipos de papeleta de predicción y tabla de líderes
+│   └── team-logos/                              # Rebanada: Almacenamiento y catálogo de escudos de equipos
+│       ├── README.md                            # Resumen funcional de gestión y servicio de imágenes
+│       ├── routes.md                            # Endpoints REST de subida, borrado, catálogo y servicio público
+│       ├── persistence.md                       # Almacén TeamLogosStore, escrituras atómicas wx y bytes mágicos
+│       └── contracts.md                         # DTOs TeamLogoEntry, contratos de transporte y catálogo de errores
 ├── web/                                         # Frontend React 19 (Feature-Driven & Headless Hooks)
 │   ├── README.md                                # Índice del cliente web, TailwindCSS y principios UI
 │   ├── rofl-upload/                             # Feature: Interfaz de subida interactiva de repeticiones
@@ -156,12 +161,16 @@ docs/
 │   │   ├── hooks.md                             # Hooks de lectura de artículos y equipo de la semana
 │   │   ├── pages.md                             # Página principal / (Home)
 │   │   └── types.md                             # Tipos visuales de noticias y roles de invocador
-│   └── predictions/                             # Feature: Centro de pronósticos deportivos
-│       ├── README.md                            # Resumen de tarjetas de quiniela y ranking
-│       ├── components.md                        # MatchCard de votación, selectores y tabla de puntos
-│       ├── hooks.md                             # Hooks de comprobación horaria y envío de votos
-│       ├── pages.md                             # Vista pública /predicciones
-│       └── types.md                             # Modelos de tarjetas y marcadores de usuario
+│   ├── predictions/                             # Feature: Centro de pronósticos deportivos
+│   │   ├── README.md                            # Resumen de tarjetas de quiniela y ranking
+│   │   ├── components.md                        # MatchCard de votación, selectores y tabla de puntos
+│   │   ├── hooks.md                             # Hooks de comprobación horaria y envío de votos
+│   │   ├── pages.md                             # Vista pública /predicciones
+│   │   └── types.md                             # Modelos de tarjetas y marcadores de usuario
+│   └── team-logos/                              # Feature: Gestión y visualización de logos de equipos
+│       ├── README.md                            # Resumen visual y funcional del panel de logos
+│       ├── components.md                        # TeamLogosPanel, useTeamLogos, degradación en TeamBadge y CSS
+│       └── types.md                             # Interfaces Logo, UseTeamLogosReturn y cliente teamLogosApi
 └── testing/                                     # Infraestructura, arneses y catálogo de pruebas
     ├── README.md                                # Estrategia general, niveles de prueba y PGlite
     ├── strategy.md                              # Filosofía de pruebas deterministas y pirámide de testing
@@ -204,7 +213,7 @@ Ingesta de archivos binarios de repetición de League of Legends mediante lectur
 
 ### 3.3 Servicios de Backend API (`docs/api/`)
 
-Plataforma de servicios HTTP y WebSocket construida con Node.js 22 y Express, organizada en 10 rebanadas verticales (*Vertical Slices*):
+Plataforma de servicios HTTP y WebSocket construida con Node.js 22 y Express, organizada en 11 rebanadas verticales (*Vertical Slices*):
 
 - [docs/api/README.md](api/README.md): Índice del backend y principios de diseño modular.
 - **Subida ROFL:** [rofl-upload/README.md](api/rofl-upload/README.md) | [routes.md](api/rofl-upload/routes.md) | [processing.md](api/rofl-upload/processing.md) | [persistence.md](api/rofl-upload/persistence.md) | [validation.md](api/rofl-upload/validation.md) | [contracts.md](api/rofl-upload/contracts.md)
@@ -217,6 +226,7 @@ Plataforma de servicios HTTP y WebSocket construida con Node.js 22 y Express, or
 - **Transferencia de BD:** [database-transfer/README.md](api/database-transfer/README.md) | [routes.md](api/database-transfer/routes.md) | [processing.md](api/database-transfer/processing.md) | [persistence.md](api/database-transfer/persistence.md) | [validation.md](api/database-transfer/validation.md) | [contracts.md](api/database-transfer/contracts.md)
 - **Contenido Editorial:** [home-content/README.md](api/home-content/README.md) | [routes.md](api/home-content/routes.md) | [processing.md](api/home-content/processing.md) | [persistence.md](api/home-content/persistence.md) | [validation.md](api/home-content/validation.md) | [contracts.md](api/home-content/contracts.md)
 - **Predicciones:** [predictions/README.md](api/predictions/README.md) | [routes.md](api/predictions/routes.md) | [processing.md](api/predictions/processing.md) | [persistence.md](api/predictions/persistence.md) | [validation.md](api/predictions/validation.md) | [contracts.md](api/predictions/contracts.md)
+- **Logos de Equipos:** [team-logos/README.md](api/team-logos/README.md) | [routes.md](api/team-logos/routes.md) | [persistence.md](api/team-logos/persistence.md) | [contracts.md](api/team-logos/contracts.md)
 
 ### 3.4 Interfaz y Aplicación Web (`docs/web/`)
 
@@ -232,6 +242,7 @@ Cliente web interactivo en React 19 y Vite (`apps/web`), basado en componentes d
 - **Transferencia de BD:** [database-transfer/README.md](web/database-transfer/README.md) | [components.md](web/database-transfer/components.md) | [hooks.md](web/database-transfer/hooks.md) | [pages.md](web/database-transfer/pages.md) | [types.md](web/database-transfer/types.md)
 - **Contenido Editorial:** [home-content/README.md](web/home-content/README.md) | [components.md](web/home-content/components.md) | [hooks.md](web/home-content/hooks.md) | [pages.md](web/home-content/pages.md) | [types.md](web/home-content/types.md)
 - **Predicciones:** [predictions/README.md](web/predictions/README.md) | [components.md](web/predictions/components.md) | [hooks.md](web/predictions/hooks.md) | [pages.md](web/predictions/pages.md) | [types.md](web/predictions/types.md)
+- **Logos de Equipos:** [team-logos/README.md](web/team-logos/README.md) | [components.md](web/team-logos/components.md) | [types.md](web/team-logos/types.md)
 
 ### 3.5 Infraestructura y Catálogo de Pruebas (`docs/testing/`)
 

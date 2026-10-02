@@ -24,7 +24,7 @@ La arquitectura del frontend sigue con rigor el **Golden Standard Modular** del 
 
 ## 3. Catálogo de Características Web
 
-La aplicación web se estructura en nueve características de dominio principales, cada una documentada en su propia subcarpeta atómica:
+La aplicación web se estructura en diez características de dominio principales, cada una documentada en su propia subcarpeta atómica:
 
 | Característica | Enlace | Resumen Funcional |
 |---|---|---|
@@ -37,6 +37,7 @@ La aplicación web se estructura en nueve características de dominio principale
 | **Transferencia y Copias de Seguridad** | [database-transfer/README.md](database-transfer/README.md) | Panel de administración de volcados PostgreSQL, descarga de copias `.dump`, área de subida con validación previa de archivos y barreras de confirmación tipada antes de restaurar. |
 | **Contenido Editorial e Inicio** | [home-content/README.md](home-content/README.md) | Visor de artículos de noticias y comunicados oficiales, vista modal de lectura y tarjetas interactivas del quinteto ideal de la jornada (*Team of the Week*). |
 | **Predicciones Comunitarias** | [predictions/README.md](predictions/README.md) | Tarjetas interactivas de votación para series Bo1/Bo3/Bo5, selector de marcadores exactos, termómetros de tendencia comunitaria tras el cierre de jornada y tabla de pronosticadores. |
+| **Gestión de Logos de Equipos** | [team-logos/](team-logos/README.md) | Consola interactiva `/admin/team-logos` (`TeamLogosPanel`), hook `useTeamLogos`, validación preventiva de 5 MiB, selector con copia al portapapeles, confirmación de borrado y degradación multinivel en `TeamBadge`. |
 
 ## 4. Componentes Globales y Sistema de Diseño (Design System)
 

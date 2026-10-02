@@ -57,7 +57,8 @@ RCL-Next/
 │   │           ├── member-roles/                # Control de roles de usuario (viewer, admin, owner)
 │   │           ├── predictions/                 # Quinielas semanales con bloqueo horario (Europe/Madrid)
 │   │           ├── rofl-upload/                 # Subida por WebSocket, spooling en disco y persistencia
-│   │           └── suggestions/                 # Buzón asíncrono con máquina de estados y log de incidentes
+│   │           ├── suggestions/                 # Buzón asíncrono con máquina de estados y log de incidentes
+│   │           └── team-logos/                  # Almacenamiento local de escudos, servicio público y endpoints admin
 │   ├── web/                                     # Frontend cliente interactivo en React 19 + Vite
 │   │   ├── package.json                         # Dependencias y scripts del frontend (@rcl/web)
 │   │   ├── vite.config.ts                       # Configuración de Vite, plugins y alias de rutas
@@ -75,7 +76,8 @@ RCL-Next/
 │   │       │   ├── member-roles/                # Tabla de miembros y selector de roles de aplicación
 │   │       │   ├── predictions/                 # Tarjetas de quiniela, votación interactiva y rankings
 │   │       │   ├── rofl-upload/                 # Dropzone de repeticiones, hook useRoflUploadWs y progreso
-│   │       │   └── suggestions/                 # Modal de sugerencias, hook useSuggestion y reducer
+│   │       │   ├── suggestions/                 # Modal de sugerencias, hook useSuggestion y reducer
+│   │       │   └── team-logos/                  # Consola de administración de escudos (/admin/team-logos) y hook useTeamLogos
 │   │       ├── shared/                          # Componentes de presentación transversal, tokens y fuentes
 │   │       └── site/                            # Shell del sitio, navegación principal, footer y rutas
 │   └── parser/                                  # Motor de análisis binario en Python 3
@@ -110,8 +112,8 @@ RCL-Next/
     ├── database/                                # Arquitectura relacional, tablas, constraints y migraciones
     ├── reference/                               # Referencia histórica y esquema original conservado
     ├── rofl/                                    # Formato binario, algoritmo del parser y mapeo de datos
-    ├── api/                                     # Especificaciones atómicas de las 10 rebanadas de la API
-    ├── web/                                     # Especificaciones atómicas de las 9 features del frontend
+    ├── api/                                     # Especificaciones atómicas de las 11 rebanadas de la API
+    ├── web/                                     # Especificaciones atómicas de las 10 features del frontend
     └── testing/                                 # Estrategia de pruebas, límites de runtime y 77 suites
 ```
 
@@ -165,12 +167,14 @@ RCL-Next/
 
 ## 4. Consola de Administración (`/admin`)
 
-El panel administrativo en `/admin` ofrece cuatro consolas operativas protegidas mediante la guarda `RequireAdmin` y verificación de roles (`admin` u `owner`):
+El panel administrativo en `/admin` ofrece seis consolas operativas protegidas mediante la guarda `RequireAdmin` y verificación de roles (`admin` u `owner`):
 
-1. **Subida de Repeticiones ROFL (`/admin/rofl/upload`):** Ingesta por lotes de partidas mediante streaming WebSocket con análisis sintáctico en caliente. Consulta [docs/api/rofl-upload/README.md](docs/api/rofl-upload/README.md) y [docs/web/rofl-upload/README.md](docs/web/rofl-upload/README.md).
-2. **Operaciones CRUD (`/admin/crud`):** Mantenimiento de temporadas, divisiones, competiciones, equipos, invocadores y plantillas con validación transaccional y bloqueo preventivo ante dependencias relacionales activas. Consulta [docs/api/crud-operations/README.md](docs/api/crud-operations/README.md) y [docs/web/crud-operations/README.md](docs/web/crud-operations/README.md).
-3. **Gestión de Roles (`/admin/member-roles`):** Asignación y revocación de permisos de aplicación (`viewer`, `admin`, `owner`) con trazabilidad en logs de auditoría. Consulta [docs/api/member-roles/README.md](docs/api/member-roles/README.md) y [docs/web/member-roles/README.md](docs/web/member-roles/README.md).
-4. **Transferencia de Base de Datos (`/admin/database-transfer`):** Generación de copias de seguridad y restauración integral de datos de PostgreSQL mediante flujos `COPY` nativos. Consulta [docs/api/database-transfer/README.md](docs/api/database-transfer/README.md) y [docs/web/database-transfer/README.md](docs/web/database-transfer/README.md).
+1. **Contenido Editorial e Inicio (`/admin/home-content`):** Publicación de noticias y selección del quinteto ideal con guarda de navegación contra cambios sin guardar y purga de imágenes huérfanas. Consulta [docs/api/home-content/README.md](docs/api/home-content/README.md) y [docs/web/home-content/README.md](docs/web/home-content/README.md).
+2. **Subida de Repeticiones ROFL (`/admin/rofl/upload`):** Ingesta por lotes de partidas mediante streaming WebSocket con análisis sintáctico en caliente. Consulta [docs/api/rofl-upload/README.md](docs/api/rofl-upload/README.md) y [docs/web/rofl-upload/README.md](docs/web/rofl-upload/README.md).
+3. **Operaciones CRUD (`/admin/crud`):** Mantenimiento de temporadas, divisiones, competiciones, equipos, invocadores y plantillas con validación transaccional y bloqueo preventivo ante dependencias relacionales activas. Consulta [docs/api/crud-operations/README.md](docs/api/crud-operations/README.md) y [docs/web/crud-operations/README.md](docs/web/crud-operations/README.md).
+4. **Gestión de Roles (`/admin/member-roles`):** Asignación y revocación de permisos de aplicación (`viewer`, `admin`, `owner`) con trazabilidad en logs de auditoría. Consulta [docs/api/member-roles/README.md](docs/api/member-roles/README.md) y [docs/web/member-roles/README.md](docs/web/member-roles/README.md).
+5. **Logos de Equipos (`/admin/team-logos`):** Galería interactiva, carga segura con validación de bytes mágicos, copia de rutas al portapapeles y eliminación con confirmación. Consulta [docs/api/team-logos/README.md](docs/api/team-logos/README.md) y [docs/web/team-logos/README.md](docs/web/team-logos/README.md).
+6. **Transferencia de Base de Datos (`/admin/database-transfer`):** Generación de copias de seguridad y restauración integral de datos de PostgreSQL mediante flujos `COPY` nativos. Consulta [docs/api/database-transfer/README.md](docs/api/database-transfer/README.md) y [docs/web/database-transfer/README.md](docs/web/database-transfer/README.md).
 
 ---
 
