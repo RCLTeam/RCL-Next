@@ -20,6 +20,8 @@ function PlayerSummary({
   if (!player) return <div className="player-summary empty-state">Jugador no disponible</div>;
   const build = player.build;
   const slots = ['item0', 'item1', 'item2', 'item3', 'item4', 'item5'] as const;
+  const items = slots.map((slot) => build?.[slot] ?? null);
+  const orderedItems = [...items.filter((id) => id), ...items.filter((id) => !id)];
   return (
     <button
       type="button"
@@ -44,7 +46,7 @@ function PlayerSummary({
         <span className="player-summary-group items-group">
           {slots.map((slot, index) => (
             <span className="player-summary-slot" key={slot} aria-label={`Objeto ${index + 1}`}>
-              <GameIcon kind="item" id={build?.[slot] ?? null} catalog={catalog} />
+              <GameIcon kind="item" id={orderedItems[index] ?? null} catalog={catalog} />
             </span>
           ))}
         </span>

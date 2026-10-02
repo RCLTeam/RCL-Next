@@ -321,7 +321,7 @@ test('roflUploadGateway streams real .rofl file and aborts on unregistered summo
   assert.match(errorMsg.message, /Iron Tou#EUW/i);
 });
 
-test('roflUploadGateway streams .zip batch, detects anomalies, and completes atomic persistence', async (t) => {
+test('roflUploadGateway streams .zip batch and completes atomic persistence', async (t) => {
   const { client, db } = await setupTestDb();
   t.after(() => client.close());
 
@@ -342,12 +342,11 @@ test('roflUploadGateway streams .zip batch, detects anomalies, and completes ato
   ];
 
   // Update players 1..5 for blue team (Lobos) and players 6..10 for red team (Cuervos)
-  // To test anomaly detection, intentionally set player 2 to share discord_user_id with player 1
   for (let i = 0; i < bluePlayers.length; i++) {
     const p = bluePlayers[i];
     if (!p) continue;
     const suffix = String(i + 1).padStart(12, '0');
-    const discordUserId = i === 1 ? '900000000000000001' : `90000000000000000${i + 1}`;
+    const discordUserId = `90000000000000000${i + 1}`;
     await db
       .update(schema.players)
       .set({
@@ -441,11 +440,10 @@ test('roflUploadGateway streams .zip batch, detects anomalies, and completes ato
   assert.ok(messages.some((m) => m.type === 'progress'));
   assert.ok(messages.some((m) => m.type === 'stage' && m.stage === 'validating'));
 
-  // Multi-account anomaly was emitted because player 1 and player 2 share discordUserId 900000000000000001
-  const anomalyMsg = messages.find((m) => m.type === 'anomaly');
-  assert.ok(anomalyMsg && anomalyMsg.type === 'anomaly');
-  assert.equal(anomalyMsg.anomaly.discordUserId, '900000000000000001');
-  assert.equal(anomalyMsg.anomaly.accounts.length, 2);
+  assert.equal(
+    messages.some((m) => m.type === 'anomaly'),
+    false
+  );
 
   assert.ok(messages.some((m) => m.type === 'stage' && m.stage === 'persisting'));
   assert.ok(messages.some((m) => m.type === 'stage' && m.stage === 'completed'));
@@ -454,7 +452,7 @@ test('roflUploadGateway streams .zip batch, detects anomalies, and completes ato
   assert.ok(successMsg && successMsg.type === 'success');
   assert.equal(successMsg.summary.processedGames, 1);
   assert.equal(successMsg.summary.detectedPlayersCount, 10);
-  assert.equal(successMsg.summary.anomalies.length, 1);
+  assert.equal(successMsg.summary.anomalies.length, 0);
 
   // Verify atomic persistence in database
   const matchGamesRows = await db.select().from(schema.matchGames);

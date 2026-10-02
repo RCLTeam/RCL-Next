@@ -165,7 +165,8 @@
   text-transform: uppercase;
 }
 
-.rcl-site .player-performance {
+.rcl-site .player-performance,
+.rcl-site .player-linked-accounts {
   margin-bottom: 44px;
 }
 
@@ -253,6 +254,17 @@
 
 .rcl-site .player-profile-membership>div {
   min-width: 0;
+}
+
+.rcl-site .player-linked-account {
+  flex-wrap: wrap;
+}
+
+.rcl-site .player-linked-account-profile {
+  flex: 1;
+  min-width: 0;
+  color: inherit;
+  text-decoration: none;
 }
 
 .rcl-site .player-profile-membership .team-badge {

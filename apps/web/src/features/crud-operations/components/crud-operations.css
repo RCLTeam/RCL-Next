@@ -1,4 +1,23 @@
 /* Data tables scroll inside their own container; editors use the available mobile width. */
+.rcl-site .crud-map-order {
+  border: 1px solid var(--line);
+  padding: 20px;
+  margin-bottom: 24px;
+}
+.rcl-site .crud-map-order ol {
+  list-style: none;
+  padding: 0;
+}
+.rcl-site .crud-map-order li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+  overflow-wrap: anywhere;
+}
 
 .rcl-site .crud-operations-data {
   min-width: 0;

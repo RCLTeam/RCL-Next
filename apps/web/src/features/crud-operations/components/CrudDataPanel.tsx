@@ -9,6 +9,7 @@ import {
 } from '../api/crud-operations-api.js';
 import { CrudDeleteDialog } from './CrudDeleteDialog.js';
 import { CrudRecordForm } from './CrudRecordForm.js';
+import { MatchMapOrderEditor } from './MatchMapOrderEditor.js';
 import './crud-operations.css';
 
 export function CrudDataPanel({ resource }: { resource: CrudResource }) {
@@ -133,6 +134,14 @@ export function CrudDataPanel({ resource }: { resource: CrudResource }) {
       )}
       {editor && (
         <div ref={editorRef} tabIndex={-1}>
+          {resource.name === 'matches' && editor.record && (
+            <MatchMapOrderEditor
+              key={String(editor.record.id)}
+              matchId={String(editor.record.id)}
+              busy={busy}
+              onBusy={setBusy}
+            />
+          )}
           {editor && (
             <CrudRecordForm
               key={JSON.stringify(editor.record)}

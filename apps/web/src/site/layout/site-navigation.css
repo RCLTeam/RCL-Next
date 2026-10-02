@@ -18,11 +18,53 @@
   padding: 9px 0;
   overflow-wrap: anywhere;
   position: relative;
-  transition: color 0.2s ease;
+  transition:
+    color 180ms ease,
+    text-shadow 240ms ease,
+    transform 240ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.rcl-site #site-navigation a:hover {
+.rcl-site #site-navigation a:focus-visible {
   color: var(--lime);
+}
+
+.rcl-site #site-navigation a::after {
+  content: '';
+  position: absolute;
+  inset: auto 0 0;
+  height: 2px;
+  background: var(--lime);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--lime) 55%, transparent);
+  transform: scaleX(0);
+  transform-origin: left;
+  opacity: 0;
+  transition:
+    transform 320ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 180ms ease;
+}
+
+.rcl-site #site-navigation a[aria-current='page']::after,
+.rcl-site #site-navigation a:focus-visible::after {
+  transform: scaleX(1);
+  opacity: 1;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .rcl-site #site-navigation a:hover {
+    color: var(--lime);
+    text-shadow: 0 0 16px color-mix(in srgb, var(--lime) 30%, transparent);
+    transform: translateY(-2px);
+  }
+
+  .rcl-site #site-navigation a:hover::after {
+    transform: scaleX(1);
+    opacity: 1;
+  }
+}
+
+.rcl-site #site-navigation a:active {
+  transform: translateY(0) scale(0.97);
+  transition-duration: 80ms;
 }
 
 .rcl-site .admin-link {
@@ -31,7 +73,6 @@
 
 .rcl-site #site-navigation a[aria-current='page'] {
   color: var(--lime);
-  border-bottom: 2px solid var(--lime);
 }
 
 @media (min-width: 651px) {
@@ -63,32 +104,5 @@
   .rcl-site #site-navigation a {
     font-size: 12px;
     padding: 10px 0;
-  }
-
-  /* Quitamos el border-bottom estático de móvil */
-
-  .rcl-site #site-navigation a[aria-current='page'] {
-    border-bottom: 0;
-  }
-
-  /* Creación de la línea neón */
-
-  .rcl-site #site-navigation a::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 50%;
-    width: 0;
-    height: 2px;
-    background: var(--lime);
-    border-radius: 2px;
-    box-shadow: 0 0 8px var(--lime);
-    transform: translateX(-50%);
-    transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-
-  .rcl-site #site-navigation a[aria-current='page']::after,
-  .rcl-site #site-navigation a:hover::after {
-    width: 100%;
   }
 }

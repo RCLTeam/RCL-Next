@@ -124,7 +124,9 @@ export class CompetitionService {
     if (divisionId && !(await this.repository.division(divisionId))) throw notFound('Division');
     const { players: directory, slugs } = await this.playerDirectory();
     const players = divisionId ? await this.repository.players(divisionId) : directory;
-    return players.map((player) => ({ ...player, slug: slugs.get(player.id) }));
+    return players
+      .filter((player) => player.isMain)
+      .map((player) => ({ ...player, slug: slugs.get(player.id) }));
   }
   async playerDetail(reference: string): Promise<PlayerDetail> {
     const { slugs } = await this.playerDirectory();
@@ -141,6 +143,10 @@ export class CompetitionService {
       ...player,
       ...(competition ? { competition } : {}),
       slug: slugs.get(id),
+      linkedAccounts: (player.linkedAccounts ?? []).map((account) => ({
+        ...account,
+        slug: slugs.get(account.id)
+      })),
       teams: player.teams.map((team) => ({ ...team, slug: teamSlugs.get(team.id) }))
     };
   }

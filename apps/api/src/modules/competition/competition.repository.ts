@@ -21,6 +21,7 @@ export interface Team {
   logoUrl: string | null;
   color: string | null;
   isActive: boolean;
+  discordRoleId: string | null;
 }
 export interface Round {
   id: string;

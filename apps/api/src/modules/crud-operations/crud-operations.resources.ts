@@ -97,6 +97,7 @@ export const crudResources: ResourceDefinition[] = [
       text('shortName', 'Abreviatura', 16),
       text('logoUrl', 'URL o ruta del escudo', 2048),
       text('color', 'Color (#RRGGBB)', 7),
+      text('discordRoleId', 'ID del Rol de Discord', 20),
       bool('isActive', 'Activo', true)
     ]
   },
@@ -168,8 +169,7 @@ export const crudResources: ResourceDefinition[] = [
       date('scheduledAt', 'Fecha programada'),
       date('finishedAt', 'Fecha de finalización'),
       { ...text('streamUrl', 'URL de retransmisión (stream_url)', 2048), type: 'url' },
-      { ...text('streamUrlLive', 'URL del directo (stream_url_live)', 255), type: 'url' },
-      text('notes', 'Notas', 10000)
+      { ...text('streamUrlLive', 'URL del directo (stream_url_live)', 255), type: 'url' }
     ]
   }
 ];
