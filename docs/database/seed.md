@@ -58,12 +58,28 @@ El archivo `packages/database/seed/demo.sql` define identificadores canónicos d
 | Prefijo Canónico | Entidad | Ejemplo de Identificador | Propósito |
 |---|---|---|---|
 | `9000...` | `discord_users` | `900000000000000001` (Snowflake) | Usuarios de prueba con roles `viewer`, `admin` y `owner`. |
+| `9100...` | `teams.discord_role_id` | `910000000000000001` (Snowflake) | Roles de Discord asignados a los equipos de prueba (Lobos, Cuervos, Dragones, Fénix). |
 | `2000...` | `seasons_divisions` | `20000000-0000-0000-0000-000000000001` | Ligas Premier y Ascend para la "Temporada DEMO". |
-| `3000...` | `teams` | `30000000-0000-0000-0000-000000000001` | Equipos participantes (ej. "RCL Legends", "Nexus Tigers"). |
+| `3000...` | `teams` | `30000000-0000-0000-0000-000000000001` | Equipos participantes (ej. "Lobos DEMO", "Cuervos DEMO"). |
 | `4000...` | `players` | `40000000-0000-0000-0000-000000000001` | Cuentas de invocador vinculadas a los usuarios de Discord. |
 | `7000...` | `matches` | `70000000-0000-0000-0000-000000000001` | Encuentros de liga en formato BO1, BO3 y BO5. |
 | `8000...` | `match_games` | `80000000-0000-0000-0000-000000000001` | Partidas o mapas individuales disputados. |
 | `a000...` | `player_game_*` | `a0000000-0000-0000-0000-000000000001` | Identificador compartido entre `info`, `stats`, `runes` y `build`. |
+
+### Asignación de Roles de Discord en Equipos (`discord_role_id`):
+Las inserciones de la tabla `teams` en `demo.sql` especifican explícitamente identificadores Snowflake positivos en la columna `discord_role_id` (`910000000000000001` .. `910000000000000004`):
+
+```sql
+-- packages/database/seed/demo.sql:41-46
+INSERT INTO teams (id, season_division_id, name, short_name, color, discord_role_id) VALUES
+  ('30000000-0000-4000-8000-000000000001', '20000000-0000-4000-8000-000000000001', 'Lobos DEMO', 'LOB', '#7B2CFF', '910000000000000001'),
+  ('30000000-0000-4000-8000-000000000002', '20000000-0000-4000-8000-000000000001', 'Cuervos DEMO', 'CRV', '#F4FF3A', '910000000000000002'),
+  ('30000000-0000-4000-8000-000000000003', '20000000-0000-4000-8000-000000000002', 'Dragones DEMO', 'DRG', '#7B2CFF', '910000000000000003'),
+  ('30000000-0000-4000-8000-000000000004', '20000000-0000-4000-8000-000000000002', 'Fénix DEMO', 'FNX', '#F4FF3A', '910000000000000004')
+ON CONFLICT (id) DO NOTHING;
+```
+
+- **Justificación Deportiva y Visibilidad Inmediata:** Esta configuración garantiza que todos los clubes del entorno de demostración cumplan la regla `discordRoleId >= 0n` evaluada por la función `isActiveTeam` (`apps/web/src/features/competition/team-visibility.ts:9-12`). Al poseer un identificador Snowflake positivo válido, los equipos resultan inmediatamente visibles en el catálogo general de equipos (`TeamGrid`), en la tabla de clasificación (`StandingsTable`) y en el sistema de predicciones de partidos (`PredictionsPage`, `PredictionCard`), sin requerir configuración manual previa de roles en el servidor de Discord.
 
 ### Idempotencia con `ON CONFLICT DO NOTHING`:
 Todas las sentencias de inserción en `demo.sql` utilizan cláusulas `ON CONFLICT (...) DO NOTHING`, lo que permite re-ejecutar el script sobre una base de datos parcialmente poblada sin arrojar colisiones de clave primaria o índices únicos.
@@ -82,6 +98,7 @@ La suite de pruebas automatizadas `tests/integration/demo-showcase.test.ts` cert
 2. **Equilibrio de Kills y Deaths:** En cada mapa individual, la suma total de asesinatos (`sum(kills)`) coincide exactamente con la suma total de muertes (`sum(deaths)`).
 3. **Consistencia de Marcadores:** La cantidad de mapas ganados por cada equipo coincide exactamente con los marcadores `team1_score` y `team2_score` del partido padre en `matches`.
 4. **Plantilla Completa:** Exactamente 10 jugadores por cada partida (5 en el bando azul y 5 en el bando rojo).
+5. **Roles de Discord Válidos en Equipos:** La consulta `SELECT id FROM teams WHERE discord_role_id IS NULL OR discord_role_id < 0` retorna 0 filas (`tests/integration/demo-showcase.test.ts:15-18`). Ningún equipo del entorno de demostración queda en estado inactivo o fantasma.
 
 ### Patrón Defensivo `coalesce` en Actualizaciones:
 En las líneas 985 a 1021 de `showcase.sql`, las sentencias de actualización de estadísticas emplean la función `coalesce`:

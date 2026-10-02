@@ -95,3 +95,73 @@ Cuando se descomprime un paquete `.zip` que contiene archivos que no son repetic
 > [!NOTE]
 > **Comportamiento Específico:** Si todos los archivos del lote son inválidos y `validRoflCount === 0`, la línea `execute-python-parser.ts:156-160` detiene la operación arrojando `Error('No valid ROFL files found in batch to process (all files had invalid ROFL headers)')`, impidiendo ejecutar pasos posteriores de base de datos.
 > Asimismo, `validateParserFileCounts(validRoflCount, validJsonFiles.length)` (`execute-python-parser.ts:34-40, 162`) exige que por cada archivo ROFL válido exista estrictamente un archivo JSON en disco, de lo contrario aborta.
+
+---
+
+## 6. Ordenación Natural Determinista de Mapas Importados (`orderImportedGames`)
+
+Tras completar la inserción por lotes de las partidas pertenecientes a una serie o enfrentamiento competitivo, el repositorio asegura que los mapas importados queden indexados de acuerdo con su orden cronológico y secuencial natural. Esta lógica está implementada en la función `orderImportedGames(tx, matchId)` (`apps/api/src/modules/rofl-upload/persistence/postgres-rofl-upload.repository.ts:41-83`).
+
+### 6.1 Propósito y Ordenación Alfanumérica Natural
+
+Cuando se importan múltiples archivos `.rofl` con identificadores externos (`externalGameId`, tales como `EUW1-1`, `EUW1-2`, `EUW1-10`), una ordenación puramente léxica situaría erróneamente `EUW1-10` antes de `EUW1-2`. Para garantizar que la columna `game_number` refleje con exactitud la secuencia deportiva:
+
+```typescript
+// apps/api/src/modules/rofl-upload/persistence/postgres-rofl-upload.repository.ts:51-58
+// Keep maps without a replay identifier in their existing positions.
+const imported = games.filter((game) => game.externalGameId !== null);
+const sorted = [...imported].sort((a, b) =>
+  (a.externalGameId ?? '').localeCompare(b.externalGameId ?? '', undefined, {
+    numeric: true,
+    sensitivity: 'base'
+  })
+);
+```
+
+- **Aislamiento de Mapas Manuales:** La función filtra exclusivamente los mapas con `externalGameId !== null` (`imported`). Aquellas partidas registradas de forma manual sin archivo de repetición preservan inalteradas sus posiciones preexistentes.
+- **Comparación Natural:** El parámetro `{ numeric: true, sensitivity: 'base' }` en `localeCompare` evalúa los segmentos numéricos por su magnitud real, garantizando la secuencia `EUW1-1` $\rightarrow$ `EUW1-2` $\rightarrow$ `EUW1-10`.
+- **Verificación de Cortocircuito (No-op):** Si el orden actual de `imported` ya coincide elemento a elemento con la secuencia ordenada (`sorted.every((game, index) => game.id === imported[index]?.id)`), la función retorna de inmediato sin emitir operaciones de actualización sobre PostgreSQL (`postgres-rofl-upload.repository.ts:59`).
+
+### 6.2 Algoritmo de Desplazamiento Atómico ante la Restricción `UNIQUE`
+
+En la base de datos, la tabla `match_games` impone una restricción de unicidad relacional compuesta:
+```sql
+UNIQUE (matches_id, game_number)
+```
+Si se intentara reordenar dos mapas intercambiando directamente sus valores de `game_number`, la ejecución arrojaría de inmediato una colisión de clave única (`duplicate key value violates unique constraint "match_games_matches_id_game_number_unique"`). Para reordenar de forma atómica y determinista:
+
+1. **Contexto Transaccional ACID:**
+   La función opera dentro de la misma transacción en la que el partido padre (`matches`) se encuentra bloqueado pesimistamente con `FOR UPDATE`, garantizando aislamiento absoluto frente a lecturas o escrituras simultáneas.
+
+2. **Búsqueda de Posición Temporal Libre:**
+   Se calcula la menor posición libre dentro del rango válido de enteros pequeños de PostgreSQL (`smallint`, 1 a 32767) que no esté ocupada por ninguna partida del partido:
+   ```typescript
+   // apps/api/src/modules/rofl-upload/persistence/postgres-rofl-upload.repository.ts:60-64
+   const positions = new Map(games.map((game) => [game.id, game.gameNumber]));
+   const occupied = new Set(positions.values());
+   let temporary = 1;
+   while (occupied.has(temporary) && temporary <= 32767) temporary++;
+   if (temporary > 32767) throw new Error('No free position is available to order imported maps.');
+   ```
+
+3. **Desplazamiento Atómico en Tres Fases (*Three-Way Swap*):**
+   Al iterar sobre los mapas ordenados (`sorted`), para cada partida cuyo `target` posicional difiere de su posición actual (`current`):
+   - Si la posición `target` está ocupada por otra partida (`other`), dicha partida `other` se desplaza transitoriamente a la posición `temporary` libre.
+   - La partida en curso (`game.id`) se actualiza a su posición definitiva `target`.
+   - La partida desplazada (`other`) se mueve a la posición liberada `current`.
+   - Si la posición `target` no estaba ocupada, se ejecuta un único `UPDATE` hacia `target`.
+   ```typescript
+   // apps/api/src/modules/rofl-upload/persistence/postgres-rofl-upload.repository.ts:72-82
+   for (const [index, game] of sorted.entries()) {
+     const target = imported[index]?.gameNumber;
+     const current = positions.get(game.id);
+     if (target === undefined || current === undefined || current === target) continue;
+     const other = [...positions].find(([, position]) => position === target)?.[0];
+     if (other) {
+       await move(other, temporary);
+       await move(game.id, target);
+       await move(other, current);
+     } else await move(game.id, target);
+   }
+   ```
+   Este mecanismo garantiza que en ningún momento intermedio existan dos filas compartiendo el mismo `(matches_id, game_number)`, cumpliendo estrictamente con la integridad del esquema relacional.
