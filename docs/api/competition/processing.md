@@ -6,11 +6,12 @@
 
 ## 1. Visión General
 
-El archivo `apps/api/src/modules/competition/` concentra la lógica algorítmica y matemática de las competiciones de League of Legends en RCL-Next. Sus responsabilidades se dividen en cuatro motores independientes y puros:
+El archivo `apps/api/src/modules/competition/` concentra la lógica algorítmica y matemática de las competiciones de League of Legends en RCL-Next. Sus responsabilidades se dividen en cinco motores y especificaciones independientes y puras:
 1. **Motor de Clasificación y Desempates de Liga (`competition.service.ts:8-50`)**: Cómputo de la tabla de posiciones en series al mejor de 3 (BO3).
 2. **Motor de Puntuación Multidimensional de MVP (`player-statistics.ts:81-191`)**: Evaluación del rendimiento individual continuo por rol y selección del mejor jugador.
 3. **Motor de Estadísticas Agregadas de Campeones (`champion-stats.ts:1-32`)**: Consolidación de selecciones, mapas disputados, victorias y porcentajes de presencia.
 4. **Generador Determinista de Slugs y Evasión de Colisiones (`profile-slugs.ts:1-60`)**: Normalización semántica de URLs para partidos, equipos y jugadores.
+5. **Especificación de Visibilidad de Equipos y Sentinels de Roles (`team-visibility.ts:1-16`)**: Determinación del estado de los equipos mediante rangos numéricos de roles de Discord para su inclusión en clasificación, cuadrícula, calendario y pronósticos.
 
 ---
 
@@ -269,3 +270,48 @@ Para generar URLs semánticas y amigables para el usuario (ej. `/partidos/los-ch
    - **Paso 3**: Si ocurre una colisión sobre el hash, se añade un sufijo numérico incremental secuencial (`-2`, `-3`).
 4. **Resolución Inversa (`resolveProfileId`, `líneas 55-59`)**:
    - Si la referencia suministrada por el usuario ya es un UUID estándar, se devuelve directamente sin consultar el mapa en memoria. Si es un slug, se resuelve en tiempo $O(1)$ contra el mapa invertido `Map<string, string>`.
+
+---
+
+## 7. Especificación de Visibilidad de Equipos y Sentinels de Roles (`team-visibility.ts`)
+
+La visibilidad y participación de los equipos en la plataforma se gestiona mediante la especificación canónica en `apps/web/src/features/competition/team-visibility.ts:1-16`, vinculando el identificador numérico de rol de Discord (`discordRoleId`, almacenado como `bigint` en PostgreSQL y serializado como `string | null` en la API):
+
+```typescript
+// apps/web/src/features/competition/team-visibility.ts:1-16
+type TeamRole = { discordRoleId?: string | null };
+
+function hasRoleAtLeast(team: TeamRole | undefined, minimum: bigint): boolean {
+  const roleId = team?.discordRoleId;
+  return Boolean(roleId && BigInt(roleId) >= minimum);
+}
+
+// Zero is active; -10 belongs to withdrawn teams, not ghost teams.
+export function isActiveTeam(team: TeamRole | undefined): boolean {
+  return hasRoleAtLeast(team, 0n);
+}
+
+export function isTeamVisibleInCalendar(team: TeamRole | undefined): boolean {
+  return hasRoleAtLeast(team, -10n);
+}
+```
+
+### 7.1 Función `isActiveTeam(team)`
+Requiere `discordRoleId >= 0n`. Un equipo con un rol numérico mayor o igual a cero se considera un equipo activo participante en la competición:
+- **Inclusión en Clasificación:** Se contabiliza en la tabla de clasificación (`StandingsTable.tsx:3`).
+- **Inclusión en Cuadrícula de Equipos:** Se renderiza en el catálogo de equipos de la división (`TeamGrid.tsx:3`).
+- **Inclusión en Predicciones:** Habilita el pronóstico de sus enfrentamientos tanto en el calendario de votación como en la mutación transaccional (`predictions.repository.ts:29-30, 130`).
+
+### 7.2 Función `isTeamVisibleInCalendar(team)` y Valores Sentinel
+Requiere `discordRoleId >= -10n`. Controla la visibilidad de los partidos en el calendario de la temporada (`MatchList.tsx:3`), distinguiendo los siguientes estados mediante valores centinela numéricos:
+
+- **Sentinel `-10n` (Equipos Retirados / Abandonados - `withdrawn`):**
+  - Identifica a aquellos equipos que abandonaron o fueron retirados de la competición tras haber iniciado la temporada.
+  - **Comportamiento en Calendario:** Al cumplir `BigInt(roleId) >= -10n`, sus partidos permanecen visibles en el calendario para preservar la trazabilidad histórica de los enfrentamientos disputados previamente o de los puntos adjudicados por incomparecencia (*forfeit*).
+  - **Exclusión de Clasificación y Pronósticos:** Al no satisfacer `discordRoleId >= 0n`, quedan excluidos de la clasificación activa y del sistema de predicciones.
+- **Sentinel `-9000n` (Equipos Fantasma - `ghost teams`):**
+  - Identifica equipos de prueba, comodines técnicos o entidades ficticias (`BigInt(roleId) < -10n`).
+  - **Comportamiento Perimetral:** Quedan completamente excluidos e invisibles tanto en el calendario como en la clasificación y las predicciones.
+- **Equipos sin Rol (`discordRoleId === null` o `undefined`):**
+  - Equipos sin rol de Discord configurado. Se tratan como inactivos y no superan los filtros de visibilidad activa ni de calendario.
+

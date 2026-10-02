@@ -1,6 +1,6 @@
 # Tipos y Contratos de Interfaz del Frontend
 
-[⬅️ Volver a Vistas Ensambladoras](pages.md) | [Siguiente: Auth API ➡️](../../../docs/api/auth/README.md)
+[⬅️ Volver a Vistas Ensambladoras](pages.md) | [Siguiente: Auth API ➡️](../../api/auth/README.md)
 
 ---
 
@@ -61,21 +61,32 @@ export const playerSortOptions = [
 export type PlayerSort = (typeof playerSortOptions)[number][0];
 ```
 
-### 3.2 Roles Válidos de Jugadores
+### 3.2 Opciones de Rol y Filtrado de Jugadores
 **Ubicación**: `apps/web/src/site/pages/players/PlayersPage.tsx:29-37, 134`
 
-```typescript
-export const VALID_PLAYER_ROLES = [
-  'top',
-  'jungle',
-  'mid',
-  'adc',
-  'support',
-  'substitute'
-] as const;
+La página define la tupla inmutable de opciones de filtrado visual de roles con sus respectivas etiquetas:
 
-export type PlayerRoleFilter = (typeof VALID_PLAYER_ROLES)[number] | 'all';
+```typescript
+// apps/web/src/site/pages/players/PlayersPage.tsx:29-37
+const roles = [
+  ['all', 'Todos'],
+  ['top', 'Top'],
+  ['jungle', 'Jungla'],
+  ['mid', 'Mid'],
+  ['adc', 'ADC'],
+  ['support', 'Support'],
+  ['substitute', 'Suplente']
+] as const;
 ```
+
+Y en la función `filterPlayers` (`PlayersPage.tsx:134`), se define la lista de roles deportivos válidos para la validación de entrada frente a roles genéricos:
+
+```typescript
+// apps/web/src/site/pages/players/PlayersPage.tsx:134
+const VALID_PLAYER_ROLES = ['top', 'jungle', 'mid', 'adc', 'support', 'substitute'];
+```
+
+El filtro opera directamente sobre las cadenas tipadas inferidas de la tupla `roles` (sin requerir un tipo separado exportado), con valor por defecto `'all'` en el estado de filtrado.
 
 ### 3.3 Recursos de Competición (`CompetitionResource`)
 **Ubicación**: `apps/web/src/features/competition/hooks/useCompetition.ts:5`
@@ -88,9 +99,9 @@ Define los cuatro sub-recursos consultables por división que pueden activarse o
 
 ---
 
-## 4. Reexportaciones de Contratos del Dominio
+## 4. Reexportaciones y Extensión de Contratos del Dominio
 
-El módulo reexporta los contratos compartidos de `@rcl/contracts` para consumo local dentro de `apps/web`:
+El módulo reexporta los contratos compartidos de `@rcl/contracts` (`packages/contracts/src/competition-profiles.ts:1-80`) para consumo local dentro de `apps/web`:
 
 ```typescript
 // competition.types.ts:1-9
@@ -105,9 +116,92 @@ export type {
 } from '@rcl/contracts';
 ```
 
-Y define los tipos propios expuestos por las rutas públicas `/api/v1`:
-- `Season` (`competition.types.ts:11-16`)
-- `Division` (`competition.types.ts:17-23`)
-- `Round` (`competition.types.ts:24-30`)
-- `Match` (`competition.types.ts:31-44`)
-- `Standing` (`competition.types.ts:45-54`)
+### 4.1 Contratos Principales de Competición (`@rcl/contracts`)
+
+- **`TeamSummary` (`competition-profiles.ts:1-9`)**:
+  Estructura base representativa de un club deportivo:
+  ```typescript
+  export interface TeamSummary {
+    slug?: string | undefined;
+    id: string;
+    name: string;
+    shortName: string | null;
+    logoUrl: string | null;
+    color?: string | null;
+    discordRoleId?: string | null;
+  }
+  ```
+  - `discordRoleId`: Identificador numérico de Discord en formato texto (*snowflake*) consumido por las reglas de visibilidad (`team-visibility.ts`) para discriminar clubes en activo (`>= 0n`), equipos retirados con registro histórico preservado en calendario (`>= -10n`) y clubes fantasma (`null` o sin rol).
+
+- **`TeamDetail` (`competition-profiles.ts:31-38`)**:
+  Ficha extendida de un club consumida en `TeamDetailPage`:
+  ```typescript
+  export interface TeamDetail extends TeamSummary {
+    divisionId: string;
+    color: string | null;
+    isActive: boolean;
+    seasonName: string;
+    divisionName: string;
+    members: TeamMember[];
+  }
+  ```
+  - `isActive`: Bandera booleana de actividad competitiva en la temporada.
+  - `members`: Arreglo de integrantes del club (`TeamMember[]`) clasificados en roles de juego (`playerRoles`), cuerpo técnico (`coach`), gestión (`staff`) y colaboradores (`partners`).
+
+- **`Player` (`competition-profiles.ts:40-57`)**:
+  Modelo individual de competidor:
+  ```typescript
+  export interface Player {
+    competition?: {
+      isCaptain?: boolean;
+      role: string | null;
+      team: TeamSummary | null;
+      champion: string | null;
+      stats: PlayerStatistics | null;
+      mvpMatchIds: string[];
+      featured: { roundName: string; stats: PlayerStatistics } | null;
+    };
+    slug?: string | undefined;
+    id: string;
+    gameName: string;
+    riotTag: string | null;
+    countryCode: string | null;
+    isMain: boolean;
+    displayName: string | null;
+  }
+  ```
+  - `isMain`: Distingue si la ficha corresponde a la cuenta principal del invocador o a una cuenta secundaria vinculada registrada en la plataforma.
+  - `slug`: Identificador alfanumérico amigable para enrutamiento (`/jugadores/:slugOrId`).
+
+- **`PlayerTeam` (`competition-profiles.ts:68-75`)**:
+  Historial de vinculación deportiva de un jugador con un club:
+  ```typescript
+  export interface PlayerTeam extends TeamSummary {
+    divisionId?: string;
+    seasonName: string;
+    divisionName: string;
+    role: TeamMember['role'];
+    isCaptain: boolean;
+    isActive: boolean;
+  }
+  ```
+
+- **`PlayerDetail` (`competition-profiles.ts:76-79`)**:
+  Ficha integral de jugador consumida en `PlayerDetailPage`:
+  ```typescript
+  export interface PlayerDetail extends Player {
+    linkedAccounts?: Player[];
+    teams: PlayerTeam[];
+  }
+  ```
+  - `linkedAccounts`: Arreglo opcional con las cuentas adicionales asociadas al mismo usuario (`discordUserId`), permitiendo la navegación cruzada y la auditoría de cuentas secundarias (*smurfs*).
+  - `teams`: Historial completo de inscripciones en competiciones de la liga por división y temporada.
+
+### 4.2 Modelos Propios de la API Pública de Competición
+
+Estructuras JSON públicas devueltas por los endpoints `/api/v1` de competición:
+- `Season` (`competition.types.ts:11-16`): Temporada competitiva con fechas de inicio y finalización.
+- `Division` (`competition.types.ts:17-23`): División dentro de una temporada con código y orden de visualización.
+- `Round` (`competition.types.ts:24-30`): Jornada con número de secuencia, fase (`stage`: `'regular'` o `'playoff'`) y fecha programada.
+- `Match` (`competition.types.ts:31-44`): Enfrentamiento con equipos, tanteo, estado (`'scheduled' | 'live' | 'completed' | 'forfeit' | 'cancelled'`), formato BO y enlaces a streaming.
+- `Standing` (`competition.types.ts:45-54`): Fila de clasificación de la fase regular con balance de victorias, derrotas y diferencia de mapas.

@@ -25,9 +25,9 @@ Ninguna vista ensambladora contiene lógica de persistencia ni manipulación dir
 | **Jugadores** | `/jugadores` | `site/pages/players/PlayersPage.tsx` | `CompetitionFilters`, `DataState`, `FeaturedPlayer`, `PlayerGrid` | `useCollection` (`players`) |
 | **Playoffs** | `/playoffs` | `site/pages/playoffs/PlayoffsPage.tsx` | `CompetitionFilters`, `DataState`, `PlayoffBracket` | `useCompetition` (`rounds`, `calendar`) |
 | **Campeones** | `/campeones` | `site/pages/champions/ChampionsPage.tsx` | `CompetitionFilters`, `DataState`, `ChampionsTable` | `useCollection` (`champions`) |
-| **Detalle de Partido** | `/partidos/:id` | `site/pages/match-details/MatchDetailPage.tsx`| `MatchHeaderCard`, `MatchMatchupsSection`, `MatchStatsSection` | `useCompetitionDetail` (`matches`) |
-| **Detalle de Equipo** | `/equipos/:id` | `site/pages/team-details/TeamDetailPage.tsx` | `TeamHero`, `RosterSection`, `TeamHistorySection` | `useCompetitionDetail` (`teams`) |
-| **Detalle de Jugador** | `/jugadores/:id`| `site/pages/player-details/PlayerDetailPage.tsx`| `PlayerHero`, `PlayerCareerSection` | `useCompetitionDetail` (`players`) |
+| **Detalle de Partido** | `/partidos/:id` | `site/pages/match-details/MatchDetailPage.tsx` | `TeamBadge`, `MatchReport`, `MatchMatchupsSection`, `MatchStatsSection` (marcador BO, MVP de serie, selector de mapa, enfrentamientos y estadísticas) | `useCompetitionDetail` (`matches`) |
+| **Detalle de Equipo** | `/equipos/:id` | `site/pages/team-details/TeamDetailPage.tsx` | `TeamBadge`, `TeamProfile`, `MemberSection` (perfil institucional, estado activo/inactivo, Multi OP.GG, desglose de plantilla por roles y estadísticas) | `useCompetitionDetail` (`teams`) |
+| **Detalle de Jugador** | `/jugadores/:id` | `site/pages/player-details/PlayerDetailPage.tsx` | `TeamBadge`, `PlayerProfile` (métricas de rendimiento, cuentas secundarias vinculadas con enlace a OP.GG e histórico de inscripciones) | `useCompetitionDetail` (`players`) |
 
 ---
 
@@ -128,10 +128,129 @@ Ninguna vista ensambladora contiene lógica de persistencia ni manipulación dir
 **Archivo**: `site/pages/champions/ChampionsPage.tsx:1-49`
 
 - Consulta `divisions/:divisionId/champions` mediante `useCollection`.
-- Integra el catálogo de recursos gráficos de Riot Games (`useGameCatalog`, `riot-assets.service.ts`) para renderizar iconos oficiales de campeones junto a sus porcentajes de victoria y presencia en el torneo.
+- Integra el catálogo de recursos gráficos de Riot Games (`useGameCatalog`, `apps/web/src/shared/riot/riot-assets.service.ts`) para renderizar iconos oficiales de campeones junto a sus porcentajes de victoria y presencia en el torneo.
 
 ---
 
-### 3.7 Páginas de Detalle Individual (`MatchDetailPage`, `TeamDetailPage`, `PlayerDetailPage`)
-- Utilizan `useCompetitionDetail(resource, id)` para cargar la entidad.
-- Manejan el estado `'missing'` para renderizar vistas personalizadas de error cuando un identificador no existe en la base de datos o un partido no se encuentra en estado `'completed'` / `'forfeit'`.
+### 3.7 `MatchDetailPage` (Ficha de Detalle de Partido)
+**Archivo**: `site/pages/match-details/MatchDetailPage.tsx:1-159`
+
+Orquesta la vista completa del resultado de un enfrentamiento competitivo, integrando el catálogo visual de Riot Games (`useGameCatalog`), el selector de mapas disputados, el MVP determinista de la serie y la navegación por pestañas entre enfrentamientos directos y estadísticas cuantitativas.
+
+- **Ciclo de Vida y Estados Asíncronos**:
+  - Consume `useCompetitionDetail('matches', matchId)`.
+  - Sincroniza el título del documento reactivamente (`document.title = `${state.data.homeTeam.name} vs ${state.data.awayTeam.name} · Rebel Crown Legacy``) al alcanzar el estado `'ready'`.
+  - Resuelve estados en `PageLayout`:
+    - `'loading'`: Mensaje accesible de carga (`<output className="empty-state">Cargando partido…</output>`).
+    - `'missing'`: Aviso específico de no disponibilidad (`Partido no disponible. La ficha se publica al terminar el encuentro.`), activado ante HTTP 404 o si el partido no se encuentra en estado `'completed'` o `'forfeit'`.
+    - `'error'`: Contenedor accesible (`role="alert"`) con botón interactivo de reintento (`retry`).
+    - `'ready'`: Delega el reporte estructurado en el componente interno `MatchReport`.
+
+- **Cabecera y Reporte Oficial de Incidencias (`match-header-card`)**:
+  - **Marcador Global (`match-report-score`)**: Presenta los emblemas (`TeamBadge`) y nombres de ambos equipos, el marcador de la serie (`match.homeScore – match.awayScore`) y el estado competitivo, distinguiendo incomparecencias administrativas (`match.status === 'forfeit' ? 'Incomparecencia' : 'Resultado final'`) y el formato al mejor de mapas (`BO{match.bestOf}`).
+  - **Sección Destacada de MVP de la Serie (`match-series-mvp`)**:
+    - Resuelve al jugador galardonado con el MVP de la serie mediante `match.mvpPlayerId`, calculado deterministamente en el backend a través del algoritmo `matchMvps` (`apps/api/src/modules/competition/player-statistics.ts:174-225`).
+    - Localiza la entidad del participante en el árbol de mapas:
+      ```typescript
+      const mvp = match.games
+        .flatMap((item) => item.participants)
+        .find((player) => player.playerId === match.mvpPlayerId);
+      ```
+    - Muestra la insignia `"MVP del enfrentamiento"` y un enlace enriquecido mediante `SiteLink` hacia su perfil (`/jugadores/${encodeURIComponent(mvp.playerId)}`), mostrando `gameName` y `riotTag`.
+
+- **Barra Unificada de Sub-Tarjetas de Mapas (`match-subcard-bar`)**:
+  - **Columna de Contexto (`match-context-col`)**: Despliega la ruta competitiva completa (`seasonName · divisionName · roundName`).
+  - **Selector de Mapas (`match-selector-col`)**: Agrupa una botonera interactiva (`role="toolbar"`, `aria-label="Seleccionar mapa"`) donde cada botón (`btn-selector`, `aria-pressed={game?.id === item.id}`) conmuta el identificador del mapa activo (`gameChoice`) en el estado local de React.
+  - **Columna de Resultado del Mapa (`match-result-col`)**: Expone el club vencedor del mapa seleccionado (`winner ? `Victoria de ${winner}` : 'Ganador no registrado'`) junto a la duración exacta de la partida formateada en minutos y segundos (`mm:ss`) calculada a partir de `game.durationSeconds`.
+
+- **Navegación por Pestañas y Secciones Condicionales (`match-section-nav`)**:
+  - Implementa un control de pestañas con accesibilidad WAI-ARIA (`role="tablist"`, `role="tab"`, `aria-selected`, `aria-controls`, `tabIndex` reactivo):
+    1. **Pestaña `Enfrentamiento`** (`section === 'enfrentamientos'`): Monta `MatchMatchupsSection`, desplegando la comparativa calle por calle (`TOP`, `JUNGLE`, `MID`, `ADC`, `SUPPORT`, `SIN POSICIÓN`), las runas, los hechizos de invocador y la build compactada de objetos.
+    2. **Pestaña `Estadísticas`** (`section === 'estadisticas'`): Monta `MatchStatsSection`, proporcionando un selector desplegable accesible de jugadores (`Select`) y el desglose de métricas de juego organizadas en 4 categorías (*Combate*, *Economía y visión*, *Objetivos* y *Actividad*).
+
+---
+
+### 3.8 `TeamDetailPage` (Ficha de Detalle de Equipo)
+**Archivo**: `site/pages/team-details/TeamDetailPage.tsx:1-243`
+
+Orquesta la vista del perfil institucional y deportivo de un club, integrando la temática visual del equipo, el estado de actividad competitiva, el generador de enlaces a la herramienta Multi OP.GG y la plantilla categorizada por funciones técnicas.
+
+- **Ciclo de Vida y Estados Asíncronos**:
+  - Consume `useCompetitionDetail('teams', teamId)`.
+  - Sincroniza dinámicamente el título del navegador (`document.title = `${state.data.name} · Rebel Crown Legacy``) en estado `'ready'`.
+  - Presenta estados dedicados en `PageLayout`: `'loading'`, `'missing'` ("Equipo no encontrado. Puede que ya no esté disponible."), `'error'` con reintento y `'ready'` renderizando `TeamProfile`.
+
+- **Cabecera y Estado Competitivo (`team-profile-header`)**:
+  - Inyecta la variable CSS `--team-color` con el color corporativo del equipo (`team.color || 'var(--panel)'`), tiñendo bordes, sombras y acentos visuales de la ficha.
+  - Renderiza el emblema oficial (`TeamBadge`), el acrónimo distintivo (`team.shortName ?? team.name`), la división y la temporada.
+  - **Indicador de Estado de Actividad (`team-profile-status`)**: Muestra explícitamente si el club participa activamente en el torneo o si se encuentra dado de baja:
+    ```tsx
+    <span className="team-profile-status">
+      {team.isActive ? 'Equipo activo' : 'Equipo inactivo'}
+    </span>
+    ```
+
+- **Integración de Multi OP.GG (`multiOpggUrl`)**:
+  - Agrupa los Riot IDs (`${gameName}#${tag}`) de todos los jugadores de la plantilla (`team.members` con roles deportivos), normaliza los tags eliminando prefijos `#`, deduplica los nombres invocadores mediante `Set` y construye de forma segura la URL de consulta hacia la herramienta multianálisis externa:
+    ```typescript
+    const summoners = players.flatMap((player) => {
+      const gameName = player.gameName?.trim();
+      const tag = player.riotTag?.trim().replace(/^#/, '').trim();
+      return gameName && tag ? [`${gameName}#${tag}`] : [];
+    });
+    const multiOpggUrl = summoners.length
+      ? `https://op.gg/es/lol/multisearch/euw?${new URLSearchParams({ summoners: [...new Set(summoners)].join(',') })}`
+      : null;
+    ```
+  - **Botón Interactivo de Marca (`team-profile-opgg`)**: Renderiza el logotipo oficial de OP.GG envuelto en un enlace seguro con atributos `target="_blank"`, `rel="noopener noreferrer"` y etiqueta descriptiva `aria-label={`Ver Multi OP.GG de ${team.name} (nueva pestaña)`}`.
+
+- **Información Institucional y Clasificación de Miembros (`MemberSection`)**:
+  - **Panel Descriptivo (`team-profile-info`)**: Lista de cuatro dimensiones institucionales (`<dl>`): nombre de la entidad, división, temporada y recuento total de jugadores.
+  - **Sección `Jugadores`**: Filtra integrantes clasificados bajo `playerRoles` (`'top'`, `'jungle'`, `'mid'`, `'adc'`, `'support'`, `'substitute'`). Aplica ordenación canónica por posición de juego y desempate alfabético en locale `'es'`.
+    - Cada tarjeta (`team-member-card team-player-card`) expone las estadísticas del jugador en la plantilla (`rosterStats`: partidas jugadas, galardones de MVP y campeones únicos utilizados).
+    - Distintivo visual para el capitán (`member.isCaptain`, clase `is-captain` y etiqueta `team-player-captain`).
+    - Enlace al perfil individual del jugador (`/jugadores/:playerSlugOrId`) mediante `SiteLink` y botón directo a su perfil individual en OP.GG (`team-member-opgg`).
+  - **Secciones de Cuerpo Técnico y Colaboradores**: Bloques independientes para `Coach` (`role === 'coach'`), `Staff` (`role === 'staff'`) y `Partners` (`role === 'partners'`), garantizando la representación completa de la estructura del club.
+
+---
+
+### 3.9 `PlayerDetailPage` (Ficha de Detalle de Jugador)
+**Archivo**: `site/pages/player-details/PlayerDetailPage.tsx:1-256`
+
+Orquesta la ficha de perfil de un competidor, centralizando su identidad en Riot Games, sus estadísticas acumuladas en el torneo, la vinculación de cuentas secundarias (*smurfs* / secundarias) y su historial cronológico de inscripciones.
+
+- **Ciclo de Vida y Estados Asíncronos**:
+  - Consume `useCompetitionDetail('players', playerId)`.
+  - Actualiza reactivamente el título de la pestaña (`document.title = `${state.data.gameName} · Rebel Crown Legacy``).
+  - Gestiona los estados en `PageLayout`: `'loading'`, `'missing'` ("Jugador no encontrado. Puede que ya no esté disponible."), `'error'` con reintento (`retry`) y `'ready'` renderizando `PlayerProfile`.
+
+- **Cabecera de Identidad (`player-profile-header`)**:
+  - Aplica la variable CSS `--profile-color` vinculada al color corporativo del equipo más reciente (`latestTeam?.color || 'var(--purple)'`).
+  - Distingue la naturaleza de la cuenta: `{player.isMain ? 'Cuenta principal' : 'Cuenta registrada'}`.
+  - Presenta el Riot ID canónico (`${player.gameName}#${tag}`), el nombre de comunidad en Discord (`displayName(player.displayName ?? 'Jugador RCL')`), el rol habitual y el distintivo de capitán (`player-captain-label`).
+  - Integra enlace directo a OP.GG (`player-profile-opgg`) con atributos seguros `target="_blank"`, `rel="noopener noreferrer"` y etiqueta de accesibilidad.
+  - Enlace al equipo más reciente (`player-profile-team`, `latestTeam = player.teams[0]`) o iniciales en fallback si el jugador no cuenta con equipo activo.
+
+- **Sección de Cuentas Secundarias Vinculadas (`player-linked-accounts`)**:
+  - Contenedor accesible identificado semánticamente mediante `aria-labelledby="player-accounts-title"`, con encabezado `"Cuentas secundarias"` y subtítulo `"Cuentas del mismo jugador"`.
+  - Itera sobre el listado `player.linkedAccounts` (cuentas adicionales asociadas a la misma identidad deportiva):
+    - Presenta la tarjeta de membresía vinculada (`player-profile-membership player-linked-account`).
+    - Etiqueta de relación clara: `{account.isMain ? 'Cuenta principal' : 'Cuenta secundaria'}`.
+    - Enlace interno mediante `SiteLink` hacia la ficha de la cuenta:
+      `/jugadores/${encodeURIComponent(account.slug ?? account.id)}`
+    - Nombre del invocador y Riot ID formateado (`${account.gameName}#${accountTag}`).
+    - Enlace individual a la herramienta externa OP.GG (`https://op.gg/es/lol/summoners/euw/...`) con apertura en nueva pestaña (`target="_blank"`, `rel="noopener noreferrer"`) y accesibilidad (`aria-label={`Ver OP.GG de ${account.gameName} (nueva pestaña)`}`).
+  - **Estado Vacío Semántico**: Cuando el arreglo `linkedAccounts` no contiene elementos o es indefinido, renderiza un mensaje informativo limpio:
+    ```tsx
+    <div className="empty-state">No hay otras cuentas vinculadas a este jugador.</div>
+    ```
+
+- **Sección de Rendimiento Deportivo (`player-performance`)**:
+  - Cuadrícula con 8 métricas de rendimiento (`player-performance-grid`): Partidas, KDA, % Victorias, MVPs conseguidos (`player.competition?.mvpMatchIds.length`), CS/minuto, Participación en kills %, Daño/minuto y Puntuación de visión. Formateo en español (`'es'`) con un máximo de 2 dígitos fraccionarios.
+  - Campeón insignia (`player-signature-champion`): Muestra el campeón más jugado por el usuario en la competición (`player.competition?.champion`).
+  - Estado vacío de rendimiento (`player-performance-empty`): Mensaje inspirador ("La historia está por escribir. Próxima parada: la Grieta.") para participantes que aún no han debutado en partidos oficiales.
+
+- **Historial de Equipos e Inscripciones (`player-teams`)**:
+  - Recorre el arreglo `player.teams` (`PlayerTeam[]`), listando las participaciones históricas del jugador ordenadas por división y temporada.
+  - Cada fila enlaza a la ficha del club (`/equipos/:slugOrId`), muestra el escudo (`TeamBadge`), temporada, división, rol desempeñado y condición de capitán.
+  - Avisa de clubes dados de baja mediante la etiqueta semántica `{!team.isActive && <span className="meta">Equipo inactivo</span>}`.

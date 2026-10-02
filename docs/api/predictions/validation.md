@@ -48,9 +48,34 @@ const pick = z
 
 ## 3. Validaciones de Dominio y Errores de Negocio
 
-En `predictions.repository.ts:101-121`, se ejecutan las siguientes comprobaciones de negocio dentro de la transacción pesimista:
+En `predictions.repository.ts:113-152`, se ejecutan las siguientes comprobaciones de negocio dentro de la transacción pesimista:
 
-### 3.1 Comprobación de Ventana de Votación (`PREDICTIONS_CLOSED`)
+### 3.1 Comprobación de Equipos Activos (`INACTIVE_TEAMS`)
+**Archivo**: `predictions.repository.ts:117-138`
+
+```typescript
+// apps/api/src/modules/predictions/predictions.repository.ts:125-138
+if (
+  !match.team1Id ||
+  !match.team2Id ||
+  ![match.team1Id, match.team2Id].every((id) =>
+    participants.some(
+      (team) => team.id === id && team.discordRoleId !== null && team.discordRoleId >= 0n
+    )
+  )
+)
+  throw new AppError(
+    409,
+    'INACTIVE_TEAMS',
+    'Predictions are not allowed for matches with inactive or ghost teams.'
+  );
+```
+- **Regla de Negocio**: Las predicciones solo están permitidas para partidos donde ambos contendientes son equipos activos (`discordRoleId !== null && discordRoleId >= 0n`).
+- **Comportamiento ante Anomalías**: Si un partido involucra a un equipo retirado (sentinel `-10n`), un equipo fantasma (sentinel `-9000n`) o un equipo sin rol de Discord configurado (`null`), la transacción aborta y se rechaza la solicitud emitiendo un conflicto **HTTP 409 `INACTIVE_TEAMS`**.
+
+### 3.2 Comprobación de Ventana de Votación (`PREDICTIONS_CLOSED`)
+**Archivo**: `predictions.repository.ts:139-140`
+
 ```typescript
 if (!predictionWindow(match.scheduledAt, match.status, new Date()).open)
   throw new AppError(409, 'PREDICTIONS_CLOSED', 'Voting is closed.');
@@ -58,7 +83,9 @@ if (!predictionWindow(match.scheduledAt, match.status, new Date()).open)
 - Se reevalúa el estado de la ventana en tiempo real con la fecha y hora exacta del servidor (`new Date()`).
 - Si la fecha límite semanal expiró (martes 23:59:59) o el partido ya ha alcanzado su hora de inicio (`scheduledAt <= now`), el servidor arroja un conflicto **HTTP 409**.
 
-### 3.2 Comprobación de Participación de Equipo (`INVALID_TEAM`)
+### 3.3 Comprobación de Participación de Equipo (`INVALID_TEAM`)
+**Archivo**: `predictions.repository.ts:141-143`
+
 ```typescript
 const home = pick.selectedTeamId === match.team1Id;
 if (!home && pick.selectedTeamId !== match.team2Id)
@@ -66,7 +93,9 @@ if (!home && pick.selectedTeamId !== match.team2Id)
 ```
 - El equipo elegido debe ser obligatoriamente el equipo local (`match.team1Id`) o el equipo visitante (`match.team2Id`). Si se envía un UUID perteneciente a otro equipo de la liga, se rechaza con **HTTP 400**.
 
-### 3.3 Consistencia de Tanteo Best-Of (`INVALID_SCORE`)
+### 3.4 Consistencia de Tanteo Best-Of (`INVALID_SCORE`)
+**Archivo**: `predictions.repository.ts:144-151`
+
 ```typescript
 const wins = Math.floor(match.bestOf / 2) + 1;
 const winnerScore = home ? pick.homeScore : pick.awayScore;
@@ -89,11 +118,12 @@ if (
 
 | Código HTTP | Código Interno | Causa Técnica | Ubicación |
 |:---:|---|---|---|
-| **`400 Bad Request`** | `INVALID_TEAM` | El equipo seleccionado no es participante en el partido. | `predictions.repository.ts:112` |
-| **`400 Bad Request`** | `INVALID_SCORE` | Marcador inconsistente con el formato Best-Of del partido. | `predictions.repository.ts:120` |
+| **`400 Bad Request`** | `INVALID_TEAM` | El equipo seleccionado no es participante en el partido. | `predictions.repository.ts:143` |
+| **`400 Bad Request`** | `INVALID_SCORE` | Marcador inconsistente con el formato Best-Of del partido. | `predictions.repository.ts:151` |
 | **`401 Unauthorized`** | `UNAUTHORIZED` | Petición a `/mine` o `PUT /matches/:id` sin sesión de Discord. | `auth.router.ts:25` |
 | **`403 Forbidden`** | `FORBIDDEN` | Cabecera `Origin` discordante con `frontendOrigin` en mutación. | `auth.router.ts:35` |
-| **`404 Not Found`** | `NOT_FOUND` | La división (`notFound('Division')`) o el partido (`notFound('Match')`) no existen. | `predictions.repository.ts:17, 107` |
-| **`409 Conflict`** | `PREDICTIONS_CLOSED` | El plazo de votación cerró o el partido ya comenzó (`scheduledAt <= now`). | `predictions.repository.ts:109` |
+| **`404 Not Found`** | `NOT_FOUND` | La división (`notFound('Division')`) o el partido (`notFound('Match')`) no existen. | `predictions.repository.ts:18, 119` |
+| **`409 Conflict`** | `INACTIVE_TEAMS` | Predicciones no permitidas en encuentros con equipos inactivos o fantasma. | `predictions.repository.ts:133-138` |
+| **`409 Conflict`** | `PREDICTIONS_CLOSED` | El plazo de votación cerró o el partido ya comenzó (`scheduledAt <= now`). | `predictions.repository.ts:140` |
 | **`422 Unprocessable Entity`** | `VALIDATION_ERROR` | Parámetro UUID inválido en ruta o propiedades extra en cuerpo JSON. | `predictions.router.ts:13, 36, 39` |
 | **`500 Internal Server Error`** | `INTERNAL_SERVER_ERROR` | Fallo de base de datos o excepción no controlada en runtime. | Manejador global Express |
