@@ -150,6 +150,7 @@ export const adminRoutes = [
   { path: '/admin/rofl/upload', title: 'ROFL Upload' },
   { path: '/admin/crud', title: 'CRUD Operations' },
   { path: '/admin/member-roles', title: 'Gestión de roles' },
+  { path: '/admin/team-logos', title: 'Team Logos' },
   { path: '/admin/database-transfer', title: 'Database Transfer' }
 ];
 

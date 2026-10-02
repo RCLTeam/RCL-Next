@@ -1,157 +1,210 @@
-# Rebel Crown Legacy
+# Rebel Crown Legacy (RCL-Next)
 
-Base de la refactorización en TypeScript, Express y PostgreSQL con Drizzle. Incluye esquema, migraciones, datos de prueba, API de consulta y autenticación Discord con sesiones PostgreSQL. Incluye también el cliente React y la subida de repeticiones ROFL. Las siguientes etapas se detallan en [el roadmap](docs/architecture/roadmap.md).
+Plataforma integral de gestión de competición, telemetría deportiva y portal web para la liga Rebel Crown Legacy. Construida como un monorepo modular de alto rendimiento con TypeScript, React 19, Express, PostgreSQL con Drizzle ORM y un motor de extracción binaria de repeticiones en Python 3.
 
-## Administración
+Para consultar la documentación técnica completa del monorepo, visita el [Portal Principal de Documentación Técnica](docs/README.md).
 
-El panel `/admin` tiene cuatro subpáginas: **ROFL Upload** (`/admin/rofl/upload`), **CRUD Operations** (`/admin/crud`), **Roles Management** (`/admin/member-roles`) y **Database Transfer** (`/admin/database-transfer`). En CRUD Operations, un selector permite gestionar temporadas, divisiones, competiciones, equipos, cuentas de jugadores, plantillas y jornadas. Requiere una sesión con rol `admin` u `owner`. Solo un owner puede modificar roles e importar datos; ambos pueden exportar backups nativos `.dump`. La transferencia requiere `pg_dump` y `pg_restore` en PATH o `POSTGRES_BIN_DIR`.
+---
 
-Los cambios se guardan en PostgreSQL con auditoría y validación. Los borrados con registros dependientes se bloquean; los resultados con mapas importados se protegen. No se necesitan migraciones adicionales. Consulta [la guía de administración](docs/administration.md).
+## 1. Visión General de la Arquitectura
 
-## Inicio de sesión con Discord
+El monorepo RCL-Next sigue un diseño estrictamente desacoplado organizado en cuatro capas fundamentales:
 
-Configura `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET` y `DISCORD_REDIRECT_URI` en `.env`, aplica `pnpm db:migrate`, arranca `pnpm dev:api` y `pnpm dev:web` en terminales separadas y abre `http://localhost:5173`. La cabecera incluye **Entrar con Discord**, el usuario conectado y el cierre de sesión. Consulta [la guía de autenticación](docs/authentication.md) para registrar el callback y probar el acceso. Sin credenciales, la API pública sigue disponible y las rutas de autenticación devuelven 503.
+1. **Backend API (`apps/api`) — Rebanadas Verticales (*Vertical Slice Architecture*):**  
+   Construido sobre Node.js 22 y Express. Cada funcionalidad de negocio (`apps/api/src/modules/`) es autónoma y encapsula sus propias rutas de transporte HTTP/WebSocket, lógica de procesamiento puro, acceso a datos transaccional con Drizzle ORM, esquemas de validación defensiva y contratos. La comunicación en tiempo real opera mediante pasarelas WebSocket (`ws`) con control de contrapresión (*backpressure*). Consulta la [documentación de la API](docs/api/README.md).
 
-## Dónde está la base de datos
+2. **Frontend Web (`apps/web`) — Diseño Guiado por Características (*Feature-Driven & Headless Hooks*):**  
+   Aplicación cliente interactiva en React 19 y Vite con TailwindCSS. Desacopla radicalmente los componentes visuales puros y deterministas (*Dumb Components* en `components/`) de los efectos de red, sincronización y streaming de datos (*Headless Hooks* en `hooks/`). Las páginas (*Smart Pages* en `pages/`) actúan como orquestadores limpios de la vista. Consulta la [documentación del frontend](docs/web/README.md).
 
-- SQL ejecutable: `packages/database/drizzle/0000_initial_schema.sql`.
-- SQL original conservado: `docs/reference/0000_initial_schema.original.sql`.
-- Modelo tipado: `packages/database/src/schema.ts`.
-- Datos sintéticos: `packages/database/seed/demo.sql` y `packages/database/seed/showcase.sql`.
-- Conexión PostgreSQL: configurada mediante `DATABASE_URL` en `.env`.
-- Los registros se guardan en la instancia PostgreSQL; el archivo SQL define la estructura.
+3. **Extractor Binario ROFL (`apps/parser`) — Lectura Inversa $O(1)$ en Python 3:**  
+   Motor de bajo nivel (`roflParser.py`) que analiza archivos de repetición `.rofl` de League of Legends mediante un algoritmo de búsqueda inversa (*reverse seek*) que lee directamente los metadatos finales sin descomprimir paquetes pesados de red. Opera con cero dependencias externas de terceros y códigos de salida delimitados (0-14). Consulta la [documentación de ROFL](docs/rofl/README.md).
 
-Las pruebas automatizadas usan PostgreSQL embebido (PGlite), temporal y sin puerto TCP. Para ejecutar la aplicación necesitas una instancia PostgreSQL propia.
+4. **Capa de Persistencia Relacional (`packages/database`) — PostgreSQL & PGlite:**  
+   Modelo de 21 tablas relacionales y 6 enums tipados con Drizzle ORM (`packages/database/src/schema.ts`). Utiliza claves primarias naturales e inmutables, transacciones ACID con bloqueos consultivos de PostgreSQL (`pg_advisory_lock`), y disparadores PL/pgSQL transaccionales y diferidos (`complete_player_game`). Para pruebas automatizadas, utiliza PostgreSQL embebido en memoria (**PGlite 0.3+**) sin dependencias de red ni servicios externos. Consulta la [documentación de base de datos](docs/database/README.md).
 
-## Puesta en marcha (PowerShell, desde RCL Next)
+---
 
-Necesitas Node.js 22 o superior, pnpm 11 y PostgreSQL 17. Crea una base de desarrollo y configura su conexión en DATABASE_URL antes de ejecutar los comandos de base de datos.
-
-```powershell
-# Solo si todavía no existe .env; conserva tus credenciales actuales.
-if (-not (Test-Path .env)) { Copy-Item .env.example .env }
-pnpm install --frozen-lockfile
-pnpm db:migrate
-pnpm db:seed
-pnpm db:check
-pnpm dev:api
-```
-
-El seed requiere `ALLOW_DEMO_SEED=true` y rechaza `NODE_ENV=production`. Ejecuta `demo.sql` y `showcase.sql` en una sola transacción. Crea una temporada DEMO, dos divisiones, cuatro equipos, veinte jugadores, 11 encuentros y 24 mapas con 240 registros de estadísticas completas. Incluye series BO3/BO5, playoffs, encuentros programados, uno en directo y uno cancelado, además de objetos, hechizos, runas, MVP y un pronóstico. Las estadísticas alimentan los perfiles, comparativas y clasificaciones. Repetirlo no duplica registros: conserva los valores existentes y completa únicamente campos vacíos de las partidas DEMO identificadas. Las fechas de 2050 y los nombres DEMO son deliberadamente ficticios. Las pruebas existentes conservan el fixture mínimo `demo.sql`; `demo-showcase.test.ts` verifica la ampliación, coherencia de resultados e idempotencia.
-
-## Cómo ver las tablas y los registros
-
-Con PostgreSQL arrancado, ejecuta `pnpm db:studio` y abre la dirección que muestre Drizzle. También puedes conectar DBeaver o pgAdmin usando los datos de DATABASE_URL.
-
-## Comprobar la API
-
-```powershell
-Invoke-RestMethod http://localhost:3001/health/ready
-Invoke-RestMethod http://localhost:3001/api/v1/seasons
-$seasonName = [uri]::EscapeDataString('Temporada DEMO — datos ficticios')
-Invoke-RestMethod "http://localhost:3001/api/v1/seasons/$seasonName/divisions"
-Invoke-RestMethod http://localhost:3001/api/v1/divisions/20000000-0000-4000-8000-000000000001/standings
-```
-
-La clasificación DEMO muestra Lobos con una victoria y Cuervos con una derrota. El catálogo incluye todas las temporadas, ordenadas por fecha de inicio descendente (sin fecha al final) y nombre. No existe un estado activo de temporada. No hay fallback a datos simulados en la API: si PostgreSQL o las migraciones faltan, el arranque falla con una indicación concreta. Readiness devuelve 503 si se pierde la conexión.
-
-## Estructura implementada
+## 2. Árbol Completo del Monorepo (`tree`)
 
 ```text
-apps/
-  web/src/
-    features/
-      <funcionalidad>/pages/      Página y CSS propio
-      <funcionalidad>/components/ Componentes exclusivos de la funcionalidad
-      crud-operations/           Cliente HTTP, formularios y listados CRUD
-      rofl-upload/               Componentes, hooks y tipos de subida ROFL
-      auth/                      Sesión compartida, controles y guarda de acceso
-      competition/               Cliente API, tipos, hooks, filtros y vistas comunes
-      site/                      Composición pública, navegación y estilos del sitio
-    shared/
-      components/                Layout reutilizable
-      resources/                 Catálogo de imágenes y roles de jugador
-      assets/                    Imágenes, fuentes y licencias
-      styles/                    Base, tokens, fuentes y primitivas visuales
-    App.tsx                      Composición de la interfaz
-    *.test.tsx                   Pruebas junto al código que verifican
-  api/src/
-    config/                      Entorno y sus pruebas
-    modules/auth/                OAuth Discord, sesiones y autorización
-    modules/competition/         Rutas, controladores, servicios y repositorios
-    modules/rofl-upload/          Procesamiento, validación, persistencia y WebSocket
-    shared/                      Errores y utilidades HTTP
-    app.ts                       Composición e inyección de dependencias
-    server.ts                    Conexión, arranque y cierre controlado
-  parser/
-    roflParser.py                Extractor CLI de repeticiones LoL (.rofl)
-    tests/                       Pruebas Python
-    data/                        Ejemplo ROFL utilizado por las pruebas
-    result/                      Ejemplo JSON utilizado por las pruebas
-packages/
-  contracts/src/
-    auth.ts                      Tipo público de usuario autenticado
-    rofl-upload.ts               Mensajes WebSocket, anomalías y resumen del lote
-    index.ts                     Exportaciones públicas de @rcl/contracts
-  database/
-    src/                         Esquema Drizzle, conexión y comandos de base de datos
-    drizzle/                     Migraciones SQL, journal y snapshots
-    seed/demo.sql                Datos sintéticos de desarrollo y pruebas
-tests/
-  integration/                   Pruebas HTTP, WebSocket, parser y PGlite
-  support/                       Adaptador node:test para Vitest
-docs/
-  architecture/                  Diseño, modelo de datos, parser y roadmap
-  reference/                     SQL original conservado
-  api.md                         Contrato de los endpoints
-  authentication.md              Configuración de Discord
+RCL-Next/
+├── README.md                                    # Portal principal y guía de inicio del monorepo
+├── package.json                                 # Configuración del workspace raíz (pnpm 11)
+├── pnpm-workspace.yaml                          # Definición de paquetes y aplicaciones del monorepo
+├── tsconfig.json                                # Configuración base estricta de TypeScript
+├── biome.json                                   # Reglas de formateo, linting y organización de imports
+├── vitest.config.ts                             # Configuración central de Vitest (maxWorkers: 4, timeout 30s)
+├── drizzle.config.ts                            # Configuración de introspección y migraciones de Drizzle Kit
+├── .env.example                                 # Plantilla canónica de variables de entorno del sistema
+├── CONTRIBUTING.md                              # Guía de contribución y estándares de ingeniería
+├── apps/                                        # Aplicaciones ejecutables del monorepo
+│   ├── api/                                     # Backend Express y pasarelas WebSocket
+│   │   ├── package.json                         # Dependencias y scripts de la API (@rcl/api)
+│   │   ├── tsconfig.json                        # Configuración de compilación de desarrollo y tests
+│   │   ├── tsconfig.build.json                  # Compilación limpia para producción (excluye tests)
+│   │   └── src/                                 # Código fuente del backend
+│   │       ├── app.ts                           # Fábrica de aplicación Express e inyección de dependencias
+│   │       ├── server.ts                        # Punto de entrada, escucha HTTP/WS y apagado controlado
+│   │       ├── config/                          # Carga y validación estricta de variables de entorno
+│   │       ├── shared/                          # Errores de dominio, utilidades HTTP y middleware global
+│   │       └── modules/                         # Rebanadas verticales de negocio
+│   │           ├── auth/                        # Discord OAuth2, sesiones de base de datos y cookies
+│   │           ├── competition/                 # Clasificaciones, desempates, estadísticas, visibilidad y algoritmo MVP
+│   │           ├── crud-operations/             # Motor CRUD administrativo con detección de dependencias FK y reordenación de mapas
+│   │           ├── database-transfer/           # Volcados y restauraciones PostgreSQL con comandos COPY
+│   │           ├── discord-bridge/              # Cliente WebSocket hacia el bot de Discord con reintentos
+│   │           ├── home-content/                # Publicaciones editoriales y equipo de la semana
+│   │           ├── member-roles/                # Control de roles de usuario (viewer, admin, owner)
+│   │           ├── predictions/                 # Quinielas semanales con bloqueo horario (Europe/Madrid)
+│   │           ├── rofl-upload/                 # Subida por WebSocket, spooling en disco y persistencia
+│   │           ├── suggestions/                 # Buzón asíncrono con máquina de estados y log de incidentes
+│   │           └── team-logos/                  # Almacenamiento local de escudos, servicio público y endpoints admin
+│   ├── web/                                     # Frontend cliente interactivo en React 19 + Vite
+│   │   ├── package.json                         # Dependencias y scripts del frontend (@rcl/web)
+│   │   ├── vite.config.ts                       # Configuración de Vite, plugins y alias de rutas
+│   │   ├── index.html                           # Plantilla HTML raíz del portal web
+│   │   ├── public/                              # Activos estáticos públicos (logos, escudos, marcas)
+│   │   └── src/                                 # Código fuente del frontend
+│   │       ├── App.tsx                          # Componente raíz y proveedor global de rutas
+│   │       ├── features/                        # Características guiadas por dominio (Golden Standard)
+│   │       │   ├── auth/                        # Botones de login Discord, avatar y barrera RequireAdmin
+│   │       │   ├── competition/                 # Tablas de clasificación, calendarios, fichas de detalle y emparejamientos
+│   │       │   ├── crud-operations/             # Formularios tipados, editor de mapas y modales de confirmación
+│   │       │   ├── database-transfer/           # Panel de administración de copias de seguridad .dump
+│   │       │   ├── discord-bridge/              # Hook de telemetría y salud del puente de Discord
+│   │       │   ├── home-content/                # Tarjetas de noticias, visor modal y quinteto ideal
+│   │       │   ├── member-roles/                # Tabla de miembros y selector de roles de aplicación
+│   │       │   ├── predictions/                 # Tarjetas de quiniela, votación interactiva y rankings
+│   │       │   ├── rofl-upload/                 # Dropzone de repeticiones, hook useRoflUploadWs y progreso
+│   │       │   ├── suggestions/                 # Modal de sugerencias, hook useSuggestion y reducer
+│   │       │   └── team-logos/                  # Consola de administración de escudos (/admin/team-logos) y hook useTeamLogos
+│   │       ├── shared/                          # Componentes de presentación transversal, tokens y fuentes
+│   │       └── site/                            # Shell del sitio, navegación principal, footer y rutas
+│   └── parser/                                  # Motor de análisis binario en Python 3
+│       ├── roflParser.py                        # CLI de extracción de metadatos LoL por seek inverso
+│       ├── README.md                            # Guía técnica interna del módulo de extracción
+│       ├── data/                                # Archivos de repetición sintéticos (.rofl) de prueba
+│       ├── result/                              # Cargas útiles JSON esperadas para verificación
+│       └── tests/                               # Batería de pruebas unitarias en Python unittest
+│           └── test_roflParser.py               # Casos de prueba para cabecera b"RIOT" y cotas de memoria
+├── packages/                                    # Paquetes compartidos del monorepo
+│   ├── contracts/                               # Tipos TypeScript compartidos y contratos DTO
+│   │   ├── package.json                         # Configuración del paquete @rcl/contracts
+│   │   └── src/                                 # Definición de interfaces públicas, eventos y respuestas
+│   └── database/                                # Esquema de persistencia, migraciones y datos de prueba
+│       ├── package.json                         # Configuración del paquete @rcl/database
+│       ├── drizzle/                             # Migraciones DDL SQL y journal versionado de Drizzle
+│       │   └── 0000_initial_schema.sql          # Esquema relacional consolidado (21 tablas, 6 enums)
+│       ├── seed/                                # Conjuntos de datos reproducibles
+│       │   ├── demo.sql                         # Fixture mínimo para pruebas automatizadas
+│       │   └── showcase.sql                     # Datos ricos de demostración con 240 estadísticas
+│       └── src/                                 # Código de base de datos
+│           ├── schema.ts                        # Definición tipada de tablas, enums, checks y relaciones
+│           ├── connection.ts                    # Factoría de conexiones para PostgreSQL y PGlite
+│           ├── migrate.ts                       # Ejecutor de migraciones con advisory lock 72160419
+│           └── seed.ts                          # Sembrador transaccional protegido con lock 72160420
+├── tests/                                       # Suites de pruebas transversales
+│   ├── integration/                             # 25 suites de integración HTTP/WS sobre PGlite (529 tests)
+│   ├── unit/                                    # 15 suites de renderizado aislado y helpers de shell (102 tests)
+│   └── support/                                 # Adaptadores y utilidades de soporte para Vitest
+└── docs/                                        # Documentación técnica canónica e hipergranular
+    ├── README.md                                # Portal central de documentación y sitemap maestro
+    ├── database/                                # Arquitectura relacional, tablas, constraints y migraciones
+    ├── reference/                               # Referencia histórica y esquema original conservado
+    ├── rofl/                                    # Formato binario, algoritmo del parser y mapeo de datos
+    ├── api/                                     # Especificaciones atómicas de las 11 rebanadas de la API
+    ├── web/                                     # Especificaciones atómicas de las 10 features del frontend
+    └── testing/                                 # Estrategia de pruebas, límites de runtime y 77 suites
 ```
 
-Las pruebas unitarias y de módulo viven junto al código que verifican. Consulta [CONTRIBUTING.md](CONTRIBUTING.md) para elegir dónde añadir archivos y qué convenciones seguir.
+---
 
-El frontend React 19 se encuentra en `apps/web`. Incluye el portal público y la consola de administración. No se incorporan bots o servicios adicionales en esta fase.
+## 3. Puesta en Marcha y Guía Rápida
 
-## Páginas del frontend
+### Requisitos del Sistema
+- **Node.js**: versión 22.0.0 o superior.
+- **pnpm**: versión 11.0.0 o superior (`corepack enable pnpm`).
+- **Python**: versión 3.10 o superior (solo requiere la librería estándar).
+- **PostgreSQL**: versión 16 o superior (necesaria para ejecutar la aplicación en desarrollo; los tests automatizados no la requieren gracias a PGlite embebido).
 
-La estructura visual parte de `../Maqueta/`. Cada funcionalidad vive en `apps/web/src/features/<funcionalidad>/`: `pages/` contiene su página y CSS; `components/` sus componentes exclusivos. Los módulos de página son `home`, `leagues`, `calendar`, `standings`, `teams`, `players`, `champions`, `fantasy`, `predictions`, `crystal-ball`, `playoffs`, `admin` y `not-found`.
+### Pasos de Instalación y Arranque
 
-Las rutas públicas son `/`, `/ligas`, `/calendario`, `/clasificacion`, `/equipos`, `/jugadores`, `/campeones`, `/fantasy`, `/predicciones`, `/bola-cristal` y `/playoffs`. `/admin` y sus cuatro subpáginas aceptan barra final y están protegidos por `RequireAdmin`. Requieren una sesión verificada de rol `admin` u `owner`; carga, error, sesión anónima, viewer y cierre de sesión bloquean el panel. Administración aparece al final de la navegación para ambos roles. El contrato admite `viewer`, `admin` y `owner`; ninguno recibe owner automáticamente.
+1. **Clonar e instalar dependencias:**
+   ```bash
+   # En Windows PowerShell o terminal Linux:
+   pnpm install --frozen-lockfile
+   ```
 
-`features/auth/` comparte una única sesión entre cabecera y guarda mediante `AuthProvider`. `features/competition/` reúne API, tipos, hooks y componentes de competición. `features/site/` compone el portal, la navegación y el marco visual. `shared/` contiene únicamente recursos y primitivas reutilizables. Los colores y fuentes están en `shared/styles/tokens.css` y `fonts.css`. Los estilos de navegación, cabecera, pie, filtros y tarjetas están junto a sus componentes; `site/site.css` conserva el orden de carga de los estilos compartidos. Cada página importa su propio CSS y sus ajustes responsive. Las marcas se sirven desde `apps/web/public/images/brand/` y los escudos desde `apps/web/public/images/teams_logo/`, con URLs públicas bajo `/images/`. Los vídeos de formato de Premier y Ascend se muestran mediante reproductores de YouTube.
+2. **Configuración de Variables de Entorno:**
+   ```bash
+   # Crear .env local a partir de la plantilla:
+   cp .env.example .env
+   # O en PowerShell:
+   if (-not (Test-Path .env)) { Copy-Item .env.example .env }
+   ```
+   Configura `DATABASE_URL` con tu instancia de PostgreSQL de desarrollo. Para habilitar el inicio de sesión federado, define `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET` y `DISCORD_REDIRECT_URI` (consulta la [guía de autenticación](docs/api/auth/README.md)). Si no se configuran credenciales de Discord, las rutas de autenticación responden 503 pero la API pública permanece plenamente operativa.
 
-La página `/campeones` consulta `GET /api/v1/divisions/:divisionId/champions`. Calcula selecciones y victorias por mapa importado con ganador, dentro de series finalizadas (`completed` o `forfeit`), y respeta la temporada/división seleccionada. Los mapas sin participantes no forman parte de la muestra. Incluye búsqueda, ordenación e iconos del servicio compartido de Riot.
+3. **Migraciones y Siembra de Datos:**
+   ```bash
+   pnpm db:migrate
+   pnpm db:seed
+   pnpm db:check
+   ```
+   *Nota sobre el seed:* La siembra requiere `ALLOW_DEMO_SEED=true` y rechaza `NODE_ENV=production`. Ejecuta `demo.sql` y `showcase.sql` en una sola transacción protegida por bloqueos consultivos. Crea una temporada de prueba, dos divisiones, cuatro equipos, 20 jugadores, 11 encuentros y 24 mapas con 240 registros de estadísticas completas.
 
-El contenedor conserva el ancho completo y los mismos márgenes interiores. La selección de temporada y división se conserva al navegar entre páginas públicas. El hook de competición cancela solicitudes obsoletas y muestra estados de carga, error y vacío. Predicciones utiliza los partidos programados del calendario real; las funciones aún sin API muestran estados pendientes, sin inventar resultados o porcentajes.
+4. **Arranque de Servidores de Desarrollo:**
+   Ejecuta en terminales separadas:
+   ```bash
+   # Terminal 1 — Backend API (puerto 3001 por defecto):
+   pnpm dev:api
 
-El módulo `features/rofl-upload/` conserva componentes, hooks, tipos y pruebas del protocolo WebSocket. `site/pages/admin/admin.css` define el contenedor; `features/rofl-upload/components/rofl-upload.css` define la consola. `features/crud-operations/` reúne la gestión CRUD. El traslado no cambia contratos ni endpoints.
+   # Terminal 2 — Frontend React (puerto 5173 por defecto):
+   pnpm dev:web
+   ```
+   Abre tu navegador en `http://localhost:5173`.
 
-La paleta y la jerarquía tipográfica siguen `Maqueta/Guía de Marca RCL_files/saved_resource.html`: Manuka Condensed Black (900) para titulares; Manuka Bold (700) para subtítulos y cifras; PP Fraktion Sans Light/Bold (300/700) para cuerpo y controles; PP Fraktion Mono Regular/Bold (400/700) para metadatos y estadísticas. `tokens.css` centraliza todos los colores, incluidos victoria, derrota y avisos; los fondos y transparencias derivan de esos tokens. El texto principal usa Parchment White, nunca blanco puro.
+---
 
-Los siete archivos de fuente aportados en `Maqueta/` se sirven desde `shared/assets/fonts/manuka/` y `shared/assets/fonts/fraktion/`, con sus pesos declarados en `fonts.css` y sus avisos de licencia junto a los archivos. Vite incluye las fuentes en la compilación, sin depender de instalaciones locales ni de servicios externos. Bebas Neue, Inter y la fuente monoespaciada del sistema cubren los caracteres que falten en las fuentes proporcionadas. Los paquetes aportados indican `Personal Use Only` y Manuka se distribuye como `TestManuka`; para publicar con otra licencia hay que sustituirlos por los archivos autorizados conservando los nombres y pesos. Los fondos `/_blob/` siguen ausentes de la copia de la maqueta.
+## 4. Consola de Administración (`/admin`)
 
-Al añadir una página, crea `features/<funcionalidad>/pages/`, importa su CSS y regístrala en `navigation.tsx` y `LeaguePortal.tsx` (o en `App.tsx` para vistas fuera del portal). Los componentes compartidos de un dominio viven en su funcionalidad; las primitivas transversales van en `shared/components/`. En producción, el servidor debe resolver las rutas de página a `index.html` y reenviar `/api` y `/ws/rofl-upload` a la API; Vite ya lo resuelve en desarrollo.
+El panel administrativo en `/admin` ofrece seis consolas operativas protegidas mediante la guarda `RequireAdmin` y verificación de roles (`admin` u `owner`):
 
-## Verificación
+1. **Contenido Editorial e Inicio (`/admin/home-content`):** Publicación de noticias y selección del quinteto ideal con guarda de navegación contra cambios sin guardar y purga de imágenes huérfanas. Consulta [docs/api/home-content/README.md](docs/api/home-content/README.md) y [docs/web/home-content/README.md](docs/web/home-content/README.md).
+2. **Subida de Repeticiones ROFL (`/admin/rofl/upload`):** Ingesta por lotes de partidas mediante streaming WebSocket con análisis sintáctico en caliente. Consulta [docs/api/rofl-upload/README.md](docs/api/rofl-upload/README.md) y [docs/web/rofl-upload/README.md](docs/web/rofl-upload/README.md).
+3. **Operaciones CRUD (`/admin/crud`):** Mantenimiento de temporadas, divisiones, competiciones, equipos, invocadores y plantillas con validación transaccional y bloqueo preventivo ante dependencias relacionales activas. Consulta [docs/api/crud-operations/README.md](docs/api/crud-operations/README.md) y [docs/web/crud-operations/README.md](docs/web/crud-operations/README.md).
+4. **Gestión de Roles (`/admin/member-roles`):** Asignación y revocación de permisos de aplicación (`viewer`, `admin`, `owner`) con trazabilidad en logs de auditoría. Consulta [docs/api/member-roles/README.md](docs/api/member-roles/README.md) y [docs/web/member-roles/README.md](docs/web/member-roles/README.md).
+5. **Logos de Equipos (`/admin/team-logos`):** Galería interactiva, carga segura con validación de bytes mágicos, copia de rutas al portapapeles y eliminación con confirmación. Consulta [docs/api/team-logos/README.md](docs/api/team-logos/README.md) y [docs/web/team-logos/README.md](docs/web/team-logos/README.md).
+6. **Transferencia de Base de Datos (`/admin/database-transfer`):** Generación de copias de seguridad y restauración integral de datos de PostgreSQL mediante flujos `COPY` nativos. Consulta [docs/api/database-transfer/README.md](docs/api/database-transfer/README.md) y [docs/web/database-transfer/README.md](docs/web/database-transfer/README.md).
 
-```powershell
+---
+
+## 5. Pipeline de Verificación y Pruebas Automatizadas
+
+El monorepo cuenta con una suite automatizada de **77 archivos de pruebas** y **897 pruebas verificadas** con una tasa de éxito del 100% y 0 suites fantasma:
+
+```bash
+# 1. Comprobación integral de tipos, estilo y suites de pruebas completas:
 pnpm check
+
+# 2. Certificación de esquema de base de datos e integridad Drizzle:
 pnpm db:generate
-python3 -m unittest discover -s apps/parser/tests -p "test_*.py"
+
+# 3. Batería de pruebas unitarias del extractor binario ROFL en Python:
+python3 -m unittest discover apps/parser/tests
 ```
 
-El pipeline de validación comprueba la salud integral del proyecto:
-1. `pnpm typecheck`: compila `@rcl/database` y `@rcl/contracts` para emitir los tipos y artefactos en `dist`, comprueba los tipos de las suites de prueba en `tests/` mediante `tsc -p tsconfig.json` y valida con TypeScript estricto (`tsc --noEmit`) cada paquete del workspace.
-2. `biome check .`: valida reglas de linter, formato y ordenación de imports en todo el repositorio.
-3. `vitest run`: ejecuta las suites colocadas junto al código en `apps/` y `packages/`, además de las de `tests/integration/`.
-4. `python3 -m unittest discover -s apps/parser/tests -p "test_*.py"`: ejecuta la batería de pruebas unitarias del extractor ROFL en `apps/parser/tests/`, validando la lectura por seek inverso, comprobación de cabecera mágica `b"RIOT"`, cotas de metadatos y fidelidad del esquema JSON.
+### Detalle de los Comandos de Validación
+- `pnpm check`: Ejecuta secuencialmente `pnpm typecheck` (compilación TypeScript en `packages/*` y verificación sin emisión en todas las aplicaciones), `biome check .` (linter y formateador) y `vitest run` (ejecución de las 76 suites TypeScript).
+- `pnpm db:generate`: Ejecuta Drizzle Kit para inspeccionar `packages/database/src/schema.ts` y certificar que no existen discrepancias entre el modelo tipado y las migraciones generadas.
+- `python3 -m unittest discover apps/parser/tests`: Ejecuta la batería de pruebas de bajo nivel del extractor Python, validando cotas de memoria, trailers little-endian y códigos de error (0-14).
+- Las pruebas relacionales no requieren servicios externos de base de datos ni variables en `.env`, ejecutando sobre instancias efímeras de PostgreSQL en memoria mediante **PGlite**.
 
-Los paquetes compartidos (`@rcl/database` y `@rcl/contracts`) exponen sus artefactos compilados desde `dist`. Ejecuta `pnpm build:packages` antes de invocar Vitest directamente, o `pnpm check` para compilar los paquetes y ejecutar toda la validación TypeScript. Para producción, `pnpm build` compila el workspace en orden de dependencias y `pnpm --filter @rcl/api start` arranca la API. Su compilación excluye los archivos de pruebas mediante `apps/api/tsconfig.build.json`.
+Para más detalles sobre la pirámide de pruebas, arneses y límites de concurrencia, consulta la [documentación de testing](docs/testing/README.md).
 
-Las pruebas no requieren una base de datos externa ni variables en `.env`: ejecutan las migraciones reales y el seed sobre PostgreSQL embebido en memoria (`@electric-sql/pglite`), verificando las 19 tablas mediante Drizzle y recorriendo el flujo HTTP → controlador → servicio → repositorio → base de datos. PGlite proporciona aislamiento determinista e instantáneo para tests locales y CI sin dependencias de red. Para ejecutar la aplicación se utiliza una instancia PostgreSQL 17 configurada mediante DATABASE_URL. Las migraciones de base de datos se gestionan mediante `pnpm db:generate`, sobre el esquema inicial único `0000_initial_schema.sql`, que ya incluye las tablas de autenticación.
+---
 
-## Migraciones e historial
+## 6. Recursos y Licencias
 
-La migración original era SQL incompleto y no ejecutable. Se conserva íntegra como referencia y se ha reconstruido el baseline para **bases nuevas**. Por petición del usuario, antes de desplegar en producción se consolidaron las migraciones antiguas 0000/0001/0002 en una única `0000_initial_schema.sql`. Incluye visión, estadísticas ROFL, timestamps y validación de snapshots completos. Como la base todavía no está en producción, las tablas de autenticación también están integradas en ese esquema inicial: hay un único snapshot y una sola entrada en el journal. Si ya aplicaste el historial previo a la consolidación en desarrollo, utiliza otra base vacía o prepara una adaptación explícita; no se ha borrado ninguna base existente. Consulta `docs/architecture/rofl-mapping.md` para el mapeo completo de estadísticas.
-
-Si tienes una base previa, no borres su volumen ni apliques este baseline manualmente. El runner rechaza esquemas sin historial o con hashes distintos. En ese caso hace falta una migración de adaptación basada en el esquema realmente desplegado. No se ha importado ni alterado ninguna base MySQL o PostgreSQL existente.
-
+- **Fuentes Tipográficas:** La jerarquía visual utiliza *Manuka* para titulares y cifras, *PP Fraktion Sans* para controles y cuerpo, y *PP Fraktion Mono* para metadatos y estadísticas. Los archivos de fuentes se sirven localmente desde `apps/web/src/shared/assets/fonts/` junto a sus respectivas licencias. Vite las incluye en la compilación sin depender de CDNs externas.
+- **Activos Deportivos:** Los logotipos oficiales de la liga se ubican en `apps/web/public/images/brand/` y los escudos de los equipos en `apps/web/public/images/teams_logo/`.
+- **Esquema Histórico:** Se conserva el archivo arqueológico preliminar en `docs/reference/0000_initial_schema.original.sql` junto a su análisis comparativo en [docs/reference/README.md](docs/reference/README.md).

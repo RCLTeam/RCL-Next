@@ -13,3 +13,7 @@ __pycache__/
 
 # Uploaded editorial assets
 **/data/editorial-images/
+
+# Team logos managed from administration
+/apps/web/public/images/teams_logo/*
+!/apps/web/public/images/teams_logo/placeholder.webp

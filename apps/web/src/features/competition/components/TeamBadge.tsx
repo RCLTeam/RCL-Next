@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { teamLogoBounds } from '../../../shared/resources/team-logo-bounds.js';
-import { resolveTeamLogo } from '../../../shared/resources/team-logos.js';
+import { resolveTeamLogo, teamLogoDirectory } from '../../../shared/resources/team-logos.js';
 import type { Team } from '../types/competition.types.js';
 import './team-badge.css';
 
@@ -8,7 +8,7 @@ interface TeamBadgeProps {
   team?: Team | null | undefined;
 }
 
-const DEFAULT_LOGO_URL = '/images/teams_logo/placeholder.webp';
+const DEFAULT_LOGO_URL = `${teamLogoDirectory}placeholder.webp`;
 
 export function TeamBadge({ team }: TeamBadgeProps) {
   const [failedUrls, setFailedUrls] = useState<Set<string>>(new Set());
@@ -20,8 +20,8 @@ export function TeamBadge({ team }: TeamBadgeProps) {
     activeUrl = DEFAULT_LOGO_URL;
   }
 
-  const bounds = activeUrl?.startsWith('/images/teams_logo/')
-    ? teamLogoBounds[activeUrl.slice('/images/teams_logo/'.length)]
+  const bounds = activeUrl?.startsWith(teamLogoDirectory)
+    ? teamLogoBounds[activeUrl.slice(teamLogoDirectory.length)]
     : undefined;
 
   return (

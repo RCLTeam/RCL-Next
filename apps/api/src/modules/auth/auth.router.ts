@@ -63,6 +63,10 @@ export function authRouter(options: AuthOptions): Router {
     const state = cookie(req, stateCookie);
     res.clearCookie(stateCookie, cookieOptions);
     await options.service.validateState(req.query.state, state);
+    if (req.query.error === 'access_denied') {
+      res.redirect(options.frontendOrigin);
+      return;
+    }
     if (req.query.error !== undefined) {
       throw new AppError(400, 'DISCORD_ACCESS_DENIED', 'Discord authorization was not completed.');
     }
