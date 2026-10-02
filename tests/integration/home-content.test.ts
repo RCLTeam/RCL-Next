@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { existsSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, rmSync, utimesSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -13,6 +13,8 @@ import { AuthService } from '../../apps/api/src/modules/auth/auth.service.js';
 import { DiscordOAuthClient } from '../../apps/api/src/modules/auth/discord.client.js';
 import { PostgresAuthRepository } from '../../apps/api/src/modules/auth/postgres-auth.repository.js';
 import { PostgresCompetitionRepository } from '../../apps/api/src/modules/competition/postgres-competition.repository.js';
+import { EditorialImageStore } from '../../apps/api/src/modules/home-content/editorial-image.store.js';
+import { HomeContentService } from '../../apps/api/src/modules/home-content/home-content.service.js';
 import { PostgresHomeContentRepository } from '../../apps/api/src/modules/home-content/postgres-home-content.repository.js';
 import * as schema from '../../packages/database/src/schema.js';
 
@@ -43,6 +45,52 @@ describe('home content publication, authorization and persistence', () => {
     }
   });
   const root = '/api/v1/home-content';
+  it('discards abandoned uploads but preserves images referenced by saved drafts', async () => {
+    const images = new EditorialImageStore(imageDirectory);
+    const upload = () => images.save(Buffer.from('89504e470d0a1a0a', 'hex'), 'image/png');
+    const abandoned = await upload();
+    const saved = await upload();
+    await post({ ...article, coverUrl: saved.url, coverAlt: 'Draft cover' }).expect(201);
+    const endpoint = `${root}/admin/images/discard`;
+    const body = { urls: [abandoned.url, saved.url] };
+    await request(app).post(endpoint).send(body).expect(401);
+    await request(app)
+      .post(endpoint)
+      .set('Cookie', cookie('viewer'))
+      .set('Origin', origin)
+      .send(body)
+      .expect(403);
+    await request(app).post(endpoint).set('Cookie', cookie('admin')).send(body).expect(403);
+    await postDiscard({ urls: ['../../outside.png'] }).expect(422);
+    await postDiscard(body).expect(200);
+    await postDiscard(body).expect(200);
+    await request(app).get(abandoned.url).expect(404);
+    await request(app).get(saved.url).expect(200);
+    function postDiscard(value: object) {
+      return request(app)
+        .post(endpoint)
+        .set('Cookie', cookie('admin'))
+        .set('Origin', origin)
+        .send(value);
+    }
+  });
+  it('sweeps old orphan uploads after a browser crash without deleting recent or referenced images', async () => {
+    const images = new EditorialImageStore(imageDirectory);
+    const upload = () => images.save(Buffer.from('89504e470d0a1a0a', 'hex'), 'image/png');
+    const orphan = await upload();
+    const referenced = await upload();
+    const recent = await upload();
+    await post({ ...article, body: `![Saved inline image](${referenced.url})` }).expect(201);
+    const old = new Date(Date.now() - 8 * 24 * 60 * 60 * 1000);
+    for (const image of [orphan, referenced]) {
+      utimesSync(join(imageDirectory, image.url.split('/').at(-1) ?? ''), old, old);
+    }
+    const service = new HomeContentService(new PostgresHomeContentRepository(db), images);
+    await service.cleanupExpiredImages();
+    await request(app).get(orphan.url).expect(404);
+    await request(app).get(referenced.url).expect(200);
+    await request(app).get(recent.url).expect(200);
+  });
   it('manages team logos with authenticated writes, origin checks and safe filenames', async () => {
     const endpoint = '/api/v1/team-logos/admin';
     const png = Buffer.from(

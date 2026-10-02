@@ -1,8 +1,9 @@
 import type { EditorialArticle, EditorialInput, EditorialKind } from '@rcl/contracts';
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Select } from '../../../shared/components/Selector/Selector.js';
 import { SiteLink } from '../../../shared/components/SiteLink.js';
-import { deleteArticle, saveArticle } from '../home-content-api.js';
+import { deleteArticle, discardImages, saveArticle } from '../home-content-api.js';
+import { PendingImages } from '../pending-images.js';
 import { useHomeContent } from '../useHomeContent.js';
 import { ArticleView } from './ArticleView.js';
 import { ContentField } from './ContentField.js';
@@ -27,9 +28,11 @@ export function EditorialManager(props: EditorStateProps) {
   const content = useHomeContent<EditorialArticle[]>('admin/articles');
   const [selected, setSelected] = useState<EditorialArticle | 'new' | null>(null);
   const [busy, setBusy] = useState(false);
+  const [editorRevision, setEditorRevision] = useState(0);
   function select(article: EditorialArticle | 'new' | null) {
     if (props.dirty && !window.confirm('Hay cambios sin guardar. ¿Quieres descartarlos?')) return;
     props.onDirty(false);
+    setEditorRevision((value) => value + 1);
     setSelected(article);
   }
   return (
@@ -76,7 +79,7 @@ export function EditorialManager(props: EditorStateProps) {
         </aside>
         {selected ? (
           <ArticleForm
-            key={selected === 'new' ? 'new' : selected.id}
+            key={`${selected === 'new' ? 'new' : selected.id}:${editorRevision}`}
             initial={selected === 'new' ? null : selected}
             {...props}
             onBusy={(value) => {
@@ -136,7 +139,18 @@ function ArticleForm({
         }
       : { ...emptyArticle }
   );
-  const uploadedImages = useRef<string[]>([]);
+  const [uploadedImages] = useState(() => new PendingImages(discardImages));
+  useEffect(() => {
+    uploadedImages.resume();
+    const pageHide = (event: PageTransitionEvent) => {
+      if (!event.persisted) uploadedImages.dispose();
+    };
+    window.addEventListener('pagehide', pageHide);
+    return () => {
+      window.removeEventListener('pagehide', pageHide);
+      uploadedImages.dispose();
+    };
+  }, [uploadedImages]);
   const bodyInput = useRef<HTMLTextAreaElement>(null);
   const [preview, setPreview] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -186,8 +200,9 @@ function ArticleForm({
           setError('');
           setMessage('');
           try {
-            const article = await saveArticle(initial?.id ?? null, form, uploadedImages.current);
-            uploadedImages.current = [];
+            const article = await uploadedImages.save((urls) =>
+              saveArticle(initial?.id ?? null, form, urls)
+            );
             onSaved(article);
             setMessage(article.published ? 'Artículo publicado.' : 'Borrador guardado.');
           } catch (failure) {
@@ -244,7 +259,7 @@ function ArticleForm({
               onBusy(value);
             }}
             onUploaded={(coverUrl, coverAlt) => {
-              uploadedImages.current.push(coverUrl);
+              uploadedImages.add(coverUrl);
               update({ coverUrl, coverAlt });
             }}
           />
@@ -280,7 +295,7 @@ function ArticleForm({
               onBusy(value);
             }}
             onUploaded={(url, description) => {
-              uploadedImages.current.push(url);
+              uploadedImages.add(url);
               const position = bodyInput.current?.selectionStart ?? form.body.length;
               const alt = description.replace(/[\[\]\r\n]/g, ' ');
               const image = `\n\n![${alt}](${url})\n\n`;

@@ -33,6 +33,7 @@ El diseño y la implementación del módulo se rigen por los siguientes principi
 
 ## 3. Garantías de Fiabilidad y Advertencias de Rendimiento
 
+- **Subidas abandonadas:** `POST /api/v1/home-content/admin/images/discard` recibe `{ urls: string[] }` (hasta 100 URLs locales), exige rol admin/owner y origen válido, y elimina únicamente imágenes sin referencias en artículos, incluidos borradores. Es idempotente. El servidor también busca imágenes huérfanas de más de siete días al arrancar y cada hora, para cubrir cierres del navegador o fallos de red. La tarea se detiene y se espera durante el apagado.
 - **Exclusión de Triggers PL/pgSQL:** Las tablas `editorial_articles` y `home_weekly_teams` no poseen trigger automático de base de datos para `updated_at`. Cualquier script externo de migración o inserción directa debe proporcionar la marca de tiempo explícitamente.
 - **Riesgo de Bloqueo en Limpieza de Imágenes:** La instrucción `LOCK TABLE editorial_articles IN SHARE ROW EXCLUSIVE MODE` detiene escrituras concurrentes en la tabla editorial durante la verificación de imágenes huérfanas (`postgres-home-content.repository.ts:64`).
 - **Complejidad N+1 en `listWeeklyTeams`:** El método `listWeeklyTeams` ejecuta una consulta adicional de candidatos con 4 `INNER JOIN` por cada jornada recuperada (`postgres-home-content.repository.ts:207-223`). Para divisiones con múltiples jornadas, debe considerarse la precarga por lotes si el volumen de jornadas aumenta.

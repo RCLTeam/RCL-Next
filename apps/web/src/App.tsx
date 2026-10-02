@@ -1,5 +1,6 @@
 import React from 'react';
 import { AuthProvider } from './features/auth/components/AuthProvider.js';
+import { browserNavigation } from './shared/browser-navigation.js';
 import { NavigationContext } from './shared/navigation.js';
 import { LeaguePortal } from './site/layout/LeaguePortal.js';
 import { SiteLayout } from './site/layout/SiteLayout.js';
@@ -13,13 +14,17 @@ export interface AppProps {
 }
 
 export function App({ initialPath, wsUrl }: AppProps) {
+  const leaveGuard = React.useRef<(() => boolean) | null>(null);
+  const navigation = React.useRef<ReturnType<typeof browserNavigation> | null>(null);
+  const setLeaveGuard = React.useCallback((guard: (() => boolean) | null) => {
+    leaveGuard.current = guard;
+  }, []);
   const [currentPath, setCurrentPath] = React.useState(
     () => initialPath ?? (typeof window !== 'undefined' ? window.location.pathname : '/')
   );
   React.useEffect(() => {
-    const onPopState = () => setCurrentPath(window.location.pathname);
-    window.addEventListener('popstate', onPopState);
-    return () => window.removeEventListener('popstate', onPopState);
+    navigation.current = browserNavigation(setCurrentPath, () => leaveGuard.current?.() ?? true);
+    return () => navigation.current?.dispose();
   }, []);
   const requestedPath = currentPath.replace(/\/$/, '') || '/';
   const path = requestedPath;
@@ -30,8 +35,7 @@ export function App({ initialPath, wsUrl }: AppProps) {
     document.title = `${title} · Rebel Crown Legacy`;
   }, [title, path]);
   const navigate = (nextPath: string) => {
-    if (nextPath !== window.location.pathname) window.history.pushState({}, '', nextPath);
-    setCurrentPath(nextPath);
+    if (!navigation.current?.navigate(nextPath)) return;
     if (
       (path === '/' && nextPath.startsWith('/editorial/')) ||
       (path.startsWith('/editorial/') && nextPath === '/')
@@ -42,7 +46,7 @@ export function App({ initialPath, wsUrl }: AppProps) {
   };
   return (
     <AuthProvider>
-      <NavigationContext.Provider value={{ path, navigate }}>
+      <NavigationContext.Provider value={{ path, navigate, setLeaveGuard }}>
         {route ? (
           <LeaguePortal key={path} route={route} wsUrl={wsUrl} />
         ) : (
