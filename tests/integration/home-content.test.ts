@@ -119,9 +119,17 @@ describe('home content publication, authorization and persistence', () => {
     const created = await upload('test.png').expect(201);
     await upload('test.png').expect(409);
     const listed = await request(app).get(endpoint).set('Cookie', cookie('admin')).expect(200);
+    expect(listed.headers['cache-control']).toBe('no-store');
     expect(listed.body.data).toEqual([created.body.data]);
     const image = await request(app).get(created.body.data.url).expect(200);
     expect(image.body).toEqual(png);
+    expect(image.headers['cache-control']).toBe('public, max-age=3600, must-revalidate');
+    expect(image.headers['x-content-type-options']).toBe('nosniff');
+    expect(image.headers.etag).toBeTruthy();
+    await request(app)
+      .get(created.body.data.url)
+      .set('If-None-Match', image.headers.etag ?? '')
+      .expect(304);
     await request(app)
       .delete(`${endpoint}/test.png`)
       .set('Cookie', cookie('viewer'))

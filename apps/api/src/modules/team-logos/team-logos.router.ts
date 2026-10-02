@@ -4,12 +4,15 @@ import { TeamLogosStore } from './team-logos.store.js';
 
 export function teamLogosRouter(auth?: AuthOptions, store = new TeamLogosStore()): Router {
   const router = Router();
-  router.use((_req, res, next) => {
+  router.use('/admin', (_req, res, next) => {
     res.set('Cache-Control', 'no-store');
     next();
   });
   router.get('/images/:name', async (req, res, next) => {
-    res.sendFile(await store.file(req.params.name), (error) => {
+    const file = await store.file(req.params.name);
+    res.set('Cache-Control', 'public, max-age=3600, must-revalidate');
+    res.set('X-Content-Type-Options', 'nosniff');
+    res.sendFile(file, (error) => {
       if (error) next(error);
     });
   });

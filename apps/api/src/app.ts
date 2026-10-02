@@ -42,7 +42,7 @@ export function createApp(options: {
   databaseTransferRepository?: DatabaseTransferRepository;
   homeContentRepository?: HomeContentRepository;
   editorialImageDirectory?: string;
-  teamLogoDirectory?: string;
+  teamLogoDirectory?: string | undefined;
   bridgeClient?: DiscordBridgeClient;
   suggestionsService?: SuggestionsService;
   suggestionStore?: SuggestionStore;
