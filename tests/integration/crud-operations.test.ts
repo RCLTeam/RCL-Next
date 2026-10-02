@@ -106,6 +106,94 @@ describe('admin CRUD with HTTP sessions and PostgreSQL constraints', () => {
   });
   afterAll(() => client.close());
 
+  it('reorders imported maps atomically, preserving results and rejecting stale or invalid orders', async () => {
+    const match = await create('matches', { ...matchValues, bestOf: 5 });
+    const games = await db
+      .insert(schema.matchGames)
+      .values(
+        [1, 2, 3].map((gameNumber) => ({
+          matchesId: String(match.id),
+          gameNumber,
+          blueTeamId: team1,
+          redTeamId: team2,
+          winnerTeamId: team1,
+          externalGameId: `reorder-${gameNumber}`,
+          durationSeconds: 1800
+        }))
+      )
+      .returning();
+    const path = `matches/${match.id}/maps`;
+    const initial = games.map((game) => game.id);
+    const reversed = [...initial].reverse();
+    const body = { expectedOrder: initial, gameIds: reversed };
+    await request(app).get(endpoint(path)).expect(401);
+    await request(app).get(endpoint(path)).set('Cookie', `rcl_session=${viewerToken}`).expect(403);
+    await request(app)
+      .put(endpoint(`${path}/order`))
+      .set('Cookie', `rcl_session=${viewerToken}`)
+      .set('Origin', origin)
+      .send(body)
+      .expect(403);
+    await request(app)
+      .put(endpoint(`${path}/order`))
+      .set('Cookie', cookie)
+      .send(body)
+      .expect(403);
+    const read = () => request(app).get(endpoint(path)).set('Cookie', cookie).expect(200);
+    expect((await read()).body.data.map((game: { id: string }) => game.id)).toEqual(initial);
+    await send('put', `${path}/order`, {
+      ...body,
+      gameIds: [initial[0], initial[0], initial[2]]
+    }).expect(422);
+    await send('put', `${path}/order`, {
+      expectedOrder: initial.slice(1),
+      gameIds: initial.slice(1)
+    }).expect(409);
+    const [originalMatch] = await db
+      .select()
+      .from(schema.matches)
+      .where(eq(schema.matches.id, String(match.id)));
+    await send('put', `${path}/order`, body).expect(204);
+    const saved = (await read()).body.data;
+    expect(saved.map((game: { id: string }) => game.id)).toEqual(reversed);
+    expect(saved.map((game: { gameNumber: number }) => game.gameNumber)).toEqual([1, 2, 3]);
+    const after = await db
+      .select()
+      .from(schema.matchGames)
+      .where(eq(schema.matchGames.matchesId, String(match.id)));
+    for (const game of games) {
+      const changed = after.find((item) => item.id === game.id);
+      expect(changed).toMatchObject({
+        ...game,
+        gameNumber: reversed.indexOf(game.id) + 1,
+        updatedAt: expect.any(Date)
+      });
+    }
+    expect(
+      (
+        await db
+          .select()
+          .from(schema.matches)
+          .where(eq(schema.matches.id, String(match.id)))
+      )[0]
+    ).toEqual(originalMatch);
+    await send('put', `${path}/order`, body).expect(409);
+    expect((await read()).body.data).toEqual(saved);
+    // Exercise a three-way rotation, not just a swap.
+    const rotated = [reversed[1], reversed[2], reversed[0]];
+    await send('put', `${path}/order`, { expectedOrder: reversed, gameIds: rotated }).expect(204);
+    expect((await read()).body.data.map((game: { id: string }) => game.id)).toEqual(rotated);
+    expect(
+      await db
+        .select()
+        .from(schema.auditLogs)
+        .where(eq(schema.auditLogs.entityId, String(match.id)))
+    ).toEqual(expect.arrayContaining([expect.objectContaining({ action: 'admin.reorder-maps' })]));
+    // Keep unrelated tests' fixtures unchanged.
+    await db.delete(schema.matchGames).where(eq(schema.matchGames.matchesId, String(match.id)));
+    await db.delete(schema.matches).where(eq(schema.matches.id, String(match.id)));
+  });
+
   it('requires admin sessions for reads and writes and trusted origins for every mutation', async () => {
     for (const method of ['get', 'post', 'put', 'delete'] as const) {
       await request(app)[method](endpoint('seasons')).expect(401);

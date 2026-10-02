@@ -1,5 +1,16 @@
 export type CrudValue = string | number | boolean | null;
 export type CrudRecord = Record<string, CrudValue>;
+export interface AdminMatchMap {
+  id: string;
+  gameNumber: number;
+  externalGameId: string | null;
+  durationSeconds: number | null;
+  winner: string | null;
+}
+export interface MatchMapOrder {
+  expectedOrder: string[];
+  gameIds: string[];
+}
 export interface CrudField {
   name: string;
   label: string;

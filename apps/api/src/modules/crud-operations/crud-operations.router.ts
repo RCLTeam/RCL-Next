@@ -10,6 +10,9 @@ export function crudOperationsRouter(service: CrudOperationsService, auth: AuthO
   });
   router.use(requireAuth(auth, 'admin'));
   router.get('/resources', (_req, res) => res.json({ data: service.resources() }));
+  router.get('/matches/:matchId/maps', async (req, res) =>
+    res.json({ data: await service.matchMaps(String(req.params.matchId)) })
+  );
   router.get('/references/:resource', async (req, res) =>
     res.json({ data: await service.list(String(req.params.resource), req.query, true) })
   );
@@ -17,6 +20,14 @@ export function crudOperationsRouter(service: CrudOperationsService, auth: AuthO
     res.json({ data: await service.list(String(req.params.resource), req.query) })
   );
   router.use(requireTrustedOrigin(auth.frontendOrigin));
+  router.put('/matches/:matchId/maps/order', async (req, res) => {
+    await service.reorderMaps(
+      String(req.params.matchId),
+      req.body,
+      String(res.locals.user.discordId)
+    );
+    res.status(204).end();
+  });
   router.post('/:resource/delete-preview', async (req, res) => {
     res.json({
       data: await service.previewDelete(

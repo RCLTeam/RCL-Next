@@ -14,6 +14,21 @@ export class CrudOperationsService {
   resources() {
     return crudResources;
   }
+  matchMaps(matchId: string) {
+    return this.repository.matchMaps(z.string().uuid().parse(matchId));
+  }
+  reorderMaps(matchId: string, body: unknown, actorId: string) {
+    const ids = z.array(z.string().uuid()).max(32767);
+    const order = z.object({ expectedOrder: ids, gameIds: ids }).strict().parse(body);
+    if (
+      new Set(order.gameIds).size !== order.gameIds.length ||
+      new Set(order.expectedOrder).size !== order.expectedOrder.length ||
+      order.gameIds.length !== order.expectedOrder.length ||
+      order.gameIds.some((id) => !order.expectedOrder.includes(id))
+    )
+      throw new AppError(422, 'INVALID_MAP_ORDER', 'Incluye todos los mapas una sola vez.');
+    return this.repository.reorderMaps(z.string().uuid().parse(matchId), order, actorId);
+  }
   private resource(name: string) {
     const resource = crudResources.find((item) => item.name === name);
     if (!resource) throw notFound('CRUD resource');
