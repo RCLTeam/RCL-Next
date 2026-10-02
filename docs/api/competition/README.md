@@ -1,6 +1,6 @@
 # Módulo API: Competition Engine & League Administration
 
-[⬅️ Volver al Índice Principal de Documentación](../../../docs/README.md) | [Siguiente: Web Competition ➡️](../../../docs/web/competition/README.md)
+[⬅️ Volver a API](../README.md) | [Siguiente: API Auth ➡️](../auth/README.md)
 
 ---
 
@@ -14,6 +14,7 @@ El módulo opera bajo cinco pilares arquitectónicos y de ingeniería:
 3. **Hermetismo de Persistencia y Privacidad de Datos:** Las consultas SQL construidas con Drizzle ORM purgan activamente credenciales y metadatos internos (`puuid`, `discordUserId`, `createdAt`, `updatedAt`, `postgres-competition.repository.ts:77-94, 154-158`), impidiendo la fuga de identificadores de cuentas hacia los clientes.
 4. **Validación Exhaustiva con Detección Temprana (*Fail-Fast*):** Todos los parámetros de consulta y ruta se analizan mediante esquemas Zod con modificador `.strict()`. Parámetros no reconocidos en query strings o formatos inválidos generan de forma inmediata un error HTTP 422 `VALIDATION_ERROR` (`competition.controller.ts:63-89`).
 5. **Restricción de Acceso por Estado Deportivo:** El endpoint de detalle de partido (`GET /api/v1/matches/:matchId`) restringe deliberadamente el acceso a enfrentamientos en estado `'completed'` o `'forfeit'`, devolviendo HTTP 404 ante consultas sobre partidos programados o cancelados (`competition.service.ts:77-78`).
+6. **Reglas de Visibilidad Deportiva y Deduplicación de Identidades:** Sentinels de rol de Discord (`isActiveTeam` con `discordRoleId >= 0n`, `isTeamVisibleInCalendar` con `discordRoleId >= -10n`, exclusión de fantasma `-9000n`), resolución de plantilla con deduplicación estricta de cuentas principales físicas (`selectDistinctOn([teamMemberships.discordUserId])` y filtro `players.isMain = true`), y resolución de cuentas secundarias (`linkedAccounts`) en el perfil de jugador.
 
 ---
 
@@ -22,8 +23,8 @@ El módulo opera bajo cinco pilares arquitectónicos y de ingeniería:
 | Documento | Enlace | Resumen Funcional |
 |---|---|---|
 | **Rutas y Controladores** | [routes.md](routes.md) | Catálogo de los 12 endpoints HTTP montados bajo `/api/v1`, métodos, parámetros de ruta/query, semántica REST y matriz de códigos de estado (200, 404, 422, 500). |
-| **Lógica de Procesamiento y Algoritmos** | [processing.md](processing.md) | Algoritmo de clasificación de 4 niveles (mapDifference -> wins -> losses -> localeCompare), motor de MVP con escalado continuo a trozos de 9 dimensiones, fallbacks económicos y ejemplo numérico detallado, desempates deterministas, normalización de roles y slugs deterministas con SHA-256. |
-| **Persistencia y Consultas Relacionales** | [persistence.md](persistence.md) | Implementación de `PostgresCompetitionRepository` sobre Drizzle ORM, proyección SQL, resolución de jornada activa, deduplicación de cuentas con `selectDistinctOn` y purga de campos sensibles. |
+| **Lógica de Procesamiento y Algoritmos** | [processing.md](processing.md) | Algoritmo de clasificación de 4 niveles (mapDifference -> wins -> losses -> localeCompare), motor de MVP con escalado continuo a trozos de 9 dimensiones, reglas de visibilidad deportiva (`team-visibility.ts`), fallbacks económicos, desempates deterministas, normalización de roles y slugs deterministas con SHA-256. |
+| **Persistencia y Consultas Relacionales** | [persistence.md](persistence.md) | Implementación de `PostgresCompetitionRepository` sobre Drizzle ORM, proyección SQL, resolución de jornada activa, consultas de detalle de equipo con cuentas principales, detalle de jugador con cuentas secundarias (`linkedAccounts`), deduplicación con `selectDistinctOn` y purga de campos sensibles. |
 | **Validación y Manejo de Errores** | [validation.md](validation.md) | Esquemas Zod con `.strict()`, validación regex unicode para identificadores alfanuméricos, límites de rango `smallint` para jornadas y ciclo de error 422 / 404. |
 | **Contratos y DTOs** | [contracts.md](contracts.md) | Estructuras de datos TypeScript exportadas en `@rcl/contracts` (`Standing`, `MatchDetail`, `TeamDetail`, `PlayerDetail`, `ChampionStats`, `Season`, `Division`, `Round`). |
 

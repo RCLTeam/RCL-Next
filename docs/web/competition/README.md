@@ -1,6 +1,6 @@
 # Módulo Web: Competition Feature (Frontend Golden Standard)
 
-[⬅️ Volver al Índice Principal de Documentación](../../../docs/README.md) | [Siguiente: Auth API ➡️](../../../docs/api/auth/README.md)
+[⬅️ Volver a Web](../README.md) | [Siguiente: Web Auth ➡️](../auth/README.md)
 
 ---
 
@@ -13,6 +13,7 @@ Su arquitectura respeta rigurosamente el **Golden Standard Modular** del monorep
 2. **Lógica de Estado y Red Desacoplada (*Headless Hooks*):** La comunicación HTTP, el control de concurrencia y la sincronización residen en el directorio `hooks/` (`useCollection`, `useCompetitionSelection`, `useCompetition`, `useCompetitionDetail`).
 3. **Cancelación Automática y Prevención de Carreras (*AbortController*):** Las peticiones de colección cancelan de forma transparente las consultas previas en vuelo cuando cambian los filtros de temporada o división (`useCollection.ts:13, 24`), y purgan inmediatamente el estado previo para evitar fugas visuales de datos desactualizados.
 4. **Resiliencia Visual y Accesibilidad:** Implementación de vistas seguras contra *Cumulative Layout Shift* (CLS) mediante cajas delimitadoras fijas para emblemas de equipo, soporte de navegación completa por teclado en tablas desplazables (`tabIndex={0}`) y mecanismos accesibles para ocultar spoilers de resultados.
+5. **Vistas de Detalle y Visibilidad Deportiva:** Integración de reglas `isActiveTeam` e `isTeamVisibleInCalendar`, fichas completas de detalle (`MatchDetailPage`, `TeamDetailPage`, `PlayerDetailPage`), generación de enlaces Multi OP.GG deduplicados, sección de cuentas vinculadas y emparejamiento calle por calle (`MatchMatchupsSection`).
 
 ---
 
@@ -20,9 +21,9 @@ Su arquitectura respeta rigurosamente el **Golden Standard Modular** del monorep
 
 | Documento | Enlace | Resumen Funcional |
 |---|---|---|
-| **Componentes de Presentación (Dumb UI)** | [components.md](components.md) | Catálogo de los 10 componentes visuales puros (`StandingsTable`, `MatchCard`, `TeamCard`, `TeamBadge`, `DivisionCard`, `DivisionSwitch`, `PlayoffBracket`, `RoundFilter`, `CompetitionFilters`, `CompetitionDataState`), props, accesibilidad y cero red. |
+| **Componentes de Presentación (Dumb UI)** | [components.md](components.md) | Catálogo de componentes visuales puros (`StandingsTable`, `MatchCard`, `TeamCard`, `TeamBadge`, `DivisionCard`, `DivisionSwitch`, `PlayoffBracket`, `RoundFilter`, `CompetitionFilters`, `CompetitionDataState`, `MatchMatchupsSection`), props, accesibilidad, filtrado reactivo de clubes en `StandingsTable`, visibilidad en tarjetas y cero red. |
 | **Hooks Headless y Sincronización** | [hooks.md](hooks.md) | Gestión del ciclo de vida asíncrono con `useCollection`, cancelación vía `AbortController`, orquestación de recursos con `useCompetition`, selección jerárquica y mapeo de errores 404/422 a estados `missing`. |
-| **Vistas Ensambladoras (Smart Pages)** | [pages.md](pages.md) | Integración de vistas en `apps/web/src/site/pages/` (`StandingsPage`, `CalendarPage`, `TeamsPage`, `PlayersPage`, `PlayoffsPage`, `ChampionsPage`, páginas de detalle), temporizadores en tiempo real y composición de hooks. |
+| **Vistas Ensambladoras (Smart Pages)** | [pages.md](pages.md) | Integración de vistas en `apps/web/src/site/pages/` (`StandingsPage`, `CalendarPage`, `TeamsPage`, `PlayersPage`, `PlayoffsPage`, `ChampionsPage`, y vistas de detalle `MatchDetailPage`, `TeamDetailPage`, `PlayerDetailPage`), temporizadores en tiempo real y composición de hooks. |
 | **Tipos y Contratos de Interfaz** | [types.md](types.md) | Modelos de estado de UI (`CollectionState`, `DetailState`), uniones discriminadas, opciones de ordenación de estadísticas (`PlayerSort`) y reexportación de contratos de competición. |
 
 ---

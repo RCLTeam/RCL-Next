@@ -1,6 +1,6 @@
 # Pipeline de Procesamiento y Formato Binario ROFL
 
-[⬅️ Volver al Índice Principal de Documentación](../../docs/README.md) | [Siguiente: API ROFL Upload ➡️](../api/rofl-upload/README.md)
+[⬅️ Volver al Índice Principal de Documentación](../README.md) | [Siguiente: API ROFL Upload ➡️](../api/rofl-upload/README.md)
 
 ---
 
@@ -18,9 +18,9 @@ Posteriormente, las estadísticas extraídas se transforman y mapean de manera n
 
 | Documento | Enlace | Resumen Funcional |
 |---|---|---|
-| **Motor de Parsing y CLI** | [parser.md](parser.md) | Especificación técnica de `roflParser.py`, interfaz de línea de comandos, códigos de salida (0-14), cuotas de metadatos y paralelismo en subprocesos. |
+| **Motor de Parsing y CLI** | [parser.md](parser.md) | Especificación técnica de `roflParser.py`, interfaz de línea de comandos, códigos de salida (0-14), cuotas de metadatos, paralelismo en subprocesos y ordenación natural determinista de partidas importadas (`orderImportedGames`) con Three-Way Swap atómico en PostgreSQL. |
 | **Estructura Binaria ROFL** | [binary-format.md](binary-format.md) | Anatomía física del archivo `.rofl`, cabecera mágica `b"RIOT"`, trailer little-endian de 4 bytes, `statsJson` doblemente codificado y delimitaciones técnicas en metadatos. |
-| **Diccionario de Mapeo Relacional** | [mapping.md](mapping.md) | Mapeo detallado de las 75 métricas de invocador y equipo de `statsJson` hacia las 5 tablas Drizzle (`match_games`, `player_game_info`, `player_game_stats`, `player_game_runes`, `player_game_build`). |
+| **Diccionario de Mapeo Relacional** | [mapping.md](mapping.md) | Mapeo detallado de las 75 métricas de invocador y equipo de `statsJson` hacia las 5 tablas Drizzle (`match_games`, `player_game_info`, `player_game_stats`, `player_game_runes`, `player_game_build`), junto a la derivación y redirección obligatoria de cuentas secundarias / smurfs hacia la cuenta principal física (`findPlayersByRiotIds`). |
 
 ---
 

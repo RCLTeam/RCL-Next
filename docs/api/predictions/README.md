@@ -1,6 +1,6 @@
 # Módulo API: Match Predictions & Community Leaderboard
 
-[⬅️ Volver al Índice Principal de Documentación](../../../docs/README.md) | [Siguiente: Web Home Content ➡️](../../../docs/web/home-content/README.md)
+[⬅️ Volver a API](../README.md) | [Siguiente: API ROFL Upload ➡️](../rofl-upload/README.md)
 
 ---
 
@@ -15,6 +15,7 @@ El subsistema se estructura en torno a cinco pilares arquitectónicos y de integ
 3. **Protección Anti-Colusión y Ocultamiento de Tendencias:** Mientras la ventana de votación no esté formalmente cerrada (`!window.closed`), el recuento total de votos (`votes`) y el porcentaje del equipo local (`homePercent`) se devuelven estrictamente como `null` (`predictions.repository.ts:64-72`). Ningún usuario puede inspeccionar la tendencia de la comunidad antes del cierre.
 4. **Refutación Fáctica de Cuotas de Apuesta (Odds) y Multiplicadores:** En el sistema **no existen cuotas de apuestas, pagos, líneas de dinero ni multiplicadores de racha**. El sistema computa exclusivamente porcentajes enteros redondeados (`Math.round((100 * homeVotes) / totalVotes)`). El baremo de puntuación otorga puntos planos deterministas: **3 puntos** por acertar ganador y tanteo exacto, **1 punto** por acertar ganador con tanteo incorrecto, y **0 puntos** si no se acierta el ganador (`predictionPoints`, `prediction-policy.ts:30-32`).
 5. **Advertencia de Escalabilidad (Agregación en Memoria):** El método `overview` de `PredictionsRepository` recupera de la base de datos la totalidad de predicciones registradas para todos los partidos y divisiones de la temporada completa (`predictions.repository.ts:22-28`), acumulando los puntos y calculando el ranking mediante estructuras `Map` en el proceso Node.js.
+6. **Filtro Perimetral y Bloqueo Pesimista contra Equipos Inactivos / Fantasma (`INACTIVE_TEAMS`):** Exclusión en el calendario de jornadas (`overview`) mediante `gte(homeTeam.discordRoleId, 0n)` y `gte(awayTeam.discordRoleId, 0n)`, y bloqueo pesimista en `save()` con `SELECT FOR SHARE` sobre `teams`, rechazando pronósticos para equipos inactivos o fantasma con HTTP 409 `INACTIVE_TEAMS`.
 
 ---
 
@@ -24,8 +25,8 @@ El subsistema se estructura en torno a cinco pilares arquitectónicos y de integ
 |---|---|---|
 | **Rutas y Controladores** | [routes.md](routes.md) | Catálogo de los 3 endpoints HTTP montados bajo `/api/v1/predictions` (`GET /divisions/:id`, `GET /divisions/:id/mine`, `PUT /matches/:id`), cabeceras anti-caché, autenticación Discord y control de origen confiable. |
 | **Lógica de Procesamiento** | [processing.md](processing.md) | Cálculo de la semana natural deportiva con `Intl.DateTimeFormat`, máquina de estados de la ventana de votación, baremo de puntos plano (3/1/0) y validación de marcadores Best-Of (Bo1, Bo3, Bo5). |
-| **Persistencia y Base de Datos** | [persistence.md](persistence.md) | Operaciones con Drizzle ORM sobre la tabla `predictions`, restricción de clave foránea `ON DELETE RESTRICT` en equipos, clave única anti-duplicados `(discord_user_id, match_id)`, cobertura del trigger SQL `set_updated_at` y autopsia de la agregación de temporada en memoria. |
-| **Validación y Errores** | [validation.md](validation.md) | Esquemas Zod estrictos, validación de pertenencia de equipos (`INVALID_TEAM`), límites de tanteo (`INVALID_SCORE`), conflicto de ventana cerrada (HTTP 409 `PREDICTIONS_CLOSED`) y códigos de estado. |
+| **Persistencia y Base de Datos** | [persistence.md](persistence.md) | Operaciones con Drizzle ORM sobre la tabla `predictions`, filtrado perimetral de calendario (`discordRoleId >= 0n`), bloqueo compartido de participantes (`SELECT FOR SHARE`), restricción de clave foránea `ON DELETE RESTRICT` en equipos, clave única anti-duplicados `(discord_user_id, match_id)`, cobertura del trigger SQL `set_updated_at` y autopsia de la agregación de temporada en memoria. |
+| **Validación y Errores** | [validation.md](validation.md) | Esquemas Zod estrictos, regla de equipos activos y código HTTP 409 `INACTIVE_TEAMS`, validación de pertenencia de equipos (`INVALID_TEAM`), límites de tanteo (`INVALID_SCORE`), conflicto de ventana cerrada (HTTP 409 `PREDICTIONS_CLOSED`) y códigos de estado. |
 | **Contratos y DTOs** | [contracts.md](contracts.md) | Estructuras de datos TypeScript exportadas en `@rcl/contracts` (`PredictionPick`, `PredictionSummary`, `PredictorStanding`, `PredictionsData`) y criterios de ordenación del ranking. |
 
 ---

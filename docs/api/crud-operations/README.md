@@ -1,6 +1,6 @@
 # Módulo API: CRUD Operations Engine
 
-[⬅️ Volver al Índice Principal de Documentación](../../../docs/README.md) | [Siguiente: API Database Transfer ➡️](../../../docs/api/database-transfer/README.md)
+[⬅️ Volver a API](../README.md) | [Siguiente: API Database Transfer ➡️](../database-transfer/README.md)
 
 ---
 
@@ -15,6 +15,7 @@ El motor está diseñado bajo principios de máxima defensa de integridad refere
 3. **Planificador Determinista de Borrado en Cascada:** Resuelve de forma autónoma el grafo acíclico dirigido (DAG) de dependencias foráneas (`postgres-crud-delete-plan.ts:21-50`), previene referencias cíclicas (`deleted.has(id)`), impone un límite operativo duro de 10.000 filas y genera un digest criptográfico SHA-256 de confirmación.
 4. **Concurrencia Optimista con Precisión de Microsegundos:** Detección de colisiones concurrentes basada en marcas temporales UTC con formato `YYYY-MM-DD"T"HH24:MI:SS.US"Z"`, rechazando cualquier mutación desactualizada con HTTP 409 `DATA_CONFLICT`.
 5. **Efectos Colaterales Automáticos y Trazabilidad Universal:** Las mutaciones sobre plantillas deportivas (`memberships`) disparan inserciones auditables inmediatas en `roster_movements` (`joined`, `left`, `role_changed`, `promoted_to_captain`, `demoted_from_captain`), mientras que toda operación exitosa genera un registro inmutable en `audit_logs` con snapshots completos de estado previo y posterior.
+6. **Reordenación Transaccional de Mapas y Soporte de Roles de Discord:** Bloqueo pesimista con `SELECT ... FOR UPDATE` sobre `matches` y `match_games`, validación optimista contra `expectedOrder` (HTTP 409), algoritmo de desplazamiento atómico mediante slot temporal libre en `smallint` para preservar la unicidad relacional `(matches_id, game_number)`, auditoría transaccional (`admin.reorder-maps`) y soporte del campo `discordRoleId` en `teams`.
 
 ---
 
@@ -22,11 +23,11 @@ El motor está diseñado bajo principios de máxima defensa de integridad refere
 
 | Documento | Enlace | Resumen Funcional |
 |---|---|---|
-| **Rutas y Capa de Transporte** | [routes.md](routes.md) | Endpoints de catálogo, consulta paginada, previsualización de borrado y mutaciones; cabeceras de caché `no-store` y control de acceso por roles. |
+| **Rutas y Capa de Transporte** | [routes.md](routes.md) | Endpoints de catálogo, consulta paginada (ampliada a `limit=250` para referencias foráneas), previsualización de borrado, mutaciones con soporte de `discordRoleId` en `teams`, y endpoints de gestión de mapas (`GET /matches/:matchId/maps` y `PUT /matches/:matchId/maps/order`); cabeceras de caché `no-store` y control de acceso por roles. |
 | **Lógica de Procesamiento y Algoritmos** | [processing.md](processing.md) | Planificador de borrado relacional, recorrido BFS, límite de 10.000 filas, digest SHA-256, orden topológico inverso y validaciones deportivas. |
-| **Persistencia Relacional y Consultas** | [persistence.md](persistence.md) | Repositorio `PostgresCrudOperationsRepository`, mapeo Drizzle, bloqueo consultivo `noWait`, ranking de búsqueda y enriquecimiento foráneo en lote. |
+| **Persistencia Relacional y Consultas** | [persistence.md](persistence.md) | Repositorio `PostgresCrudOperationsRepository`, mapeo Drizzle, bloqueo consultivo `noWait`, ranking de búsqueda, enriquecimiento foráneo en lote, consultas `matchMaps` y transacción pesimista `reorderMaps`. |
 | **Validación y Reglas de Dominio** | [validation.md](validation.md) | Esquemas Zod por recurso, reglas de integridad referencial, inmutabilidad de claves primarias y matriz de privilegios `admin` vs `owner`. |
-| **Contratos y DTOs Compartidos** | [contracts.md](contracts.md) | Interfaces TypeScript exportadas (`CrudResource`, `CrudField`, `CrudRecord`, `CrudDeletePreview`, `CrudDeleteImpact`) en `@rcl/contracts`. |
+| **Contratos y DTOs Compartidos** | [contracts.md](contracts.md) | Interfaces TypeScript exportadas (`CrudResource`, `CrudField`, `CrudRecord`, `CrudDeletePreview`, `CrudDeleteImpact`, `AdminMatchMap`, `MatchMapOrder`) en `@rcl/contracts`. |
 
 ---
 

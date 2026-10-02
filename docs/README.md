@@ -24,16 +24,16 @@ docs/
 │   ├── schema.md                                # Especificación de las 21 tablas relacionales y 6 enums
 │   ├── constraints.md                           # Claves foráneas, índices parciales y triggers PL/pgSQL
 │   ├── migrations.md                            # Ciclo de migraciones, advisory lock 72160419 y hashes SHA-256
-│   ├── seed.md                                  # Siembra transaccional protegida, demo.sql y showcase.sql
+│   ├── seed.md                                  # Siembra transaccional protegida, demo.sql con roles de Discord y showcase.sql
 │   └── contracts.md                             # Mapeo y trazabilidad hacia tipos de @rcl/contracts
 ├── reference/                                   # Archivo arqueológico y comparativa histórica
 │   ├── README.md                                # Análisis comparativo del esquema original vs Drizzle
 │   └── 0000_initial_schema.original.sql         # SQL histórico de referencia (conservado intacto)
 ├── rofl/                                        # Pipeline de repeticiones y formato binario ROFL
 │   ├── README.md                                # Índice general del motor de análisis de partidas LoL
-│   ├── parser.md                                # CLI apps/parser/roflParser.py, subprocesos y códigos 0-14
+│   ├── parser.md                                # CLI, códigos de salida y ordenación natural determinista
 │   ├── binary-format.md                         # Cabecera b"RIOT", trailer seek inverso y statsJson
-│   └── mapping.md                               # Normalización de 75 métricas a las 5 tablas Drizzle
+│   └── mapping.md                               # Normalización a 5 tablas y derivación de cuentas secundarias
 ├── api/                                         # Backend y servicios HTTP/WebSocket (Vertical Slices)
 │   ├── README.md                                # Índice del backend Express, middlewares y arquitectura
 │   ├── rofl-upload/                             # Rebanada: Subida y streaming WebSocket de repeticiones
@@ -61,7 +61,7 @@ docs/
 │   │   ├── README.md                            # Resumen del cómputo de ligas, jornadas y clasificaciones
 │   │   ├── routes.md                            # Rutas REST de temporadas, divisiones y clasificaciones
 │   │   ├── processing.md                        # Clasificación de 4 niveles, escalado continuo de MVP (9 dimensiones) y slugs
-│   │   ├── persistence.md                       # Consultas agregadas sobre match_games y player_game_stats
+│   │   ├── persistence.md                       # Consultas agregadas, rosters con cuenta principal y cuentas secundarias
 │   │   ├── validation.md                        # Reglas de integridad deportiva y estados de serie
 │   │   └── contracts.md                         # Tipos DTO de tablas de clasificación y estadísticas
 │   ├── auth/                                    # Rebanada: Autenticación OAuth2 Discord y sesiones
@@ -80,9 +80,9 @@ docs/
 │   │   └── contracts.md                         # Tipos de roles de aplicación y logs de auditoría
 │   ├── crud-operations/                         # Rebanada: Motor administrativo de operaciones CRUD
 │   │   ├── README.md                            # Resumen del mantenimiento general de entidades
-│   │   ├── routes.md                            # Endpoints dinámicos de gestión relacional
+│   │   ├── routes.md                            # Endpoints dinámicos de gestión relacional y reordenación de mapas
 │   │   ├── processing.md                        # Introspección de claves foráneas y protección de borrado
-│   │   ├── persistence.md                       # Ejecución transaccional y prevención de huérfanos
+│   │   ├── persistence.md                       # Ejecución transaccional pesimista, reorderMaps y prevención de huérfanos
 │   │   ├── validation.md                        # Esquemas de campos editables y comprobaciones previas
 │   │   └── contracts.md                         # Definición de entidades administrables y metadatos
 │   ├── database-transfer/                       # Rebanada: Exportación e importación de volcados
@@ -103,7 +103,7 @@ docs/
 │       ├── README.md                            # Resumen de pronósticos con límite horario Europe/Madrid
 │       ├── routes.md                            # Endpoints de votación, consulta de resultados y rankings
 │       ├── processing.md                        # Puntuación (1 pt ganador, 3 pts marcador exacto)
-│       ├── persistence.md                       # Tabla predictions y agregación de aciertos
+│       ├── persistence.md                       # Tabla predictions, bloqueo de inactivos y agregación de aciertos
 │       ├── validation.md                        # Bloqueo temporal automático antes del primer mapa
 │       └── contracts.md                         # Tipos de papeleta de predicción y tabla de líderes
 ├── web/                                         # Frontend React 19 (Feature-Driven & Headless Hooks)
@@ -122,9 +122,9 @@ docs/
 │   │   └── types.md                             # Estados de la máquina de envío (queued -> confirmed)
 │   ├── competition/                             # Feature: Vistas deportivas y estadísticas
 │   │   ├── README.md                            # Resumen de componentes de liga y perfiles
-│   │   ├── components.md                        # Tablas de clasificaciones, calendarios, podio MVP
+│   │   ├── components.md                        # Tablas de clasificaciones, emparejamientos por carril y podio MVP
 │   │   ├── hooks.md                             # Hooks de obtención y caché de datos de competición
-│   │   ├── pages.md                             # Páginas /clasificacion, /calendario, /jugadores, etc.
+│   │   ├── pages.md                             # Páginas públicas de liga y fichas de detalle (Match, Team, Player)
 │   │   └── types.md                             # Tipos de presentación de clasificación y jugadores
 │   ├── auth/                                    # Feature: Controles de identidad y sesión
 │   │   ├── README.md                            # Resumen de autenticación en la interfaz de usuario
@@ -140,7 +140,7 @@ docs/
 │   │   └── types.md                             # Tipos de edición de rol y filtros de auditoría
 │   ├── crud-operations/                         # Feature: Consola de mantenimiento relacional
 │   │   ├── README.md                            # Resumen de la interfaz CRUD administrativa
-│   │   ├── components.md                        # Formularios tipados y diálogo de borrado en cascada
+│   │   ├── components.md                        # Formularios tipados, MatchMapOrderEditor y borrado en cascada
 │   │   ├── hooks.md                             # Hooks para introspección y ejecución transaccional
 │   │   ├── pages.md                             # Vista /admin/crud con selector de entidades
 │   │   └── types.md                             # Esquemas dinámicos de formularios y columnas
@@ -188,7 +188,7 @@ Gestiona el esquema de persistencia en PostgreSQL 16+ / PGlite 0.3+, modelado co
 - [docs/database/schema.md](database/schema.md): Catálogo exhaustivo de las 21 tablas y 6 enums.
 - [docs/database/constraints.md](database/constraints.md): Claves foráneas, checks, índices únicos parciales y triggers.
 - [docs/database/migrations.md](database/migrations.md): Flujo de migraciones, advisory lock `72160419` y verificación de integridad.
-- [docs/database/seed.md](database/seed.md): Estrategia de siembra idempotente con `demo.sql` y `showcase.sql`.
+- [docs/database/seed.md](database/seed.md): Estrategia de siembra transaccional protegida, demo.sql con roles de Discord, showcase.sql y verificación del invariante 5.
 - [docs/database/contracts.md](database/contracts.md): Trazabilidad de entidades relacionales hacia `@rcl/contracts`.
 - [docs/reference/README.md](reference/README.md): Comparativa técnica del esquema histórico vs el modelo Drizzle actual.
 - [docs/reference/0000_initial_schema.original.sql](reference/0000_initial_schema.original.sql): Archivo SQL arqueológico conservado como referencia.
@@ -198,9 +198,9 @@ Gestiona el esquema de persistencia en PostgreSQL 16+ / PGlite 0.3+, modelado co
 Ingesta de archivos binarios de repetición de League of Legends mediante lectura de metadatos de seek inverso en Python 3 (`apps/parser/roflParser.py`):
 
 - [docs/rofl/README.md](rofl/README.md): Arquitectura del pipeline de extracción y tolerancia a fallos.
-- [docs/rofl/parser.md](rofl/parser.md): Especificación de `roflParser.py`, interfaz CLI y códigos de salida 0 a 14.
+- [docs/rofl/parser.md](rofl/parser.md): Especificación de `roflParser.py`, interfaz CLI, códigos de salida 0 a 14 y ordenación natural determinista con swap atómico.
 - [docs/rofl/binary-format.md](rofl/binary-format.md): Estructura binaria, cabecera `b"RIOT"` y empaquetado de metadatos.
-- [docs/rofl/mapping.md](rofl/mapping.md): Diccionario de normalización de métricas hacia las tablas de partidas de Drizzle.
+- [docs/rofl/mapping.md](rofl/mapping.md): Normalización a 5 tablas Drizzle y derivación de cuentas secundarias hacia cuenta principal.
 
 ### 3.3 Servicios de Backend API (`docs/api/`)
 

@@ -1,6 +1,6 @@
 # Capa de Base de Datos y Arquitectura Relacional
 
-[⬅️ Volver al Índice Principal de Documentación](../../docs/README.md) | [Siguiente: ROFL Replay Pipeline ➡️](../rofl/README.md)
+[⬅️ Volver al Índice Principal de Documentación](../README.md) | [Siguiente: ROFL Replay Pipeline ➡️](../rofl/README.md)
 
 ---
 
@@ -29,7 +29,7 @@ La arquitectura relacional implementa un diseño de alta integridad deportiva qu
 | [schema.md](./schema.md) | Catálogo detallado de las 21 tablas Drizzle y 6 tipos enumerados (`pgEnum`), especificación de columnas, tipos, claves y nulabilidad. |
 | [constraints.md](./constraints.md) | Restricciones relacionales, índices únicos parciales, reglas de validación `CHECK` y disparadores PL/pgSQL (`set_updated_at`, `check_match_games_teams`, `complete_player_game`). |
 | [migrations.md](./migrations.md) | Ciclo de vida de migraciones con Drizzle Kit, ejecutor programático con bloqueo consultivo `72160419` y verificación de integridad criptográfica SHA-256. |
-| [seed.md](./seed.md) | Estrategia de siembra transaccional protegida con bloqueo `72160420`, fixtures sintéticos deterministas (`demo.sql`) y conjunto de datos de demostración con 240 estadísticas (`showcase.sql`). |
+| [seed.md](./seed.md) | Estrategia de siembra transaccional protegida con bloqueo `72160420`, fixtures sintéticos deterministas (`demo.sql`) con identificadores Snowflake positivos de rol de Discord (`discord_role_id >= 0n`) para visibilidad inmediata de clubes demo, verificación del invariante 5 en `demo-showcase.test.ts` y conjunto de datos de demostración con 240 estadísticas (`showcase.sql`). |
 | [contracts.md](./contracts.md) | Integración y trazabilidad entre las entidades relacionales de la base de datos y los contratos TypeScript compartidos del paquete `@rcl/contracts`. |
 
 ---

@@ -49,8 +49,8 @@ RCL-Next/
 │   │       ├── shared/                          # Errores de dominio, utilidades HTTP y middleware global
 │   │       └── modules/                         # Rebanadas verticales de negocio
 │   │           ├── auth/                        # Discord OAuth2, sesiones de base de datos y cookies
-│   │           ├── competition/                 # Clasificaciones, desempates, estadísticas y algoritmo MVP
-│   │           ├── crud-operations/             # Motor CRUD administrativo con detección de dependencias FK
+│   │           ├── competition/                 # Clasificaciones, desempates, estadísticas, visibilidad y algoritmo MVP
+│   │           ├── crud-operations/             # Motor CRUD administrativo con detección de dependencias FK y reordenación de mapas
 │   │           ├── database-transfer/           # Volcados y restauraciones PostgreSQL con comandos COPY
 │   │           ├── discord-bridge/              # Cliente WebSocket hacia el bot de Discord con reintentos
 │   │           ├── home-content/                # Publicaciones editoriales y equipo de la semana
@@ -67,8 +67,8 @@ RCL-Next/
 │   │       ├── App.tsx                          # Componente raíz y proveedor global de rutas
 │   │       ├── features/                        # Características guiadas por dominio (Golden Standard)
 │   │       │   ├── auth/                        # Botones de login Discord, avatar y barrera RequireAdmin
-│   │       │   ├── competition/                 # Tablas de clasificación, calendarios y vistas de equipo
-│   │       │   ├── crud-operations/             # Formularios tipados y modales de confirmación de borrado
+│   │       │   ├── competition/                 # Tablas de clasificación, calendarios, fichas de detalle y emparejamientos
+│   │       │   ├── crud-operations/             # Formularios tipados, editor de mapas y modales de confirmación
 │   │       │   ├── database-transfer/           # Panel de administración de copias de seguridad .dump
 │   │       │   ├── discord-bridge/              # Hook de telemetría y salud del puente de Discord
 │   │       │   ├── home-content/                # Tarjetas de noticias, visor modal y quinteto ideal
