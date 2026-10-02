@@ -6,7 +6,7 @@
 
 ## 1. Resumen de Contratos Compartidos
 
-Los contratos del motor CRUD están centralizados en el paquete `@rcl/contracts` (`packages/contracts/src/crud-operations.ts:1-42`). Estos contratos definen la representación canónica de los recursos dinámicos, registros tabulares, resultados de paginación y estructuras de previsualización de borrado relacional, siendo compartidos sin duplicación entre el backend (`apps/api`) y el frontend (`apps/web`).
+Los contratos del motor CRUD están centralizados en el paquete `@rcl/contracts` (`packages/contracts/src/crud-operations.ts:1-53`). Estos contratos definen la representación canónica de los recursos dinámicos, registros tabulares, resultados de paginación, mapas de partidos, reordenaciones de series y estructuras de previsualización de borrado relacional, siendo compartidos sin duplicación entre el backend (`apps/api`) y el frontend (`apps/web`).
 
 ---
 
@@ -68,6 +68,38 @@ export interface CrudPageResult {
 
 ---
 
+### 2.5 Contratos de Mapas y Reordenación de Series
+
+Definidos en `packages/contracts/src/crud-operations.ts:3-13`:
+
+#### A. Representación de Mapa en Panel de Administración (`AdminMatchMap`)
+```typescript
+export interface AdminMatchMap {
+  id: string;
+  gameNumber: number;
+  externalGameId: string | null;
+  durationSeconds: number | null;
+  winner: string | null;
+}
+```
+- **`id`:** Identificador único UUID del mapa en la tabla `match_games`.
+- **`gameNumber`:** Posición ordinal asignada a la partida dentro del encuentro (1, 2, 3...).
+- **`externalGameId`:** Identificador externo asignado por Riot Games o el sistema de ingesta (`null` en partidas manuales).
+- **`durationSeconds`:** Duración real de la partida en segundos (`null` si no está disponible).
+- **`winner`:** Nombre legible del equipo ganador (`schema.teams.name`), o `null` si no se ha registrado vencedor.
+
+#### B. Ordenación Concurrente de Mapas (`MatchMapOrder`)
+```typescript
+export interface MatchMapOrder {
+  expectedOrder: string[];
+  gameIds: string[];
+}
+```
+- **`expectedOrder`:** Secuencia de identificadores UUID de los mapas tal y como fueron leídos por el cliente en su última consulta. Actúa como token de concurrencia optimista; si la secuencia o cantidad de mapas en base de datos difiere al momento de guardar, la solicitud se rechaza con HTTP 409 `conflict('The maps have changed. Reload the order before saving.')`.
+- **`gameIds`:** Secuencia ordenada deseada de identificadores UUID. Debe incluir todos los identificadores de los mapas del encuentro exactamente una vez.
+
+---
+
 ## 3. Contratos de Previsualización y Borrado en Cascada
 
 ### 3.1 Impacto de Dependencia Relacional (`CrudDeleteImpact`)
@@ -113,17 +145,46 @@ export interface CrudDeleteDependency {
 
 ## 4. Contratos Internos de Repositorio (`CrudMutation`)
 
-Definido en `apps/api/src/modules/crud-operations/crud-operations.repository.ts:3-12`:
+Definido en `apps/api/src/modules/crud-operations/crud-operations.repository.ts:10-17`:
 
 ```typescript
 export interface CrudMutation {
-  resource: string;
   action: 'create' | 'update' | 'delete';
   key: CrudRecord;
+  values: CrudRecord;
   version?: string;
-  values?: CrudRecord;
-  cascadeConfirmation?: string;
   actorId: string;
+  cascadeConfirmation?: string;
 }
 ```
 - Encapsula de forma estricta los datos necesarios para ejecutar la mutación transaccional con verificación de versión optimista (`version`) y token de confirmación (`cascadeConfirmation`).
+
+---
+
+## 5. Especificación de Metadatos de Recursos y Campo `discordRoleId`
+
+En `apps/api/src/modules/crud-operations/crud-operations.resources.ts:90-103`, el descriptor del recurso `teams` incorpora soporte para roles de Discord:
+
+```typescript
+{
+  name: 'teams',
+  label: 'Equipos',
+  description: 'Equipos inscritos en cada competición y su identidad visual.',
+  keys: ['id'],
+  fields: [
+    { name: 'seasonDivisionId', label: 'Competición', type: 'select', reference: 'competitions', required: true },
+    { name: 'name', label: 'Nombre', type: 'text', maxLength: 120, required: true },
+    { name: 'shortName', label: 'Abreviatura', type: 'text', maxLength: 16, required: false },
+    { name: 'logoUrl', label: 'URL o ruta del escudo', type: 'text', maxLength: 2048, required: false },
+    { name: 'color', label: 'Color (#RRGGBB)', type: 'text', maxLength: 7, required: false },
+    { name: 'discordRoleId', label: 'ID del Rol de Discord', type: 'text', maxLength: 20, required: false },
+    { name: 'isActive', label: 'Activo', type: 'boolean', required: true, defaultValue: true }
+  ]
+}
+```
+
+### Especificación del Campo `discordRoleId`
+- **Tipo:** `text`.
+- **Longitud Máxima:** `20` caracteres (correspondiente al límite superior de identificadores numéricos Snowflake de 64 bits en Discord).
+- **Obligatoriedad:** Opcional / nullable (`required: false`, almacena `null` en base de datos si no se proporciona).
+- **Propósito:** Almacena el Snowflake del rol de Discord representativo del equipo en el servidor de la liga. Facilita la asignación masiva de roles y las menciones automáticas en canales de competición.

@@ -20,6 +20,8 @@ Los componentes visuales y el cliente de API importan desde `@rcl/contracts` los
 
 ```typescript
 import type {
+  AdminMatchMap,
+  MatchMapOrder,
   CrudValue,
   CrudRecord,
   CrudField,
@@ -31,6 +33,8 @@ import type {
 } from '@rcl/contracts';
 ```
 
+- **`AdminMatchMap`:** DTO que modela los datos de un mapa para administración (`id: string`, `gameNumber: number`, `externalGameId: string | null`, `durationSeconds: number | null`, `winner: string | null`).
+- **`MatchMapOrder`:** Contrato de carga útil para persistir la reordenación de partidas (`expectedOrder: string[]`, `gameIds: string[]`), garantizando control de concurrencia optimista contra el servidor.
 - **`CrudRecord`:** `Record<string, string | number | boolean | null>`, estructura base de cada fila renderizada.
 - **`CrudResource`:** Metadatos de la tabla activa, incluyendo `keys: string[]` y `fields: CrudField[]`.
 - **`CrudDeletePreview`:** Estructura que transporta el token criptográfico `confirmation`, la bandera de viabilidad `allowed` y la lista de `impacts: CrudDeleteImpact[]`.
