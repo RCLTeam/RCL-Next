@@ -22,7 +22,7 @@ El módulo opera bajo cinco pilares arquitectónicos y de ingeniería:
 | Documento | Enlace | Resumen Funcional |
 |---|---|---|
 | **Rutas y Controladores** | [routes.md](routes.md) | Catálogo de los 12 endpoints HTTP montados bajo `/api/v1`, métodos, parámetros de ruta/query, semántica REST y matriz de códigos de estado (200, 404, 422, 500). |
-| **Lógica de Procesamiento y Algoritmos** | [processing.md](processing.md) | Algoritmo de clasificación de 4 niveles (`mapDifference -> wins -> losses -> localeCompare`), fórmula de 9 dimensiones de MVP, desempates cronológicos, normalización de roles y slugs deterministas con SHA-256. |
+| **Lógica de Procesamiento y Algoritmos** | [processing.md](processing.md) | Algoritmo de clasificación de 4 niveles (mapDifference -> wins -> losses -> localeCompare), motor de MVP con escalado continuo a trozos de 9 dimensiones, fallbacks económicos y ejemplo numérico detallado, desempates deterministas, normalización de roles y slugs deterministas con SHA-256. |
 | **Persistencia y Consultas Relacionales** | [persistence.md](persistence.md) | Implementación de `PostgresCompetitionRepository` sobre Drizzle ORM, proyección SQL, resolución de jornada activa, deduplicación de cuentas con `selectDistinctOn` y purga de campos sensibles. |
 | **Validación y Manejo de Errores** | [validation.md](validation.md) | Esquemas Zod con `.strict()`, validación regex unicode para identificadores alfanuméricos, límites de rango `smallint` para jornadas y ciclo de error 422 / 404. |
 | **Contratos y DTOs** | [contracts.md](contracts.md) | Estructuras de datos TypeScript exportadas en `@rcl/contracts` (`Standing`, `MatchDetail`, `TeamDetail`, `PlayerDetail`, `ChampionStats`, `Season`, `Division`, `Round`). |

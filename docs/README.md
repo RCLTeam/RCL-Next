@@ -60,7 +60,7 @@ docs/
 │   ├── competition/                             # Rebanada: Motor deportivo, estadísticas y clasificaciones
 │   │   ├── README.md                            # Resumen del cómputo de ligas, jornadas y clasificaciones
 │   │   ├── routes.md                            # Rutas REST de temporadas, divisiones y clasificaciones
-│   │   ├── processing.md                        # Cómputo de rachas, desempates olímpicos y fórmula MVP
+│   │   ├── processing.md                        # Clasificación de 4 niveles, escalado continuo de MVP (9 dimensiones) y slugs
 │   │   ├── persistence.md                       # Consultas agregadas sobre match_games y player_game_stats
 │   │   ├── validation.md                        # Reglas de integridad deportiva y estados de serie
 │   │   └── contracts.md                         # Tipos DTO de tablas de clasificación y estadísticas
