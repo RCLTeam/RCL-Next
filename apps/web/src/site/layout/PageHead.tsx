@@ -1,4 +1,4 @@
-import type { PageMetadata } from '@rcl/contracts';
+import { type PageMetadata, pageMetadataImage } from '@rcl/contracts';
 import { useEffect } from 'react';
 
 export function PageHead({ path, metadata }: { path: string; metadata: PageMetadata }) {
@@ -9,6 +9,8 @@ export function PageHead({ path, metadata }: { path: string; metadata: PageMetad
         ['name', 'description', page.description],
         ['property', 'og:description', page.description],
         ['name', 'twitter:description', page.description],
+        ['property', 'og:image', pageMetadataImage],
+        ['name', 'twitter:image', pageMetadataImage],
         ['property', 'og:title', `${page.title} · Rebel Crown Legacy`],
         ['name', 'twitter:title', `${page.title} · Rebel Crown Legacy`],
         ['property', 'og:type', 'website'],
