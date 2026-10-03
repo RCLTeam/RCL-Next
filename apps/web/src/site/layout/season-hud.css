@@ -1,6 +1,8 @@
 /* Season HUD — SiteLayout */
 
 .rcl-site .hud-season {
+  min-width: 0;
+  overflow-wrap: anywhere;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -20,7 +22,7 @@
 }
 
 .rcl-site .hud-bar {
-  height: 30px;
+  min-height: 30px;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -29,7 +31,7 @@
   color: var(--muted);
   gap: 16px;
   width: 100%;
-  padding: 0 var(--page-gutter);
+  padding: 6px var(--page-gutter);
   font-size: 9px;
 }
 
@@ -40,6 +42,9 @@
 }
 
 .rcl-site .hud-motto {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  text-align: right;
   color: var(--lime);
   display: none;
 }

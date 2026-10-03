@@ -38,6 +38,7 @@
 }
 
 .rcl-site .match-teams > span {
+  min-width: 0;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -87,9 +88,16 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  min-width: 180px;
-  min-height: 48px;
+  width: clamp(80px, 24vw, 112px);
+  min-height: 64px;
   border-radius: 6px;
+}
+
+@media (min-width: 651px) {
+  .rcl-site .match-score-spoiler {
+    width: 180px;
+    min-height: 48px;
+  }
 }
 
 .rcl-site .spoiler-cover {
@@ -102,7 +110,9 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  font: 700 11px var(--mono);
+  padding: 8px;
+  text-align: center;
+  font: 700 11px/1.4 var(--mono);
   text-transform: uppercase;
   border-radius: inherit;
   transition: background-color 0.2s, color 0.2s;
@@ -121,6 +131,8 @@
 }
 
 .rcl-site .match-meta {
+  min-width: 0;
+  overflow-wrap: anywhere;
   gap: 7px;
   font: 10px/1.5 var(--mono);
   color: var(--muted);
@@ -195,6 +207,7 @@
 }
 
 .rcl-site .match-stream-link {
+  min-height: 44px;
   position: relative;
   z-index: 1;
   display: inline-flex;
@@ -227,6 +240,8 @@
 }
 
 .rcl-site .team-link {
+  min-width: 0;
+  max-width: 100%;
   display: inherit;
   flex-direction: inherit;
   align-items: inherit;
