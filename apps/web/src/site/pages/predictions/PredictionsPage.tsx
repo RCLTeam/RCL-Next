@@ -39,8 +39,8 @@ export function PredictionsPage({ competition }: { competition: Competition }) {
           <span className={`prediction-status${data?.open ? ' is-open' : ''}`}>
             {data
               ? data.open
-                ? 'Votaciones abiertas · Hasta el martes 23:59'
-                : 'Votaciones cerradas · Abren el lunes 00:00'
+                ? 'Votaciones abiertas · Hasta 1 hora antes de cada partido'
+                : 'Sin partidos abiertos para votar'
               : predictions.error
                 ? 'Predicciones no disponibles'
                 : 'Cargando predicciones…'}
@@ -73,18 +73,39 @@ export function PredictionsPage({ competition }: { competition: Competition }) {
         }}
         empty="No hay encuentros programados para esta semana en esta división."
       >
-        <div className="prediction-grid">
-          {matches.map(({ match, summary }) => {
-            const pick = predictions.picks.find((p) => p.matchId === match.id);
+        <div className="prediction-groups">
+          {[true, false].map((open) => {
+            const group = matches.filter(({ summary }) => summary.open === open);
+            if (!group.length) return null;
             return (
-              <PredictionCard
-                key={`${match.id}/${userId}`}
-                match={match}
-                summary={summary}
-                pick={pick}
-                authenticated={Boolean(userId)}
-                save={predictions.save}
-              />
+              <section
+                className="prediction-group"
+                key={String(open)}
+                aria-labelledby={`predictions-${open ? 'open' : 'closed'}`}
+              >
+                <h2
+                  className="prediction-group-title"
+                  id={`predictions-${open ? 'open' : 'closed'}`}
+                >
+                  {open ? 'Abiertas para votar' : 'Votaciones cerradas'}
+                  <span>{group.length}</span>
+                </h2>
+                <div className="prediction-grid">
+                  {group.map(({ match, summary }) => {
+                    const pick = predictions.picks.find((p) => p.matchId === match.id);
+                    return (
+                      <PredictionCard
+                        key={`${match.id}/${userId}`}
+                        match={match}
+                        summary={summary}
+                        pick={pick}
+                        authenticated={Boolean(userId)}
+                        save={predictions.save}
+                      />
+                    );
+                  })}
+                </div>
+              </section>
             );
           })}
         </div>

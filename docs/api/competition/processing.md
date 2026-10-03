@@ -49,8 +49,8 @@ export function calculateStandings(teams: Team[], matches: Match[]) {
   return [...totals.values()]
     .sort(
       (a, b) =>
-        b.mapDifference - a.mapDifference ||
         b.wins - a.wins ||
+        b.mapDifference - a.mapDifference ||
         a.losses - b.losses ||
         a.team.name.localeCompare(b.team.name, 'es')
     )
@@ -61,10 +61,10 @@ export function calculateStandings(teams: Team[], matches: Match[]) {
 ### 2.2 Cascada Estricta de 4 Niveles de Ordenación
 El orden de los equipos en la tabla de clasificación responde a la siguiente evaluación jerárquica (`competition.service.ts:43-48`):
 
-1. **Nivel 1 — Diferencia Neta de Mapas (`b.mapDifference - a.mapDifference`):**
-   - Calculada como `mapsWon - mapsLost`. En un formato BO3, un resultado de 2-0 aporta `+2`, mientras que un 2-1 aporta `+1`.
-2. **Nivel 2 — Victorias de Serie (`b.wins - a.wins`):**
+1. **Nivel 1 — Victorias de Serie (`b.wins - a.wins`):**
    - Número total de series completas ganadas.
+2. **Nivel 2 — Diferencia Neta de Mapas (`b.mapDifference - a.mapDifference`):**
+   - Calculada como `mapsWon - mapsLost`. En un formato BO3, un resultado de 2-0 aporta `+2`, mientras que un 2-1 aporta `+1`.
 3. **Nivel 3 — Menor Número de Derrotas (`a.losses - b.losses`):**
    - Número total de series perdidas (prioriza al equipo con menos derrotas).
 4. **Nivel 4 — Desempate Determinista Alfabético (`a.team.name.localeCompare(b.team.name, 'es')`):**
@@ -314,4 +314,3 @@ Requiere `discordRoleId >= -10n`. Controla la visibilidad de los partidos en el 
   - **Comportamiento Perimetral:** Quedan completamente excluidos e invisibles tanto en el calendario como en la clasificación y las predicciones.
 - **Equipos sin Rol (`discordRoleId === null` o `undefined`):**
   - Equipos sin rol de Discord configurado. Se tratan como inactivos y no superan los filtros de visibilidad activa ni de calendario.
-

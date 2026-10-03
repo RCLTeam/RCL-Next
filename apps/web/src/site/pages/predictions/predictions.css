@@ -22,8 +22,34 @@
 }
 
 /* Match cards */
+.rcl-site .prediction-groups {
+  display: grid;
+  gap: 32px;
+  min-width: 0;
+}
+
+.rcl-site .prediction-group {
+  min-width: 0;
+}
+
+.rcl-site .prediction-group-title {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin: 0 0 16px;
+  font: 700 16px/1.5 var(--mono);
+  overflow-wrap: anywhere;
+}
+
+.rcl-site .prediction-group-title span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 400;
+}
+
 .rcl-site .prediction-grid {
   display: grid;
+  align-items: start;
   gap: 18px;
   grid-template-columns: minmax(0, 1fr);
 }

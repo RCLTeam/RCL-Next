@@ -46,7 +46,7 @@ Integra el componente `CompetitionFilters` para conmutar de división deportiva 
 - Si la jornada está abierta:
   ```tsx
   <span className="prediction-status is-open">
-    Votaciones abiertas · Hasta el martes 23:59
+    Votaciones abiertas · Hasta 1 hora antes de cada partido
   </span>
   ```
 - Si la jornada está cerrada:

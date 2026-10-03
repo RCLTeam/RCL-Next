@@ -37,12 +37,12 @@ export function calculateStandings(teams: Team[], matches: Match[]) {
       team.mapDifference = team.mapsWon - team.mapsLost;
     }
   }
-  // BO3 points are the accumulated map difference; retain existing tie ordering.
+  // Rank by series wins, then map difference, fewer losses and team name.
   return [...totals.values()]
     .sort(
       (a, b) =>
-        b.mapDifference - a.mapDifference ||
         b.wins - a.wins ||
+        b.mapDifference - a.mapDifference ||
         a.losses - b.losses ||
         a.team.name.localeCompare(b.team.name, 'es')
     )

@@ -80,3 +80,21 @@ test('ranking shows the top five and the current user outside them', () => {
   expect(html).not.toContain('Predictor 5');
   expect(html).toContain('3 de 10 aciertos');
 });
+
+test('closed voting keeps community data hidden until completion, including zero-vote results', () => {
+  for (const votes of [null, 0]) {
+    const html = renderToStaticMarkup(
+      <PredictionCard
+        match={match}
+        summary={{ matchId: 'm', open: false, closed: true, votes, homePercent: null }}
+        authenticated
+        save={async () => {}}
+      />
+    );
+    expect(html).not.toContain('<form');
+    expect(html.includes('Los porcentajes se revelan al finalizar el partido.')).toBe(
+      votes === null
+    );
+    expect(html.includes('Sin votos para esta serie.')).toBe(votes === 0);
+  }
+});

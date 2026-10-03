@@ -54,7 +54,7 @@ export function PredictionCard({
           {match.awayTeam?.name ?? 'Por definir'}
         </span>
       </div>
-      {summary.closed ? (
+      {summary.closed && summary.votes !== null ? (
         summary.homePercent !== null ? (
           <div className="prediction-community">
             <div className="prediction-gauge" aria-hidden="true">
@@ -70,7 +70,7 @@ export function PredictionCard({
           <p className="prediction-notice">Sin votos para esta serie.</p>
         )
       ) : (
-        <p className="prediction-notice">Los porcentajes se revelan al cerrar las votaciones.</p>
+        <p className="prediction-notice">Los porcentajes se revelan al finalizar el partido.</p>
       )}
       {eligible && summary.open && authenticated && (
         <form

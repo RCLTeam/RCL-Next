@@ -116,7 +116,8 @@ test('featured stats and selected card metric render without internal MVP scores
   expect(html).toContain('/jugadores/jugador-a');
   expect(html).not.toContain('score');
   const grid = renderToStaticMarkup(<PlayerGrid players={[player]} sort="damagePerMinute" />);
-  expect(grid).toContain('Daño a campeones/min');
+  expect(grid).toContain('Daño/min');
+  expect(grid).toContain('Daño a campeones por minuto.');
   expect(grid).toContain('700');
   expect(renderToStaticMarkup(<FeaturedPlayer player={undefined} />)).toContain('se anunciará');
 });
@@ -171,4 +172,26 @@ test('players missing the selected statistic sort by team, then name, with no te
     'wolves',
     'none'
   ]);
+});
+
+test('featured player shows one valid team logo with or without a champion', () => {
+  for (const champion of ['Ahri', null]) {
+    for (const logoUrl of ['/images/team.png', 'javascript:invalid', null]) {
+      const html = renderToStaticMarkup(
+        <FeaturedPlayer
+          player={{
+            ...player,
+            competition: {
+              ...player.competition,
+              champion,
+              team: { id: 'team', name: 'Team', shortName: null, logoUrl }
+            }
+          }}
+        />
+      );
+      expect((html.match(/class="team-badge/g) ?? []).length).toBe(
+        logoUrl === '/images/team.png' ? 1 : 0
+      );
+    }
+  }
 });

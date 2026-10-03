@@ -31,14 +31,14 @@ interface PredictionCardProps {
 
 #### Mecanismos y Comportamiento:
 1. **Termómetro Comunitario Condicional (Líneas 45-62):**
-   - **Ventana Cerrada con Votos (`summary.closed && summary.homePercent !== null`):** Renderiza el termómetro visual con la barra de progreso `.prediction-gauge` cuyo ancho refleja `style={{ width: `${summary.homePercent}%` }}`, los porcentajes calculados para local y visitante (`summary.homePercent%` vs `100 - summary.homePercent%`) y el recuento de participación:
+   - **Ventana Cerrada con Votos (`summary.closed && summary.votes !== null && summary.homePercent !== null`):** Renderiza el termómetro visual con la barra de progreso `.prediction-gauge` cuyo ancho refleja `style={{ width: `${summary.homePercent}%` }}`, los porcentajes calculados para local y visitante (`summary.homePercent%` vs `100 - summary.homePercent%`) y el recuento de participación:
      ```tsx
      <small>{summary.votes} votos de la comunidad</small>
      ```
    - **Ventana Cerrada sin Votos:** Muestra `<p className="prediction-notice">Sin votos para esta serie.</p>`.
-   - **Ventana Abierta o Intermedia (`!summary.closed`):** Oculta deliberadamente cualquier estadística comunitaria y muestra el aviso de privacidad:
+   - **Partido pendiente de finalizar (`summary.votes === null`):** Oculta deliberadamente cualquier estadística comunitaria y muestra el aviso de privacidad:
      ```tsx
-     <p className="prediction-notice">Los porcentajes se revelan al cerrar las votaciones.</p>
+     <p className="prediction-notice">Los porcentajes se revelan al finalizar el partido.</p>
      ```
 2. **Formulario Interactivo de Pronóstico (Líneas 63-149):**
    - Se renderiza únicamente si la votación está abierta y el usuario ha iniciado sesión (`summary.open && authenticated`).
@@ -58,7 +58,7 @@ Componente presentacional estático que expone las tres reglas oficiales de las 
 
 1. **Acierto de Ganador:** *"1 punto por cada serie cuyo vencedor coincida con tu pronóstico."*
 2. **Marcador Exacto:** *"3 puntos en total si además aciertas el resultado exacto de la serie."*
-3. **Plazo Límite de Votación:** *"Las votaciones abren los lunes y cierran los martes a las 23:59."*
+3. **Plazo Límite de Votación:** *"Vota desde el lunes a las 00:00 hasta 1 hora antes del inicio de cada partido."*
 
 ---
 

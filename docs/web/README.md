@@ -79,3 +79,7 @@ Más allá de las carpetas específicas por funcionalidad en `apps/web/src/featu
 - **Servicios de Backend API:** Para consultar las especificaciones técnicas de las rutas HTTP y gateways WebSocket consumidos por estos componentes, ver [docs/api/README.md](../api/README.md).
 - **Esquema de Base de Datos:** Para auditar los modelos de datos de PostgreSQL subyacentes, ver [docs/database/README.md](../database/README.md).
 - **Suites de Pruebas Frontend:** Para conocer las pruebas unitarias y de renderizado de la interfaz, ver [docs/testing/suites/web.md](../testing/suites/web.md) y [docs/testing/suites/integration.md](../testing/suites/integration.md).
+
+### Menú móvil
+
+La cabecera completa permite desplazamiento vertical cuando supera la altura disponible (`max-height: 100dvh; overflow-y: auto` en `site-header.css`). `.nav-bottom` no tiene un límite independiente de `60vh`.
