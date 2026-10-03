@@ -362,13 +362,6 @@
   overflow-wrap: anywhere;
 }
 
-.rcl-site .player-stat-description {
-  display: block;
-  margin-top: 4px;
-  color: var(--muted);
-  font: 11px/1.5 var(--mono);
-  overflow-wrap: anywhere;
-}
 
 @media (min-width: 701px) {
   .rcl-site .featured-player-card {
