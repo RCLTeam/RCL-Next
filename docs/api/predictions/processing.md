@@ -6,11 +6,12 @@
 
 ## 1. Visión General de la Lógica de Predicciones
 
-La lógica de negocio del módulo de predicciones se encapsula de forma funcional y desacoplada en `prediction-policy.ts` (`apps/api/src/modules/predictions/prediction-policy.ts:1-33`). Sus responsabilidades abarcan:
+La lógica de negocio del módulo de predicciones se encapsula de forma funcional y desacoplada en `prediction-policy.ts` (`apps/api/src/modules/predictions/prediction-policy.ts`). Sus responsabilidades abarcan:
 1. El cálculo determinista de la semana natural deportiva bajo la zona horaria oficial de la competición (`Europe/Madrid`), con respeto estricto a los cambios de hora estacionales (DST).
-2. La determinación del estado de la ventana de votación para cada enfrentamiento (`open` vs. `closed`).
-3. El baremo plano de asignación de puntos por acierto de ganador y marcador exacto.
-4. El cálculo de porcentajes enteros de la comunidad y la validación matemática de tanteos en series Best-Of.
+2. La determinación de la jornada actual de la competición (`currentRoundId`).
+3. La determinación del estado de la ventana de votación para cada enfrentamiento (`open` vs. `closed`).
+4. El baremo plano de asignación de puntos por acierto de ganador y marcador exacto.
+5. El cálculo de porcentajes enteros de la comunidad y la validación matemática de tanteos en series Best-Of.
 
 ---
 
@@ -45,9 +46,36 @@ export function predictionWindow(scheduledAt: Date | null, status: string, now: 
     closed
   };
 }
-
-
 ```
+
+### 2.1 Jornada actual (`currentRoundId`)
+
+```typescript
+// The current round is the latest one whose league week has already started.
+export function currentRoundId(
+  rounds: readonly { id: number; startsAt: Date | null }[],
+  now: Date
+): number | null {
+  const week = leagueWeek(now).week;
+  let current: { id: number; startsAt: Date } | null = null;
+  for (const { id, startsAt } of rounds) {
+    if (!startsAt || leagueWeek(startsAt).week > week) continue;
+    const time = startsAt.getTime();
+    const currentTime = current?.startsAt.getTime() ?? Number.NEGATIVE_INFINITY;
+    if (!current || time > currentTime || (time === currentTime && id > current.id))
+      current = { id, startsAt };
+  }
+  return current?.id ?? null;
+}
+```
+
+#### Reglas de Determinación de la Jornada Actual:
+- **Semana de inicio iniciada:** La jornada actual es la última cuya semana de inicio es igual o anterior a la semana en curso (`leagueWeek(startsAt).week <= week`).
+- **Semanas de descanso:** En las semanas de descanso se mantiene la última jornada disputada o iniciada.
+- **Resolución de empates:** Si dos jornadas coinciden en su fecha/hora de inicio (`time === currentTime`), el empate se resuelve a favor de la jornada con mayor `id` (`id > current.id`).
+- **Jornadas sin fecha:** Se ignoran por completo las jornadas sin `starts_at` (`startsAt === null`).
+
+---
 
 ## 3. Estados y publicación
 
@@ -60,15 +88,19 @@ export function predictionWindow(scheduledAt: Date | null, status: string, now: 
 | En directo | `false` | `true` | Ocultos |
 | Finalizado (`completed` o `forfeit`), con fecha | `false` | `true` | Visibles |
 | Programado para una semana futura | `false` | `false` | Ocultos |
-| Sin fecha | `false` | `false` | Fuera del resumen semanal |
+| Sin fecha | `false` | `false` | Fuera del resumen |
 
-El `open` global indica que algún partido elegible admite votos. El resumen incluye solo encuentros de la semana actual y excluye los cancelados.
+El `open` global indica que algún partido elegible admite votos. El resumen incluye los encuentros de la jornada mostrada (`matches.id_round`): la indicada en `roundId` o, si no se indica, la actual. Excluye los cancelados, los que no tienen fecha y los de equipos inactivos. Los partidos sin `id_round` no aparecen en ninguna jornada.
+
+---
 
 ## 4. Privacidad y aplazamientos
 
 El repositorio publica `votes` y `homePercent` únicamente en estado `completed` o `forfeit`. Ambos permanecen `null` durante la hora previa y las retransmisiones en directo. Al finalizar sin votos, `votes` es cero y `homePercent` sigue siendo `null`.
 
 Retrasar un partido `scheduled` de las 18:00Z a las 21:00Z puede reabrir el voto a las 18:30Z dentro de la semana actual. Los porcentajes nunca se habían publicado, por lo que no se exponen tendencias. Cambiar la fecha de un partido finalizado no reabre el voto mientras conserve su estado final.
+
+Un partido aplazado sigue en su jornada aunque su `scheduled_at` caiga en otra semana. Admite votos desde la vista de su jornada mientras la semana de su `scheduled_at` sea la semana en curso.
 
 No se añade una excepción para el lunes entre las 00:00 y las 00:59: la competición no permite encuentros en lunes ni martes.
 
@@ -77,10 +109,10 @@ No se añade una excepción para el lunes entre las 00:00 y las 00:59: la compet
 ## 5. Baremo de Puntuación y Refutación de Cuotas
 
 ### 5.1 Baremo Plano de Puntos (`predictionPoints`)
-La asignación de puntos se calcula en `prediction-policy.ts:30-32`:
+La asignación de puntos se calcula en `prediction-policy.ts` (función `predictionPoints`):
 
 ```typescript
-// apps/api/src/modules/predictions/prediction-policy.ts:30-32
+// apps/api/src/modules/predictions/prediction-policy.ts
 export function predictionPoints(correctWinner: boolean, exactScore: boolean) {
   return correctWinner ? (exactScore ? 3 : 1) : 0;
 }
@@ -94,7 +126,7 @@ export function predictionPoints(correctWinner: boolean, exactScore: boolean) {
 - En el código fuente no existe ningún algoritmo de cuotas decimales, multiplicadores de ganancias, líneas de dinero ni cálculos de momios.
 - Los porcentajes de la comunidad se calculan como un entero puro mediante redondeo estándar:
   ```typescript
-  // predictions.repository.ts:67-71
+  // predictions.repository.ts (overview)
   homePercent = Math.round((100 * homeVotes) / totalVotes);
   ```
 - El porcentaje del equipo visitante es calculado por el cliente como `100 - homePercent`.
@@ -103,10 +135,10 @@ export function predictionPoints(correctWinner: boolean, exactScore: boolean) {
 
 ## 6. Validación de Marcadores en Formatos Best-Of (Bo1, Bo3, Bo5)
 
-Cuando un usuario envía un pronóstico con tanteo (`homeScore` o `awayScore`), `predictions.repository.ts:113-120` valida que el marcador sea coherente con la longitud de la serie (`match.bestOf`):
+Cuando un usuario envía un pronóstico con tanteo (`homeScore` o `awayScore`), `predictions.repository.ts` (método `save`) valida que el marcador sea coherente con la longitud de la serie (`match.bestOf`):
 
 ```typescript
-// predictions.repository.ts:113-120
+// predictions.repository.ts
 const wins = Math.floor(match.bestOf / 2) + 1;
 const winnerScore = home ? pick.homeScore : pick.awayScore;
 const loserScore = home ? pick.awayScore : pick.homeScore;
