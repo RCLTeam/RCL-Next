@@ -64,6 +64,7 @@ export class PredictionsRepository {
       const row = ranking.get(user.discordId) ?? {
         userId: user.discordId,
         name: user.globalName ?? user.username,
+        avatarHash: user.avatarHash,
         position: 0,
         correct: 0,
         total: 0,
