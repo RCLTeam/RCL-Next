@@ -59,6 +59,9 @@ export class PredictionsRepository {
     }
     return {
       ...leagueWeek(now),
+      open: calendar.some(
+        ({ match }) => predictionWindow(match.scheduledAt, match.status, now).open
+      ),
       matches: calendar
         .map(({ match }) => match)
         .filter(

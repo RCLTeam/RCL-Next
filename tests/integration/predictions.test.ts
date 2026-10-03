@@ -87,6 +87,18 @@ test('predictions persist, hide votes until close, reject late edits and derive 
         .where(eq(schema.teams.id, teamId));
     }
     vi.setSystemTime(new Date('2026-09-29T22:00:00Z'));
+    await repository.save(userId, { ...pick, awayScore: 1 });
+    expect((await repository.overview(division)).open).toBe(true);
+    vi.setSystemTime(new Date('2026-10-02T16:59:59.999Z'));
+    await repository.save(userId, { ...pick, awayScore: 1 });
+    expect((await repository.overview(division)).matches[0]).toMatchObject({
+      open: true,
+      closed: false,
+      votes: null,
+      homePercent: null
+    });
+    vi.setSystemTime(new Date('2026-10-02T17:00:00Z'));
+    expect((await repository.overview(division)).open).toBe(false);
     await expect(repository.save(userId, pick)).rejects.toMatchObject({
       code: 'PREDICTIONS_CLOSED'
     });
