@@ -25,6 +25,9 @@ import { pageMetadataRouter, webPageRouter } from './modules/page-metadata/page-
 import { PageMetadataService } from './modules/page-metadata/page-metadata.service.js';
 import type { PredictionsRepository } from './modules/predictions/predictions.repository.js';
 import { predictionsRouter } from './modules/predictions/predictions.router.js';
+import type { SitemapRepository } from './modules/sitemap/persistence/sitemap.repository.js';
+import { SitemapService } from './modules/sitemap/processing/sitemap.service.js';
+import { sitemapRouter } from './modules/sitemap/sitemap.router.js';
 import { IncidentLogger } from './modules/suggestions/incident-logger.js';
 import { SuggestionStore } from './modules/suggestions/suggestion.store.js';
 import { createSuggestionsRouter } from './modules/suggestions/suggestions.router.js';
@@ -50,6 +53,8 @@ export function createApp(options: {
   suggestionsService?: SuggestionsService;
   suggestionStore?: SuggestionStore;
   incidentLogger?: IncidentLogger;
+  sitemapRepository?: SitemapRepository;
+  sitemapService?: SitemapService;
 }): express.Express {
   const app = express();
   app.disable('x-powered-by');
@@ -164,6 +169,12 @@ export function createApp(options: {
       auth: options.auth
     })
   );
+  const sitemapService =
+    options.sitemapService ??
+    (options.sitemapRepository ? new SitemapService(options.sitemapRepository) : undefined);
+  if (sitemapService) {
+    app.use('/api/sitemap.xml', sitemapRouter(sitemapService));
+  }
   app.get('/health/live', (_req, res) => {
     res.json({ data: { status: 'ok' } });
   });
