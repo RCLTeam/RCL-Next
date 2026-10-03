@@ -26,6 +26,18 @@ export const playerSortOptions = [
   ['damageMitigated', 'Daño mitigado']
 ] as const;
 export type PlayerSort = (typeof playerSortOptions)[number][0];
+const playerCardStats: Record<PlayerSort, { label: string; description: string }> = {
+  kda: { label: 'KDA', description: 'Relación entre asesinatos, asistencias y muertes.' },
+  csPerMinute: { label: 'CS/min', description: 'Súbditos y monstruos eliminados por minuto.' },
+  killParticipation: {
+    label: 'KP',
+    description: 'Porcentaje de asesinatos del equipo en los que participa el jugador.'
+  },
+  winRate: { label: 'WR', description: 'Porcentaje de victorias.' },
+  damagePerMinute: { label: 'Daño/min', description: 'Daño a campeones por minuto.' },
+  visionScore: { label: 'Visión', description: 'Puntuación de visión.' },
+  damageMitigated: { label: 'Mitigado', description: 'Daño mitigado.' }
+};
 const roles = [
   ['all', 'Todos'],
   ['top', 'Top'],
@@ -234,7 +246,6 @@ function PlayerTeam({ player }: { player: Player }) {
   const team = player.competition?.team;
   return (
     <span className="player-team">
-      {resolveTeamLogo(team?.logoUrl) && <TeamBadge team={team} />}
       <span>{team?.name ?? 'Sin equipo'}</span>
     </span>
   );
@@ -247,27 +258,34 @@ export function FeaturedPlayer({
   return (
     <section className="players-featured" aria-labelledby="featured-player-title">
       <h2 className="eyebrow" id="featured-player-title">
-        Ficha destacada · MVP de la jornada
+        MVP de la jornada
       </h2>
       {player?.competition?.featured ? (
         <SiteLink className="featured-player-card" href={playerHref(player)}>
-          <div>
+          <div className="featured-player-portrait">
             <PlayerArt player={player} catalog={catalog} />
-            <PlayerTeam player={player} />
           </div>
           <div className="featured-player-body">
-            <span className="featured-player-award">
-              MVP · {player.competition.featured.roundName}
-            </span>
-            <h3>{player.gameName}</h3>
-            <p>
-              {roleLabel(player.competition.role)}
-              {player.riotTag ? ` · #${player.riotTag}` : ''}
-            </p>
+            <div className="featured-player-header">
+              <span className="featured-player-award">MVP</span>
+              <span className="featured-player-round">{player.competition.featured.roundName}</span>
+            </div>
+            <div className="featured-player-identity">
+              <div className="featured-player-identity-text">
+                <div className="featured-player-name">
+                  <h3>{player.gameName}</h3>
+                  {player.riotTag && <span className="featured-player-tag">#{player.riotTag}</span>}
+                </div>
+                <div className="featured-player-meta">
+                  <PlayerTeam player={player} />
+                </div>
+              </div>
+              {player.competition.team && <TeamBadge team={player.competition.team} />}
+            </div>
             <dl className="featured-player-stats">
-              {(['kda', 'killParticipation', 'csPerMinute', 'winRate'] as const).map((key) => (
+              {playerSortOptions.map(([key, label]) => (
                 <div key={key}>
-                  <dt>{playerSortOptions.find(([value]) => value === key)?.[1]}</dt>
+                  <dt>{label}</dt>
                   <dd>{formatPlayerStat(player.competition?.featured?.stats, key)}</dd>
                 </div>
               ))}
@@ -289,6 +307,7 @@ export function PlayerGrid({
   sort = 'kda',
   catalog = {}
 }: { players: Player[]; sort?: PlayerSort; catalog?: GameCatalog }) {
+  const tooltipId = React.useId();
   if (!players.length)
     return <div className="empty-state">No hay jugadores que coincidan con la búsqueda.</div>;
   return (
@@ -319,15 +338,19 @@ export function PlayerGrid({
             {!player.competition?.champion && !player.competition?.stats ? (
               <p className="player-pending-stats">Estadísticas pendientes.</p>
             ) : (
-              <div className="player-card-stats">
-                <span>
-                  {playerSortOptions.find(([key]) => key === sort)?.[1]}{' '}
-                  <strong>{formatPlayerStat(player.competition?.stats, sort)}</strong>
-                </span>
-                {sort !== 'winRate' && (
-                  <span>{formatPlayerStat(player.competition?.stats, 'winRate')} WR</span>
-                )}
-              </div>
+              <dl className="player-card-stats">
+                <div aria-describedby={`${tooltipId}-${player.id}-stat`}>
+                  <dt>{playerCardStats[sort].label}</dt>
+                  <dd>{formatPlayerStat(player.competition?.stats, sort)}</dd>
+                  <span
+                    className="player-stat-tooltip"
+                    role="tooltip"
+                    id={`${tooltipId}-${player.id}-stat`}
+                  >
+                    {playerCardStats[sort].description}
+                  </span>
+                </div>
+              </dl>
             )}
           </div>
         </SiteLink>

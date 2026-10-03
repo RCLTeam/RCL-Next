@@ -116,7 +116,8 @@ test('featured stats and selected card metric render without internal MVP scores
   expect(html).toContain('/jugadores/jugador-a');
   expect(html).not.toContain('score');
   const grid = renderToStaticMarkup(<PlayerGrid players={[player]} sort="damagePerMinute" />);
-  expect(grid).toContain('Daño a campeones/min');
+  expect(grid).toContain('Daño/min');
+  expect(grid).toContain('Daño a campeones por minuto.');
   expect(grid).toContain('700');
   expect(renderToStaticMarkup(<FeaturedPlayer player={undefined} />)).toContain('se anunciará');
 });
