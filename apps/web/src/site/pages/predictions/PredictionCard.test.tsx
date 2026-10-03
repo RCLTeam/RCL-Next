@@ -77,7 +77,8 @@ test('ranking shows the top five and the current user outside them', () => {
   const html = renderToStaticMarkup(
     <PredictorRankingPanel ranking={ranking} userId="7" season="2026" />
   );
-  expect(html).toContain('tú, Predictor 7');
+  expect(html).toContain('Predictor 7');
+  expect(html).not.toContain('tú,');
   expect(html).not.toContain('Predictor 5');
   expect(html).toContain('3 de 10 aciertos');
 });
@@ -97,5 +98,7 @@ test('closed voting keeps community data hidden until completion, including zero
       votes === null
     );
     expect(html.includes('Sin votos para esta serie.')).toBe(votes === 0);
+    expect(html.includes('width:50%')).toBe(votes === null);
+    expect(html.match(/>\?\?<\/span>/g) ?? []).toHaveLength(votes === null ? 2 : 0);
   }
 });
