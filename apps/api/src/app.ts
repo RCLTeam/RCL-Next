@@ -2,6 +2,7 @@ import cors from 'cors';
 import express from 'express';
 import helmet from 'helmet';
 import { type AuthOptions, authRouter } from './modules/auth/auth.router.js';
+import { discordAvatarsRouter } from './modules/auth/discord-avatars.router.js';
 import { CompetitionController } from './modules/competition/competition.controller.js';
 import type { CompetitionRepository } from './modules/competition/competition.repository.js';
 import { competitionRouter } from './modules/competition/competition.router.js';
@@ -86,6 +87,7 @@ export function createApp(options: {
     );
   }
   app.use(express.json({ limit: '1mb' }));
+  app.use('/api/v1/discord-avatars', discordAvatarsRouter());
   app.use(
     '/api/v1/team-logos',
     teamLogosRouter(options.auth, new TeamLogosStore(options.teamLogoDirectory))
