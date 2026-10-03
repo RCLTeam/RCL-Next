@@ -68,6 +68,7 @@ test('ranking shows the top five and the current user outside them', () => {
   const ranking = Array.from({ length: 8 }, (_, i) => ({
     userId: `${i}`,
     name: `Predictor ${i}`,
+    avatarHash: null,
     position: i + 1,
     points: 30 - i,
     correct: 10 - i,
