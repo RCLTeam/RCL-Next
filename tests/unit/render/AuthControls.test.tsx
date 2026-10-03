@@ -15,6 +15,28 @@ const user: AuthUser = {
 
 describe('Discord header controls', () => {
   const callbacks = { onLogout: () => {}, onRetry: () => {} };
+  it.each(['0123456789abcdef0123456789abcdef', 'a_0123456789abcdef0123456789abcdef'])(
+    'loads avatar %s through the same-origin proxy',
+    (avatarHash) => {
+      const html = renderToString(
+        <AuthControlsView
+          state={{ status: 'authenticated', user: { ...user, avatarHash } }}
+          {...callbacks}
+        />
+      );
+      expect(html).toContain(`src="/api/v1/discord-avatars/${user.discordId}/${avatarHash}"`);
+      expect(html).toContain('alt="Jugador RCL"');
+      expect(html).not.toContain('cdn.discordapp.com');
+    }
+  );
+  it('does not request an avatar when the account has none', () => {
+    const html = renderToString(
+      <AuthControlsView state={{ status: 'authenticated', user }} {...callbacks} />
+    );
+    expect(html).toContain('>JU</span>');
+    expect(html).not.toContain('<img');
+    expect(html).not.toContain('/api/v1/discord-avatars/');
+  });
   it('normalizes Discord display names and initials without changing the account', () => {
     const account = Object.freeze({ ...user, globalName: '𝑶𝒛𝒂𝒓𝒖' });
     const html = renderToString(

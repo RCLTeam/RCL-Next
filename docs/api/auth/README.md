@@ -17,10 +17,13 @@ El módulo opera bajo cinco pilares arquitectónicos y de seguridad:
 
 ---
 
+El módulo también sirve el avatar de la cuenta mediante un [proxy público de imágenes](avatars.md), con caché temporal y sin reenviar cookies de Discord.
+
 ## 2. Tabla de Contenidos del Módulo
 
 | Documento | Enlace | Resumen Funcional |
 |---|---|---|
+| **Proxy de Avatares** | [avatars.md](avatars.md) | Contrato público, aislamiento de cookies, límites de descarga, caché, despliegue y verificación. |
 | **Rutas y Transporte** | [routes.md](routes.md) | Endpoints de OAuth2 (`/discord`, `/discord/callback`), consulta de sesión (`/me`) y revocación (`/logout`), prevención de *cookie shadowing* y middleware de origen confiable. |
 | **Lógica de Procesamiento y Criptografía** | [processing.md](processing.md) | Flujo del protocolo OAuth2, ciclo de vida de estados (10 min) y sesiones (7 días), hashing SHA-256, comparación en tiempo constante y mitigación de fugas de proveedor. |
 | **Persistencia Relacional** | [persistence.md](persistence.md) | Implementación de `PostgresAuthRepository`, atomicidad SQL con `DELETE ... RETURNING`, transacciones ACID de sesión y preservación estricta de roles en upsert. |
