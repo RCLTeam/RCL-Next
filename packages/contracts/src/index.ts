@@ -2,6 +2,7 @@ export type { AuthUser } from './auth.js';
 export {
   getPageMetadata,
   pageMetadata,
+  pageMetadataImage,
   renderPageMetadata,
   type PageMetadata
 } from './page-metadata.js';
