@@ -3,6 +3,17 @@ import { z } from 'zod';
 import { type AuthOptions, requireAuth, requireTrustedOrigin } from '../auth/auth.router.js';
 import type { PredictionsRepository } from './predictions.repository.js';
 
+const overviewQuery = z
+  .object({
+    roundId: z
+      .string()
+      .regex(/^-?\d+$/)
+      .refine((value) => Number(value) >= -32768 && Number(value) <= 32767)
+      .transform(Number)
+      .optional()
+  })
+  .strict();
+
 export function predictionsRouter(repository: PredictionsRepository, auth?: AuthOptions): Router {
   const router = Router();
   router.use((_req, res, next) => {
@@ -10,7 +21,11 @@ export function predictionsRouter(repository: PredictionsRepository, auth?: Auth
     next();
   });
   router.get('/divisions/:id', async (req, res) => {
-    res.json({ data: await repository.overview(z.string().uuid().parse(req.params.id)) });
+    const divisionId = z.string().uuid().parse(req.params.id);
+    const { roundId } = overviewQuery.parse(req.query);
+    res.json({
+      data: await repository.overview(divisionId, roundId === undefined ? {} : { roundId })
+    });
   });
   if (auth) {
     router.get('/divisions/:id/mine', requireAuth(auth), async (req, res) => {

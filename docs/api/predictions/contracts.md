@@ -6,16 +6,16 @@
 
 ## 1. Visión General de Contratos
 
-Los tipos de datos e interfaces que rigen el sistema de predicciones residen en el paquete compartido `@rcl/contracts` (`packages/contracts/src/predictions.ts:1-27`).
+Los tipos de datos e interfaces que rigen el sistema de predicciones residen en el paquete compartido `@rcl/contracts` (`packages/contracts/src/predictions.ts`).
 
-Estos contratos definen la estructura inmutable de los pronósticos emitidos por los usuarios, el resumen de estado de cada encuentro en la semana, y las entradas de la tabla de clasificación general de predictores.
+Estos contratos definen la estructura inmutable de los pronósticos emitidos por los usuarios, el resumen de estado de cada encuentro en la jornada, y las entradas de la tabla de clasificación general de predictores.
 
 ---
 
 ## 2. Definiciones de Tipos TypeScript (`packages/contracts/src/predictions.ts`)
 
 ```typescript
-// packages/contracts/src/predictions.ts:1-27
+// packages/contracts/src/predictions.ts
 export interface PredictionPick {
   matchId: string;
   selectedTeamId: string;
@@ -42,6 +42,10 @@ export interface PredictorStanding {
 
 export interface PredictionsData {
   week: string;
+  /** Round whose matches are listed; null when the division has no started round. */
+  round: string | null;
+  /** Latest round whose league week has started. */
+  currentRound: string | null;
   open: boolean;
   matches: PredictionSummary[];
   ranking: PredictorStanding[];
@@ -89,7 +93,7 @@ Entrada individual en la tabla de clasificación de la temporada:
 | `total` | `number` | Sí | Número total de partidos pronosticados por el usuario. |
 | `points` | `number` | Sí | Puntuación total acumulada según el baremo oficial (3/1/0 puntos). |
 
-#### Criterio de Ordenación del Ranking (`predictions.repository.ts:77-82`):
+#### Criterio de Ordenación del Ranking (`predictions.repository.ts`, método `overview`):
 1. **Puntos Descendente:** `b.points - a.points`
 2. **Aciertos Descendente:** `b.correct - a.correct`
 3. **Nombre Alfabético Ascendente:** `a.name.localeCompare(b.name)`
@@ -102,10 +106,16 @@ Estructura global entregada por el endpoint público `GET /api/v1/predictions/di
 
 | Campo | Tipo | Obligatorio | Descripción |
 |---|---|:---:|---|
-| `week` | `string` | Sí | Fecha ISO del lunes de la semana actual (`YYYY-MM-DD`, ej. `'2026-09-28'`). |
-| `open` | `boolean` | Sí | Verdadero si algún partido elegible de la semana admite votos. |
+| `week` | `string` | Sí | Fecha ISO del lunes de la semana actual de la consulta (`YYYY-MM-DD`, ej. `'2026-09-28'`). |
+| `round` | `string \| null` | Sí | Jornada cuyos partidos se listan, o `null` si la división aún no tiene ninguna jornada iniciada. |
+| `currentRound` | `string \| null` | Sí | Última jornada cuya semana de Madrid ha empezado. |
+| `open` | `boolean` | Sí | Verdadero si algún partido elegible de la división admite votos. Abarca todos los partidos de la división, no solo los de la jornada mostrada. |
 | `matches` | `PredictionSummary[]` | Sí | Lista de resúmenes de partidos de la jornada con su estado de votación. |
 | `ranking` | `PredictorStanding[]` | Sí | Clasificación acumulada de todos los pronosticadores de la temporada. |
+
+> **Aclaración sobre `week` y `open`:**
+> - El campo `week` sigue siendo la semana de la fecha de consulta (independientemente de qué jornada se esté visualizando en `round`).
+> - El campo `open` abarca todos los partidos de la división, no solo los de la jornada mostrada en `matches`.
 
 ---
 
@@ -118,6 +128,8 @@ Estructura global entregada por el endpoint público `GET /api/v1/predictions/di
 {
   "data": {
     "week": "2026-09-28",
+    "round": "5",
+    "currentRound": "5",
     "open": true,
     "matches": [
       {
@@ -147,6 +159,8 @@ Estructura global entregada por el endpoint público `GET /api/v1/predictions/di
 {
   "data": {
     "week": "2026-09-28",
+    "round": "5",
+    "currentRound": "5",
     "open": false,
     "matches": [
       {

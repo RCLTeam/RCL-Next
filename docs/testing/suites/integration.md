@@ -6,9 +6,9 @@
 
 ## 1. Resumen Ejecutivo
 
-El corazón de la verificación de robustez de RCL-Next reside en las suites de integración relacional (`tests/integration/`, **25 archivos, 529 pruebas, 11.687 líneas de código**) y en las suites de renderizado y lógica transversal (`tests/unit/`, **15 archivos, 102 pruebas, 1.679 líneas de código**).
+El corazón de la verificación de robustez de RCL-Next reside en las suites de integración relacional (`tests/integration/`, **26 archivos, 531 pruebas, 11.890 líneas de código**) y en las suites de renderizado y lógica transversal (`tests/unit/`, **15 archivos, 102 pruebas, 1.679 líneas de código**).
 
-En conjunto, este estrato agrupa **631 pruebas automatizadas** que certifican el comportamiento de extremo a extremo de la plataforma: transacciones atómicas contra PostgreSQL en memoria (PGlite), pasarelas WebSocket en tiempo real, autenticación federada con Discord, mitigación de ataques adversarios y verificación de interfaces de usuario desacopladas.
+En conjunto, este estrato agrupa **633 pruebas automatizadas** que certifican el comportamiento de extremo a extremo de la plataforma: transacciones atómicas contra PostgreSQL en memoria (PGlite), pasarelas WebSocket en tiempo real, autenticación federada con Discord, mitigación de ataques adversarios y verificación de interfaces de usuario desacopladas.
 
 ---
 
@@ -31,18 +31,19 @@ Todas las suites de este directorio interactúan con instancias efímeras de **P
 | 11 | `tests/integration/discord-client.test.ts` | 4 | 40 | Cliente Discord | Manejo de caídas de red, latencias y respuestas anómalas del proveedor de identidad de Discord. |
 | 12 | `tests/integration/home-content.test.ts` | 6 | 453 | Contenido Editorial | Publicación de artículos de noticias y persistencia del quinteto ideal de la jornada con aislamiento transaccional. |
 | 13 | `tests/integration/member-roles.test.ts` | 6 | 169 | Roles de Sistema | Mutación y auditoría de privilegios administrativos (`viewer`, `admin`, `owner`), previniendo la degradación del último propietario. |
-| 14 | `tests/integration/predictions.test.ts` | 1 | 72 | Predicciones | Registro de votos de usuarios, bloqueo de votación tras inicio de jornada y cálculo ponderado de puntos en la tabla de clasificación. |
-| 15 | `tests/integration/rofl-concurrency-adversarial.test.ts` | 3 | 382 | Concurrencia ROFL | Estrés de subidas simultáneas: bloqueo pesimista `SELECT ... FOR UPDATE` en matches para evitar colisión de partidas en series Bo3/Bo5. |
-| 16 | `tests/integration/rofl-parser-timeout-adversarial.test.ts` | 4 | 107 | Tiempos de Espera | Límites estrictos de ejecución de subprocesos Python (45s), terminación forzada con `SIGKILL` y erradicación de procesos zombi. |
-| 17 | `tests/integration/rofl-stats.test.ts` | 1 | 191 | Métricas ROFL | Verificación cruzada entre las estadísticas calculadas tras la ingesta de una repetición y los registros persistidos en las 5 tablas Drizzle. |
-| 18 | `tests/integration/rofl-streaming-quota-adversarial.test.ts` | 2 | 149 | Cuotas de Subida | Transmisión de archivos que exceden la cuota permitida de 50 MB, cierre del socket con código 1009 (*Message Too Big*) y limpieza de temporales. |
-| 19 | `tests/integration/rofl-upload-repository.test.ts` | 1 | 350 | Repositorio ROFL | Inserción atómica en `match_games`, `player_game_info`, `player_game_stats`, `player_game_runes` y `player_game_build` con trigger diferido `complete_player_game`. |
-| 20 | `tests/integration/rofl-upload-websocket.test.ts` | 6 | 524 | WebSocket Gateway | Ciclo de vida del canal de subida `/ws/rofl-upload`, señalización de progreso, contrapresión de lectura de chunks binarios y desconexión limpia. |
-| 21 | `tests/integration/rofl-websocket-end-to-end.test.ts` | 4 | 515 | E2E ROFL | Pipeline integral: subida WebSocket de `.rofl` real $\rightarrow$ spooling en disco $\rightarrow$ parser Python $\rightarrow$ persistencia relacional $\rightarrow$ consulta vía API REST. |
-| 22 | `tests/integration/schema-constraints.test.ts` | 1 | 260 | Restricciones SQL | Restricciones `CHECK`, índices únicos parciales y comprobaciones de integridad deportiva en la base de datos. |
-| 23 | `tests/integration/suggestions-opaque-e2e.test.ts` | 345 | 3.990 | Fuzzing Sugerencias | **La suite más grande del monorepo**: 345 pruebas basadas en propiedades y fuzzing que exploran todas las transiciones de estado, TTL, concurrencia y límites del buzón de sugerencias. |
-| 24 | `tests/integration/tier5-adversarial-challenger.test.ts` | 45 | 892 | Auditoría Adversaria | Batería forense de 45 pruebas sobre casos de borde, inyección de caracteres nulos, URLs de gran longitud y desbordamientos en todas las rutas de la API. |
-| 25 | `tests/integration/tier5-chaos-concurrency.test.ts` | 7 | 518 | Ingeniería del Caos | Interrupción abrupta de conexiones en mitad de operaciones transaccionales, desconexión de red simulada y recuperación determinista del servidor. |
+| 14 | `tests/integration/predictions-router.test.ts` | 1 | 42 | Rutas Predicciones | Validación estricta de `roundId` (formato, límites int16, unicidad y rechazo de parámetros extra) y reenvío al repositorio en `overview`. |
+| 15 | `tests/integration/predictions.test.ts` | 2 | 233 | Predicciones | Filtrado por jornada (`id_round`), jornada por defecto (`currentRoundId`), error 404 cuando la jornada no pertenece a la división, persistencia de pronósticos, bloqueo tras el inicio y cálculo de clasificación. |
+| 16 | `tests/integration/rofl-concurrency-adversarial.test.ts` | 3 | 382 | Concurrencia ROFL | Estrés de subidas simultáneas: bloqueo pesimista `SELECT ... FOR UPDATE` en matches para evitar colisión de partidas en series Bo3/Bo5. |
+| 17 | `tests/integration/rofl-parser-timeout-adversarial.test.ts` | 4 | 107 | Tiempos de Espera | Límites estrictos de ejecución de subprocesos Python (45s), terminación forzada con `SIGKILL` y erradicación de procesos zombi. |
+| 18 | `tests/integration/rofl-stats.test.ts` | 1 | 191 | Métricas ROFL | Verificación cruzada entre las estadísticas calculadas tras la ingesta de una repetición y los registros persistidos en las 5 tablas Drizzle. |
+| 19 | `tests/integration/rofl-streaming-quota-adversarial.test.ts` | 2 | 149 | Cuotas de Subida | Transmisión de archivos que exceden la cuota permitida de 50 MB, cierre del socket con código 1009 (*Message Too Big*) y limpieza de temporales. |
+| 20 | `tests/integration/rofl-upload-repository.test.ts` | 1 | 350 | Repositorio ROFL | Inserción atómica en `match_games`, `player_game_info`, `player_game_stats`, `player_game_runes` y `player_game_build` con trigger diferido `complete_player_game`. |
+| 21 | `tests/integration/rofl-upload-websocket.test.ts` | 6 | 524 | WebSocket Gateway | Ciclo de vida del canal de subida `/ws/rofl-upload`, señalización de progreso, contrapresión de lectura de chunks binarios y desconexión limpia. |
+| 22 | `tests/integration/rofl-websocket-end-to-end.test.ts` | 4 | 515 | E2E ROFL | Pipeline integral: subida WebSocket de `.rofl` real $\rightarrow$ spooling en disco $\rightarrow$ parser Python $\rightarrow$ persistencia relacional $\rightarrow$ consulta vía API REST. |
+| 23 | `tests/integration/schema-constraints.test.ts` | 1 | 260 | Restricciones SQL | Restricciones `CHECK`, índices únicos parciales y comprobaciones de integridad deportiva en la base de datos. |
+| 24 | `tests/integration/suggestions-opaque-e2e.test.ts` | 345 | 3.990 | Fuzzing Sugerencias | **La suite más grande del monorepo**: 345 pruebas basadas en propiedades y fuzzing que exploran todas las transiciones de estado, TTL, concurrencia y límites del buzón de sugerencias. |
+| 25 | `tests/integration/tier5-adversarial-challenger.test.ts` | 45 | 892 | Auditoría Adversaria | Batería forense de 45 pruebas sobre casos de borde, inyección de caracteres nulos, URLs de gran longitud y desbordamientos en todas las rutas de la API. |
+| 26 | `tests/integration/tier5-chaos-concurrency.test.ts` | 7 | 518 | Ingeniería del Caos | Interrupción abrupta de conexiones en mitad de operaciones transaccionales, desconexión de red simulada y recuperación determinista del servidor. |
 
 ---
 
@@ -52,18 +53,18 @@ Este directorio contiene pruebas unitarias que no están co-ubicadas en las carp
 
 | # | Archivo de Prueba | Pruebas | Líneas (LoC) | Tipo / Componente | Foco de Verificación |
 |---|---|---:|---:|---|---|
-| 26 | `tests/unit/auth-api.test.ts` | 11 | 72 | Mocked API | Pruebas unitarias sobre los controladores de autenticación y middleware de autorización. |
-| 27 | `tests/unit/competition-api.test.ts` | 3 | 44 | Mocked API | Controladores de clasificación y detalles de competición con respuestas simuladas. |
-| 28 | `tests/unit/current-season.test.ts` | 4 | 32 | Utilidad Competición | Lógica de ordenación cronológica descendente de temporadas y selección de la temporada activa. |
-| 29 | `tests/unit/profile-slugs.test.ts` | 4 | 51 | Formateo URLs | Generación y saneamiento de slugs URL para jugadores y equipos (eliminación de acentos, caracteres especiales y espacios). |
-| 30 | `tests/unit/team-logos.test.ts` | 2 | 15 | Activos Visuales | Resolución de rutas de escudos de equipos y URLs de respaldo para logos ausentes. |
-| 31 | `tests/unit/useRoflUploadWs.test.ts` | 13 | 222 | Hook Headless | Pruebas unitarias de la máquina de estados del hook `useRoflUploadWs`: progreso de subida, detección de anomalías y reconexión. |
-| 32 | `tests/unit/render/AdminPage.test.tsx` | 11 | 132 | Renderizado UI | Vistas del panel de administración (`/admin`), control de pestañas, barreras de autorización y selección de herramientas. |
-| 33 | `tests/unit/render/App.test.tsx` | 6 | 87 | Renderizado Shell | Montaje raíz de la aplicación web, resolución de rutas y renderizado de la página 404 ante rutas inexistentes. |
-| 34 | `tests/unit/render/AuthControls.test.tsx` | 6 | 64 | Renderizado UI | Botón de inicio de sesión de Discord, avatar de usuario y menú de opciones de desconexión. |
-| 35 | `tests/unit/render/DataState.test.tsx` | 8 | 83 | Renderizado UI | Componentes de estado de interfaz: spinner de carga, tarjetas de error accesibles y pantallas de estado vacío. |
-| 36 | `tests/unit/render/SiteLayout.test.tsx` | 5 | 109 | Renderizado UI | Barra de navegación superior, contenedor de contenido y pie de página institucional. |
-| 37 | `tests/unit/render/competition-pages.test.tsx` | 12 | 338 | Renderizado UI | Vistas de competición: calendarios de partidos, tablas de ligas, clasificaciones y eliminatorias de playoffs. |
-| 38 | `tests/unit/render/match-detail.test.tsx` | 5 | 134 | Renderizado UI | Vista detallada de una partida: marcadores de equipo, runas reforzadas, desglose de objetos y estadísticas de daño. |
-| 39 | `tests/unit/render/player-pages.test.tsx` | 6 | 199 | Renderizado UI | Perfiles individuales de jugadores: estadísticas por campeón, historial de partidas y porcentaje de participación. |
-| 40 | `tests/unit/render/rofl-upload.test.tsx` | 6 | 97 | Renderizado UI | Zona de arrastrar y soltar repeticiones, barras de progreso y visor de incidencias. |
+| 27 | `tests/unit/auth-api.test.ts` | 11 | 72 | Mocked API | Pruebas unitarias sobre los controladores de autenticación y middleware de autorización. |
+| 28 | `tests/unit/competition-api.test.ts` | 3 | 44 | Mocked API | Controladores de clasificación y detalles de competición con respuestas simuladas. |
+| 29 | `tests/unit/current-season.test.ts` | 4 | 32 | Utilidad Competición | Lógica de ordenación cronológica descendente de temporadas y selección de la temporada activa. |
+| 30 | `tests/unit/profile-slugs.test.ts` | 4 | 51 | Formateo URLs | Generación y saneamiento de slugs URL para jugadores y equipos (eliminación de acentos, caracteres especiales y espacios). |
+| 31 | `tests/unit/team-logos.test.ts` | 2 | 15 | Activos Visuales | Resolución de rutas de escudos de equipos y URLs de respaldo para logos ausentes. |
+| 32 | `tests/unit/useRoflUploadWs.test.ts` | 13 | 222 | Hook Headless | Pruebas unitarias de la máquina de estados del hook `useRoflUploadWs`: progreso de subida, detección de anomalías y reconexión. |
+| 33 | `tests/unit/render/AdminPage.test.tsx` | 11 | 132 | Renderizado UI | Vistas del panel de administración (`/admin`), control de pestañas, barreras de autorización y selección de herramientas. |
+| 34 | `tests/unit/render/App.test.tsx` | 6 | 87 | Renderizado Shell | Montaje raíz de la aplicación web, resolución de rutas y renderizado de la página 404 ante rutas inexistentes. |
+| 35 | `tests/unit/render/AuthControls.test.tsx` | 6 | 64 | Renderizado UI | Botón de inicio de sesión de Discord, avatar de usuario y menú de opciones de desconexión. |
+| 36 | `tests/unit/render/DataState.test.tsx` | 8 | 83 | Renderizado UI | Componentes de estado de interfaz: spinner de carga, tarjetas de error accesibles y pantallas de estado vacío. |
+| 37 | `tests/unit/render/SiteLayout.test.tsx` | 5 | 109 | Renderizado UI | Barra de navegación superior, contenedor de contenido y pie de página institucional. |
+| 38 | `tests/unit/render/competition-pages.test.tsx` | 12 | 338 | Renderizado UI | Vistas de competición: calendarios de partidos, tablas de ligas, clasificaciones y eliminatorias de playoffs. |
+| 39 | `tests/unit/render/match-detail.test.tsx` | 5 | 134 | Renderizado UI | Vista detallada de una partida: marcadores de equipo, runas reforzadas, desglose de objetos y estadísticas de daño. |
+| 40 | `tests/unit/render/player-pages.test.tsx` | 6 | 199 | Renderizado UI | Perfiles individuales de jugadores: estadísticas por campeón, historial de partidas y porcentaje de participación. |
+| 41 | `tests/unit/render/rofl-upload.test.tsx` | 6 | 97 | Renderizado UI | Zona de arrastrar y soltar repeticiones, barras de progreso y visor de incidencias. |

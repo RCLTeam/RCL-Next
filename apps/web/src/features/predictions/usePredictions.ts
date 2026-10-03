@@ -14,28 +14,45 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     );
   return (await response.json()).data as T;
 }
-export function usePredictions(divisionId: string | undefined, userId: string | undefined) {
+export function predictionsOverviewPath(divisionId: string, roundId?: string) {
+  return roundId
+    ? `divisions/${divisionId}?${new URLSearchParams({ roundId })}`
+    : `divisions/${divisionId}`;
+}
+export function usePredictions(
+  divisionId: string | undefined,
+  userId: string | undefined,
+  roundId?: string
+) {
   const [result, setResult] = useState<{
     key: string;
     data: PredictionsData;
     picks: PredictionPick[];
   } | null>(null);
+  const [currentRound, setCurrentRound] = useState<{
+    divisionId: string | undefined;
+    id: string | null;
+  } | null>(null);
   const [error, setError] = useState(false);
   const [revision, setRevision] = useState(0);
-  const key = `${divisionId}/${userId}`;
+  const key = `${divisionId}/${roundId ?? ''}/${userId}`;
   // biome-ignore lint/correctness/useExhaustiveDependencies: revision refreshes server time and votes.
   useEffect(() => {
     if (!divisionId) return;
     const controller = new AbortController();
     setError(false);
     Promise.all([
-      request<PredictionsData>(`divisions/${divisionId}`, { signal: controller.signal }),
+      request<PredictionsData>(predictionsOverviewPath(divisionId, roundId), {
+        signal: controller.signal
+      }),
       userId
         ? request<PredictionPick[]>(`divisions/${divisionId}/mine`, { signal: controller.signal })
         : Promise.resolve([])
     ])
       .then(([data, picks]) => {
-        if (!controller.signal.aborted) setResult({ key, data, picks });
+        if (controller.signal.aborted) return;
+        setResult({ key, data, picks });
+        setCurrentRound({ divisionId, id: data.currentRound });
       })
       .catch(() => {
         if (!controller.signal.aborted) {
@@ -48,9 +65,10 @@ export function usePredictions(divisionId: string | undefined, userId: string | 
       controller.abort();
       window.clearTimeout(timer);
     };
-  }, [divisionId, userId, key, revision]);
+  }, [divisionId, roundId, userId, key, revision]);
   return {
     data: result?.key === key ? result.data : null,
+    currentRound: currentRound?.divisionId === divisionId ? (currentRound?.id ?? null) : null,
     picks: result?.key === key ? result.picks : [],
     error,
     retry: () => setRevision((r) => r + 1),

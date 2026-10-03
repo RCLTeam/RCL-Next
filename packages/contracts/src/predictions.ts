@@ -21,6 +21,10 @@ export interface PredictorStanding {
 }
 export interface PredictionsData {
   week: string;
+  /** Round whose matches are listed; null when the division has no started round. */
+  round: string | null;
+  /** Latest round whose league week has started. */
+  currentRound: string | null;
   open: boolean;
   matches: PredictionSummary[];
   ranking: PredictorStanding[];
