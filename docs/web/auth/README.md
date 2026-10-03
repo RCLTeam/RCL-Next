@@ -31,5 +31,5 @@ El diseño sigue estrictamente el **Golden Standard Modular** del repositorio:
 ## 3. Garantías de Separación de Responsabilidades
 
 - **Cero Red en Componentes Visuales:** `AuthControlsView` no importa `fetch`, `auth-api.ts` ni librerías de red; solo renderiza markup HTML según el estado recibido.
-- **Mapeo Seguro de Avatares:** Renderizado condicional de avatares animados (`.gif` si el hash comienza por `a_`, o `.png` en caso contrario), con fallback accesible a las iniciales del usuario (`AuthControls.tsx:38-51`).
+- **Avatares desde el mismo origen:** `AuthControlsView` usa el [proxy de avatares](../../api/auth/avatars.md), que conserva PNG/GIF sin reenviar cookies de Discord. Cuando no hay hash se muestran las iniciales; no existe sustitución automática por iniciales ante un error de descarga.
 - **Resiliencia ante Fallos de Red:** Si `/api/v1/auth/me` devuelve error o la red falla, la UI transiciona al estado discriminado `'error'` permitiendo al usuario reintentar sin recargar la página completa.

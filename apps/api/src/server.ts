@@ -16,6 +16,7 @@ import { PostgresMemberRolesRepository } from './modules/member-roles/postgres-m
 import { PredictionsRepository } from './modules/predictions/predictions.repository.js';
 import { PostgresRoflUploadRepository } from './modules/rofl-upload/persistence/postgres-rofl-upload.repository.js';
 import { attachRoflUploadGateway } from './modules/rofl-upload/websocket/rofl-upload.gateway.js';
+import { PostgresSitemapRepository } from './modules/sitemap/persistence/postgres-sitemap.repository.js';
 import {
   IncidentLogger,
   SuggestionStore,
@@ -69,6 +70,7 @@ const suggestionsService = new SuggestionsService({
 });
 
 const app = createApp({
+  webDirectory: process.env.WEB_DIST_DIR,
   teamLogoDirectory: process.env.TEAM_LOGO_DIR,
   predictionsRepository: new PredictionsRepository(connection.db),
   homeContentRepository: new PostgresHomeContentRepository(connection.db),
@@ -79,6 +81,7 @@ const app = createApp({
   memberRolesRepository: new PostgresMemberRolesRepository(connection.db),
   crudOperationsRepository: new PostgresCrudOperationsRepository(connection.db),
   repository: new PostgresCompetitionRepository(connection.db),
+  sitemapRepository: new PostgresSitemapRepository(connection.db),
   checkDatabase,
   corsOrigin: env.CORS_ORIGIN,
   bridgeClient,
@@ -114,6 +117,7 @@ cleanupImages();
 
 server.listen(env.PORT, env.HOST, () => {
   console.info(`RCL API: http://${env.HOST}:${env.PORT}/api/v1/seasons`);
+  console.info(`RCL Sitemap: http://${env.HOST}:${env.PORT}/api/sitemap.xml`);
   console.info(`RCL ROFL Upload WS: ws://${env.HOST}:${env.PORT}/ws/rofl-upload`);
 });
 server.on('error', async () => {

@@ -2,6 +2,7 @@ import cors from 'cors';
 import express from 'express';
 import helmet from 'helmet';
 import { type AuthOptions, authRouter } from './modules/auth/auth.router.js';
+import { discordAvatarsRouter } from './modules/auth/discord-avatars.router.js';
 import { CompetitionController } from './modules/competition/competition.controller.js';
 import type { CompetitionRepository } from './modules/competition/competition.repository.js';
 import { competitionRouter } from './modules/competition/competition.router.js';
@@ -21,8 +22,13 @@ import { HomeContentService } from './modules/home-content/home-content.service.
 import type { MemberRolesRepository } from './modules/member-roles/member-roles.repository.js';
 import { memberRolesRouter } from './modules/member-roles/member-roles.router.js';
 import { MemberRolesService } from './modules/member-roles/member-roles.service.js';
+import { pageMetadataRouter, webPageRouter } from './modules/page-metadata/page-metadata.router.js';
+import { PageMetadataService } from './modules/page-metadata/page-metadata.service.js';
 import type { PredictionsRepository } from './modules/predictions/predictions.repository.js';
 import { predictionsRouter } from './modules/predictions/predictions.router.js';
+import type { SitemapRepository } from './modules/sitemap/persistence/sitemap.repository.js';
+import { SitemapService } from './modules/sitemap/processing/sitemap.service.js';
+import { sitemapRouter } from './modules/sitemap/sitemap.router.js';
 import { IncidentLogger } from './modules/suggestions/incident-logger.js';
 import { SuggestionStore } from './modules/suggestions/suggestion.store.js';
 import { createSuggestionsRouter } from './modules/suggestions/suggestions.router.js';
@@ -32,6 +38,7 @@ import { TeamLogosStore } from './modules/team-logos/team-logos.store.js';
 import { errorHandler } from './shared/http.js';
 
 export function createApp(options: {
+  webDirectory?: string | undefined;
   repository: CompetitionRepository;
   predictionsRepository?: PredictionsRepository;
   checkDatabase: () => Promise<void>;
@@ -47,11 +54,20 @@ export function createApp(options: {
   suggestionsService?: SuggestionsService;
   suggestionStore?: SuggestionStore;
   incidentLogger?: IncidentLogger;
+  sitemapRepository?: SitemapRepository;
+  sitemapService?: SitemapService;
 }): express.Express {
   const app = express();
   app.disable('x-powered-by');
   app.use(helmet());
   app.use(cors({ origin: options.corsOrigin, credentials: true }));
+  const metadata = new PageMetadataService(
+    new CompetitionService(options.repository),
+    options.homeContentRepository
+      ? new HomeContentService(options.homeContentRepository)
+      : undefined
+  );
+  app.use(pageMetadataRouter(metadata));
   if (options.auth && options.databaseTransferRepository) {
     app.use(
       '/api/v1/database-transfer',
@@ -71,6 +87,7 @@ export function createApp(options: {
     );
   }
   app.use(express.json({ limit: '1mb' }));
+  app.use('/api/v1/discord-avatars', discordAvatarsRouter());
   app.use(
     '/api/v1/team-logos',
     teamLogosRouter(options.auth, new TeamLogosStore(options.teamLogoDirectory))
@@ -154,6 +171,12 @@ export function createApp(options: {
       auth: options.auth
     })
   );
+  const sitemapService =
+    options.sitemapService ??
+    (options.sitemapRepository ? new SitemapService(options.sitemapRepository) : undefined);
+  if (sitemapService) {
+    app.use('/api/sitemap.xml', sitemapRouter(sitemapService));
+  }
   app.get('/health/live', (_req, res) => {
     res.json({ data: { status: 'ok' } });
   });
@@ -171,6 +194,7 @@ export function createApp(options: {
     '/api/v1',
     competitionRouter(new CompetitionController(new CompetitionService(options.repository)))
   );
+  if (options.webDirectory) app.use(webPageRouter(options.webDirectory, metadata));
   app.use((_req, res) => {
     res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Route not found.' } });
   });
