@@ -26,17 +26,14 @@ export const playerSortOptions = [
   ['damageMitigated', 'Daño mitigado']
 ] as const;
 export type PlayerSort = (typeof playerSortOptions)[number][0];
-const playerCardStats: Record<PlayerSort, { label: string; description: string }> = {
-  kda: { label: 'KDA', description: 'Relación entre asesinatos, asistencias y muertes.' },
-  csPerMinute: { label: 'CS/min', description: 'Súbditos y monstruos eliminados por minuto.' },
-  killParticipation: {
-    label: 'KP',
-    description: 'Porcentaje de asesinatos del equipo en los que participa el jugador.'
-  },
-  winRate: { label: 'WR', description: 'Porcentaje de victorias.' },
-  damagePerMinute: { label: 'Daño/min', description: 'Daño a campeones por minuto.' },
-  visionScore: { label: 'Visión', description: 'Puntuación de visión.' },
-  damageMitigated: { label: 'Mitigado', description: 'Daño mitigado.' }
+const playerCardStats: Record<PlayerSort, string> = {
+  kda: 'KDA',
+  csPerMinute: 'CS/min',
+  killParticipation: 'KP',
+  winRate: 'WR',
+  damagePerMinute: 'Daño/min',
+  visionScore: 'Visión',
+  damageMitigated: 'Mitigado'
 };
 const roles = [
   ['all', 'Todos'],
@@ -309,7 +306,6 @@ export function PlayerGrid({
   sort = 'kda',
   catalog = {}
 }: { players: Player[]; sort?: PlayerSort; catalog?: GameCatalog }) {
-  const tooltipId = React.useId();
   if (!players.length)
     return <div className="empty-state">No hay jugadores que coincidan con la búsqueda.</div>;
   return (
@@ -324,11 +320,6 @@ export function PlayerGrid({
             } as React.CSSProperties
           }
           href={playerHref(player)}
-          aria-describedby={
-            player.competition?.champion || player.competition?.stats
-              ? `${tooltipId}-${player.id}-stat`
-              : undefined
-          }
           aria-label={`Ver jugador ${player.gameName}${player.riotTag ? `#${player.riotTag}` : ''}`}
         >
           <PlayerArt player={player} catalog={catalog} />
@@ -347,13 +338,8 @@ export function PlayerGrid({
             ) : (
               <dl className="player-card-stats">
                 <div>
-                  <dt>{playerCardStats[sort].label}</dt>
-                  <dd>
-                    {formatPlayerStat(player.competition?.stats, sort)}
-                    <span className="player-stat-description" id={`${tooltipId}-${player.id}-stat`}>
-                      {playerCardStats[sort].description}
-                    </span>
-                  </dd>
+                  <dt>{playerCardStats[sort]}</dt>
+                  <dd>{formatPlayerStat(player.competition?.stats, sort)}</dd>
                 </div>
               </dl>
             )}
