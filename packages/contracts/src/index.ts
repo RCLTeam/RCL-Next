@@ -1,4 +1,10 @@
 export type { AuthUser } from './auth.js';
+export {
+  getPageMetadata,
+  pageMetadata,
+  renderPageMetadata,
+  type PageMetadata
+} from './page-metadata.js';
 export type * from './predictions.js';
 export type * from './match-detail.js';
 export type * from './member-roles.js';

@@ -69,6 +69,7 @@ const suggestionsService = new SuggestionsService({
 });
 
 const app = createApp({
+  webDirectory: process.env.WEB_DIST_DIR,
   teamLogoDirectory: process.env.TEAM_LOGO_DIR,
   predictionsRepository: new PredictionsRepository(connection.db),
   homeContentRepository: new PostgresHomeContentRepository(connection.db),
