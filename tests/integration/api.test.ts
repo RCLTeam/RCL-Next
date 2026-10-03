@@ -181,7 +181,7 @@ test('regular BO3 standings award the score difference for all four results', as
     assert.equal(home?.losses, Number(awayScore === 2));
   }
 });
-test('standings prioritize accumulated difference over series wins', async () => {
+test('standings prioritize series wins over accumulated map difference', async () => {
   const source = repository();
   source.matches = async () => [
     { ...match, id: 'series-1', bestOf: 3, homeScore: 2, awayScore: 0 },
@@ -196,12 +196,33 @@ test('standings prioritize accumulated difference over series wins', async () =>
     }))
   ];
   const rows = await new CompetitionService(source).standings(divisionId);
-  assert.equal(rows[0]?.team.id, homeId);
-  assert.equal(rows[0]?.mapDifference, 1);
-  assert.equal(rows[0]?.wins, 2);
+  assert.equal(rows[0]?.team.id, awayId);
+  assert.equal(rows[0]?.mapDifference, -1);
+  assert.equal(rows[0]?.wins, 3);
   assert.equal(rows[0]?.played, 5);
-  assert.equal(rows[1]?.mapDifference, -1);
-  assert.equal(rows[1]?.wins, 3);
+  assert.equal(rows[1]?.mapDifference, 1);
+  assert.equal(rows[1]?.wins, 2);
+});
+
+test('standings break equal series wins by map difference before team name', async () => {
+  const source = repository();
+  source.matches = async () => [
+    { ...match, bestOf: 3, homeScore: 2, awayScore: 1 },
+    { ...match, id: 'series-2', bestOf: 3, homeScore: 0, awayScore: 2, winnerTeamId: awayId }
+  ];
+  const rows = await new CompetitionService(source).standings(divisionId);
+  assert.deepEqual(
+    rows.map(({ team, position, wins, mapDifference }) => ({
+      id: team.id,
+      position,
+      wins,
+      mapDifference
+    })),
+    [
+      { id: awayId, position: 1, wins: 1, mapDifference: 1 },
+      { id: homeId, position: 2, wins: 1, mapDifference: -1 }
+    ]
+  );
 });
 
 test('calendar filters by round and expands teams', async () => {

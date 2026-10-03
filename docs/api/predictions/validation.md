@@ -81,7 +81,7 @@ if (!predictionWindow(match.scheduledAt, match.status, new Date()).open)
   throw new AppError(409, 'PREDICTIONS_CLOSED', 'Voting is closed.');
 ```
 - Se reevalúa el estado de la ventana en tiempo real con la fecha y hora exacta del servidor (`new Date()`).
-- Si la fecha límite semanal expiró (martes 23:59:59) o el partido ya ha alcanzado su hora de inicio (`scheduledAt <= now`), el servidor arroja un conflicto **HTTP 409**.
+- Si el partido no pertenece a la semana actual, no tiene fecha, no está `scheduled` o falta una hora o menos para su inicio, el servidor arroja un conflicto **HTTP 409**.
 
 ### 3.3 Comprobación de Participación de Equipo (`INVALID_TEAM`)
 **Archivo**: `predictions.repository.ts:141-143`

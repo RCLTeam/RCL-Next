@@ -13,6 +13,12 @@
   font-size: 12px;
 }
 
+.auth-identity,
+.auth-user {
+  min-width: 0;
+  max-width: 100%;
+}
+
 @media (min-width: 651px) {
   .auth-controls {
     font-size: 0.85rem;
@@ -22,6 +28,8 @@
 /* Button base, focus and disabled states */
 
 .auth-button {
+  max-width: 100%;
+  overflow-wrap: anywhere;
   display: inline-flex;
   align-items: center;
   justify-content: center;

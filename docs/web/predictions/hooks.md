@@ -10,7 +10,7 @@ La comunicación de red, la reactividad y la gestión de votos en cliente reside
 
 Este hook resuelve tres requisitos críticos:
 1. Recuperación atómica y paralela del resumen público de la división y de los votos personales del usuario mediante `Promise.all`.
-2. Sondeo en segundo plano (*polling*) cada 15 segundos para sincronizar el estado de la ventana de votación según la hora del servidor y actualizar los porcentajes en vivo al cierre.
+2. Sondeo en segundo plano (*polling*) cada 15 segundos para sincronizar el estado de la ventana de votación según la hora del servidor y actualizar los porcentajes al finalizar cada partido.
 3. Mutación optimista inmediata al guardar un pronóstico, reflejando el voto en pantalla antes de que concluya el viaje de ida y vuelta a la red.
 
 ---
@@ -96,7 +96,7 @@ const timer = window.setTimeout(() => setRevision((r) => r + 1), 15000);
 - Establece un temporizador que incrementa el contador de `revision` cada 15 segundos.
 - **Utilidad Práctica:**
   - Detecta automáticamente el momento exacto en que un partido pasa a estar en curso (`now >= scheduledAt`), bloqueando el formulario en cliente sin requerir recarga manual.
-  - Al pasar la medianoche del martes, detecta el cierre global de la jornada y revela inmediatamente los porcentajes comunitarios.
+  - Detecta el cierre individual una hora antes del inicio y recoge los porcentajes cuando el servidor registra el partido como `completed` o `forfeit`.
 
 ### 3.3 Mutación Optimista y Consolidación (`save`)
 1. **Petición HTTP:** Emite una solicitud `PUT /api/v1/predictions/matches/:matchId` con el equipo y marcadores elegidos.

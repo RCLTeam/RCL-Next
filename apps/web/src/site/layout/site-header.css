@@ -7,6 +7,9 @@
   background: color-mix(in srgb, var(--void) 97%, transparent);
   backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--line);
+  max-height: 100dvh;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
 }
 
 .rcl-site .nav-top {
@@ -59,8 +62,6 @@
   align-items: center;
   padding: 12px var(--page-gutter) 20px;
   width: 100%;
-  max-height: 60vh;
-  overflow-y: auto;
 }
 
 .rcl-site .nav-bottom.is-open {
@@ -94,6 +95,8 @@
 
 @media (min-width: 951px) {
   .rcl-site .site-header {
+    max-height: none;
+    overflow: visible;
     display: grid;
     grid-template-columns: auto minmax(0, 1fr) auto;
     align-items: center;

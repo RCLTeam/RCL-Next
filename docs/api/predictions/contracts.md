@@ -70,10 +70,10 @@ Representa el estado público de la ventana y el escrutinio comunitario de un pa
 | Campo | Tipo | Obligatorio | Descripción |
 |---|---|:---:|---|
 | `matchId` | `string` (UUID) | Sí | Identificador del partido. |
-| `open` | `boolean` | Sí | Indica si la votación para este partido está actualmente abierta. Falso si la semana expiró o el partido ya comenzó (`scheduledAt <= now`). |
-| `closed` | `boolean` | Sí | Indica si el plazo semanal ha concluido formalmente. Si es falso, los votos y porcentajes permanecen ocultos. |
-| `homePercent` | `number \| null` | Sí | Porcentaje entero de votos favorables al equipo local (`0` a `100`). Devuelve `null` mientras `!closed`. |
-| `votes` | `number \| null` | Sí | Número total de votos comunitarios emitidos para el partido. Devuelve `null` mientras `!closed`. |
+| `open` | `boolean` | Sí | Indica si la votación para este partido está actualmente abierta. Solo verdadero para partidos `scheduled` de la semana actual a más de una hora del inicio. |
+| `closed` | `boolean` | Sí | Indica si un partido con fecha alcanzó el límite de una hora antes o dejó de estar `scheduled`. No determina la publicación de votos. |
+| `homePercent` | `number \| null` | Sí | Porcentaje entero de votos favorables al equipo local (`0` a `100`). Devuelve `null` hasta que el partido esté `completed` o `forfeit`. |
+| `votes` | `number \| null` | Sí | Número total de votos comunitarios emitidos para el partido. Devuelve `null` hasta que el partido esté `completed` o `forfeit`. |
 
 ---
 
@@ -103,7 +103,7 @@ Estructura global entregada por el endpoint público `GET /api/v1/predictions/di
 | Campo | Tipo | Obligatorio | Descripción |
 |---|---|:---:|---|
 | `week` | `string` | Sí | Fecha ISO del lunes de la semana actual (`YYYY-MM-DD`, ej. `'2026-09-28'`). |
-| `open` | `boolean` | Sí | Estado global de la semana deportiva (verdadero en lunes y martes, falso de miércoles a domingo). |
+| `open` | `boolean` | Sí | Verdadero si algún partido elegible de la semana admite votos. |
 | `matches` | `PredictionSummary[]` | Sí | Lista de resúmenes de partidos de la jornada con su estado de votación. |
 | `ranking` | `PredictorStanding[]` | Sí | Clasificación acumulada de todos los pronosticadores de la temporada. |
 

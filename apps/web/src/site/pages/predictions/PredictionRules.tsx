@@ -11,7 +11,7 @@ const rules = [
   [
     '03',
     'Plazo para votar',
-    'Vota del lunes a las 00:00 al martes a las 23:59, antes del inicio del partido.'
+    'Vota desde el lunes a las 00:00 hasta 1 hora antes del inicio de cada partido.'
   ]
 ] as const;
 
