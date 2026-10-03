@@ -72,13 +72,14 @@ export class PredictionsRepository {
         )
         .map((match) => {
           const window = predictionWindow(match.scheduledAt, match.status, now);
+          const revealVotes = ['completed', 'forfeit'].includes(match.status);
           const picks = votes.filter(({ pick }) => pick.matchId === match.id);
           return {
             matchId: match.id,
             ...window,
-            votes: window.closed ? picks.length : null,
+            votes: revealVotes ? picks.length : null,
             homePercent:
-              window.closed && picks.length
+              revealVotes && picks.length
                 ? Math.round(
                     (100 *
                       picks.filter(({ pick }) => pick.selectedTeamId === match.team1Id).length) /

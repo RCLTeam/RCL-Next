@@ -280,7 +280,9 @@ export function FeaturedPlayer({
                   <PlayerTeam player={player} />
                 </div>
               </div>
-              {player.competition.team && <TeamBadge team={player.competition.team} />}
+              {player.competition.champion && resolveTeamLogo(player.competition.team?.logoUrl) && (
+                <TeamBadge team={player.competition.team} />
+              )}
             </div>
             <dl className="featured-player-stats">
               {playerSortOptions.map(([key, label]) => (
@@ -322,6 +324,11 @@ export function PlayerGrid({
             } as React.CSSProperties
           }
           href={playerHref(player)}
+          aria-describedby={
+            player.competition?.champion || player.competition?.stats
+              ? `${tooltipId}-${player.id}-stat`
+              : undefined
+          }
           aria-label={`Ver jugador ${player.gameName}${player.riotTag ? `#${player.riotTag}` : ''}`}
         >
           <PlayerArt player={player} catalog={catalog} />
@@ -339,16 +346,14 @@ export function PlayerGrid({
               <p className="player-pending-stats">Estadísticas pendientes.</p>
             ) : (
               <dl className="player-card-stats">
-                <div aria-describedby={`${tooltipId}-${player.id}-stat`}>
+                <div>
                   <dt>{playerCardStats[sort].label}</dt>
-                  <dd>{formatPlayerStat(player.competition?.stats, sort)}</dd>
-                  <span
-                    className="player-stat-tooltip"
-                    role="tooltip"
-                    id={`${tooltipId}-${player.id}-stat`}
-                  >
-                    {playerCardStats[sort].description}
-                  </span>
+                  <dd>
+                    {formatPlayerStat(player.competition?.stats, sort)}
+                    <span className="player-stat-description" id={`${tooltipId}-${player.id}-stat`}>
+                      {playerCardStats[sort].description}
+                    </span>
+                  </dd>
                 </div>
               </dl>
             )}

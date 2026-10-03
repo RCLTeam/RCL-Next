@@ -42,8 +42,8 @@ A continuación se detalla la matriz completa de las 3 rutas gestionadas por el 
 - **Parámetros de Ruta**:
   - `id` (`string`, requerido): Identificador UUID de la división (`seasons_divisions.id`). Validado con `z.string().uuid()` en `predictions.router.ts:13`.
 - **Comportamiento Específico**:
-  - Si la ventana de un partido aún no ha cerrado formalmente (`!window.closed`), las propiedades `votes` y `homePercent` del resumen devuelven estrictamente `null` (`predictions.repository.ts:64-72`).
-  - Únicamente cuando `window.closed === true` se revela el número de votos comunitarios y el porcentaje de victoria asignado al equipo local.
+  - Si el partido no está finalizado (`completed` o `forfeit`), las propiedades `votes` y `homePercent` del resumen devuelven estrictamente `null` (`predictions.repository.ts:64-72`).
+  - Únicamente cuando el partido está `completed` o `forfeit` se revela el número de votos comunitarios y el porcentaje de victoria asignado al equipo local.
   - Si la división especificada no existe en la base de datos, arroja `notFound('Division')` -> **HTTP 404** (`predictions.repository.ts:17`).
 - **Respuesta**: HTTP 200 `{ "data": PredictionsData }`.
 

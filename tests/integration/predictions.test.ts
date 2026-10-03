@@ -8,7 +8,7 @@ import { expect, test, vi } from 'vitest';
 import { PredictionsRepository } from '../../apps/api/src/modules/predictions/predictions.repository.js';
 import * as schema from '../../packages/database/src/schema.js';
 
-test('predictions persist, hide votes until close, reject late edits and derive the ranking', async () => {
+test('predictions persist, hide votes until completion, reject late edits and derive the ranking', async () => {
   const client = new PGlite();
   try {
     const db = drizzle(client, { schema });
@@ -105,8 +105,24 @@ test('predictions persist, hide votes until close, reject late edits and derive 
     expect((await repository.overview(division)).matches[0]).toMatchObject({
       open: false,
       closed: true,
-      homePercent: 100,
-      votes: 1
+      homePercent: null,
+      votes: null
+    });
+    vi.setSystemTime(new Date('2026-10-02T18:30:00Z'));
+    await db
+      .update(schema.matches)
+      .set({ scheduledAt: new Date('2026-10-02T21:00:00Z') })
+      .where(eq(schema.matches.id, matchId));
+    expect(
+      (await repository.overview(division)).matches.find((m) => m.matchId === matchId)
+    ).toMatchObject({ open: true, closed: false, votes: null, homePercent: null });
+    await repository.save(userId, { ...pick, awayScore: 1 });
+    await db.update(schema.matches).set({ status: 'live' }).where(eq(schema.matches.id, matchId));
+    expect(
+      (await repository.overview(division)).matches.find((m) => m.matchId === matchId)
+    ).toMatchObject({ open: false, closed: true, votes: null, homePercent: null });
+    await expect(repository.save(userId, pick)).rejects.toMatchObject({
+      code: 'PREDICTIONS_CLOSED'
     });
     await client.exec(
       `UPDATE matches SET status = 'completed', winner_team_id = team1_id, team1_score = 2, team2_score = 1 WHERE id = '${matchId}'`
@@ -118,6 +134,12 @@ test('predictions persist, hide votes until close, reject late edits and derive 
       total: 1,
       position: 1
     });
+    for (const status of ['completed', 'forfeit'] as const) {
+      await db.update(schema.matches).set({ status }).where(eq(schema.matches.id, matchId));
+      expect(
+        (await repository.overview(division)).matches.find((m) => m.matchId === matchId)
+      ).toMatchObject({ open: false, closed: true, votes: 1, homePercent: 100 });
+    }
     await client.exec(`UPDATE matches SET team2_score = 0 WHERE id = '${matchId}'`);
     expect((await repository.overview(division)).ranking[0]?.points).toBe(1);
   } finally {

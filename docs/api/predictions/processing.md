@@ -14,12 +14,12 @@ La lógica de negocio del módulo de predicciones se encapsula de forma funciona
 
 ---
 
-## 2. Política Temporal y Zona Horaria Oficial (`leagueWeek`)
+## 2. Semana y plazo por partido
 
-La liga Rebel Crown Legacy se disputa en territorio español y rige sus plazos por la hora peninsular española. Para evitar desfases causados por servidores alojados en zonas horarias UTC u otras regiones geográficas, la función `leagueWeek` calcula la semana calendario mediante el formateador internacional `Intl.DateTimeFormat`:
+La semana comienza el lunes a las 00:00 en `Europe/Madrid`, respetando los cambios de horario. `leagueWeek` devuelve su identificador, sin una apertura global por día.
 
 ```typescript
-// apps/api/src/modules/predictions/prediction-policy.ts:2-14
+// Calendar weeks use league time, including DST.
 export function leagueWeek(date: Date) {
   const parts = new Intl.DateTimeFormat('en-CA', {
     timeZone: 'Europe/Madrid',
@@ -31,68 +31,46 @@ export function leagueWeek(date: Date) {
   const day = new Date(Date.UTC(part('year'), part('month') - 1, part('day')));
   const weekday = (day.getUTCDay() + 6) % 7;
   day.setUTCDate(day.getUTCDate() - weekday);
-  return { week: day.toISOString().slice(0, 10), open: weekday < 2 };
+  return { week: day.toISOString().slice(0, 10) };
 }
-```
 
-### Reglas Matemáticas del Calendario:
-1. **Desplazamiento al Lunes:** La fórmula `weekday = (day.getUTCDay() + 6) % 7` convierte la numeración estándar de JavaScript (donde el domingo es 0) a una escala donde el **lunes es 0**, el martes es 1, y el domingo es 6.
-2. **Identificador de Semana (`week`):** Al restar `weekday` días a la fecha en UTC (`day.setUTCDate(day.getUTCDate() - weekday)`), se obtiene la fecha del lunes correspondiente a esa semana en formato ISO `YYYY-MM-DD` (ej. `'2026-09-28'`).
-3. **Plazo Semanal de Votación (`open: weekday < 2`):**
-   - **Lunes (`weekday = 0`):** `open = true`.
-   - **Martes (`weekday = 1`):** `open = true`.
-   - **Miércoles a Domingo (`weekday >= 2`):** `open = false`.
-   - El plazo semanal finaliza exactamente el **martes a las 23:59:59** hora de Madrid. A las 00:00:00 del miércoles, `open` pasa a ser `false`.
-
----
-
-## 3. Máquina de Estados de la Ventana de Predicción (`predictionWindow`)
-
-Cada enfrentamiento programado posee su propia ventana de predicción evaluada en tiempo real mediante `predictionWindow` (`prediction-policy.ts:16-28`):
-
-```typescript
-// apps/api/src/modules/predictions/prediction-policy.ts:16-28
 export function predictionWindow(scheduledAt: Date | null, status: string, now: Date) {
   const current = leagueWeek(now);
   const week = scheduledAt ? leagueWeek(scheduledAt).week : null;
+  const closed =
+    scheduledAt !== null &&
+    (now.getTime() >= scheduledAt.getTime() - 60 * 60 * 1000 || status !== 'scheduled');
   return {
-    open:
-      week === current.week &&
-      current.open &&
-      status === 'scheduled' &&
-      scheduledAt !== null &&
-      scheduledAt > now,
-    closed: week !== null && (week < current.week || (week === current.week && !current.open))
+    open: week === current.week && status === 'scheduled' && scheduledAt !== null && !closed,
+    closed
   };
 }
+
+
 ```
 
-### Matriz de Estados de la Ventana
+## 3. Estados y publicación
 
-| Condición Temporal | `status` | `open` | `closed` | Comportamiento en la Plataforma |
-|---|:---:|:---:|:---:|---|
-| Lunes/Martes y `now < scheduledAt` | `'scheduled'` | `true` | `false` | **Votación abierta.** Los usuarios pueden votar y editar sus predicciones. Los porcentajes de la comunidad están ocultos (`null`). |
-| Martes tarde y `now >= scheduledAt` | `'scheduled'` o `'live'` | `false` | `false` | **Ventana intermedia del Kickoff.** Votación bloqueada para este partido. Los porcentajes comunitarios **continúan ocultos** (`null`). |
-| Miércoles a Domingo | Cualquiera | `false` | `true` | **Votación cerrada.** Plazo semanal expirado. Se revelan el recuento total de votos (`votes`) y el porcentaje comunitario (`homePercent`). |
-| Semana pasada (`week < current.week`) | Cualquiera | `false` | `true` | **Semana histórica.** Resultados cerrados y visibles. |
+`open` permite votar en partidos `scheduled` de la semana actual hasta una hora antes del inicio. Exactamente en ese límite el voto ya está cerrado. `closed` indica que un partido con fecha alcanzó el límite o dejó de estar `scheduled`; no autoriza publicar porcentajes.
 
----
+| Situación | `open` | `closed` | Datos comunitarios |
+|---|---|---|---|
+| Programado esta semana, más de una hora antes | `true` | `false` | Ocultos |
+| Programado, desde una hora antes | `false` | `true` | Ocultos |
+| En directo | `false` | `true` | Ocultos |
+| Finalizado (`completed` o `forfeit`), con fecha | `false` | `true` | Visibles |
+| Programado para una semana futura | `false` | `false` | Ocultos |
+| Sin fecha | `false` | `false` | Fuera del resumen semanal |
 
-## 4. Autopsia de la Ventana Intermedia del Kickoff
+El `open` global indica que algún partido elegible admite votos. El resumen incluye solo encuentros de la semana actual y excluye los cancelados.
 
-### Comportamiento de la Ventana Intermedia del Kickoff
-- **Delimitación de Estados:** Podría suponerse que una predicción solo puede encontrarse en dos estados binarios: o está abierta para votar, o está cerrada y se desvelan los porcentajes de la comunidad.
-- **Realidad en el código:** Cuando un partido comienza un martes por la tarde (por ejemplo, a las 18:00 hora de Madrid) y son las 18:05:
-  1. `scheduledAt > now` es `false`, por lo que **`open = false`** (`predictionWindow`, línea 25). Nadie puede enviar un voto para ese partido (`PUT /matches/:id` rechazará con HTTP 409).
-  2. Sin embargo, para la propiedad `closed`, la condición `week === current.week && !current.open` evalúa a **`false`**, dado que para la semana global del martes `current.open` sigue siendo `true` hasta las 23:59:59.
-  3. Por tanto, **`closed = false`**.
-  4. En `predictions.repository.ts:64, 66`:
-     ```typescript
-     votes: window.closed ? picks.length : null,
-     homePercent: window.closed && picks.length ? ... : null
-     ```
-  5. Dado que `window.closed` es `false`, tanto `votes` como `homePercent` se devuelven como **`null`**.
-- **Propósito Deportivo:** Este comportamiento protege deliberadamente la confidencialidad de los votos durante las transmisiones en vivo del martes por la tarde, impidiendo que el público o los casters conozcan los porcentajes comunitarios hasta que la jornada completa haya concluido formalmente a medianoche.
+## 4. Privacidad y aplazamientos
+
+El repositorio publica `votes` y `homePercent` únicamente en estado `completed` o `forfeit`. Ambos permanecen `null` durante la hora previa y las retransmisiones en directo. Al finalizar sin votos, `votes` es cero y `homePercent` sigue siendo `null`.
+
+Retrasar un partido `scheduled` de las 18:00Z a las 21:00Z puede reabrir el voto a las 18:30Z dentro de la semana actual. Los porcentajes nunca se habían publicado, por lo que no se exponen tendencias. Cambiar la fecha de un partido finalizado no reabre el voto mientras conserve su estado final.
+
+No se añade una excepción para el lunes entre las 00:00 y las 00:59: la competición no permite encuentros en lunes ni martes.
 
 ---
 

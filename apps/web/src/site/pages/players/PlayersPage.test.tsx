@@ -173,3 +173,25 @@ test('players missing the selected statistic sort by team, then name, with no te
     'none'
   ]);
 });
+
+test('featured player shows one valid team logo with or without a champion', () => {
+  for (const champion of ['Ahri', null]) {
+    for (const logoUrl of ['/images/team.png', 'javascript:invalid', null]) {
+      const html = renderToStaticMarkup(
+        <FeaturedPlayer
+          player={{
+            ...player,
+            competition: {
+              ...player.competition,
+              champion,
+              team: { id: 'team', name: 'Team', shortName: null, logoUrl }
+            }
+          }}
+        />
+      );
+      expect((html.match(/class="team-badge/g) ?? []).length).toBe(
+        logoUrl === '/images/team.png' ? 1 : 0
+      );
+    }
+  }
+});
