@@ -13,6 +13,23 @@ export function leagueWeek(date: Date) {
   return { week: day.toISOString().slice(0, 10) };
 }
 
+// The current round is the latest one whose league week has already started.
+export function currentRoundId(
+  rounds: readonly { id: number; startsAt: Date | null }[],
+  now: Date
+): number | null {
+  const week = leagueWeek(now).week;
+  let current: { id: number; startsAt: Date } | null = null;
+  for (const { id, startsAt } of rounds) {
+    if (!startsAt || leagueWeek(startsAt).week > week) continue;
+    const time = startsAt.getTime();
+    const currentTime = current?.startsAt.getTime() ?? Number.NEGATIVE_INFINITY;
+    if (!current || time > currentTime || (time === currentTime && id > current.id))
+      current = { id, startsAt };
+  }
+  return current?.id ?? null;
+}
+
 export function predictionWindow(scheduledAt: Date | null, status: string, now: Date) {
   const current = leagueWeek(now);
   const week = scheduledAt ? leagueWeek(scheduledAt).week : null;
