@@ -24,10 +24,7 @@ export function PredictorRankingPanel({
               <span className="predictor-position">{row.position}</span>
               <PredictorAvatar key={`${row.userId}-${row.avatarHash}`} row={row} />
               <div>
-                <strong>
-                  {row.userId === userId ? 'tú, ' : ''}
-                  {displayName(row.name)}
-                </strong>
+                <strong>{displayName(row.name)}</strong>
                 <small>
                   {row.correct} de {row.total} aciertos
                 </small>
