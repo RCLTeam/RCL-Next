@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { discordLoginUrl } from '../../../features/auth/api/auth-api.js';
 import { useAuth } from '../../../features/auth/components/AuthProvider.js';
 import {
@@ -6,8 +6,10 @@ import {
   resolveCompetitionState
 } from '../../../features/competition/components/CompetitionDataState.js';
 import { CompetitionFilters } from '../../../features/competition/components/CompetitionFilters.js';
+import { RoundFilter } from '../../../features/competition/components/RoundFilter.js';
 import type { Competition } from '../../../features/competition/hooks/useCompetition.js';
 import { isActiveTeam } from '../../../features/competition/team-visibility.js';
+import { selectableRounds } from '../../../features/predictions/selectable-rounds.js';
 import { usePredictions } from '../../../features/predictions/usePredictions.js';
 import { PageLayout } from '../../../shared/components/PageLayout/PageLayout.js';
 import { PredictionCard } from './PredictionCard.js';
@@ -17,8 +19,13 @@ import './predictions.css';
 export function PredictionsPage({ competition }: { competition: Competition }) {
   const { state } = useAuth();
   const userId = state.status === 'authenticated' ? state.user.discordId : undefined;
-  const predictions = usePredictions(competition.division?.id, userId);
+  const [roundChoice, setRoundChoice] = useState('');
+  const roundKey = `${competition.division?.id ?? ''}:`;
+  const selectedRound = roundChoice.startsWith(roundKey) ? roundChoice.slice(roundKey.length) : '';
+  const predictions = usePredictions(competition.division?.id, userId, selectedRound || undefined);
   const data = predictions.data;
+  const rounds = selectableRounds(competition.rounds.data, predictions.currentRound);
+  const shownRound = competition.rounds.data.find((round) => round.id === data?.round);
   const matches =
     data?.matches.flatMap((summary) => {
       const match = competition.calendar.data.find((m) => m.id === summary.matchId);
@@ -36,6 +43,11 @@ export function PredictionsPage({ competition }: { competition: Competition }) {
     >
       <div className="page-toolbar">
         <CompetitionFilters competition={competition}>
+          <RoundFilter
+            rounds={rounds}
+            value={selectedRound || data?.round || predictions.currentRound || ''}
+            onChange={(value) => setRoundChoice(`${roundKey}${value}`)}
+          />
           <span className={`prediction-status${data?.open ? ' is-open' : ''}`}>
             {data
               ? data.open
@@ -49,12 +61,18 @@ export function PredictionsPage({ competition }: { competition: Competition }) {
       </div>
       {data && (
         <p className="prediction-week eyebrow">
-          Semana del{' '}
-          {new Intl.DateTimeFormat('es-ES', {
-            day: 'numeric',
-            month: 'long',
-            timeZone: 'UTC'
-          }).format(new Date(`${data.week}T00:00:00Z`))}
+          {shownRound ? (
+            (shownRound.name ?? `Jornada ${shownRound.sequence}`)
+          ) : (
+            <>
+              Semana del{' '}
+              {new Intl.DateTimeFormat('es-ES', {
+                day: 'numeric',
+                month: 'long',
+                timeZone: 'UTC'
+              }).format(new Date(`${data.week}T00:00:00Z`))}
+            </>
+          )}
         </p>
       )}
       {state.status === 'anonymous' && data?.open && (
@@ -71,7 +89,7 @@ export function PredictionsPage({ competition }: { competition: Competition }) {
           predictions.retry();
           competition.retry();
         }}
-        empty="No hay encuentros programados para esta semana en esta división."
+        empty="No hay encuentros programados para esta jornada en esta división."
       >
         <div className="prediction-groups">
           {[true, false].map((open) => {

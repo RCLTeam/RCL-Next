@@ -1,21 +1,42 @@
 import type { PredictionPick, PredictionsData, PredictorStanding } from '@rcl/contracts';
-import { discordUsers, matches, predictions, seasonsDivisions, teams } from '@rcl/database';
+import { discordUsers, matches, predictions, rounds, seasonsDivisions, teams } from '@rcl/database';
 import type * as schema from '@rcl/database/schema';
 import { and, eq, gte, inArray } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import type { PgDatabase, PgQueryResultHKT } from 'drizzle-orm/pg-core';
 import { AppError, notFound } from '../../shared/app-error.js';
-import { leagueWeek, predictionPoints, predictionWindow } from './prediction-policy.js';
+import {
+  currentRoundId,
+  leagueWeek,
+  predictionPoints,
+  predictionWindow
+} from './prediction-policy.js';
+
+export interface OverviewOptions {
+  roundId?: number;
+  now?: Date;
+}
 
 export class PredictionsRepository {
   constructor(private readonly db: PgDatabase<PgQueryResultHKT, typeof schema>) {}
 
-  async overview(divisionId: string, now = new Date()): Promise<PredictionsData> {
+  async overview(
+    divisionId: string,
+    { roundId, now = new Date() }: OverviewOptions = {}
+  ): Promise<PredictionsData> {
     const [division] = await this.db
       .select()
       .from(seasonsDivisions)
       .where(eq(seasonsDivisions.id, divisionId));
     if (!division) throw notFound('Division');
+    const divisionRounds = await this.db
+      .select({ id: rounds.id, startsAt: rounds.startsAt })
+      .from(rounds)
+      .where(eq(rounds.idSeasonDivision, divisionId));
+    if (roundId !== undefined && !divisionRounds.some((round) => round.id === roundId))
+      throw notFound('Round');
+    const currentRound = currentRoundId(divisionRounds, now);
+    const shownRound = roundId ?? currentRound;
     const homeTeam = alias(teams, 'prediction_home_team');
     const awayTeam = alias(teams, 'prediction_away_team');
     const calendar = await this.db
@@ -59,6 +80,8 @@ export class PredictionsRepository {
     }
     return {
       ...leagueWeek(now),
+      round: shownRound === null ? null : String(shownRound),
+      currentRound: currentRound === null ? null : String(currentRound),
       open: calendar.some(
         ({ match }) => predictionWindow(match.scheduledAt, match.status, now).open
       ),
@@ -66,8 +89,9 @@ export class PredictionsRepository {
         .map(({ match }) => match)
         .filter(
           (match) =>
-            match.scheduledAt &&
-            leagueWeek(match.scheduledAt).week === leagueWeek(now).week &&
+            shownRound !== null &&
+            match.idRound === shownRound &&
+            match.scheduledAt !== null &&
             match.status !== 'cancelled'
         )
         .map((match) => {

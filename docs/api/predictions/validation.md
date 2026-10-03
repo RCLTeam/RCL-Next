@@ -14,7 +14,7 @@ El módulo de predicciones aplica validaciones en dos fases estrictamente difere
 
 ## 2. Esquemas de Validación Zod (`predictions.router.ts`)
 
-### 2.1 Identificadores de Ruta (UUID)
+### 2.1 Identificadores de Ruta (UUID) y Parámetros de Consulta (`overviewQuery`)
 - En `GET /divisions/:id` y `GET /divisions/:id/mine`:
   ```typescript
   z.string().uuid().parse(req.params.id)
@@ -25,10 +25,34 @@ El módulo de predicciones aplica validaciones en dos fases estrictamente difere
   z.string().uuid().parse(req.params.id)
   ```
 
+#### Esquema de Consulta de Jornada (`overviewQuery`)
+En `GET /divisions/:id`:
+
+```typescript
+const overviewQuery = z
+  .object({
+    roundId: z
+      .string()
+      .regex(/^-?\d+$/)
+      .refine((value) => Number(value) >= -32768 && Number(value) <= 32767)
+      .transform(Number)
+      .optional()
+  })
+  .strict();
+```
+
+Esta validación coincide con la validación de `roundId` utilizada en el calendario de competición.
+
+**Casos de rechazo con HTTP 422 `VALIDATION_ERROR`**:
+- **Valor no entero:** Cadenas que no contienen exclusivamente dígitos opcionalmente precedidos por un signo negativo (no superan la expresión regular `/^-?\d+$/`).
+- **Fuera de rango:** Valores enteros menores que `-32768` o mayores que `32767` (fuera del rango de un entero con signo de 16 bits `int16`).
+- **Parámetro repetido:** Presencia de múltiples ocurrencias de `roundId` en la cadena de consulta (por ejemplo, `?roundId=1&roundId=2`).
+- **Parámetro desconocido:** Cualquier parámetro no reconocido en la consulta (por ejemplo, `?foo=1`), rechazado por el modificador `.strict()`.
+
 ### 2.2 Cuerpo de Pronóstico (`PUT /matches/:id`)
 
 ```typescript
-// apps/api/src/modules/predictions/predictions.router.ts:29-36
+// apps/api/src/modules/predictions/predictions.router.ts
 const pick = z
   .object({
     selectedTeamId: z.string().uuid(),
@@ -48,13 +72,13 @@ const pick = z
 
 ## 3. Validaciones de Dominio y Errores de Negocio
 
-En `predictions.repository.ts:113-152`, se ejecutan las siguientes comprobaciones de negocio dentro de la transacción pesimista:
+En `predictions.repository.ts`, se ejecutan las siguientes comprobaciones de negocio dentro de la transacción pesimista del método `save`:
 
 ### 3.1 Comprobación de Equipos Activos (`INACTIVE_TEAMS`)
-**Archivo**: `predictions.repository.ts:117-138`
+**Archivo**: `predictions.repository.ts` (método `save`)
 
 ```typescript
-// apps/api/src/modules/predictions/predictions.repository.ts:125-138
+// apps/api/src/modules/predictions/predictions.repository.ts
 if (
   !match.team1Id ||
   !match.team2Id ||
@@ -74,7 +98,7 @@ if (
 - **Comportamiento ante Anomalías**: Si un partido involucra a un equipo retirado (sentinel `-10n`), un equipo fantasma (sentinel `-9000n`) o un equipo sin rol de Discord configurado (`null`), la transacción aborta y se rechaza la solicitud emitiendo un conflicto **HTTP 409 `INACTIVE_TEAMS`**.
 
 ### 3.2 Comprobación de Ventana de Votación (`PREDICTIONS_CLOSED`)
-**Archivo**: `predictions.repository.ts:139-140`
+**Archivo**: `predictions.repository.ts` (método `save`)
 
 ```typescript
 if (!predictionWindow(match.scheduledAt, match.status, new Date()).open)
@@ -84,7 +108,7 @@ if (!predictionWindow(match.scheduledAt, match.status, new Date()).open)
 - Si el partido no pertenece a la semana actual, no tiene fecha, no está `scheduled` o falta una hora o menos para su inicio, el servidor arroja un conflicto **HTTP 409**.
 
 ### 3.3 Comprobación de Participación de Equipo (`INVALID_TEAM`)
-**Archivo**: `predictions.repository.ts:141-143`
+**Archivo**: `predictions.repository.ts` (método `save`)
 
 ```typescript
 const home = pick.selectedTeamId === match.team1Id;
@@ -94,7 +118,7 @@ if (!home && pick.selectedTeamId !== match.team2Id)
 - El equipo elegido debe ser obligatoriamente el equipo local (`match.team1Id`) o el equipo visitante (`match.team2Id`). Si se envía un UUID perteneciente a otro equipo de la liga, se rechaza con **HTTP 400**.
 
 ### 3.4 Consistencia de Tanteo Best-Of (`INVALID_SCORE`)
-**Archivo**: `predictions.repository.ts:144-151`
+**Archivo**: `predictions.repository.ts` (método `save`)
 
 ```typescript
 const wins = Math.floor(match.bestOf / 2) + 1;
@@ -118,12 +142,12 @@ if (
 
 | Código HTTP | Código Interno | Causa Técnica | Ubicación |
 |:---:|---|---|---|
-| **`400 Bad Request`** | `INVALID_TEAM` | El equipo seleccionado no es participante en el partido. | `predictions.repository.ts:143` |
-| **`400 Bad Request`** | `INVALID_SCORE` | Marcador inconsistente con el formato Best-Of del partido. | `predictions.repository.ts:151` |
-| **`401 Unauthorized`** | `UNAUTHORIZED` | Petición a `/mine` o `PUT /matches/:id` sin sesión de Discord. | `auth.router.ts:25` |
-| **`403 Forbidden`** | `FORBIDDEN` | Cabecera `Origin` discordante con `frontendOrigin` en mutación. | `auth.router.ts:35` |
-| **`404 Not Found`** | `NOT_FOUND` | La división (`notFound('Division')`) o el partido (`notFound('Match')`) no existen. | `predictions.repository.ts:18, 119` |
-| **`409 Conflict`** | `INACTIVE_TEAMS` | Predicciones no permitidas en encuentros con equipos inactivos o fantasma. | `predictions.repository.ts:133-138` |
-| **`409 Conflict`** | `PREDICTIONS_CLOSED` | El plazo de votación cerró o el partido ya comenzó (`scheduledAt <= now`). | `predictions.repository.ts:140` |
-| **`422 Unprocessable Entity`** | `VALIDATION_ERROR` | Parámetro UUID inválido en ruta o propiedades extra en cuerpo JSON. | `predictions.router.ts:13, 36, 39` |
+| **`400 Bad Request`** | `INVALID_TEAM` | El equipo seleccionado no es participante en el partido. | `predictions.repository.ts` (`save`) |
+| **`400 Bad Request`** | `INVALID_SCORE` | Marcador inconsistente con el formato Best-Of del partido. | `predictions.repository.ts` (`save`) |
+| **`401 Unauthorized`** | `UNAUTHORIZED` | Petición a `/mine` o `PUT /matches/:id` sin sesión de Discord. | `auth.router.ts` (`requireAuth`) |
+| **`403 Forbidden`** | `FORBIDDEN` | Cabecera `Origin` discordante con `frontendOrigin` en mutación. | `auth.router.ts` (`requireTrustedOrigin`) |
+| **`404 Not Found`** | `NOT_FOUND` | La división (`notFound('Division')`), la jornada (`notFound('Round')`) o el partido (`notFound('Match')`) no existen. | `predictions.repository.ts` (`overview`, `save`) |
+| **`409 Conflict`** | `INACTIVE_TEAMS` | Predicciones no permitidas en encuentros con equipos inactivos o fantasma. | `predictions.repository.ts` (`save`) |
+| **`409 Conflict`** | `PREDICTIONS_CLOSED` | El plazo de votación cerró o el partido ya comenzó (`scheduledAt <= now`). | `predictions.repository.ts` (`save`) |
+| **`422 Unprocessable Entity`** | `VALIDATION_ERROR` | Parámetro UUID inválido en ruta, formato o rango inválido en `overviewQuery` (`roundId`), parámetro repetido o desconocido, o propiedades extra en cuerpo JSON. | `predictions.router.ts` |
 | **`500 Internal Server Error`** | `INTERNAL_SERVER_ERROR` | Fallo de base de datos o excepción no controlada en runtime. | Manejador global Express |

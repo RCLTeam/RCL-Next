@@ -94,7 +94,7 @@ export const siteRoutes = [
     path: '/predicciones',
     id: 'predicciones',
     title: 'Predicciones',
-    competition: ['calendar'],
+    competition: ['calendar', 'rounds'],
     render: ({ competition }) => <PredictionsPage competition={competition} />
   },
   {

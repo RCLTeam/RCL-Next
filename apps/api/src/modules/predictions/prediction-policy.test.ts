@@ -1,5 +1,10 @@
 import { expect, test } from 'vitest';
-import { leagueWeek, predictionPoints, predictionWindow } from './prediction-policy.js';
+import {
+  currentRoundId,
+  leagueWeek,
+  predictionPoints,
+  predictionWindow
+} from './prediction-policy.js';
 
 test('weeks start Monday midnight in Madrid including DST', () => {
   for (const [before, monday, week] of [
@@ -59,4 +64,45 @@ test('exact score awards three total points, winner only one, no streak bonus', 
   expect(predictionPoints(true, true)).toBe(3);
   expect(predictionPoints(true, false)).toBe(1);
   expect(predictionPoints(false, false)).toBe(0);
+});
+
+test('current round is the latest one whose Madrid week has started, including break weeks', () => {
+  const rounds = [
+    { id: 4, startsAt: new Date('2026-09-06T22:00:00Z') },
+    { id: 5, startsAt: new Date('2026-09-27T22:00:00Z') },
+    { id: 6, startsAt: new Date('2026-10-04T22:00:00Z') },
+    { id: 7, startsAt: null }
+  ];
+  for (const [now, expected] of [
+    ['2026-10-03T10:00:00Z', 5],
+    ['2026-10-04T21:59:59.999Z', 5],
+    ['2026-10-04T22:00:00Z', 6],
+    ['2026-09-16T10:00:00Z', 4],
+    ['2026-09-01T10:00:00Z', null]
+  ] as const)
+    expect(currentRoundId(rounds, new Date(now))).toBe(expected);
+  expect(currentRoundId([], new Date('2026-10-03T10:00:00Z'))).toBeNull();
+});
+
+test('a round starting midweek is current from that Monday; ties keep the higher id', () => {
+  const midweek = new Date('2026-09-30T16:00:00Z');
+  expect(currentRoundId([{ id: 5, startsAt: midweek }], new Date('2026-09-28T08:00:00Z'))).toBe(5);
+  expect(
+    currentRoundId(
+      [
+        { id: 3, startsAt: midweek },
+        { id: 2, startsAt: midweek }
+      ],
+      new Date('2026-10-01T08:00:00Z')
+    )
+  ).toBe(3);
+});
+
+test('current round switches at Monday midnight in Madrid across the DST change', () => {
+  const rounds = [
+    { id: 8, startsAt: new Date('2026-10-18T22:00:00Z') },
+    { id: 9, startsAt: new Date('2026-10-25T23:00:00Z') }
+  ];
+  expect(currentRoundId(rounds, new Date('2026-10-25T22:59:59Z'))).toBe(8);
+  expect(currentRoundId(rounds, new Date('2026-10-25T23:00:00Z'))).toBe(9);
 });

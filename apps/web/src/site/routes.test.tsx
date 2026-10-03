@@ -21,6 +21,7 @@ test('Routes only request their own data and the visible live-match header', () 
   expect(resolveSiteRoute('/equipos')?.competition).toEqual(['calendar', 'teams']);
   expect(resolveSiteRoute('/clasificacion')?.competition).toEqual(['calendar', 'standings']);
   expect(resolveSiteRoute('/calendario')?.competition).toEqual(['calendar', 'rounds']);
+  expect(resolveSiteRoute('/predicciones')?.competition).toEqual(['calendar', 'rounds']);
   expect(resolveSiteRoute('/campeones')?.competition).toEqual(['calendar']);
   for (const route of adminRoutes) {
     const resolved = resolveSiteRoute(`${route.path}/`);

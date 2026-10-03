@@ -6,71 +6,101 @@
 
 ## 1. Visión General de la Smart Page
 
-La vista de quinielas se ensambla en `PredictionsPage.tsx` (`apps/web/src/site/pages/predictions/PredictionsPage.tsx:1-100`).
+La vista de quinielas se ensambla en el componente `PredictionsPage` (`apps/web/src/site/pages/predictions/PredictionsPage.tsx`).
 
 Como **Smart Page**, no implementa lógica de bajo nivel de renderizado de tarjetas ni realiza llamadas directas a `fetch`. Su función es orquestar la integración entre cuatro subsistemas:
 1. **Autenticación (`useAuth`):** Resuelve si el visitante es un usuario anónimo o un miembro autenticado mediante Discord.
-2. **Contexto de Competición (`useCompetition`):** Proporciona la división activa, la temporada y el calendario de partidos.
-3. **Sincronización de Predicciones (`usePredictions`):** Consume los resúmenes de la jornada y los votos del usuario.
+2. **Contexto de Competición (`useCompetition`):** Proporciona la división deportiva activa, la temporada, el calendario de partidos y el catálogo de jornadas (`rounds`).
+3. **Sincronización de Predicciones (`usePredictions`):** Consume los resúmenes de la jornada solicitada, la jornada actual persistente y los votos del usuario.
 4. **Presentación Accesible (`PageLayout` y `DataState`):** Envuelve la interfaz en la plantilla estándar de la liga, gestionando estados de carga, error y lista vacía.
 
 ---
 
-## 2. Orquestación y Ciclo de Vida (`PredictionsPage.tsx`)
+## 2. Orquestación y Ciclo de Vida (`PredictionsPage`)
 
 ```tsx
-// apps/web/src/site/pages/predictions/PredictionsPage.tsx:16-33
+// apps/web/src/site/pages/predictions/PredictionsPage.tsx
 export function PredictionsPage({ competition }: { competition: Competition }) {
   const { state } = useAuth();
   const userId = state.status === 'authenticated' ? state.user.discordId : undefined;
-  const predictions = usePredictions(competition.division?.id, userId);
+  const [roundChoice, setRoundChoice] = useState('');
+  const roundKey = `${competition.division?.id ?? ''}:`;
+  const selectedRound = roundChoice.startsWith(roundKey) ? roundChoice.slice(roundKey.length) : '';
+  const predictions = usePredictions(competition.division?.id, userId, selectedRound || undefined);
   const data = predictions.data;
+  const rounds = selectableRounds(competition.rounds.data, predictions.currentRound);
+  const shownRound = competition.rounds.data.find((round) => round.id === data?.round);
   const matches =
     data?.matches.flatMap((summary) => {
       const match = competition.calendar.data.find((m) => m.id === summary.matchId);
-      return match ? [{ match, summary }] : [];
+      return match && isActiveTeam(match.homeTeam) && isActiveTeam(match.awayTeam)
+        ? [{ match, summary }]
+        : [];
     }) ?? [];
 ```
 
 ### Flujo de Datos:
 1. **Resolución de Identidad:** Obtiene `userId = state.user.discordId` si la sesión de Discord está activa; de lo contrario, `userId` es `undefined`.
-2. **Sincronización por División:** Invoca `usePredictions(competition.division?.id, userId)`, vinculando la reactividad al cambio de división en los selectores de cabecera.
-3. **Cruce Relacional con el Calendario:** Cruza los resúmenes de predicción devueltos por la API (`data.matches`) con los partidos completos del calendario de competición (`competition.calendar.data`), descartando enfrentamientos no coincidentes o cancelados.
+2. **Carga de Recursos en la Ruta:** La ruta `/predicciones` en `siteRoutes` declara explícitamente `competition: ['calendar', 'rounds']`, garantizando la carga concurrente tanto del calendario de partidos como de la lista oficial de jornadas de la división (`competition.rounds.data`).
+3. **Selección Keyed de Jornada:** El estado local `roundChoice` almacena la selección vinculada a la división mediante una clave compuesta con prefijo `${divisionId}:${roundId}` (`${competition.division?.id ?? ''}:${selectedRound}`). Si el usuario cambia de división, la clave deja de coincidir (`roundChoice.startsWith(roundKey)`), reseteando de inmediato la selección y adoptando la jornada actual de la nueva división por defecto sin disparar peticiones incoherentes con IDs de jornada cruzados.
+4. **Sincronización Reactiva:** Invoca `usePredictions(competition.division?.id, userId, selectedRound || undefined)`, propagando automáticamente los cambios de división o de jornada al cliente de red.
+5. **Cruce Relacional con el Calendario:** Cruza los resúmenes de predicción devueltos por la API (`data.matches`) con los partidos completos del calendario de competición (`competition.calendar.data`), comprobando además la actividad de ambos equipos participantes (`isActiveTeam(match.homeTeam) && isActiveTeam(match.awayTeam)`), descartando automáticamente enfrentamientos de equipos inactivos o series canceladas.
 
 ---
 
 ## 3. Elementos de la Interfaz Orquestada
 
-### 3.1 Barra de Herramientas y Estado de Jornada (Líneas 34-46)
-Integra el componente `CompetitionFilters` para conmutar de división deportiva e inyecta la insignia visual de estado de votación:
-- Si la jornada está abierta:
-  ```tsx
-  <span className="prediction-status is-open">
-    Votaciones abiertas · Hasta 1 hora antes de cada partido
-  </span>
+### 3.1 Barra de Herramientas, Selector de Jornadas y Estado de Votación
+Integra el componente `CompetitionFilters` para conmutar de división y renderiza el selector de jornadas `RoundFilter`:
+- **Jornadas Seleccionables con `selectableRounds`:** El selector recibe `rounds={selectableRounds(competition.rounds.data, predictions.currentRound)}`. Esta función auxiliar pura, ubicada en `apps/web/src/features/predictions/selectable-rounds.ts`, cuenta con la firma:
+  ```typescript
+  export function selectableRounds(rounds: readonly Round[], currentRoundId: string | null): Round[]
   ```
-- Si la jornada está cerrada:
+  Filtra las jornadas hasta la jornada actual, ordenadas cronológicamente de la más antigua a la actual (`startsAt` ascendente), y **garantiza que nunca aparezcan jornadas futuras**.
+- **Valor por Defecto:** Utiliza prioritariamente la jornada seleccionada, recurriendo por defecto a `data.round` (la jornada actual devuelta por la API) o `predictions.currentRound`:
   ```tsx
-  <span className="prediction-status">
-    Votaciones cerradas · Abren el lunes 00:00
+  <RoundFilter
+    rounds={rounds}
+    value={selectedRound || data?.round || predictions.currentRound || ''}
+    onChange={(value) => setRoundChoice(`${roundKey}${value}`)}
+  />
+  ```
+- **Insignia Visual de Estado:** Refleja la disponibilidad de las votaciones:
+  ```tsx
+  <span className={`prediction-status${data?.open ? ' is-open' : ''}`}>
+    {data
+      ? data.open
+        ? 'Votaciones abiertas · Hasta 1 hora antes de cada partido'
+        : 'Sin partidos abiertos para votar'
+      : predictions.error
+        ? 'Predicciones no disponibles'
+        : 'Cargando predicciones…'}
   </span>
   ```
 
-### 3.2 Indicador Temporal de Semana (Líneas 47-56)
-Formatea de manera determinista la fecha del lunes de la jornada mediante hora UTC:
+### 3.2 Indicador Temporal y Rótulo de Jornada
+Muestra el rótulo de la jornada activa o seleccionada mediante el metadato oficial `shownRound.name` (o `Jornada ${shownRound.sequence}`). Si ninguna jornada coincide en el catálogo, aplica el respaldo histórico con formato de fecha UTC:
 ```tsx
-<p className="prediction-week eyebrow">
-  Semana del{' '}
-  {new Intl.DateTimeFormat('es-ES', {
-    day: 'numeric',
-    month: 'long',
-    timeZone: 'UTC'
-  }).format(new Date(`${data.week}T00:00:00Z`))}
-</p>
+{data && (
+  <p className="prediction-week eyebrow">
+    {shownRound ? (
+      (shownRound.name ?? `Jornada ${shownRound.sequence}`)
+    ) : (
+      <>
+        Semana del{' '}
+        {new Intl.DateTimeFormat('es-ES', {
+          day: 'numeric',
+          month: 'long',
+          timeZone: 'UTC'
+        }).format(new Date(`${data.week}T00:00:00Z`))}
+      </>
+    )}
+  </p>
+)}
 ```
 
-### 3.3 Llamada a la Acción para Usuarios Anónimos (Líneas 57-61)
-Si la votación está abierta pero el usuario no ha iniciado sesión, muestra un aviso discreto con enlace directo al handshake OAuth2 de Discord:
+### 3.3 Llamada a la Acción para Usuarios Anónimos
+Si la votación está abierta pero el usuario no ha iniciado sesión, muestra un aviso accesible con enlace directo al inicio de sesión mediante OAuth2 de Discord:
 ```tsx
 {state.status === 'anonymous' && data?.open && (
   <p className="prediction-login">
@@ -79,12 +109,16 @@ Si la votación está abierta pero el usuario no ha iniciado sesión, muestra un
 )}
 ```
 
-### 3.4 Cuadrícula de Partidos y Resiliencia con `DataState` (Líneas 62-88)
+### 3.4 Cuadrícula de Partidos y Resiliencia con `DataState`
 El contenedor `<DataState>` unifica los estados de error y carga de las predicciones y del calendario de la competición:
-- Si hay un error, ofrece un botón que invoca concurrentemente `predictions.retry()` y `competition.retry()`.
-- Si no hay partidos programados para esa semana, presenta el mensaje vacío: *"No hay encuentros programados para esta semana en esta división."*
-- Renderiza la cuadrícula `.prediction-grid` iterando sobre cada serie, mapeando el voto propio existente (`picks.find(p => p.matchId === match.id)`) y pasando la función de persistencia `save={predictions.save}` a cada `PredictionCard`.
+- Ante fallos de red, ofrece un botón de reintento que invoca concurrentemente `predictions.retry()` y `competition.retry()`.
+- Si no hay encuentros programados para la jornada consultada en esa división, presenta el mensaje vacío:
+  `"No hay encuentros programados para esta jornada en esta división."`
+- Divide los partidos en dos secciones claramente delimitadas:
+  - **Abiertas para votar:** Partidos donde el plazo de votación sigue activo.
+  - **Votaciones cerradas:** Partidos bloqueados (a menos de una hora de su inicio o finalizados).
+- Renderiza la cuadrícula `.prediction-grid` iterando sobre cada serie, mapeando el voto propio existente (`predictions.picks.find((p) => p.matchId === match.id)`) y pasando la función de persistencia `save={predictions.save}` a cada `PredictionCard`.
 
-### 3.5 Clasificación General y Reglas (Líneas 89-97)
+### 3.5 Clasificación General y Reglas
 - **`PredictorRankingPanel`:** Monta el ranking de pronosticadores (`data.ranking`), pasando la temporada actual y el identificador de usuario para destacar su fila personal.
 - **`PredictionRules`:** Expone al pie de página las normas de puntuación y plazos horarios oficiales.
