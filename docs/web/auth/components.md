@@ -8,10 +8,11 @@
 
 El componente `AuthControlsView` (`apps/web/src/features/auth/components/AuthControls.tsx:15-92`) es un componente puramente tonto (*Dumb Component*).
 
-### 1.1 Garantía Estricta de Cero Red
+### 1.1 Sin llamadas de red imperativas
 - **0 peticiones `fetch`**, **0 llamadas `WebSocket`** y **0 accesos a almacenamiento de red**.
 - No contiene hooks de efecto ni estado mutable interno.
 - Todo su comportamiento se define a través de las propiedades recibidas (`props`).
+- El navegador sí realiza la carga declarativa del `<img>` contra el proxy del mismo origen; esta garantía se refiere a las llamadas imperativas del componente.
 
 ---
 
@@ -52,7 +53,7 @@ El componente utiliza la unión discriminada de `state` para renderizar el fragm
    </a>
    ```
 3. **Estado Autenticado (`status: 'authenticated'`):**
-   - **Avatar Inteligente:** Si `state.user.avatarHash` existe, construye la URL del CDN de Discord. Si el hash comienza con `a_`, solicita extensión `.gif` (avatar animado); de lo contrario, solicita `.png`. Si no tiene avatar (`avatarHash === null`), renderiza un contenedor con las dos primeras iniciales en mayúsculas (`AuthControls.tsx:40-50`).
+   - **Avatar Inteligente:** Si `state.user.avatarHash` existe, construye `/api/v1/discord-avatars/{discordId}/{hash}` codificando ambos segmentos con `encodeURIComponent`. El [proxy del backend](../../api/auth/avatars.md) elige GIF o PNG y evita la conexión directa del navegador al CDN de Discord. Si no tiene avatar (`avatarHash === null`), renderiza un contenedor con las dos primeras iniciales en mayúsculas (`AuthControls.tsx:40-50`).
    - **Etiqueta de Rol:** Traduce los valores técnicos del enum a etiquetas de interfaz:
      - `'owner'` -> `"Owner"`
      - `'admin'` -> `"Administrador"`

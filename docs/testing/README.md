@@ -4,6 +4,8 @@
 
 ---
 
+La validación del proxy de avatares y el resultado de la ejecución del 4 de octubre de 2026 se documentan en [Pruebas del proxy de avatares](discord-avatars.md). Los censos históricos de esta página no representan esa ejecución.
+
 ## 1. Resumen Ejecutivo
 
 La infraestructura de aseguramiento de la calidad y pruebas de RCL-Next está diseñada para certificar la integridad deportiva, la coherencia relacional y la robustez ante fallos adversarios en todo el monorepo. La arquitectura de testing se fundamenta en un principio de **aislamiento determinista sin dependencias externas de infraestructura**, ejecutando la totalidad de la suite relacional sobre una instancia embebida de PostgreSQL en memoria mediante **PGlite** (`@electric-sql/pglite` v0.3.14).

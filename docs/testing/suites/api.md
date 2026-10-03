@@ -2,6 +2,8 @@
 
 [⬅️ Volver a Suites de Pruebas](README.md) | [Siguiente: Suites Frontend ➡️](web.md)
 
+La suite `apps/api/src/modules/auth/discord-avatars.router.test.ts` añade 19 casos del proxy. Consulta su [cobertura y comandos de ejecución](../discord-avatars.md); el censo histórico siguiente precede a esta incorporación.
+
 ---
 
 ## 1. Resumen Ejecutivo

@@ -8,11 +8,13 @@
 
 El enrutador de autenticación (`apps/api/src/modules/auth/auth.router.ts:42-92`) se monta bajo el prefijo `/api/v1/auth`. Gestiona el apretón de manos (*handshake*) con el proveedor OAuth2 de Discord, la emisión y revocación de cookies de sesión con atributos de alta seguridad, la resolución del usuario actual y la protección de mutaciones frente a ataques de origen cruzado.
 
-Todas las rutas del módulo inyectan de forma centralizada las cabeceras HTTP defensivas (`auth.router.ts:52-56`):
+Todas las rutas del enrutador `auth.router.ts` inyectan de forma centralizada las cabeceras HTTP defensivas (`auth.router.ts:52-56`):
 - `Cache-Control: no-store`: Impide que intermediarios, servidores proxy o cachés de navegador almacenen respuestas con datos de identidad o tokens.
 - `Referrer-Policy: no-referrer`: Evita que las cabeceras `Referer` filtren identificadores internos o URLs de retorno hacia dominios de terceros.
 
 ---
+
+El [proxy de avatares](avatars.md) usa un enrutador separado, montado en `GET /api/v1/discord-avatars/:discordId/:hash`. Es público, devuelve imágenes con caché de una hora y no hereda el `no-store` de las rutas de sesión. Sus validaciones y estados HTTP se documentan en esa guía.
 
 ## 2. Catálogo de Endpoints
 
