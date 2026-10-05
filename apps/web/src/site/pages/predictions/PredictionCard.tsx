@@ -69,6 +69,17 @@ export function PredictionCard({
         ) : (
           <p className="prediction-notice">Sin votos para esta serie.</p>
         )
+      ) : summary.closed ? (
+        <div className="prediction-community">
+          <div className="prediction-gauge" aria-hidden="true">
+            <span style={{ width: '50%' }} />
+          </div>
+          <div className="prediction-percent" aria-label="Porcentajes pendientes de revelar">
+            <span>??</span>
+            <span>??</span>
+          </div>
+          <small>Los porcentajes se revelan al finalizar el partido.</small>
+        </div>
       ) : (
         <p className="prediction-notice">Los porcentajes se revelan al finalizar el partido.</p>
       )}
