@@ -176,6 +176,7 @@ describe('Tier 5 Adversarial Concurrency & Chaos Resiliency Suite', () => {
     });
 
     bridgeClient = new DiscordBridgeClient({
+      healthCacheMs: 0,
       wsUrl: bridgeWsUrl,
       supertoken: mockSupertoken,
       maxRetryDurationMs: 60000, // 60s budget for nominal and chaos tests
@@ -188,6 +189,7 @@ describe('Tier 5 Adversarial Concurrency & Chaos Resiliency Suite', () => {
     suggestionStore = new SuggestionStore();
     incidentLogger = new IncidentLogger();
     suggestionsService = new SuggestionsService({
+      rateLimiter: false,
       store: suggestionStore,
       bridgeClient,
       logger: incidentLogger
@@ -443,6 +445,7 @@ describe('Tier 5 Adversarial Concurrency & Chaos Resiliency Suite', () => {
       // Dedicated bridge client with 100ms maxRetryDurationMs to simulate 5-minute timeout exhaustion
       let sleepCalls = 0;
       const timeoutBridgeClient = new DiscordBridgeClient({
+        healthCacheMs: 0,
         wsUrl: bridgeWsUrl,
         supertoken: mockSupertoken,
         maxRetryDurationMs: 100, // 100ms threshold for test
@@ -454,6 +457,7 @@ describe('Tier 5 Adversarial Concurrency & Chaos Resiliency Suite', () => {
 
       const timeoutStore = new SuggestionStore();
       const timeoutService = new SuggestionsService({
+        rateLimiter: false,
         store: timeoutStore,
         bridgeClient: timeoutBridgeClient,
         logger: incidentLogger
@@ -483,7 +487,8 @@ describe('Tier 5 Adversarial Concurrency & Chaos Resiliency Suite', () => {
       expect(finalRec?.incidentId).toMatch(
         /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
       );
-      expect(finalRec?.error).toContain('Max retry duration exceeded');
+      // The technical message is only logged; the record keeps the incidentId.
+      expect(finalRec?.error).toBeUndefined();
 
       await timeoutBridgeClient.close();
       timeoutStore.close();

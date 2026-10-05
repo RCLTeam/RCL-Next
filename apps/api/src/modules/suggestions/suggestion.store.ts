@@ -33,19 +33,23 @@ export interface SuggestionStoreOptions {
   ttlMs?: number | undefined; // Default: 2 hours (7,200,000 ms)
   cleanupIntervalMs?: number | undefined; // Default: 10 minutes (600,000 ms)
   enablePeriodicCleanup?: boolean | undefined; // Default: true
+  maxRecords?: number | undefined; // Default: 1000
 }
 
 export const DEFAULT_SUGGESTION_TTL_MS = 2 * 60 * 60 * 1000; // 7,200,000 ms
+export const DEFAULT_SUGGESTION_STORE_MAX_RECORDS = 1000;
 
 export class SuggestionStore {
   private readonly records = new Map<string, SuggestionRecord>();
   private readonly ttlMs: number;
   private readonly cleanupIntervalMs: number;
+  private readonly maxRecords: number;
   private cleanupTimer: NodeJS.Timeout | null = null;
 
   constructor(options: SuggestionStoreOptions = {}) {
     this.ttlMs = options.ttlMs ?? DEFAULT_SUGGESTION_TTL_MS;
     this.cleanupIntervalMs = options.cleanupIntervalMs ?? 10 * 60 * 1000;
+    this.maxRecords = options.maxRecords ?? DEFAULT_SUGGESTION_STORE_MAX_RECORDS;
 
     if (options.enablePeriodicCleanup !== false) {
       this.cleanupTimer = setInterval(() => {
@@ -56,6 +60,18 @@ export class SuggestionStore {
         this.cleanupTimer.unref();
       }
     }
+  }
+
+  /**
+   * Whether a new record fits under `maxRecords`. Expired records are pruned
+   * first, so only live suggestions count towards the limit.
+   */
+  public hasCapacity(now: number = Date.now()): boolean {
+    if (this.records.size < this.maxRecords) {
+      return true;
+    }
+    this.cleanup(now);
+    return this.records.size < this.maxRecords;
   }
 
   public create(id: string, initialStatus: SuggestionStatus = 'queued'): SuggestionRecord {

@@ -97,7 +97,9 @@ export function createSuggestionsRouter(
           suggestion: trimmed,
           isAnonymous
         },
-        user
+        user,
+        // req.ip honours the application's `trust proxy` setting (TRUST_PROXY).
+        { clientIp: req.ip }
       );
 
       res.status(202).json({
@@ -105,6 +107,13 @@ export function createSuggestionsRouter(
         status: result.status
       });
     } catch (err) {
+      if (err instanceof AppError && err.code === 'RATE_LIMITED') {
+        const retryAfter = (err.details as { retryAfterSeconds?: unknown } | undefined)
+          ?.retryAfterSeconds;
+        if (typeof retryAfter === 'number') {
+          res.set('Retry-After', String(retryAfter));
+        }
+      }
       next(err);
     }
   });

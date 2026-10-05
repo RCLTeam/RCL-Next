@@ -11,12 +11,20 @@ import {
   type DiscordBridgeClient
 } from '../discord-bridge/discord-bridge.client.js';
 import { IncidentLogger } from './incident-logger.js';
+import { SuggestionRateLimiter } from './suggestion-rate-limiter.js';
 import { SuggestionStore } from './suggestion.store.js';
 
 export interface SuggestionsServiceOptions {
   store?: SuggestionStore | undefined;
   bridgeClient: DiscordBridgeClient;
   logger?: IncidentLogger | undefined;
+  /** Submission limiter; `false` disables it. Default: `new SuggestionRateLimiter()`. */
+  rateLimiter?: SuggestionRateLimiter | false | undefined;
+}
+
+/** Request data used to apply the submission rate limit. */
+export interface SubmitContext {
+  clientIp?: string | undefined;
 }
 
 export interface SubmitSuggestionOptions {
@@ -36,6 +44,7 @@ export class SuggestionsService {
   private readonly store: SuggestionStore;
   private readonly bridgeClient: DiscordBridgeClient;
   private readonly logger: IncidentLogger;
+  private readonly rateLimiter: SuggestionRateLimiter | null;
 
   constructor(
     optionsOrStore: SuggestionStore | SuggestionsServiceOptions,
@@ -46,6 +55,10 @@ export class SuggestionsService {
       this.store = optionsOrStore.store ?? new SuggestionStore();
       this.bridgeClient = optionsOrStore.bridgeClient;
       this.logger = optionsOrStore.logger ?? new IncidentLogger();
+      this.rateLimiter =
+        optionsOrStore.rateLimiter === false
+          ? null
+          : (optionsOrStore.rateLimiter ?? new SuggestionRateLimiter());
     } else {
       if (!bridgeClient) {
         throw new Error('DiscordBridgeClient must be provided to SuggestionsService');
@@ -53,6 +66,7 @@ export class SuggestionsService {
       this.store = optionsOrStore;
       this.bridgeClient = bridgeClient;
       this.logger = logger ?? new IncidentLogger();
+      this.rateLimiter = new SuggestionRateLimiter();
     }
 
     if (typeof this.bridgeClient?.on === 'function') {
@@ -110,13 +124,17 @@ export class SuggestionsService {
           incident_id?: string | undefined;
         }) => {
           if (data?.id) {
+            // The bot's reason stays in the server log; the public status only
+            // carries the incidentId.
             const errorMsg = data.reason ?? data.message ?? 'Suggestion failed in Discord';
-            const incidentId =
-              data.incident_id ?? this.logger.log('DISCORD_DELIVERY_FAILED', errorMsg);
+            const incidentId = this.logger.log(
+              'DISCORD_DELIVERY_FAILED',
+              errorMsg,
+              data.incident_id
+            );
             this.store.update(data.id, {
               status: 'failed',
-              incidentId,
-              error: errorMsg
+              incidentId
             });
           }
         }
@@ -124,9 +142,15 @@ export class SuggestionsService {
     }
   }
 
+  /**
+   * Validates and queues a suggestion. When `context` is given (HTTP requests),
+   * the submission rate limit is applied: per Discord ID for signed-in users and
+   * per IP otherwise.
+   */
   public async submit(
     request: CreateSuggestionRequest,
-    user?: AuthUser | null
+    user?: AuthUser | null,
+    context?: SubmitContext
   ): Promise<CreateSuggestionResponse> {
     const rawText = request?.suggestion;
     if (typeof rawText !== 'string') {
@@ -139,6 +163,32 @@ export class SuggestionsService {
         400,
         'VALIDATION_ERROR',
         'Suggestion text must be between 10 and 1000 characters.'
+      );
+    }
+
+    if (!this.bridgeClient.isConfigured()) {
+      throw new AppError(
+        503,
+        'SUGGESTIONS_NOT_CONFIGURED',
+        'The suggestions service is not configured.'
+      );
+    }
+
+    if (context && this.rateLimiter) {
+      const key = user ? `user:${user.discordId}` : `ip:${context.clientIp ?? 'unknown'}`;
+      const result = this.rateLimiter.consume(key, Boolean(user));
+      if (!result.allowed) {
+        throw new AppError(429, 'RATE_LIMITED', 'Too many suggestions. Try again later.', {
+          retryAfterSeconds: result.retryAfterSeconds
+        });
+      }
+    }
+
+    if (!this.store.hasCapacity() || !this.bridgeClient.hasCapacity()) {
+      throw new AppError(
+        503,
+        'SUGGESTIONS_UNAVAILABLE',
+        'The suggestions service is busy. Try again later.'
       );
     }
 
@@ -196,13 +246,9 @@ export class SuggestionsService {
       response.nextRetryInSeconds = record.nextRetryInSeconds;
     }
 
-    if (record.status === 'failed') {
-      if (record.incidentId) {
-        response.incidentId = record.incidentId;
-      }
-      if (record.error) {
-        response.error = record.error;
-      }
+    // Delivery errors are only logged on the server; the client gets the incidentId.
+    if (record.status === 'failed' && record.incidentId) {
+      response.incidentId = record.incidentId;
     }
 
     return response;
@@ -267,23 +313,25 @@ export class SuggestionsService {
         this.store.update(id, { status: 'processing' });
       }
     } catch (err: unknown) {
-      let incidentId: string;
-      let errorMessage: string;
-
-      if (err instanceof BridgeRateLimitTimeoutError) {
-        incidentId = err.incidentId;
-        errorMessage = err.message;
-        this.logger.log('RATE_LIMIT_TIMEOUT', errorMessage, incidentId);
-      } else {
-        errorMessage = err instanceof Error ? err.message : String(err);
-        incidentId = this.logger.log('BRIDGE_SEND_FAILED', errorMessage);
-      }
+      // The technical detail (hosts, ports, socket codes, bot messages) is only
+      // written to the server log, linked to the incidentId returned to the client.
+      const incidentId =
+        err instanceof BridgeRateLimitTimeoutError
+          ? this.logger.log('RATE_LIMIT_TIMEOUT', describeError(err), err.incidentId)
+          : this.logger.log('BRIDGE_SEND_FAILED', describeError(err));
 
       this.store.update(id, {
         status: 'failed',
-        incidentId,
-        error: errorMessage
+        incidentId
       });
     }
   }
+}
+
+function describeError(err: unknown): string {
+  if (!(err instanceof Error)) {
+    return String(err);
+  }
+  const cause = err.cause instanceof Error ? `: ${err.cause.message}` : '';
+  return `${err.message}${cause}`;
 }

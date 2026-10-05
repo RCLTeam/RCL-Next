@@ -15,6 +15,8 @@ import { SuggestionsService } from './suggestions.service.js';
 class MockDiscordBridgeClient extends EventEmitter {
   public checkHealth = vi.fn();
   public send = vi.fn().mockResolvedValue(undefined);
+  public isConfigured = vi.fn().mockReturnValue(true);
+  public hasCapacity = vi.fn().mockReturnValue(true);
 }
 
 describe('Suggestions Integration (Full App Pipeline)', () => {
@@ -30,6 +32,7 @@ describe('Suggestions Integration (Full App Pipeline)', () => {
     suggestionStore = new SuggestionStore();
     incidentLogger = new IncidentLogger();
     suggestionsService = new SuggestionsService({
+      rateLimiter: false,
       store: suggestionStore,
       bridgeClient: mockBridgeClient as unknown as DiscordBridgeClient,
       logger: incidentLogger
