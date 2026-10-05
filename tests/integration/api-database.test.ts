@@ -215,6 +215,30 @@ test('HTTP -> controller -> service -> real repository -> embedded PostgreSQL', 
   assert.equal(report.body.data.homeTeam.id, teamId);
   assert.equal(report.body.data.games.length, 1);
   assert.equal(report.body.data.games[0].participants.length, 10);
+  const metadata = async (path: string) =>
+    (
+      await request(app)
+        .get(`/api/v1/page-metadata?path=${encodeURIComponent(path)}`)
+        .expect(200)
+    ).body.data;
+  const reportMetadata = await metadata(`/partidos/${completedMatch.slug}`);
+  assert.equal(
+    reportMetadata.title,
+    `${report.body.data.homeTeam.name} vs ${report.body.data.awayTeam.name}`
+  );
+  assert.ok(
+    reportMetadata.description.startsWith(
+      `${report.body.data.homeTeam.name} ${report.body.data.homeScore}–${report.body.data.awayScore} ${report.body.data.awayTeam.name}.`
+    )
+  );
+  assert.ok(reportMetadata.description.includes(report.body.data.divisionName));
+  assert.equal((await metadata('/equipos/lobos-demo')).title, 'Lobos DEMO');
+  assert.ok((await metadata('/equipos/lobos-demo')).description.includes('Premier DEMO'));
+  assert.equal(
+    (await metadata(`/jugadores/${playerDetail.body.data.slug}`)).title,
+    `${playerDetail.body.data.gameName}#${playerDetail.body.data.riotTag}`
+  );
+  assert.equal((await metadata('/partidos/no-existe')).title, 'Página no encontrada');
   const champions = await request(app).get(`/api/v1/divisions/${divisionId}/champions`).expect(200);
   assert.equal(champions.body.data.length, 10);
   const garen = champions.body.data.find((row: { champion: string }) => row.champion === 'Garen');
@@ -279,6 +303,18 @@ test('HTTP -> controller -> service -> real repository -> embedded PostgreSQL', 
   assert.deepEqual(
     multiMap.body.data.games.map((game: { gameNumber: number }) => game.gameNumber),
     [1, 2]
+  );
+  const rosterGames = multiMap.body.data.games.filter(
+    (game: { winnerTeamId: string | null; participants: { playerId: string; teamId: string }[] }) =>
+      game.winnerTeamId &&
+      game.participants.some((player) => player.playerId === playerId && player.teamId === teamId)
+  ).length;
+  assert.ok(rosterGames >= 1);
+  const roster = await request(app).get(`/api/v1/teams/${teamId}`).expect(200);
+  assert.equal(
+    roster.body.data.members.find((member: { playerId: string }) => member.playerId === playerId)
+      ?.rosterStats.games,
+    rosterGames
   );
   const sparse = multiMap.body.data.games[1].participants[0];
   assert.equal(sparse.teamId, teamId);

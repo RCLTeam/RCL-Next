@@ -50,6 +50,7 @@ function repository(): CompetitionRepository {
     matchDirectory: async () => [],
     match: async () => undefined,
     matchGames: async () => [],
+    matchGamesByMatch: async () => new Map(),
     championPicks: async () => [],
     teamDirectory: async () => [],
     teamDetail: async () => undefined,
@@ -286,30 +287,34 @@ test('roster statistics count distinct champions in completed team games', async
     ]
   });
   source.matches = async () => [match];
-  source.matchGames = async () =>
-    ['Ahri', 'Ahri', 'Orianna'].map((champion, index) => ({
-      id: `game-${index}`,
-      gameNumber: index + 1,
-      blueTeamId: homeId,
-      redTeamId: awayId,
-      winnerTeamId: homeId,
-      durationSeconds: 1800,
-      participants: [
-        {
-          id: `participant-${index}`,
-          playerId: homeId,
-          gameName: 'Jugador',
-          riotTag: 'EUW',
-          teamId: homeId,
-          side: 'blue',
-          champion,
-          position: 'mid',
-          build: null,
-          stats: null,
-          runes: null
-        }
-      ]
-    }));
+  const games: Awaited<ReturnType<CompetitionRepository['matchGames']>> = [
+    'Ahri',
+    'Ahri',
+    'Orianna'
+  ].map((champion, index) => ({
+    id: `game-${index}`,
+    gameNumber: index + 1,
+    blueTeamId: homeId,
+    redTeamId: awayId,
+    winnerTeamId: homeId,
+    durationSeconds: 1800,
+    participants: [
+      {
+        id: `participant-${index}`,
+        playerId: homeId,
+        gameName: 'Jugador',
+        riotTag: 'EUW',
+        teamId: homeId,
+        side: 'blue',
+        champion,
+        position: 'mid',
+        build: null,
+        stats: null,
+        runes: null
+      }
+    ]
+  }));
+  source.matchGamesByMatch = async (ids) => new Map(ids.map((id) => [id, games]));
   const detail = await new CompetitionService(source).teamDetail(homeId);
   assert.equal(detail.members[0]?.rosterStats?.games, 3);
   assert.equal(detail.members[0]?.rosterStats?.champions, 2);
