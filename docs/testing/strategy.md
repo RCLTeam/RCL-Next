@@ -96,5 +96,5 @@ Conforme al diseño de la suite de pruebas del monorepo, se documentan de forma 
      - `rofl-upload`: el hook desacoplado de subida WebSocket se prueba en `tests/unit/useRoflUploadWs.test.ts` (13 pruebas) y los controles visuales en `tests/unit/render/rofl-upload.test.tsx` (6 pruebas).
 
 3. **Páginas de la Web sin suite de renderizado dedicada:**
-   - *Observación:* Las rutas `crystal-ball` y `fantasy` no cuentan con archivos de prueba individuales dedicados en `apps/web/src/site/pages/`.
-   - *Cobertura real:* Se verifican a nivel de resolución de tabla de enrutamiento en `apps/web/src/site/routes.test.tsx` (2 pruebas) y montaje global en `tests/unit/render/App.test.tsx` (6 pruebas).
+   - *Observación:* La ruta `crystal-ball` no cuenta con un archivo de prueba individual dedicado en `apps/web/src/site/pages/`.
+   - *Cobertura real:* Se verifica a nivel de resolución de tabla de enrutamiento en `apps/web/src/site/routes.test.tsx` (3 pruebas) y montaje global en `tests/unit/render/App.test.tsx` (6 pruebas).

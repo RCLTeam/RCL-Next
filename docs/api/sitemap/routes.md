@@ -144,11 +144,6 @@ El controlador aplica explícitamente las siguientes cabeceras de transporte (`s
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://rebelcrownlegacy.es/fantasy</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
     <loc>https://rebelcrownlegacy.es/crystal-ball</loc>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
