@@ -30,13 +30,14 @@ interface PredictionCardProps {
 ```
 
 #### Mecanismos y Comportamiento:
-1. **Termómetro Comunitario Condicional (Líneas 45-62):**
+1. **Termómetro Comunitario Condicional:**
    - **Ventana Cerrada con Votos (`summary.closed && summary.votes !== null && summary.homePercent !== null`):** Renderiza el termómetro visual con la barra de progreso `.prediction-gauge` cuyo ancho refleja `style={{ width: `${summary.homePercent}%` }}`, los porcentajes calculados para local y visitante (`summary.homePercent%` vs `100 - summary.homePercent%`) y el recuento de participación:
      ```tsx
      <small>{summary.votes} votos de la comunidad</small>
      ```
-   - **Ventana Cerrada sin Votos:** Muestra `<p className="prediction-notice">Sin votos para esta serie.</p>`.
-   - **Partido pendiente de finalizar (`summary.votes === null`):** Oculta deliberadamente cualquier estadística comunitaria y muestra el aviso de privacidad:
+   - **Ventana Cerrada sin Votos (`summary.closed && summary.votes !== null && summary.homePercent === null`):** Muestra `<p className="prediction-notice">Sin votos para esta serie.</p>`.
+   - **Ventana Cerrada con Datos Ocultos (`summary.closed && summary.votes === null`):** Renderiza una barra `.prediction-gauge` con ancho fijo `50%` y dos etiquetas `??` dentro de `.prediction-percent`, con `aria-label="Porcentajes pendientes de revelar"`. Este placeholder neutral no representa votos reales. Debajo mantiene `<small>Los porcentajes se revelan al finalizar el partido.</small>`.
+   - **Ventana No Cerrada (`!summary.closed`):** No renderiza la barra y muestra el aviso:
      ```tsx
      <p className="prediction-notice">Los porcentajes se revelan al finalizar el partido.</p>
      ```
@@ -75,18 +76,16 @@ interface PredictorRankingPanelProps {
 ```
 
 #### Características de Accesibilidad y Representación:
-1. **Fila Personal Destacada (`.is-you`, Líneas 9-11):**
+1. **Fila Personal Destacada (`.is-you`):**
    ```typescript
    const own = ranking.find((row) => row.userId === userId);
    const rows = ranking.slice(0, 5);
    if (own && !rows.includes(own)) rows.push(own);
    ```
-   El componente extrae las 5 mejores posiciones de la temporada. Si el usuario autenticado (`userId`) no se encuentra dentro del Top 5, se añade dinámicamente como una sexta fila destacada con la clase CSS `.is-you` y el prefijo de cortesía:
+   El componente extrae las 5 mejores posiciones de la temporada. Si el usuario autenticado (`userId`) está clasificado fuera del Top 5, añade su fila como sexta entrada. Su fila lleva la clase CSS `.is-you` tanto dentro como fuera del Top 5. El nombre se muestra sin prefijo:
    ```tsx
-   <strong>
-     {row.userId === userId ? 'tú, ' : ''}
-     {displayName(row.name)}
-   </strong>
+   <strong>{displayName(row.name)}</strong>
    ```
 2. **Tabla Placeholder para Temporadas sin Resultados (Líneas 42-60):**
    Si la temporada aún no ha disputado enfrentamientos puntuables (`ranking.length === 0`), renderiza una tabla accesible (`<table aria-label="Ranking pendiente de resultados">`) con 5 filas vacías rotuladas con `"Por clasificar"`, evitando colapsos visuales de diseño.
+3. **Avatar de Discord:** `PredictorAvatar` utiliza `discordAvatarUrl(row.userId, row.avatarHash)` para cargar la imagen desde `/api/v1/discord-avatars/:discordId/:hash`, con ambos segmentos codificados. El proxy elige PNG o GIF para los hashes con prefijo `a_`; el navegador no consulta directamente el CDN. La imagen decorativa mide 40 × 40 y usa `loading="lazy"`. Si `avatarHash` es `null` o se dispara `onError`, muestra los dos primeros caracteres de `displayName(row.name)` en mayúsculas. La clave del componente combina usuario y hash para reiniciar el estado de error cuando cambia el avatar. Véase el [contrato del proxy](../../api/auth/avatars.md).

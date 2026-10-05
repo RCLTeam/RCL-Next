@@ -18,9 +18,6 @@ export interface SiteLayoutProps {
 export function SiteLayout({ children, leagueSwitch, competition }: SiteLayoutProps) {
   return (
     <div className="rcl-site">
-      <a className="skip-link" href="#main-content">
-        Saltar al contenido
-      </a>
       <SeasonHud competition={competition} />
       <SiteHeader leagueSwitch={leagueSwitch} />
       <main id="main-content" tabIndex={-1}>
