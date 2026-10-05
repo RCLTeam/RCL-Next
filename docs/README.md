@@ -36,6 +36,8 @@ docs/
 │   └── mapping.md                               # Normalización a 5 tablas y derivación de cuentas secundarias
 ├── api/                                         # Backend y servicios HTTP/WebSocket (Vertical Slices)
 │   ├── README.md                                # Índice del backend Express, middlewares y arquitectura
+│   ├── config/                                  # Variables de entorno y validación al arrancar (parseEnvironment)
+│   │   └── README.md                            # Tabla de variables, valores por defecto y reglas de URL
 │   ├── rofl-upload/                             # Rebanada: Subida y streaming WebSocket de repeticiones
 │   │   ├── README.md                            # Resumen funcional de la ingesta de archivos .rofl y .zip
 │   │   ├── routes.md                            # Gateway WS /ws/rofl-upload y control de backpressure
@@ -220,6 +222,7 @@ Ingesta de archivos binarios de repetición de League of Legends mediante lectur
 Plataforma de servicios HTTP y WebSocket construida con Node.js 22 y Express, organizada en 11 rebanadas verticales (*Vertical Slices*):
 
 - [docs/api/README.md](api/README.md): Índice del backend y principios de diseño modular.
+- **Configuración:** [config/README.md](api/config/README.md): variables de entorno, valores por defecto y validación de `parseEnvironment`.
 - **Subida ROFL:** [rofl-upload/README.md](api/rofl-upload/README.md) | [routes.md](api/rofl-upload/routes.md) | [processing.md](api/rofl-upload/processing.md) | [persistence.md](api/rofl-upload/persistence.md) | [validation.md](api/rofl-upload/validation.md) | [contracts.md](api/rofl-upload/contracts.md)
 - **Puente Discord:** [discord-bridge/README.md](api/discord-bridge/README.md) | [routes.md](api/discord-bridge/routes.md) | [processing.md](api/discord-bridge/processing.md) | [persistence.md](api/discord-bridge/persistence.md) | [validation.md](api/discord-bridge/validation.md) | [contracts.md](api/discord-bridge/contracts.md)
 - **Sugerencias:** [suggestions/README.md](api/suggestions/README.md) | [routes.md](api/suggestions/routes.md) | [processing.md](api/suggestions/processing.md) | [persistence.md](api/suggestions/persistence.md) | [validation.md](api/suggestions/validation.md) | [contracts.md](api/suggestions/contracts.md)

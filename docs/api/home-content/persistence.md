@@ -200,7 +200,7 @@ La gestión de ficheros estáticos en disco opera de forma local y autónoma:
 // apps/api/src/modules/home-content/editorial-image.store.ts:6-22
 export class EditorialImageStore {
   private readonly directory: string;
-  constructor(directory = process.env.EDITORIAL_IMAGE_DIR ?? 'data/editorial-images') {
+  constructor(directory = 'data/editorial-images') {
     this.directory = resolve(directory);
   }
   path(name: string) {
@@ -219,7 +219,7 @@ export class EditorialImageStore {
 ```
 
 #### Características del Almacén:
-- **Directorio Configurable:** Resuelve `process.env.EDITORIAL_IMAGE_DIR ?? 'data/editorial-images'` de forma absoluta con `path.resolve` (`editorial-image.store.ts:8-10`).
+- **Directorio Configurable:** Resuelve de forma absoluta con `path.resolve` el directorio recibido en el constructor (`editorial-image.store.ts:8-10`). `server.ts` pasa `EDITORIAL_IMAGE_DIR`, ya validada por `parseEnvironment`, tanto a `createApp` (rutas) como al almacén de la limpieza horaria (`apps/api/src/server.ts:76`, `apps/api/src/server.ts:112-115`); sin la variable se usa `data/editorial-images`, relativa al directorio de trabajo.
 - **Nomenclatura Segura con UUID v4:** Genera nombres aleatorios mediante `randomUUID()` (`${randomUUID()}.${extension}`, línea 58), previniendo colisiones de nombres y ataques de enumeración.
 - **Protección contra Path Traversal:** El método `path(name)` valida el identificador mediante la expresión regular estricta `/^[a-f0-9-]{36}\.(png|jpg|webp)$/`. Cualquier valor que intente escapar de la ruta (como `../`) arroja inmediatamente una excepción `notFound('Image')` (HTTP 404).
 - **Validación de Bytes Mágicos Binarios en `save` (`editorial-image.store.ts:44-62`):**
@@ -234,13 +234,16 @@ export class EditorialImageStore {
 
 ---
 
-### 5.2 Recolector Periódico Desacoplado (*Scheduled Sweeper*) en `server.ts` (`apps/api/src/server.ts:101-113, 126-148`)
+### 5.2 Recolector Periódico Desacoplado (*Scheduled Sweeper*) en `server.ts` (`apps/api/src/server.ts:112-127, 141-162`)
 
 Para prevenir la acumulación de imágenes huérfanas derivadas de desconexiones de red del cliente o cierres de pestaña sin descarte, el proceso del servidor ejecuta un recolector en segundo plano:
 
 ```typescript
-// apps/api/src/server.ts:101-113
-const homeContent = new HomeContentService(new PostgresHomeContentRepository(connection.db));
+// apps/api/src/server.ts:112-127
+const homeContent = new HomeContentService(
+  new PostgresHomeContentRepository(connection.db),
+  new EditorialImageStore(env.EDITORIAL_IMAGE_DIR)
+);
 let imageCleanup: Promise<void> | undefined;
 function cleanupImages() {
   if (imageCleanup) return;
@@ -263,10 +266,10 @@ cleanupImages();
 3. **Período de Gracia de 7 Días (TTL):**
    El servicio invoca `cleanupExpiredImages()`, el cual solicita a `images.expiredUploads()` las imágenes cuya fecha de modificación supera los 7 días y delega en `removeUnusedImages` para comprobar bajo `LOCK TABLE` que ninguna de ellas esté referenciada antes de borrarlas físicamente.
 4. **Ejecución Inmediata en Arranque:**
-   Al iniciar el servidor, se invoca `cleanupImages()` de forma directa (`server.ts:113`), procesando cualquier residuo caducado acumulado durante períodos de inactividad o reinicios del backend.
-5. **Apagado Ordenado (*Graceful Shutdown*, `server.ts:126-145`):**
+   Al iniciar el servidor, se invoca `cleanupImages()` de forma directa (`server.ts:127`), procesando cualquier residuo caducado acumulado durante períodos de inactividad o reinicios del backend.
+5. **Apagado Ordenado (*Graceful Shutdown*, `server.ts:141-162`):**
    ```typescript
-   // apps/api/src/server.ts:126-145
+   // apps/api/src/server.ts:141-162
    let closing = false;
    function shutdown() {
      if (closing) return;

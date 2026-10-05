@@ -48,7 +48,7 @@ app.use(
 ```
 
 ### Configuración del Directorio de Almacenamiento
-La ruta física de persistencia se resuelve jerárquicamente a través de la variable de entorno `TEAM_LOGO_DIR` (`apps/api/src/server.ts:72`, `apps/api/src/modules/team-logos/team-logos.store.ts:8-10`):
+La ruta física de persistencia se resuelve a través de la variable de entorno `TEAM_LOGO_DIR`, validada por `parseEnvironment` y entregada por `server.ts` a `createApp` (`apps/api/src/server.ts:75`, `apps/api/src/modules/team-logos/team-logos.store.ts:7-11`):
 
-- **Variable de Entorno:** `TEAM_LOGO_DIR` (definida en `.env.example:26-27`). Permite aislar el almacenamiento de logos en volúmenes persistentes dedicados en entornos de producción.
+- **Variable de Entorno:** `TEAM_LOGO_DIR` (comentada en `.env.example:23-24`; ver [configuración](../config/README.md)). Es opcional también en producción y permite aislar el almacenamiento de logos en un directorio persistente dedicado.
 - **Ruta por Defecto:** En ausencia de la variable, el constructor utiliza la ruta relativa al módulo: `fileURLToPath(new URL('../../../../web/public/images/teams_logo/', import.meta.url))`, permitiendo que la aplicación web sirva las imágenes directamente en entornos de desarrollo local.

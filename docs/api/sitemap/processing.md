@@ -29,25 +29,23 @@ El servicio puede instanciarse con opciones opcionales a través de la interfaz 
 export const DEFAULT_SITEMAP_CACHE_TTL_MS = 60 * 60 * 1000; // 3,600,000 ms (1 hour)
 
 export interface SitemapServiceOptions {
-  baseUrl?: string;
+  /** Public site URL (`FRONTEND_URL`); empty or unset uses the production domain. */
+  baseUrl?: string | undefined;
   cacheTtlMs?: number;
 }
 ```
 
 - **`cacheTtlMs`:** Tiempo de validez de la caché en milisegundos. Por defecto, `3_600_000` (1 hora). Es un respaldo: las escrituras de administración invalidan la caché de inmediato (ver [routes.md](routes.md#12-invalidación-tras-escrituras-de-administración)).
-- **`baseUrl`:** URL base de la aplicación cliente. Si se omite, se evalúa `process.env.FRONTEND_URL` o se asume el valor de respaldo `https://rebelcrownlegacy.es`.
+- **`baseUrl`:** URL base de la aplicación cliente. `createApp` la recibe como `frontendUrl` desde `FRONTEND_URL`, validada por `parseEnvironment` (`apps/api/src/server.ts:77`, `apps/api/src/app.ts:73-77`). Si se omite o está vacía, se asume el valor de respaldo `https://rebelcrownlegacy.es`.
 
 ### 2.2 Resolución de URL Base Canónica (`getBaseUrl`)
 
-Para prevenir discrepancias en las URLs generadas o la presencia de barras diagonales redundantes, el método privado `getBaseUrl()` (`sitemap.service.ts:60-66`) aplica un orden de resolución determinista y normaliza la salida eliminando cualquier barra final:
+Para prevenir discrepancias en las URLs generadas o la presencia de barras diagonales redundantes, el método privado `getBaseUrl()` (`sitemap.service.ts:58-64`) usa `baseUrl` o, si falta o está vacía, el dominio de producción, y normaliza la salida eliminando cualquier barra final:
 
 ```typescript
-// apps/api/src/modules/sitemap/processing/sitemap.service.ts:60-66
+// apps/api/src/modules/sitemap/processing/sitemap.service.ts:58-64
 private getBaseUrl(): string {
-  const envUrl = process.env.FRONTEND_URL;
-  const candidate =
-    this.options?.baseUrl ?? (envUrl && envUrl !== 'undefined' ? envUrl : undefined);
-  const raw = candidate?.trim() || 'https://rebelcrownlegacy.es';
+  const raw = this.options?.baseUrl?.trim() || 'https://rebelcrownlegacy.es';
   return raw.replace(/\/+$/, '');
 }
 ```
