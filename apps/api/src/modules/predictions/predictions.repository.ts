@@ -1,7 +1,7 @@
 import type { PredictionPick, PredictionsData, PredictorStanding } from '@rcl/contracts';
 import { discordUsers, matches, predictions, rounds, seasonsDivisions, teams } from '@rcl/database';
 import type * as schema from '@rcl/database/schema';
-import { and, eq, gte, inArray } from 'drizzle-orm';
+import { and, eq, gte, inArray, isNotNull, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import type { PgDatabase, PgQueryResultHKT } from 'drizzle-orm/pg-core';
 import { AppError, notFound } from '../../shared/app-error.js';
@@ -51,34 +51,78 @@ export class PredictionsRepository {
           gte(awayTeam.discordRoleId, 0n)
         )
       );
-    const votes = await this.db
-      .select({ pick: predictions, match: matches, user: discordUsers })
+    const finished = ['completed', 'forfeit'] as const;
+    const correct = sql`${predictions.selectedTeamId} = ${matches.winnerTeamId}`;
+    // A pick without a score never matches: NULL comparisons are excluded by the FILTER clauses.
+    const exact = sql`${predictions.homeScore} = ${matches.team1Score} AND ${predictions.awayScore} = ${matches.team2Score}`;
+    const tally = (condition: ReturnType<typeof sql>) =>
+      sql<number>`count(*) filter (where ${condition})`.mapWith(Number);
+    // One row per user: the season ranking never loads individual votes.
+    const standings = await this.db
+      .select({
+        userId: discordUsers.discordId,
+        username: discordUsers.username,
+        globalName: discordUsers.globalName,
+        avatarHash: discordUsers.avatarHash,
+        total: sql<number>`count(*)`.mapWith(Number),
+        correct: tally(correct),
+        correctExact: tally(sql`${correct} AND ${exact}`),
+        wrongExact: tally(sql`NOT (${correct}) AND ${exact}`)
+      })
       .from(predictions)
       .innerJoin(matches, eq(matches.id, predictions.matchId))
       .innerJoin(seasonsDivisions, eq(seasonsDivisions.id, matches.idSeasonDivision))
       .innerJoin(discordUsers, eq(discordUsers.discordId, predictions.discordUserId))
-      .where(eq(seasonsDivisions.seasonName, division.seasonName));
-    const ranking = new Map<string, PredictorStanding>();
-    for (const { pick, match, user } of votes) {
-      if (!['completed', 'forfeit'].includes(match.status) || !match.winnerTeamId) continue;
-      const row = ranking.get(user.discordId) ?? {
-        userId: user.discordId,
-        name: user.globalName ?? user.username,
-        avatarHash: user.avatarHash,
+      .where(
+        and(
+          eq(seasonsDivisions.seasonName, division.seasonName),
+          inArray(matches.status, [...finished]),
+          isNotNull(matches.winnerTeamId)
+        )
+      )
+      .groupBy(discordUsers.discordId);
+    const ranking = standings.map(
+      (row): PredictorStanding => ({
+        userId: row.userId,
+        name: row.globalName ?? row.username,
+        avatarHash: row.avatarHash,
         position: 0,
-        correct: 0,
-        total: 0,
-        points: 0
-      };
-      const correct = pick.selectedTeamId === match.winnerTeamId;
-      row.total++;
-      row.correct += Number(correct);
-      row.points += predictionPoints(
-        correct,
-        pick.homeScore === match.team1Score && pick.awayScore === match.team2Score
+        correct: row.correct,
+        total: row.total,
+        points:
+          row.correctExact * predictionPoints(true, true) +
+          (row.correct - row.correctExact) * predictionPoints(true, false) +
+          row.wrongExact * predictionPoints(false, true) +
+          (row.total - row.correct - row.wrongExact) * predictionPoints(false, false)
+      })
+    );
+    const shown = calendar
+      .map(({ match }) => match)
+      .filter(
+        (match) =>
+          shownRound !== null &&
+          match.idRound === shownRound &&
+          match.scheduledAt !== null &&
+          match.status !== 'cancelled'
       );
-      ranking.set(user.discordId, row);
-    }
+    const isFinished = (status: string) => (finished as readonly string[]).includes(status);
+    // Vote counts are only read for the shown matches whose results are public.
+    const revealed = shown.filter((match) => isFinished(match.status)).map((match) => match.id);
+    const counts = new Map(
+      (revealed.length
+        ? await this.db
+            .select({
+              matchId: predictions.matchId,
+              votes: sql<number>`count(*)`.mapWith(Number),
+              home: tally(sql`${predictions.selectedTeamId} = ${matches.team1Id}`)
+            })
+            .from(predictions)
+            .innerJoin(matches, eq(matches.id, predictions.matchId))
+            .where(inArray(predictions.matchId, revealed))
+            .groupBy(predictions.matchId)
+        : []
+      ).map((row) => [row.matchId, row])
+    );
     return {
       ...leagueWeek(now),
       round: shownRound === null ? null : String(shownRound),
@@ -86,34 +130,18 @@ export class PredictionsRepository {
       open: calendar.some(
         ({ match }) => predictionWindow(match.scheduledAt, match.status, now).open
       ),
-      matches: calendar
-        .map(({ match }) => match)
-        .filter(
-          (match) =>
-            shownRound !== null &&
-            match.idRound === shownRound &&
-            match.scheduledAt !== null &&
-            match.status !== 'cancelled'
-        )
-        .map((match) => {
-          const window = predictionWindow(match.scheduledAt, match.status, now);
-          const revealVotes = ['completed', 'forfeit'].includes(match.status);
-          const picks = votes.filter(({ pick }) => pick.matchId === match.id);
-          return {
-            matchId: match.id,
-            ...window,
-            votes: revealVotes ? picks.length : null,
-            homePercent:
-              revealVotes && picks.length
-                ? Math.round(
-                    (100 *
-                      picks.filter(({ pick }) => pick.selectedTeamId === match.team1Id).length) /
-                      picks.length
-                  )
-                : null
-          };
-        }),
-      ranking: [...ranking.values()]
+      matches: shown.map((match) => {
+        const window = predictionWindow(match.scheduledAt, match.status, now);
+        const revealVotes = isFinished(match.status);
+        const { votes = 0, home = 0 } = counts.get(match.id) ?? {};
+        return {
+          matchId: match.id,
+          ...window,
+          votes: revealVotes ? votes : null,
+          homePercent: revealVotes && votes ? Math.round((100 * home) / votes) : null
+        };
+      }),
+      ranking: ranking
         .sort(
           (a, b) =>
             b.points - a.points ||
