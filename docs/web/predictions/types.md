@@ -93,5 +93,5 @@ Los componentes y hooks de predicciones consumen los tipos del contrato comparti
 |---|---|---|
 | `PredictionPick` | `@rcl/contracts` | Pronóstico del usuario (`matchId`, `selectedTeamId`, `homeScore`, `awayScore`). Utilizado en el estado local del hook y en el formulario de `PredictionCard`. |
 | `PredictionSummary` | `@rcl/contracts` | Metadatos de partido de la jornada (`open`, `closed`, `homePercent`, `votes`). Controla la visualización del termómetro comunitario. |
-| `PredictorStanding` | `@rcl/contracts` | Fila individual de clasificación (`userId`, `name`, `position`, `correct`, `total`, `points`). Utilizado en `PredictorRankingPanel`. |
+| `PredictorStanding` | `@rcl/contracts` | Fila individual de clasificación (`userId`, `name`, `avatarHash`, `position`, `correct`, `total`, `points`). `avatarHash: string \| null` permite cargar el avatar mediante el proxy de Discord; si es `null`, se muestran iniciales. Utilizado en `PredictorRankingPanel`. |
 | `PredictionsData` | `@rcl/contracts` | Objeto raíz devuelto por la API con la semana deportiva (`week`), la jornada consultada (`round`), la jornada en curso (`currentRound`), el estado global de votación (`open`), los resúmenes de partidos y el ranking de la temporada. |

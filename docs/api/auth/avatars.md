@@ -41,15 +41,16 @@ El límite de 32 MiB cubre los cuerpos almacenados, no toda la memoria del proce
 
 ## Integración y despliegue
 
-`AuthControlsView` genera `/api/v1/discord-avatars/{discordId}/{hash}`, codificando ambos segmentos con `encodeURIComponent`. El navegador carga la imagen mediante `<img>`; la elección de PNG/GIF se realiza en el servidor. Sin `avatarHash`, la vista muestra iniciales. Actualmente las iniciales no se activan automáticamente si una descarga falla.
+`AuthControlsView` y `PredictorRankingPanel` usan el helper compartido `discordAvatarUrl(discordId, hash)` de `apps/web/src/shared/discord-avatar-url.ts`, que genera `/api/v1/discord-avatars/{discordId}/{hash}` codificando ambos segmentos con `encodeURIComponent`. El navegador carga la imagen mediante `<img>`; la elección de PNG/GIF se realiza en el servidor. Sin `avatarHash`, ambas vistas muestran iniciales. El ranking también muestra iniciales si falla la descarga (incluidos los errores 400/502/503 del proxy); en la cuenta este fallback por error no está implementado.
 
 En desarrollo, Vite ya redirige `/api` al backend. En producción, el mismo origen de la web debe enrutar `/api/v1/discord-avatars/` hacia la API y el backend necesita acceso HTTPS saliente a `cdn.discordapp.com`. No se necesitan variables de entorno nuevas, migraciones ni credenciales de bot. Desplegar tanto API como frontend para aplicar el cambio.
 
-El alcance es el avatar de la cuenta mostrado por `AuthControlsView`. No transforma automáticamente otras URLs de Discord, como los campos de avatar generados por el módulo de sugerencias.
+El alcance incluye el avatar de la cuenta mostrado por `AuthControlsView` y los avatares del ranking de `PredictorRankingPanel` (top 5 más la fila propia si queda fuera). No transforma automáticamente otras URLs de Discord, como los campos de avatar generados por el módulo de sugerencias.
 
 ## Comprobación en el navegador
 
 1. Iniciar sesión con una cuenta que tenga avatar y recargar con la pestaña Network abierta.
 2. Comprobar que la imagen se solicita a `/api/v1/discord-avatars/…` en el origen de la web y que su respuesta no incluye `Set-Cookie` de Discord.
 3. Comprobar un avatar animado y una cuenta sin avatar; esta última debe mostrar iniciales sin solicitar la imagen.
-4. Repetir la auditoría. El avatar de la cuenta ya no debe generar una solicitud directa a `cdn.discordapp.com`; otras imágenes externas, si existen, pueden producir sus propios avisos.
+4. Repetir la auditoría en la página pública de predicciones, con y sin sesión. Ni el avatar de la cuenta ni los del ranking deben generar solicitudes directas a `cdn.discordapp.com`; otras imágenes externas, si existen, pueden producir sus propios avisos.
+5. Forzar un error de descarga en un avatar del ranking y comprobar que se sustituye por las iniciales.
