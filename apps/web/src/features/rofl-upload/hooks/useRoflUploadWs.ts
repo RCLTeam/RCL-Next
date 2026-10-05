@@ -14,6 +14,33 @@ export interface UseRoflUploadWsReturn {
   reset: () => void;
 }
 
+export interface RoflUploadWsLocation {
+  protocol?: string | undefined;
+  host?: string | undefined;
+}
+
+export const MISSING_WS_URL_MESSAGE =
+  'Cannot resolve the upload WebSocket URL: provide wsUrl when window.location is unavailable';
+
+/**
+ * Explicit `wsUrl` wins; otherwise the gateway is reached on the page's own host so the
+ * handshake `Origin` matches the frontend origin. Returns `null` when neither is available.
+ */
+export function resolveRoflUploadWsUrl(
+  wsUrl: string | undefined,
+  location: RoflUploadWsLocation | undefined
+): string | null {
+  if (wsUrl) return wsUrl;
+  if (!location?.host) return null;
+  const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+  return `${wsProtocol}//${location.host}/ws/rofl-upload`;
+}
+
+function currentLocation(): RoflUploadWsLocation | undefined {
+  return (globalThis as unknown as { window?: { location?: RoflUploadWsLocation } }).window
+    ?.location;
+}
+
 export function useRoflUploadWs(options?: UseRoflUploadWsOptions): UseRoflUploadWsReturn {
   const [state, dispatch] = useReducer(uploadReducer, initialUploadState);
   const wsRef = useRef<WebSocket | null>(null);
@@ -94,6 +121,12 @@ export function useRoflUploadWs(options?: UseRoflUploadWsOptions): UseRoflUpload
       if (isUploadingRef.current) {
         return;
       }
+
+      const targetWsUrl = resolveRoflUploadWsUrl(options?.wsUrl, currentLocation());
+      if (!targetWsUrl) {
+        dispatch({ type: 'error', message: MISSING_WS_URL_MESSAGE });
+        return;
+      }
       isUploadingRef.current = true;
 
       if (wsRef.current) {
@@ -106,25 +139,6 @@ export function useRoflUploadWs(options?: UseRoflUploadWsOptions): UseRoflUpload
       }
 
       dispatch({ type: 'start', filename: file.name });
-
-      let targetWsUrl = options?.wsUrl;
-      if (!targetWsUrl) {
-        const win =
-          typeof globalThis !== 'undefined'
-            ? (
-                globalThis as unknown as {
-                  window?: { location?: { protocol?: string; host?: string } };
-                }
-              ).window
-            : undefined;
-
-        if (win?.location?.host) {
-          const wsProtocol = win.location.protocol === 'https:' ? 'wss:' : 'ws:';
-          targetWsUrl = `${wsProtocol}//${win.location.host}/ws/rofl-upload`;
-        } else {
-          targetWsUrl = 'ws://localhost:3000/ws/rofl-upload';
-        }
-      }
 
       let socket: WebSocket;
       try {

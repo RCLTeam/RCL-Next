@@ -8,6 +8,10 @@ import { MissingPlayersAlert } from '../../../apps/web/src/features/rofl-upload/
 import { RoflDropzone } from '../../../apps/web/src/features/rofl-upload/components/RoflDropzone.js';
 import { RoflUploadPanel } from '../../../apps/web/src/features/rofl-upload/components/RoflUploadPanel.js';
 import { UploadStepper } from '../../../apps/web/src/features/rofl-upload/components/UploadStepper.js';
+import {
+  type UseRoflUploadWsReturn,
+  useRoflUploadWs
+} from '../../../apps/web/src/features/rofl-upload/hooks/useRoflUploadWs.js';
 
 test('RoflDropzone renders accessible drop target and format badges', () => {
   const html = renderToString(React.createElement(RoflDropzone, { onFileSelected: () => {} }));
@@ -94,4 +98,31 @@ test('RoflUploadPanel renders complete initial console with dropzone', () => {
   assert.match(html, /ROFL Upload/i);
   assert.match(html, /Espacio de trabajo para la ingesta administrativa/i);
   assert.match(html, /Dropzone for ROFL and ZIP files/i);
+});
+
+test('useRoflUploadWs does not open a WebSocket without wsUrl nor window.location', async () => {
+  assert.equal((globalThis as { window?: unknown }).window, undefined);
+  const openedUrls: string[] = [];
+  const originalWebSocket = globalThis.WebSocket;
+  class RecordingWebSocket {
+    binaryType = 'blob';
+    constructor(url: string) {
+      openedUrls.push(url);
+    }
+    close(): void {}
+  }
+  globalThis.WebSocket = RecordingWebSocket as unknown as typeof WebSocket;
+  try {
+    let hook: UseRoflUploadWsReturn | undefined;
+    function Probe() {
+      hook = useRoflUploadWs();
+      return null;
+    }
+    renderToString(React.createElement(Probe));
+    assert.ok(hook);
+    await hook.uploadFile(new File(['replay'], 'match.rofl'));
+    assert.deepEqual(openedUrls, []);
+  } finally {
+    globalThis.WebSocket = originalWebSocket;
+  }
 });
