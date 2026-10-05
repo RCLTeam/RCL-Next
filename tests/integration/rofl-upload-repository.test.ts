@@ -478,3 +478,123 @@ for (const individually of [true, false]) {
     assert.equal(match?.status, 'completed');
   });
 }
+
+test('concurrent ROFL batches sharing a replay report it as a duplicate', async (t) => {
+  const client = new PGlite();
+  t.after(() => client.close());
+  const db = drizzle(client, { schema });
+  await migrate(db, {
+    migrationsFolder: fileURLToPath(new URL('../../packages/database/drizzle', import.meta.url))
+  });
+  await client.exec(await readFile('packages/database/seed/demo.sql', 'utf8'));
+  const matchId = '70000000-0000-4000-8000-000000000002';
+  await db.update(schema.matches).set({ bestOf: 5 }).where(eq(schema.matches.id, matchId));
+  const repo = new PostgresRoflUploadRepository(db);
+  const players = await repo.findPlayersByRiotIds([
+    { gameName: 'Jugador Demo 1', riotTag: 'DEMO' },
+    { gameName: 'Jugador Demo 6', riotTag: 'DEMO' }
+  ]);
+  const lookup = new Map(
+    players.map((player) => [
+      `${player.gameName.toLowerCase()}#${player.riotTag.toLowerCase()}`,
+      player
+    ])
+  );
+  const teams = await repo.findTeamMembershipsForDiscordUsers(
+    players.map((player) => player.discordUserId)
+  );
+  const game = (externalGameId: string): ParsedGameData => ({
+    fileName: `${externalGameId}.rofl`,
+    externalGameId,
+    durationSeconds: 1800,
+    winnerSide: 'blue',
+    participants: [
+      createParticipant('Jugador Demo 1', 'DEMO', 'blue', 'Garen', 'top'),
+      createParticipant('Jugador Demo 6', 'DEMO', 'red', 'Ornn', 'top')
+    ]
+  });
+
+  const results = await Promise.all([
+    repo.executeBatchInsert([game('EUW1-SHARED'), game('EUW1-A')], lookup, teams),
+    repo.executeBatchInsert([game('EUW1-SHARED'), game('EUW1-B')], lookup, teams)
+  ]);
+
+  assert.deepEqual(results.map((result) => result.insertedGames).sort(), [1, 2]);
+  assert.deepEqual(
+    results.flatMap((result) => result.skippedDuplicates),
+    ['EUW1-SHARED']
+  );
+  const rows = await db
+    .select()
+    .from(schema.matchGames)
+    .where(eq(schema.matchGames.matchesId, matchId))
+    .orderBy(asc(schema.matchGames.gameNumber));
+  assert.deepEqual(
+    rows.map((row) => row.externalGameId),
+    ['EUW1-A', 'EUW1-B', 'EUW1-SHARED']
+  );
+  assert.deepEqual(
+    rows.map((row) => row.gameNumber),
+    [1, 2, 3]
+  );
+  const [match] = await db.select().from(schema.matches).where(eq(schema.matches.id, matchId));
+  assert.equal(match?.team2Score, 3);
+  assert.equal(match?.status, 'completed');
+});
+
+test('a replay committed after the duplicate read is skipped when its match is closed', async (t) => {
+  const client = new PGlite();
+  t.after(() => client.close());
+  const db = drizzle(client, { schema });
+  await migrate(db, {
+    migrationsFolder: fileURLToPath(new URL('../../packages/database/drizzle', import.meta.url))
+  });
+  await client.exec(await readFile('packages/database/seed/demo.sql', 'utf8'));
+  const matchId = '70000000-0000-4000-8000-000000000002';
+  const repo = new PostgresRoflUploadRepository(db);
+  const players = await repo.findPlayersByRiotIds([
+    { gameName: 'Jugador Demo 1', riotTag: 'DEMO' },
+    { gameName: 'Jugador Demo 6', riotTag: 'DEMO' }
+  ]);
+  const lookup = new Map(
+    players.map((player) => [
+      `${player.gameName.toLowerCase()}#${player.riotTag.toLowerCase()}`,
+      player
+    ])
+  );
+  const teams = await repo.findTeamMembershipsForDiscordUsers(
+    players.map((player) => player.discordUserId)
+  );
+  const games: ParsedGameData[] = ['EUW1-1', 'EUW1-2'].map((externalGameId) => ({
+    fileName: `${externalGameId}.rofl`,
+    externalGameId,
+    durationSeconds: 1800,
+    winnerSide: 'blue',
+    gameCreation: Date.parse('2050-01-17T19:00:00Z'),
+    participants: [
+      createParticipant('Jugador Demo 1', 'DEMO', 'blue', 'Garen', 'top'),
+      createParticipant('Jugador Demo 6', 'DEMO', 'red', 'Ornn', 'top')
+    ]
+  }));
+  await repo.executeBatchInsert(games, lookup, teams);
+
+  // The first read misses the replays, as when another upload commits them right afterwards.
+  class LateCommitRepository extends PostgresRoflUploadRepository {
+    reads = 0;
+    override async checkExternalGamesExist(
+      ...args: Parameters<PostgresRoflUploadRepository['checkExternalGamesExist']>
+    ) {
+      this.reads += 1;
+      return this.reads === 1 ? [] : super.checkExternalGamesExist(...args);
+    }
+  }
+  const late = new LateCommitRepository(db);
+  const result = await late.executeBatchInsert(games.slice(0, 1), lookup, teams);
+
+  assert.deepEqual(result, { insertedGames: 0, skippedDuplicates: ['EUW1-1'] });
+  const rows = await db
+    .select()
+    .from(schema.matchGames)
+    .where(eq(schema.matchGames.matchesId, matchId));
+  assert.equal(rows.length, 2);
+});
