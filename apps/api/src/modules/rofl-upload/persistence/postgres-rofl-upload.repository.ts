@@ -133,9 +133,12 @@ export class PostgresRoflUploadRepository implements RoflUploadRepository {
     });
   }
 
-  async checkExternalGamesExist(externalGameIds: string[]): Promise<string[]> {
+  async checkExternalGamesExist(
+    externalGameIds: string[],
+    executor: DatabaseExecutor = this.db
+  ): Promise<string[]> {
     if (externalGameIds.length === 0) return [];
-    const rows = await this.db
+    const rows = await executor
       .select({ externalGameId: matchGames.externalGameId })
       .from(matchGames)
       .where(inArray(matchGames.externalGameId, externalGameIds));
@@ -247,13 +250,17 @@ export class PostgresRoflUploadRepository implements RoflUploadRepository {
     const externalIds = games
       .map((g) => g.externalGameId)
       .filter((id): id is string => Boolean(id));
-    const existingIds = await this.checkExternalGamesExist(externalIds);
-    const existingSet = new Set(existingIds);
     const seenInBatch = new Set<string>();
     const skippedDuplicates: string[] = [];
     let insertedGames = 0;
 
     await this.db.transaction(async (tx) => {
+      // Read inside the transaction so replays committed by a concurrent upload are skipped.
+      const existingSet = new Set(await this.checkExternalGamesExist(externalIds, tx));
+      // A concurrent upload may commit the same replay after the read above.
+      const registeredMeanwhile = async (externalGameId: string) =>
+        externalGameId !== '' &&
+        (await this.checkExternalGamesExist([externalGameId], tx)).length > 0;
       const matchStateMap = new Map<string, MatchTrackingState>();
       const gameNumberMap = new Map<string, number>();
 
@@ -355,6 +362,10 @@ export class PostgresRoflUploadRepository implements RoflUploadRepository {
           );
         }
         if (matchResult.isClosed) {
+          if (await registeredMeanwhile(game.externalGameId)) {
+            skippedDuplicates.push(game.externalGameId);
+            continue;
+          }
           throw new Error(`Match ${matchResult.matchId} is already completed/closed`);
         }
 
@@ -371,6 +382,10 @@ export class PostgresRoflUploadRepository implements RoflUploadRepository {
             throw new Error(`Match ${matchId} not found in database`);
           }
           if (matchRow.status === 'completed') {
+            if (await registeredMeanwhile(game.externalGameId)) {
+              skippedDuplicates.push(game.externalGameId);
+              continue;
+            }
             throw new Error(`Match ${matchId} is already completed/closed`);
           }
           matchStateMap.set(matchId, {
@@ -393,21 +408,30 @@ export class PostgresRoflUploadRepository implements RoflUploadRepository {
         }
         const currentMax = gameNumberMap.get(matchId) ?? 0;
         const nextGameNumber = currentMax + 1;
-        gameNumberMap.set(matchId, nextGameNumber);
 
         const matchGameId = crypto.randomUUID();
         const winnerTeamId = game.winnerSide === 'blue' ? blueTeamId : redTeamId;
 
-        await tx.insert(matchGames).values({
-          id: matchGameId,
-          matchesId: matchId,
-          gameNumber: nextGameNumber,
-          blueTeamId,
-          redTeamId,
-          winnerTeamId,
-          durationSeconds: game.durationSeconds,
-          externalGameId: game.externalGameId
-        });
+        const inserted = await tx
+          .insert(matchGames)
+          .values({
+            id: matchGameId,
+            matchesId: matchId,
+            gameNumber: nextGameNumber,
+            blueTeamId,
+            redTeamId,
+            winnerTeamId,
+            durationSeconds: game.durationSeconds,
+            externalGameId: game.externalGameId
+          })
+          .onConflictDoNothing({ target: matchGames.externalGameId })
+          .returning({ id: matchGames.id });
+        // The unique key resolves races the earlier reads cannot see: the row was not inserted.
+        if (inserted.length === 0) {
+          skippedDuplicates.push(game.externalGameId);
+          continue;
+        }
+        gameNumberMap.set(matchId, nextGameNumber);
 
         // Collect all participant records for multi-row bulk insert
         const infoRows: NewPlayerGameInfo[] = [];
