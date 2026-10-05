@@ -6,11 +6,13 @@
 
 ## 1. Reconocimiento de fichas
 
-**Archivo**: `page-metadata.service.ts:15, 37-54`
+**Archivo**: `page-metadata.service.ts:15-33, 52-71`
 
-`PageMetadataService.resolve(path)` reconoce las fichas con `/^\/(equipos|jugadores|partidos|editorial)\/([^/]+)\/?$/`. Cualquier otra ruta devuelve directamente `getPageMetadata(path)`, sin consultas ni caché.
+`PageMetadataService.resolve(path)` devuelve `{ metadata, found }` (`ResolvedPageMetadata`): `metadata` son los textos (`title`, `description`) y `found` indica si la página existe. `webPageRouter` usa `found` para elegir entre `200` y `404` ([routes.md](routes.md#2-html-inicial-de-la-web-webpagerouter)); el endpoint JSON solo devuelve `metadata`.
 
-La referencia se decodifica con `decodeURIComponent`; si la codificación es inválida se devuelven los textos de página no encontrada (`page-metadata.service.ts:73-78`).
+Reconoce las fichas con `/^\/(equipos|jugadores|partidos|editorial)\/([^/]+)\/?$/`. Cualquier otra ruta devuelve directamente `getPageMetadata(path)`, sin consultas ni caché, con `found: true` solo si la ruta, sin query string ni barra final, es una clave de `pageMetadata` (`@rcl/contracts`). `found` no se deduce del título.
+
+La referencia se decodifica con `decodeURIComponent`; si la codificación es inválida se devuelven los textos de página no encontrada con `found: false` (`page-metadata.service.ts:95-100`).
 
 ## 2. Consultas por tipo de ficha
 
@@ -29,7 +31,7 @@ El número de consultas no depende del número de partidos del equipo ni del tam
 
 ## 3. Textos generados
 
-**Archivo**: `page-metadata.service.ts:79-118`
+**Archivo**: `page-metadata.service.ts:101-141`
 
 | Ficha | `title` | `description` |
 |---|---|---|
@@ -38,13 +40,13 @@ El número de consultas no depende del número de partidos del equipo ni del tam
 | Partido | `{local} vs {visitante}` | `{local} {marcador local}–{marcador visitante} {visitante}. Consulta los mapas y las estadísticas de esta serie de {división} en Rebel Crown Legacy.` |
 | Artículo | Título | Extracto, o `{título}. Lee el artículo de {autor} en Rebel Crown Legacy.` si está vacío. |
 
-Un `AppError` con estado 404 o un `ZodError` se traducen en los textos de página no encontrada. Cualquier otro error se propaga.
+Las fichas encontradas devuelven `found: true`. Un `AppError` con estado 404 o un `ZodError` se traducen en los textos de página no encontrada con `found: false`. Cualquier otro error se propaga. Si el servicio se crea sin `HomeContentService`, `/editorial/:ref` devuelve los textos genéricos de artículo con `found: true`, porque no puede comprobar el artículo.
 
 ## 4. Caché en memoria
 
-**Archivo**: `page-metadata.service.ts:7-68`
+**Archivo**: `page-metadata.service.ts:7-85`
 
-- **Clave**: la ruta recibida, tal cual.
+- **Clave**: la ruta recibida, tal cual. Se guarda el resultado completo (`metadata` y `found`).
 - **TTL**: `DEFAULT_PAGE_METADATA_CACHE_TTL_MS` = 60 000 ms, configurable con la opción `cacheTtlMs`. Dentro del TTL, repetir la misma ficha no consulta la base de datos.
 - **Single-flight**: mientras una ficha se está resolviendo, las peticiones concurrentes a la misma ruta comparten la promesa en curso (`inFlight`), igual que `SitemapService.getSitemapXml()`.
 - **Errores**: una consulta que falla no se guarda; la siguiente petición vuelve a consultar. Sí se guardan los resultados de página no encontrada, para que referencias inexistentes repetidas tampoco consulten la base de datos.
@@ -53,4 +55,4 @@ Un `AppError` con estado 404 o un `ZodError` se traducen en los textos de págin
 
 ## 5. Pruebas
 
-`apps/api/src/modules/page-metadata/page-metadata.test.ts` cubre los textos de cada ficha (también con UUID en mayúsculas), que los partidos programados, en directo o cancelados devuelven página no encontrada, el límite de entradas y el desalojo de la más antigua, que un equipo con 1 y con 20 partidos completados genera las mismas llamadas al repositorio, la caché dentro y fuera del TTL, la deduplicación de peticiones concurrentes y que los fallos no se guardan. `tests/integration/api-database.test.ts` comprueba los metadatos de equipo, jugador y partido contra PostgreSQL embebido (PGlite).
+`apps/api/src/modules/page-metadata/page-metadata.test.ts` cubre el valor de `found` para todas las rutas de `pageMetadata` (con y sin barra final), rutas desconocidas, codificaciones inválidas y fichas inexistentes; que `webPageRouter` responde `404` con el HTML de página no encontrada a `GET` y `HEAD` de `/ruta-inexistente`, `/equipos/no-existe` y `/equipos/rebels/extra`, y `200` a `/`, `/index.html`, `/campeones` y una ficha existente; los textos de cada ficha (también con UUID en mayúsculas), que los partidos programados, en directo o cancelados devuelven página no encontrada, el límite de entradas y el desalojo de la más antigua, que un equipo con 1 y con 20 partidos completados genera las mismas llamadas al repositorio, la caché dentro y fuera del TTL, la deduplicación de peticiones concurrentes y que los fallos no se guardan. `tests/integration/api-database.test.ts` comprueba los metadatos de equipo, jugador y partido contra PostgreSQL embebido (PGlite).

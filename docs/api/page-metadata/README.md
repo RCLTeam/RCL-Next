@@ -11,7 +11,7 @@ El módulo `apps/api/src/modules/page-metadata/` resuelve el `<title>` y la `<me
 Se expone de dos formas:
 
 - `GET /api/v1/page-metadata?path=` devuelve los metadatos en JSON.
-- `webPageRouter`, cuando la API sirve la web compilada (`WEB_DIST_DIR`), inserta los metadatos en el `index.html` de cada petición de página, de modo que las vistas previas de enlaces los reciben sin ejecutar JavaScript.
+- `webPageRouter`, cuando la API sirve la web compilada (`WEB_DIST_DIR`), inserta los metadatos en el `index.html` de cada petición de página, de modo que las vistas previas de enlaces los reciben sin ejecutar JavaScript. Responde `404` (con el mismo HTML) a las rutas desconocidas y a las fichas inexistentes.
 
 Las fichas se resuelven con proyecciones ligeras de `CompetitionService` (número de consultas fijo, sin depender de los partidos del equipo) y el resultado se guarda en una caché en memoria de 60 segundos con deduplicación de peticiones concurrentes.
 
@@ -23,5 +23,5 @@ La integración con la web (`PageHead`, plugin de Vite y despliegue) está en [d
 
 | Documento | Resumen |
 |---|---|
-| [routes.md](routes.md) | Endpoint JSON, servicio del HTML con metadatos, cabeceras `Cache-Control` y rutas excluidas. |
+| [routes.md](routes.md) | Endpoint JSON, servicio del HTML con metadatos, código `200`/`404` de las páginas, cabeceras `Cache-Control`, rutas excluidas y alcance del `404` detrás de un proxy. |
 | [processing.md](processing.md) | Reconocimiento de fichas, consultas ligeras por tipo de ficha, textos generados, respuestas de página no encontrada y caché con TTL y *single-flight*. |
