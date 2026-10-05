@@ -36,7 +36,7 @@ export function PredictionsPage({ competition }: { competition: Competition }) {
   return (
     <PageLayout
       id="predicciones"
-      number="09"
+      number="08"
       title="Elige tu ganador"
       subtitle="Predicciones de la comunidad"
       description="Antes de cada jornada, vota quién crees que se lleva cada serie. Cada acierto suma puntos a tu clasificación personal de predictor."
