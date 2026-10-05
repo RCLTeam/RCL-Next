@@ -15,7 +15,7 @@ Los componentes visuales del módulo de predicciones residen en `apps/web/src/si
 
 ## 2. Catálogo de Componentes Visuales
 
-### 2.1 `PredictionCard.tsx` (`apps/web/src/site/pages/predictions/PredictionCard.tsx:5-151`)
+### 2.1 `PredictionCard.tsx` (`apps/web/src/site/pages/predictions/PredictionCard.tsx:8-181`)
 Tarjeta visual para pronosticar el resultado de una serie deportiva.
 
 #### Props:
@@ -41,7 +41,7 @@ interface PredictionCardProps {
      ```tsx
      <p className="prediction-notice">Los porcentajes se revelan al finalizar el partido.</p>
      ```
-2. **Formulario Interactivo de Pronóstico (Líneas 63-149):**
+2. **Formulario Interactivo de Pronóstico (Líneas 91-155):**
    - Se renderiza únicamente si la votación está abierta y el usuario ha iniciado sesión (`summary.open && authenticated`).
    - **Botones de Ganador:** Dos botones con emblemas de equipo (`TeamBadge`) que utilizan `aria-pressed={team === match.homeTeam?.id}` para indicar la selección activa.
    - **Desplegable de Tanteo Dinámico:** Se calculan las victorias requeridas en función del formato de la serie (`wins = Math.floor(match.bestOf / 2) + 1`). Las opciones se computan automáticamente en función del equipo elegido:
@@ -51,6 +51,8 @@ interface PredictionCardProps {
      );
      ```
    - **Envío y Guardado:** Al enviar el formulario, el componente activa el estado local `saving`, divide el tanteo y ejecuta `await save(...)`, notificando al usuario mediante mensajes accesibles.
+
+3. **Fecha y hora del partido (`PredictionCard.tsx:38-40` y `157-165`):** El pie `.prediction-meta` muestra el día de la semana y la hora (`lun, 00:30`) con `formatLeagueDate` (`apps/web/src/shared/league-time.ts`) en `Europe/Madrid`, la misma zona que usan `MatchCard` y el plazo de votación de la API. El `<time>` lleva `title="Hora peninsular española"`; sin `scheduledAt` válido muestra *"Fecha por confirmar"*.
 
 ---
 

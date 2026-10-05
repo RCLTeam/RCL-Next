@@ -17,13 +17,13 @@ La lógica de negocio del módulo de predicciones se encapsula de forma funciona
 
 ## 2. Semana y plazo por partido
 
-La semana comienza el lunes a las 00:00 en `Europe/Madrid`, respetando los cambios de horario. `leagueWeek` devuelve su identificador, sin una apertura global por día.
+La semana comienza el lunes a las 00:00 en `Europe/Madrid`, respetando los cambios de horario. `leagueWeek` devuelve su identificador, sin una apertura global por día. La zona procede de la constante `LEAGUE_TIME_ZONE` de `@rcl/contracts` (`packages/contracts/src/league-time.ts`), la misma con la que la web formatea las horas de los partidos.
 
 ```typescript
 // Calendar weeks use league time, including DST.
 export function leagueWeek(date: Date) {
   const parts = new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'Europe/Madrid',
+    timeZone: LEAGUE_TIME_ZONE,
     year: 'numeric',
     month: '2-digit',
     day: '2-digit'
