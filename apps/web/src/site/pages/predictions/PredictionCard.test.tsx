@@ -81,6 +81,55 @@ test('ranking shows the top five and the current user outside them', () => {
   expect(html).not.toContain('tú,');
   expect(html).not.toContain('Predictor 5');
   expect(html).toContain('3 de 10 aciertos');
+  const rows = html.match(/<li\b[^>]*>[\s\S]*?<\/li>/g) ?? [];
+  expect(rows).toHaveLength(6);
+  const highlightedRows = rows.filter((row) => row.includes('class="predictor-row is-you"'));
+  expect(highlightedRows).toHaveLength(1);
+  expect(highlightedRows[0]).toContain('<strong>Predictor 7</strong>');
+});
+
+test.each(['0123456789abcdef0123456789abcdef', 'a_0123456789abcdef0123456789abcdef'])(
+  'ranking loads avatar %s through the same-origin proxy',
+  (avatarHash) => {
+    const html = renderToStaticMarkup(
+      <PredictorRankingPanel
+        ranking={[
+          {
+            userId: '123456789012345678',
+            name: 'Jugador',
+            avatarHash,
+            position: 1,
+            points: 30,
+            correct: 10,
+            total: 10
+          }
+        ]}
+      />
+    );
+    expect(html).toContain('<img');
+    expect(html).toContain(`src="/api/v1/discord-avatars/123456789012345678/${avatarHash}"`);
+    expect(html).not.toContain('cdn.discordapp.com');
+  }
+);
+
+test('ranking shows initials without requesting an image when the avatar is missing', () => {
+  const html = renderToStaticMarkup(
+    <PredictorRankingPanel
+      ranking={[
+        {
+          userId: '123456789012345678',
+          name: 'Jugador',
+          avatarHash: null,
+          position: 1,
+          points: 30,
+          correct: 10,
+          total: 10
+        }
+      ]}
+    />
+  );
+  expect(html).toContain('<span class="predictor-avatar" aria-hidden="true">JU</span>');
+  expect(html).not.toContain('<img');
 });
 
 test('closed voting keeps community data hidden until completion, including zero-vote results', () => {
