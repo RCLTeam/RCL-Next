@@ -51,3 +51,7 @@ El frontend de RCL-Next (`apps/web`) cuenta con **23 suites de pruebas unitarias
 3. **Página `crystal-ball`:**
    - *Ausencia de pruebas dedicadas:* No cuenta con un archivo `*.test.tsx` dedicado a su vista aislada.
    - *Dónde se prueba:* Su montaje y resolución de navegación están garantizados por la suite general de rutas `apps/web/src/site/routes.test.tsx` y la suite de integración de la aplicación `tests/unit/render/App.test.tsx`.
+4. **Fechas y horas en la zona horaria de la liga:**
+   - `apps/web/src/shared/league-time.test.ts` (3 pruebas) cubre `formatLeagueDate`: instante cercano a medianoche, cambio de horario de invierno y fecha no válida.
+   - `MatchCard.test.tsx`, `PredictionCard.test.tsx` y `ArticleView.test.tsx` renderizan `2026-10-04T22:30:00Z` y comprueban la fecha y hora de `Europe/Madrid` (`05 oct` / `00:30`, `lun, 00:30`, `5 de octubre de 2026`).
+   - Estas suites fijan `process.env.TZ = 'America/New_York'` en `beforeAll` y lo restauran (o lo eliminan si no existía) en `afterAll`, de modo que detectan un formateo con la zona del proceso aunque la máquina esté en horario peninsular.

@@ -1,5 +1,6 @@
 import type React from 'react';
 import { SiteLink } from '../../../shared/components/SiteLink.js';
+import { LEAGUE_TIME_LABEL, formatLeagueDate } from '../../../shared/league-time.js';
 import { safeStreamUrl } from '../api/competition-api.js';
 import type { Match } from '../types/competition.types.js';
 import { TeamBadge } from './TeamBadge.js';
@@ -54,8 +55,12 @@ export function MatchCard({ match }: { match: Match }) {
         : null;
 
   const stream = safeStreamUrl(rawStreamUrl);
-  const scheduled = match.scheduledAt ? new Date(match.scheduledAt) : null;
-  const validDate = scheduled && Number.isFinite(scheduled.getTime());
+  const scheduledDay = match.scheduledAt
+    ? formatLeagueDate(match.scheduledAt, { day: '2-digit', month: 'short' })
+    : null;
+  const scheduledTime = match.scheduledAt
+    ? formatLeagueDate(match.scheduledAt, { hour: '2-digit', minute: '2-digit' })
+    : null;
   const showScore = ['live', 'completed', 'forfeit'].includes(match.status);
   return (
     <article
@@ -70,12 +75,10 @@ export function MatchCard({ match }: { match: Match }) {
         />
       )}
       <div className="match-date">
-        {validDate ? (
-          <time dateTime={match.scheduledAt ?? undefined}>
-            {scheduled.toLocaleDateString('es-ES', { day: '2-digit', month: 'short' })}
-            <strong>
-              {scheduled.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
-            </strong>
+        {scheduledDay && scheduledTime ? (
+          <time dateTime={match.scheduledAt ?? undefined} title={LEAGUE_TIME_LABEL}>
+            {scheduledDay}
+            <strong>{scheduledTime}</strong>
           </time>
         ) : (
           <span>

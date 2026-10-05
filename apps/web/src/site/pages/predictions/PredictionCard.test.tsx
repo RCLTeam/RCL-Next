@@ -1,9 +1,19 @@
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { expect, test } from 'vitest';
+import { afterAll, beforeAll, expect, test } from 'vitest';
 import type { Match } from '../../../features/competition/types/competition.types.js';
 import { PredictionCard } from './PredictionCard.js';
 import { PredictorRankingPanel } from './PredictorRankingPanel.js';
+
+const processTimeZone = process.env.TZ;
+// Render as a visitor outside the league's time zone.
+beforeAll(() => {
+  process.env.TZ = 'America/New_York';
+});
+afterAll(() => {
+  if (processTimeZone === undefined) Reflect.deleteProperty(process.env, 'TZ');
+  else process.env.TZ = processTimeZone;
+});
 
 const match: Match = {
   id: 'm',
@@ -150,4 +160,19 @@ test('closed voting keeps community data hidden until completion, including zero
     expect(html.includes('width:50%')).toBe(votes === null);
     expect(html.match(/>\?\?<\/span>/g) ?? []).toHaveLength(votes === null ? 2 : 0);
   }
+});
+
+test('shows the match day and time in Madrid time, not the browser time zone', () => {
+  const summary = { matchId: 'm', open: true, closed: false, homePercent: null, votes: null };
+  // 22:30 UTC on Sunday 4 October is 00:30 on Monday in Madrid and 18:30 on Sunday in New York.
+  const html = renderToStaticMarkup(
+    <PredictionCard
+      match={{ ...match, scheduledAt: '2026-10-04T22:30:00Z' }}
+      summary={summary}
+      authenticated
+      save={async () => {}}
+    />
+  );
+  expect(html).toContain('lun, 00:30');
+  expect(html).not.toContain('18:30');
 });

@@ -18,7 +18,7 @@ En estricta conformidad con el **Golden Standard Arquitectónico**, la totalidad
 | # | Componente | Archivo | Líneas | Llamadas Red | Responsabilidad Visual |
 |:---:|---|---|:---:|:---:|---|
 | 1 | `StandingsTable` | `StandingsTable.tsx` | 50 | **0** | Tabla accesible de clasificación de la fase regular. |
-| 2 | `MatchCard` | `MatchCard.tsx` | 177 | **0** | Tarjeta de partido con anti-spoiler y enlaces seguros de streaming. |
+| 2 | `MatchCard` | `MatchCard.tsx` | 179 | **0** | Tarjeta de partido con anti-spoiler y enlaces seguros de streaming. |
 | 3 | `TeamCard` | `TeamCard.tsx` | 24 | **0** | Tarjeta de equipo con variable CSS temática de color. |
 | 4 | `TeamBadge` | `TeamBadge.tsx` | 51 | **0** | Emblema de equipo con triple degradación ante fallos y delimitación CLS. |
 | 5 | `DivisionCard` | `DivisionCard.tsx` | 58 | **0** | Tarjeta interactiva de división en modalidades botón y enlace. |
@@ -50,12 +50,14 @@ En estricta conformidad con el **Golden Standard Arquitectónico**, la totalidad
 - **Navegación**: Enlaza el nombre del equipo hacia `/equipos/:slugOrId` usando `SiteLink`.
 
 ### 3.2 `MatchCard`
-**Archivo**: `MatchCard.tsx:1-177`  
+**Archivo**: `MatchCard.tsx:1-179`  
 **Props**: `{ match: Match }`
+
+- **Fecha y hora en horario de la liga** (`MatchCard.tsx:58-89`): el día (`05 oct`) y la hora (`00:30`) se formatean con `formatLeagueDate` (`apps/web/src/shared/league-time.ts`) en `Europe/Madrid`, no con la zona del navegador. El `<time>` lleva `title="Hora peninsular española"`. Si `scheduledAt` falta o no es una fecha válida, muestra *"Fecha por confirmar"*.
 
 - **Mecanismo Anti-Spoiler**:
   ```tsx
-  // MatchCard.tsx:107-113
+  // MatchCard.tsx:111-115
   <label className="match-score-spoiler">
     <input type="checkbox" className="spoiler-toggle" />
     <span className="spoiler-cover">HAZ CLIC PARA VER MÁS</span>
@@ -64,7 +66,7 @@ En estricta conformidad con el **Golden Standard Arquitectónico**, la totalidad
   ```
   Permite al usuario ocultar el resultado por defecto y revelarlo bajo demanda sin JavaScript imperativo, valiéndose de selectores CSS `:checked`.
 - **Seguridad en URLs de Emisión (`safeStreamUrl`)**: La función `safeStreamUrl` filtra cualquier protocolo no seguro (`http:` externo, `javascript:`, `data:`), admitiendo únicamente `https:` y entornos de desarrollo locales (`http://localhost`, `http://127.0.0.1`).
-- **Iconografía Condicional**: Detecta si la transmisión pertenece a YouTube o Twitch y renderiza los iconos SVG correspondientes (`TwitchIcon`, `YoutubeIcon`, `líneas 16-46, 142-170`).
+- **Iconografía Condicional**: Detecta si la transmisión pertenece a YouTube o Twitch y renderiza los iconos SVG correspondientes (`TwitchIcon`, `YoutubeIcon`, `líneas 17-47, 145-173`).
 - **Estados de Partido Traducidos**:
   ```typescript
   export const matchStatus: Record<Match['status'], string> = {

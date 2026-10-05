@@ -1,8 +1,18 @@
 import type { EditorialInput } from '@rcl/contracts';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { expect, test } from 'vitest';
+import { afterAll, beforeAll, expect, test } from 'vitest';
 import { ArticleView } from './ArticleView.js';
+
+const processTimeZone = process.env.TZ;
+// Render as a visitor outside the league's time zone.
+beforeAll(() => {
+  process.env.TZ = 'America/New_York';
+});
+afterAll(() => {
+  if (processTimeZone === undefined) Reflect.deleteProperty(process.env, 'TZ');
+  else process.env.TZ = processTimeZone;
+});
 
 const article: EditorialInput = {
   title: 'Final',
@@ -41,4 +51,11 @@ test('treats HTML and unsupported image URLs as text', () => {
   expect(html).not.toContain('<script>');
   expect(html).not.toContain('<img');
   expect(html).toContain('&lt;script&gt;');
+});
+
+test('shows the publication date in Madrid time, not the browser time zone', () => {
+  // 22:30 UTC on 4 October is already 5 October in Madrid but still 4 October in New York.
+  const publishedAt = '2026-10-04T22:30:00Z';
+  const html = renderToStaticMarkup(<ArticleView article={article} publishedAt={publishedAt} />);
+  expect(html).toContain(`<time dateTime="${publishedAt}">5 de octubre de 2026</time>`);
 });

@@ -15,7 +15,7 @@ Los componentes visuales del módulo residen en `apps/web/src/features/home-cont
 
 ## 2. Catálogo de Componentes Visuales
 
-### 2.1 `ArticleView.tsx` (`apps/web/src/features/home-content/components/ArticleView.tsx:5-64`)
+### 2.1 `ArticleView.tsx` (`apps/web/src/features/home-content/components/ArticleView.tsx:6-60`)
 Componente presentacional de lectura de artículos editoriales.
 
 #### Props:
@@ -27,12 +27,12 @@ interface ArticleViewProps {
 ```
 
 #### Mecanismos y Seguridad:
-1. **Cálculo de Tiempo de Lectura (`ArticleView.tsx:9`):**
+1. **Cálculo de Tiempo de Lectura (`ArticleView.tsx:13`):**
    ```typescript
    const minutes = Math.max(1, Math.ceil(article.body.split(/\s+/).length / 220));
    ```
    Calcula la duración estimada a razón de 220 palabras por minuto, garantizando un mínimo de 1 minuto.
-2. **Renderizado Seguro de Texto (Sin `dangerouslySetInnerHTML`, líneas 38-56):**
+2. **Renderizado Seguro de Texto (Sin `dangerouslySetInnerHTML`, líneas 34-53):**
    Divide el cuerpo del artículo por saltos de línea dobles (`body.split(/\n\s*\n/)`) y analiza cada bloque mediante expresiones regulares y prefijos textuales:
    - **Imágenes Inline:** Evalúa la expresión regular estricta:
      ```typescript
@@ -42,6 +42,8 @@ interface ArticleViewProps {
    - **Subtítulos:** Si el párrafo comienza por `'## '`, genera un encabezado `<h2>{paragraph.slice(3)}</h2>`.
    - **Citas:** Si el párrafo comienza por `'> '`, genera un bloque de cita `<blockquote>{paragraph.slice(2)}</blockquote>`.
    - **Párrafos Estándar:** Cualquier otro bloque se renderiza como nodo de texto plano dentro de un elemento `<p>`.
+3. **Fecha de Publicación en Horario de la Liga (`ArticleView.tsx:10-12` y `23`):**
+   `publishedAt` se formatea con `formatLeagueDate` (`apps/web/src/shared/league-time.ts`) en `Europe/Madrid` (`5 de octubre de 2026`), de modo que un artículo publicado cerca de medianoche muestra el mismo día a todos los visitantes. Si la fecha no es válida, no se renderiza el `<time>`.
 
 ---
 

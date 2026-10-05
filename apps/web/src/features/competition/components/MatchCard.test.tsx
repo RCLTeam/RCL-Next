@@ -1,8 +1,18 @@
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { expect, test } from 'vitest';
+import { afterAll, beforeAll, expect, test } from 'vitest';
 import type { Match } from '../types/competition.types.js';
 import { MatchCard } from './MatchCard.js';
+
+const processTimeZone = process.env.TZ;
+// Render as a visitor outside the league's time zone.
+beforeAll(() => {
+  process.env.TZ = 'America/New_York';
+});
+afterAll(() => {
+  if (processTimeZone === undefined) Reflect.deleteProperty(process.env, 'TZ');
+  else process.env.TZ = processTimeZone;
+});
 
 const match: Match = {
   id: 'match',
@@ -42,4 +52,14 @@ test('live matches use the live URL even when a recording exists', () => {
   );
   expect(html).toContain(`href="${match.streamUrlLive}"`);
   expect(html).not.toContain('youtube.com');
+});
+
+test('shows the match date and time in Madrid time, not the browser time zone', () => {
+  // 22:30 UTC on 4 October is 00:30 on 5 October in Madrid and 18:30 on 4 October in New York.
+  const html = renderToStaticMarkup(
+    <MatchCard match={{ ...match, status: 'scheduled', scheduledAt: '2026-10-04T22:30:00Z' }} />
+  );
+  expect(html).toContain('05 oct');
+  expect(html).toContain('<strong>00:30</strong>');
+  expect(html).not.toContain('18:30');
 });

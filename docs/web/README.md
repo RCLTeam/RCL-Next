@@ -72,6 +72,13 @@ Más allá de las carpetas específicas por funcionalidad en `apps/web/src/featu
   - **Entrada de Vistas:** Anima la entrada de páginas en el contenedor principal (`#main-content`) con `@keyframes page-enter` (`translate: 0 8px` a `0 0`, `opacity: 0` a `1`, 360ms con `cubic-bezier(0.22, 1, 0.36, 1)`).
   - **Selección Activa:** Transición fluida en la barra de navegación con `@keyframes navigation-select` (`opacity: 0.4` y `scaleX(0.3)` a `opacity: 1` y `scaleX(1)`, 360ms).
 
+### 4.3 Fechas y horas de la liga (`league-time.ts`)
+- **Cita:** `apps/web/src/shared/league-time.ts:1-22`
+- **Responsabilidad:** `formatLeagueDate(value, options)` formatea un instante en `es-ES` con la zona horaria de la liga (`LEAGUE_TIME_ZONE = 'Europe/Madrid'`, exportada por `@rcl/contracts` y compartida con el plazo de votación de la API). Devuelve `null` si la fecha no es válida y reutiliza un `Intl.DateTimeFormat` por combinación de opciones.
+- **Consumidores:** `MatchCard` (calendario y partido destacado de la portada), `PredictionCard` y `ArticleView`. El mismo partido muestra la misma fecha y hora en todas las vistas, sea cual sea la zona horaria del navegador.
+- **Indicación de zona:** `LEAGUE_TIME_LABEL` (*"Hora peninsular española"*) se usa como `title` del `<time>` de las horas de partido.
+- **Excepción:** la semana de `PredictionsPage` se formatea en `UTC` porque representa un día sin hora (`YYYY-MM-DD`), no un instante.
+
 ---
 
 ## 5. Enlaces Cruzados con Otras Áreas
