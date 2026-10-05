@@ -61,6 +61,7 @@ export interface CompetitionRepository {
   >;
   match(id: string): Promise<Match | undefined>;
   matchGames(id: string): Promise<MatchMap[]>;
+  matchGamesByMatch(ids: string[]): Promise<Map<string, MatchMap[]>>;
   teamDirectory(): Promise<
     { id: string; name: string; seasonName: string; divisionName: string }[]
   >;

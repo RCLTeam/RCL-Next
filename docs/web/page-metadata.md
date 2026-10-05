@@ -1,6 +1,6 @@
 # Descripciones al compartir enlaces
 
-`packages/contracts/src/page-metadata.ts` define `PageMetadata` (`title` y `description`) y los textos por ruta. `App` pasa esta variable a `PageHead`, que actualiza las etiquetas del `<head>` al navegar. La API completa las fichas con los nombres de equipos y jugadores, los resultados de partidos y el extracto de los artículos publicados.
+`packages/contracts/src/page-metadata.ts` define `PageMetadata` (`title` y `description`) y los textos por ruta. `App` pasa esta variable a `PageHead`, que actualiza las etiquetas del `<head>` al navegar. La API completa las fichas con los nombres de equipos y jugadores, los resultados de partidos y el extracto de los artículos publicados. Las fichas se resuelven con consultas ligeras y se guardan 60 segundos en una caché del servidor, así que un cambio de nombre o de resultado puede tardar hasta ese tiempo en aparecer en los metadatos; el funcionamiento de la API está descrito en [docs/api/page-metadata](../api/page-metadata/README.md).
 
 El HTML contiene `description`, `og:description` y `twitter:description`, junto con sus títulos. Los valores se escapan antes de insertarlos en la plantilla. Las páginas desconocidas y los recursos inexistentes tienen un texto de página no disponible.
 

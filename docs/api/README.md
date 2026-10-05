@@ -24,7 +24,7 @@ La arquitectura sigue el patrón de **Rebanadas Verticales (*Vertical Slice Arch
 
 ## 3. Catálogo de Módulos de la API
 
-La API de RCL-Next se compone de doce módulos funcionales, cada uno documentado exhaustivamente en su respectiva subcarpeta atómica:
+La API de RCL-Next se compone de trece módulos funcionales, cada uno documentado exhaustivamente en su respectiva subcarpeta atómica:
 
 | Módulo | Enlace | Resumen Funcional |
 |---|---|---|
@@ -38,6 +38,7 @@ La API de RCL-Next se compone de doce módulos funcionales, cada uno documentado
 | **Transferencia de Base de Datos** | [database-transfer/README.md](database-transfer/README.md) | Generación y restauración de copias de seguridad PostgreSQL mediante comandos `COPY` nativos, empaquetado gzip, streaming y ordenación topológica de tablas. |
 | **Contenido Editorial e Inicio** | [home-content/README.md](home-content/README.md) | Gestión de noticias, artículos editoriales y selección transaccional del quinteto ideal de cada jornada (*Team of the Week*) para la página de inicio. |
 | **Predicciones Comunitarias** | [predictions/README.md](predictions/README.md) | Quinielas de partidos (Bo1, Bo3, Bo5), control estricto de ventanas de votación en horario peninsular (Madrid), ocultación de tendencias hasta el cierre y ranking. |
+| **Metadatos de Página** | [page-metadata/README.md](page-metadata/README.md) | Títulos y descripciones por ruta para el HTML inicial y `GET /api/v1/page-metadata`, consultas ligeras de fichas de equipo, jugador y partido, y caché en memoria de 60 segundos con *single-flight*. |
 | **Logos de Equipos** | [team-logos/README.md](team-logos/README.md) | Motor de almacenamiento en disco (`TeamLogosStore`), servicio público de imágenes con ETag/304, inspección de magic bytes (PNG, JPEG, WebP), cuota de 5 MiB y protección de `placeholder.webp`. |
 | **Sitemap XML Dinámico** | [sitemap/README.md](sitemap/README.md) | Generación dinámica del mapa del sitio XML (protocolo Sitemaps 0.9) en `/sitemap.xml` y `/api/sitemap.xml`: rutas estáticas derivadas de `pageMetadata`, equipos y jugadores con el mismo slug que la API, artículos publicados, caché en memoria invalidada tras las escrituras de administración (TTL de respaldo de 1 hora). |
 
