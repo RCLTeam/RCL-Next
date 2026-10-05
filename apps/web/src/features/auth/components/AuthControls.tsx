@@ -37,9 +37,7 @@ export function AuthControlsView({
             {state.user.avatarHash ? (
               <img
                 className="auth-avatar"
-                src={`https://cdn.discordapp.com/avatars/${state.user.discordId}/${state.user.avatarHash}.${
-                  state.user.avatarHash.startsWith('a_') ? 'gif' : 'png'
-                }`}
+                src={`/api/v1/discord-avatars/${encodeURIComponent(state.user.discordId)}/${encodeURIComponent(state.user.avatarHash)}`}
                 alt={displayName(state.user.globalName || state.user.username)}
               />
             ) : (

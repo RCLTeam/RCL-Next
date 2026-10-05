@@ -2,6 +2,8 @@
 
 [⬅️ Volver a Suites de Pruebas](README.md)
 
+Las suites `tests/integration/api.test.ts` y `tests/unit/render/AuthControls.test.tsx` incorporan la integración y el renderizado del [proxy de avatares](../discord-avatars.md). Los recuentos históricos siguientes preceden a esta ampliación.
+
 ---
 
 ## 1. Resumen Ejecutivo

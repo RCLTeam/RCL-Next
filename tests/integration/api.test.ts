@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import request from 'supertest';
+import { vi } from 'vitest';
 import { createApp } from '../../apps/api/src/app.js';
 import type {
   CompetitionRepository,
@@ -88,6 +89,32 @@ const app = createApp({
   repository: repository(),
   checkDatabase: async () => {},
   corsOrigin: 'http://localhost:5173'
+});
+
+test('public avatar route serves images through the full app without Discord cookies', async () => {
+  const fetchImage = vi.fn<typeof fetch>().mockResolvedValue(
+    new Response(new Uint8Array([137, 80, 78, 71]), {
+      headers: { 'content-type': 'image/png', 'set-cookie': '__cf_bm=private' }
+    })
+  );
+  vi.stubGlobal('fetch', fetchImage);
+  try {
+    const avatarApp = createApp({
+      repository: repository(),
+      checkDatabase: async () => {},
+      corsOrigin: 'http://localhost:5173'
+    });
+    const result = await request(avatarApp)
+      .get('/api/v1/discord-avatars/123456789012345678/0123456789abcdef0123456789abcdef')
+      .expect(200)
+      .expect('Content-Type', 'image/png')
+      .expect('Cache-Control', 'public, max-age=3600');
+    assert.deepEqual(result.body, Buffer.from([137, 80, 78, 71]));
+    assert.equal(result.headers['set-cookie'], undefined);
+    assert.equal(fetchImage.mock.calls.length, 1);
+  } finally {
+    vi.unstubAllGlobals();
+  }
 });
 
 test('readiness reports database outages as 503', async () => {

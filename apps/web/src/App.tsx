@@ -1,8 +1,10 @@
+import { getPageMetadata } from '@rcl/contracts';
 import React from 'react';
 import { AuthProvider } from './features/auth/components/AuthProvider.js';
 import { browserNavigation } from './shared/browser-navigation.js';
 import { NavigationContext } from './shared/navigation.js';
 import { LeaguePortal } from './site/layout/LeaguePortal.js';
+import { PageHead } from './site/layout/PageHead.js';
 import { SiteLayout } from './site/layout/SiteLayout.js';
 import './site/layout/site.css';
 import { NotFoundPage } from './site/pages/not-found/NotFoundPage.js';
@@ -29,6 +31,7 @@ export function App({ initialPath, wsUrl }: AppProps) {
   const requestedPath = currentPath.replace(/\/$/, '') || '/';
   const path = requestedPath;
   const route = resolveSiteRoute(path);
+  const metadata = React.useMemo(() => getPageMetadata(path), [path]);
   const title = route?.title ?? 'Página no encontrada';
   // biome-ignore lint/correctness/useExhaustiveDependencies: A new detail URL must reset the previous record's title even when both routes share a title.
   React.useEffect(() => {
@@ -47,6 +50,7 @@ export function App({ initialPath, wsUrl }: AppProps) {
   return (
     <AuthProvider>
       <NavigationContext.Provider value={{ path, navigate, setLeaveGuard }}>
+        <PageHead path={path} metadata={metadata} />
         {route ? (
           <LeaguePortal key={path} route={route} wsUrl={wsUrl} />
         ) : (
