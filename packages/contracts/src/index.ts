@@ -25,3 +25,4 @@ export type {
 export type * from './competition-profiles.js';
 export type * from './discord-bridge.js';
 export type * from './suggestions.js';
+export { LEAGUE_TIME_ZONE } from './league-time.js';
