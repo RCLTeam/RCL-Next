@@ -1,5 +1,6 @@
 import type { PredictorStanding } from '@rcl/contracts';
 import React, { useState } from 'react';
+import { discordAvatarUrl } from '../../../shared/discord-avatar-url.js';
 import { displayName } from '../../../shared/display-name.js';
 export function PredictorRankingPanel({
   ranking,
@@ -67,7 +68,7 @@ function PredictorAvatar({ row }: { row: PredictorStanding }) {
     <span className="predictor-avatar" aria-hidden="true">
       {row.avatarHash && !failed ? (
         <img
-          src={`https://cdn.discordapp.com/avatars/${row.userId}/${row.avatarHash}.${row.avatarHash.startsWith('a_') ? 'gif' : 'png'}`}
+          src={discordAvatarUrl(row.userId, row.avatarHash)}
           alt=""
           width={40}
           height={40}
