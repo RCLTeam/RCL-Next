@@ -74,7 +74,7 @@ A continuación se detalla la matriz completa de las 12 rutas registradas en `co
 - **Propósito**: Devuelve las divisiones asociadas a una temporada concreta (ej. Premier, Segunda).
 - **Parámetros de Ruta**:
   - `seasonId` (`string`, requerido): Nombre canónico de la temporada (validado con `z.string().min(1).max(120)`, `competition.controller.ts:54`).
-- **Comportamiento**: Si la temporada no existe en la base de datos, arroja `notFound('Season')` -> HTTP 404 (`competition.service.ts:260`).
+- **Comportamiento**: Si la temporada no existe en la base de datos, arroja `notFound('Season')` -> HTTP 404 (`competition.service.ts:261`).
 - **Respuesta**: HTTP 200 `{ data: Division[] }`.
 
 ### 3.7 `GET /api/v1/divisions/:divisionId/teams`
@@ -102,7 +102,7 @@ A continuación se detalla la matriz completa de las 12 rutas registradas en `co
 - **Parámetros de Consulta (Query String)**:
   - `roundId` (`string`, opcional): Identificador numérico de jornada. Validado estrictamente mediante `z.string().regex(/^-?\d+$/).refine(v => Number(v) >= -32768 && Number(v) <= 32767)` (`competition.controller.ts:67-71`).
   - **Validación Estricta**: La consulta aplica `.strict()` (`competition.controller.ts:73`). Si el cliente suministra claves de consulta inesperadas (ej. `?unexpected=1`), la petición es rechazada de inmediato con HTTP 422.
-- **Comportamiento**: Si se proporciona un `roundId` numérico que no corresponde a ninguna jornada de la división, arroja `notFound('Round')` -> HTTP 404 (`competition.service.ts:282`).
+- **Comportamiento**: Si se proporciona un `roundId` numérico que no corresponde a ninguna jornada de la división, arroja `notFound('Round')` -> HTTP 404 (`competition.service.ts:283`).
 - **Respuesta**: HTTP 200 `{ data: Match[] }`.
 
 ### 3.11 `GET /api/v1/divisions/:divisionId/champions`
@@ -127,6 +127,6 @@ A continuación se detalla la matriz completa de las 12 rutas registradas en `co
 | Código HTTP | Causa Técnica | Estructura de Respuesta |
 |---|---|---|
 | **`200 OK`** | Petición procesada con éxito y recurso serializado. | `{"data": ...}` |
-| **`404 Not Found`** | Recurso no encontrado (temporada, división, jornada, equipo, jugador o partido inexistente), o partido no finalizado (`competition.service.ts:109-110, 175, 260, 264, 282`). | `{"error": "NOT_FOUND", "message": "<Resource> not found"}` |
+| **`404 Not Found`** | Recurso no encontrado (temporada, división, jornada, equipo, jugador o partido inexistente), o partido no finalizado (`competition.service.ts:109-110, 175, 261, 265, 283`). | `{"error": "NOT_FOUND", "message": "<Resource> not found"}` |
 | **`422 Unprocessable Entity`** | Error de validación Zod en parámetros de ruta (UUID inválido, regex slug inválida) o en query string (claves extra no permitidas por `.strict()`, rango numérico excedido). | `{"error": "VALIDATION_ERROR", "details": [...]}` |
 | **`500 Internal Server Error`** | Error inesperado del motor de base de datos PostgreSQL o fallo no capturado en ejecución. | `{"error": "INTERNAL_SERVER_ERROR", "message": "..."}` |

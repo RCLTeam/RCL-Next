@@ -88,9 +88,9 @@ Más allá de la validación sintáctica de Zod, la capa de servicio (`competiti
 | Partido en estado distinto a `'completed'` o `'forfeit'` | `competition.service.ts:109-110` | `notFound('Match')` | **404** |
 | Jugador o slug de jugador no encontrado | `competition.service.ts:185, 187` | `notFound('Player')` | **404** |
 | Equipo o slug de equipo no encontrado | `competition.service.ts:207, 209` | `notFound('Team')` | **404** |
-| Temporada no encontrada | `competition.service.ts:260` | `notFound('Season')` | **404** |
-| División no encontrada en la base de datos | `competition.service.ts:175, 264` | `notFound('Division')` | **404** |
-| `roundId` numérico no pertenece a la división indicada | `competition.service.ts:282` | `notFound('Round')` | **404** |
+| Temporada no encontrada | `competition.service.ts:261` | `notFound('Season')` | **404** |
+| División no encontrada en la base de datos | `competition.service.ts:175, 265` | `notFound('Division')` | **404** |
+| `roundId` numérico no pertenece a la división indicada | `competition.service.ts:283` | `notFound('Round')` | **404** |
 
 ---
 
