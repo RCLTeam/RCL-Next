@@ -69,13 +69,13 @@ test('The initial HTTP HTML contains route metadata without executing browser Ja
 });
 
 const divisionId = '20000000-0000-4000-8000-000000000001';
-const homeId = '30000000-0000-4000-8000-000000000001';
-const awayId = '30000000-0000-4000-8000-000000000002';
-const playerId = '40000000-0000-4000-8000-000000000001';
-const matchId = (index: number) => `70000000-0000-4000-8000-${String(index + 1).padStart(12, '0')}`;
+const homeId = 'a0000000-0000-4000-8000-00000000000a';
+const awayId = 'a0000000-0000-4000-8000-00000000000b';
+const playerId = 'b0000000-0000-4000-8000-00000000000c';
+const matchId = (index: number) => `c0000000-0000-4000-8000-${String(index + 1).padStart(12, '0')}`;
 
 // Every repository method is counted; each one issues at least one database query.
-function countingRepository(completedMatches: number) {
+function countingRepository(completedMatches: number, statuses: Match['status'][] = []) {
   const calls: string[] = [];
   const matches: Match[] = Array.from({ length: completedMatches }, (_, index) => ({
     id: matchId(index),
@@ -86,7 +86,7 @@ function countingRepository(completedMatches: number) {
     homeScore: 2,
     awayScore: 1,
     winnerTeamId: homeId,
-    status: 'completed',
+    status: statuses[index] ?? 'completed',
     bestOf: 3,
     scheduledAt: null,
     finishedAt: null,
@@ -114,7 +114,8 @@ function countingRepository(completedMatches: number) {
         awayTeamId,
         roundId
       })),
-    match: async (id) => matches.find((match) => match.id === id),
+    // PostgreSQL compares uuid values regardless of letter case.
+    match: async (id) => matches.find((match) => match.id === id.toLowerCase()),
     matchGames: async () => [],
     matchGamesByMatch: async (ids) => new Map(ids.map((id) => [id, []])),
     teamDirectory: async () => directory,
@@ -209,6 +210,15 @@ test('Detail metadata keeps the same texts when resolved from the repository', a
   expect((await service.resolve('/equipos/missing')).title).toBe('Página no encontrada');
   expect((await service.resolve('/jugadores/missing')).title).toBe('Página no encontrada');
   expect((await service.resolve('/partidos/missing')).title).toBe('Página no encontrada');
+  expect(await service.resolve(`/equipos/${homeId.toUpperCase()}`)).toEqual(
+    await service.resolve('/equipos/rebels')
+  );
+  expect(await service.resolve(`/jugadores/${playerId.toUpperCase()}`)).toEqual(
+    await service.resolve(`/jugadores/${playerId}`)
+  );
+  expect(await service.resolve(`/partidos/${matchId(0).toUpperCase()}`)).toEqual(
+    await service.resolve(`/partidos/${matchId(0)}`)
+  );
 });
 
 test('Repeated metadata requests within the TTL query the repository once', async () => {
@@ -256,4 +266,34 @@ test('Failed metadata lookups are not cached', async () => {
   await expect(service.resolve('/editorial/final')).rejects.toThrow('Database unavailable');
   expect((await service.resolve('/editorial/final')).description).toBe('Resumen.');
   expect(lookup).toHaveBeenCalledTimes(2);
+});
+
+test('Match metadata only describes completed or forfeited series', async () => {
+  const { repository } = countingRepository(4, ['scheduled', 'live', 'cancelled', 'forfeit']);
+  const service = new PageMetadataService(new CompetitionService(repository));
+  for (const index of [0, 1, 2])
+    expect((await service.resolve(`/partidos/${matchId(index)}`)).title).toBe(
+      'Página no encontrada'
+    );
+  expect((await service.resolve(`/partidos/${matchId(3)}`)).title).toBe('Rebels vs Crown');
+});
+
+test('The metadata cache keeps at most the configured entries and drops the oldest', async () => {
+  const { repository, calls } = countingRepository(1);
+  const service = new PageMetadataService(new CompetitionService(repository), undefined, {
+    cacheMaxEntries: 2
+  });
+  const lookups = async (path: string) => {
+    const before = calls.length;
+    await service.resolve(path);
+    return calls.length - before;
+  };
+  const team = await lookups('/equipos/rebels');
+  expect(team).toBeGreaterThan(0);
+  expect(await lookups(`/jugadores/${playerId}`)).toBeGreaterThan(0);
+  expect(await lookups('/equipos/rebels')).toBe(0);
+  // A third path evicts the oldest entry (the team) and keeps the player.
+  expect(await lookups(`/partidos/${matchId(0)}`)).toBeGreaterThan(0);
+  expect(await lookups(`/jugadores/${playerId}`)).toBe(0);
+  expect(await lookups('/equipos/rebels')).toBe(team);
 });

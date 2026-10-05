@@ -239,6 +239,15 @@ test('HTTP -> controller -> service -> real repository -> embedded PostgreSQL', 
     `${playerDetail.body.data.gameName}#${playerDetail.body.data.riotTag}`
   );
   assert.equal((await metadata('/partidos/no-existe')).title, 'Página no encontrada');
+  assert.equal((await metadata(`/equipos/${teamId.toUpperCase()}`)).title, 'Lobos DEMO');
+  assert.equal(
+    (await metadata(`/jugadores/${playerId.toUpperCase()}`)).title,
+    `${playerDetail.body.data.gameName}#${playerDetail.body.data.riotTag}`
+  );
+  assert.equal(
+    (await metadata(`/partidos/${completedMatch.id.toUpperCase()}`)).title,
+    reportMetadata.title
+  );
   const champions = await request(app).get(`/api/v1/divisions/${divisionId}/champions`).expect(200);
   assert.equal(champions.body.data.length, 10);
   const garen = champions.body.data.find((row: { champion: string }) => row.champion === 'Garen');

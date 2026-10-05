@@ -241,15 +241,16 @@ export class CompetitionService {
   }
   async teamSummary(reference: string): Promise<TeamSummaryRecord> {
     const directory = await this.repository.teamDirectory();
-    const id = resolveProfileId(reference, teamProfileSlugs(directory));
-    const team = directory.find((entry) => entry.id === id);
+    // UUID references may arrive in any letter case, as PostgreSQL accepts them.
+    const id = resolveProfileId(reference, teamProfileSlugs(directory))?.toLowerCase();
+    const team = directory.find((entry) => entry.id.toLowerCase() === id);
     if (!team) throw notFound('Team');
     return { name: team.name, seasonName: team.seasonName, divisionName: team.divisionName };
   }
   async playerSummary(reference: string): Promise<PlayerSummaryRecord> {
     const { players, slugs } = await this.playerDirectory();
-    const id = resolveProfileId(reference, slugs);
-    const player = players.find((entry) => entry.id === id);
+    const id = resolveProfileId(reference, slugs)?.toLowerCase();
+    const player = players.find((entry) => entry.id.toLowerCase() === id);
     if (!player) throw notFound('Player');
     return { gameName: player.gameName, riotTag: player.riotTag };
   }
