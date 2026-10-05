@@ -242,6 +242,9 @@ export class DiscordBridgeClient extends EventEmitter {
         if (ws) {
           try {
             ws.removeAllListeners();
+            // terminate() on a CONNECTING socket emits 'error' on the next tick;
+            // without a listener it would become an uncaught exception.
+            ws.on('error', () => {});
             if (ws.readyState === WebSocket.OPEN) {
               ws.close(1000, 'Health check complete');
             } else {

@@ -113,4 +113,37 @@ describe('Suggestions with the Discord bot unavailable', () => {
     await new Promise((resolve) => setTimeout(resolve, 50));
     expect(processErrors).toEqual([]);
   });
+  it('survives a health probe whose handshake never completes', async () => {
+    // Accepts TCP connections but never answers the WebSocket upgrade.
+    const sockets: net.Socket[] = [];
+    const silent = net.createServer((socket) => {
+      sockets.push(socket);
+    });
+    await new Promise<void>((resolve) => silent.listen(0, '127.0.0.1', resolve));
+    const { port } = silent.address() as net.AddressInfo;
+
+    try {
+      const client = new DiscordBridgeClient({
+        wsUrl: `ws://127.0.0.1:${port}/ws/bridge`,
+        supertoken: 'test-supertoken',
+        healthProbeTimeoutMs: 200,
+        healthCacheMs: 0,
+        connectTimeoutMs: 200
+      });
+      clients.push(client);
+
+      const health = await client.checkHealth();
+      expect(health).toMatchObject({ status: 'unreachable', healthy: false });
+
+      await expect(
+        client.send({ type: 'SUGGESTION_CREATED', data: { id: 'silent-bot' } })
+      ).rejects.toThrow('Discord bridge is unavailable');
+
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      expect(processErrors).toEqual([]);
+    } finally {
+      for (const socket of sockets) socket.destroy();
+      await new Promise<void>((resolve) => silent.close(() => resolve()));
+    }
+  });
 });
