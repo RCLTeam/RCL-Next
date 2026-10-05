@@ -14,6 +14,7 @@ export interface PredictionSummary {
 export interface PredictorStanding {
   userId: string;
   name: string;
+  avatarHash: string | null;
   position: number;
   correct: number;
   total: number;

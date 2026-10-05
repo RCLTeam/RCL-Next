@@ -1,4 +1,5 @@
 import React from 'react';
+import { discordAvatarUrl } from '../../../shared/discord-avatar-url.js';
 import { displayName } from '../../../shared/display-name.js';
 import { discordLoginUrl } from '../api/auth-api.js';
 import { type AuthState, useAuth } from './AuthProvider.js';
@@ -37,7 +38,7 @@ export function AuthControlsView({
             {state.user.avatarHash ? (
               <img
                 className="auth-avatar"
-                src={`/api/v1/discord-avatars/${encodeURIComponent(state.user.discordId)}/${encodeURIComponent(state.user.avatarHash)}`}
+                src={discordAvatarUrl(state.user.discordId, state.user.avatarHash)}
                 alt={displayName(state.user.globalName || state.user.username)}
               />
             ) : (

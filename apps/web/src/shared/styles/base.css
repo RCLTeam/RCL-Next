@@ -102,8 +102,7 @@
   min-width: 0;
 }
 
-.rcl-site .sr-only,
-.rcl-site .skip-link:not(:focus) {
+.rcl-site .sr-only {
   position: absolute;
   width: 1px;
   height: 1px;
@@ -111,16 +110,6 @@
   overflow: hidden;
   clip-path: inset(50%);
   white-space: nowrap;
-}
-
-.rcl-site .skip-link:focus {
-  position: fixed;
-  top: 8px;
-  left: 8px;
-  z-index: 100;
-  padding: 16px;
-  background: var(--lime);
-  color: var(--void);
 }
 
 .rcl-site #main-content {
