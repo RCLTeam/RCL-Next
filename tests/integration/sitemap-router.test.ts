@@ -1,7 +1,6 @@
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import request from 'supertest';
 import { describe, expect, it, vi } from 'vitest';
 import { createApp } from '../../apps/api/src/app.js';
@@ -121,7 +120,6 @@ describe('Sitemap Router Integration (GET /api/sitemap.xml)', () => {
     expect(res.body.error.code).toBe('NOT_FOUND');
   });
 
-  const webDirectory = fileURLToPath(new URL('../../apps/web/public', import.meta.url));
   const appWith = (options: { sitemapService?: SitemapService; webDirectory?: string } = {}) =>
     createApp({
       repository: {} as CompetitionRepository,
@@ -163,19 +161,5 @@ describe('Sitemap Router Integration (GET /api/sitemap.xml)', () => {
     } finally {
       rmSync(builtWeb, { recursive: true, force: true });
     }
-  });
-
-  it('serves robots.txt from the web build pointing to the sitemap URL the API answers', async () => {
-    const robots = readFileSync(`${webDirectory}/robots.txt`, 'utf8');
-    const sitemapLine = robots.split('\n').find((line) => line.startsWith('Sitemap:'));
-    expect(sitemapLine).toBe('Sitemap: https://rebelcrownlegacy.es/sitemap.xml');
-
-    const app = appWith({ webDirectory });
-    const res = await request(app).get('/robots.txt').expect(200);
-    expect(res.headers['content-type']).toMatch(/text\/plain/);
-    expect(res.text).toContain('Sitemap: https://rebelcrownlegacy.es/sitemap.xml');
-    const path = new URL(sitemapLine?.slice('Sitemap:'.length).trim() ?? '').pathname;
-    const sitemap = await request(app).get(path).expect(200);
-    expect(sitemap.text).toContain('<urlset');
   });
 });

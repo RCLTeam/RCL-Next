@@ -48,18 +48,11 @@ sitemapRepository: new PostgresSitemapRepository(connection.db),
 
 Así, tras crear o renombrar un equipo o un jugador, publicar o editar un artículo, o importar una copia de la base de datos, la siguiente petición al sitemap ya refleja el cambio.
 
-### 1.3 `robots.txt` y Ruta Pública
+### 1.3 Proxy Inverso, `robots.txt` y Ruta Pública
 
-`apps/web/public/robots.txt` se copia a `apps/web/dist` en el build y, con `WEB_DIST_DIR` configurado, lo sirve el middleware estático de `webPageRouter`:
+En producción, el proxy inverso (nginx) responde `/robots.txt` con un texto fijo definido en su propia configuración, que incluye la línea `Sitemap: https://rebelcrownlegacy.es/sitemap.xml`. El repositorio no contiene un `robots.txt`: un fichero en `apps/web/public` no llegaría a servirse.
 
-```text
-User-agent: *
-Disallow: /admin
-
-Sitemap: https://rebelcrownlegacy.es/sitemap.xml
-```
-
-La API atiende `/sitemap.xml` directamente, así que la línea `Sitemap:` no depende de reglas adicionales en el proxy inverso: basta con que el dominio público dirija las rutas de páginas al servidor Express, como ya exige el servicio de metadatos (`docs/web/page-metadata.md`). `/api/sitemap.xml` se mantiene por compatibilidad y devuelve el mismo documento.
+El mismo proxy envía `/sitemap.xml` a la API (`/api/sitemap.xml`). La ruta `/sitemap.xml` que registra la propia API queda para cuando se use sin proxy: como el enrutador se monta antes de `webPageRouter`, con `WEB_DIST_DIR` configurado devuelve el XML y no el `index.html` de la web. Ambas rutas devuelven el mismo documento.
 
 ---
 

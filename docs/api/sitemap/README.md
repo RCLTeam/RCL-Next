@@ -15,7 +15,7 @@ El diseño del módulo se rige por los siguientes principios de arquitectura e i
 3. **Las mismas URLs que la web:** Las rutas estáticas se derivan de `pageMetadata` (`@rcl/contracts`), excluyendo `/admin` y sus subrutas, de modo que el sitemap no puede anunciar una página que la web no sirve. Los equipos y jugadores se publican con el mismo slug que devuelve la API de competición (`teamProfileSlugs` y `playerProfileSlugs` de `apps/api/src/modules/competition/profile-slugs.ts`), codificado con `encodeURIComponent` igual que los enlaces de la web.
 4. **Caché en Memoria con Invalidación y Deduplicación Concurrente (*Single-Flight*):** El orquestador `SitemapService` mantiene el XML en memoria con una promesa en vuelo compartida (`inFlightPromise`) que evita regeneraciones simultáneas. Las escrituras correctas en los módulos de administración (`crud-operations`, `home-content` y `database-transfer`) invalidan la caché, y un TTL de respaldo de 1 hora acota los cambios hechos fuera de la API.
 5. **Proyección Relacional Mínima y Consultas Paralelas:** `PostgresSitemapRepository` recupera solo los campos necesarios para construir los slugs y las fechas de modificación sobre `teams` (con su temporada y división), `players` y `editorial_articles` (`published = true`), resolviendo las tres consultas con `Promise.all`.
-6. **Cabeceras HTTP y `robots.txt`:** El enrutador responde con `Content-Type: application/xml; charset=utf-8` y `Cache-Control: public, max-age=300`. `apps/web/public/robots.txt` declara `Sitemap: https://rebelcrownlegacy.es/sitemap.xml`, ruta que la propia API atiende antes del enrutador de páginas web.
+6. **Cabeceras HTTP y proxy inverso:** El enrutador responde con `Content-Type: application/xml; charset=utf-8` y `Cache-Control: public, max-age=300`. En producción, `robots.txt` lo define el proxy inverso y `/sitemap.xml` llega a la API a través de él; la ruta `/sitemap.xml` de la API queda para cuando se use sin proxy (ver [routes.md](routes.md#13-proxy-inverso-robotstxt-y-ruta-pública)).
 
 ---
 
@@ -23,7 +23,7 @@ El diseño del módulo se rige por los siguientes principios de arquitectura e i
 
 | Documento | Enlace | Resumen Funcional |
 |---|---|---|
-| **Rutas y Controladores** | [routes.md](routes.md) | Endpoints `GET /sitemap.xml` y `GET /api/sitemap.xml`, montaje en Express, invalidación tras escrituras de administración, cabeceras HTTP, `robots.txt` y manejo de errores 404/500. |
+| **Rutas y Controladores** | [routes.md](routes.md) | Endpoints `GET /sitemap.xml` y `GET /api/sitemap.xml`, montaje en Express, invalidación tras escrituras de administración, cabeceras HTTP, proxy inverso y manejo de errores 404/500. |
 | **Lógica de Procesamiento** | [processing.md](processing.md) | Orquestación en `SitemapService`, rutas estáticas derivadas de `pageMetadata`, slugs de equipos y jugadores, resolución de URL base, caché con invalidación y *single-flight*, serialización y formateo de fechas. |
 | **Persistencia y Consultas** | [persistence.md](persistence.md) | Interfaz `SitemapRepository`, implementación con Drizzle ORM sobre `teams` (con temporada y división), `players` y `editorial_articles`, y filtro de artículos publicados. |
 | **Contratos y Tipos** | [contracts.md](contracts.md) | Definiciones de tipos TypeScript en `sitemap.types.ts` (`SitemapUrlEntry`, `SitemapChangeFrequency`, modelos de persistencia, opciones de servicio) y formato XML estándar. |

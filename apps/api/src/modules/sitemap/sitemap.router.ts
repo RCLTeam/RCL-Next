@@ -1,7 +1,7 @@
 import { type RequestHandler, Router } from 'express';
 import type { SitemapService } from './processing/sitemap.service.js';
 
-/** Public sitemap paths: the root one is the one referenced by robots.txt. */
+/** Public sitemap paths: /sitemap.xml serves deployments without the reverse proxy. */
 export const SITEMAP_PATHS = ['/sitemap.xml', '/api/sitemap.xml'] as const;
 
 export function sitemapRouter(service: SitemapService): Router {
