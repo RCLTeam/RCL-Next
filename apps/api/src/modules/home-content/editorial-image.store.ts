@@ -5,7 +5,7 @@ import { AppError, notFound } from '../../shared/app-error.js';
 
 export class EditorialImageStore {
   private readonly directory: string;
-  constructor(directory = process.env.EDITORIAL_IMAGE_DIR ?? 'data/editorial-images') {
+  constructor(directory = 'data/editorial-images') {
     this.directory = resolve(directory);
   }
   path(name: string) {

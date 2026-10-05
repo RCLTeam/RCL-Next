@@ -49,8 +49,9 @@ export function createApp(options: {
   memberRolesRepository?: MemberRolesRepository;
   databaseTransferRepository?: DatabaseTransferRepository;
   homeContentRepository?: HomeContentRepository;
-  editorialImageDirectory?: string;
+  editorialImageDirectory?: string | undefined;
   teamLogoDirectory?: string | undefined;
+  frontendUrl?: string | undefined;
   bridgeClient?: DiscordBridgeClient;
   suggestionsService?: SuggestionsService;
   suggestionStore?: SuggestionStore;
@@ -71,7 +72,9 @@ export function createApp(options: {
   app.use(pageMetadataRouter(metadata));
   const sitemapService =
     options.sitemapService ??
-    (options.sitemapRepository ? new SitemapService(options.sitemapRepository) : undefined);
+    (options.sitemapRepository
+      ? new SitemapService(options.sitemapRepository, { baseUrl: options.frontendUrl })
+      : undefined);
   // Admin modules that change teams, players or articles refresh the sitemap on success.
   if (sitemapService) {
     for (const path of [
@@ -161,11 +164,7 @@ export function createApp(options: {
     });
   }
   const bridgeClient =
-    options.bridgeClient ??
-    new DiscordBridgeClient({
-      wsUrl: process.env.DISCORD_BOT_WS_URL ?? '',
-      supertoken: process.env.DISCORD_BOT_WS_SUPERTOKEN ?? ''
-    });
+    options.bridgeClient ?? new DiscordBridgeClient({ wsUrl: '', supertoken: '' });
   const incidentLogger = options.incidentLogger ?? new IncidentLogger();
   const suggestionStore = options.suggestionStore ?? new SuggestionStore();
   const suggestionsService =
