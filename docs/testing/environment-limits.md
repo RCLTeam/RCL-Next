@@ -36,6 +36,11 @@ Las pruebas de integración en `tests/integration/` no se conectan a un servidor
   ```
 - **Riesgo Mitigado:** Si el método `client.close()` no se registra en el hook `after`, la memoria asignada al runtime de PostgreSQL/WASM permanece anclada al recolector de basura de V8, provocando un desbordamiento de memoria heap de Node.js (*JavaScript heap out of memory*) al procesar las 25 suites de integración consecutivas.
 
+### 2.4 Serialización de Transacciones
+- **Restricción:** PGlite tiene una única conexión y ejecuta las transacciones de una en una; las consultas lanzadas fuera de una transacción esperan a que termine la que está abierta.
+- **Consecuencia:** Dos llamadas lanzadas en paralelo con `Promise.all` intercalan sus consultas previas a la transacción, pero sus transacciones no se solapan. Una prueba de concurrencia reproduce las carreras entre una lectura previa y una transacción posterior (por ejemplo, la comprobación de duplicados de la subida ROFL), pero no dos transacciones de `READ COMMITTED` abiertas a la vez como en un servidor PostgreSQL real.
+- **Mitigación en las pruebas:** Las ramas que solo se alcanzan con transacciones solapadas se cubren simulando el estado intermedio (por ejemplo, una subclase del repositorio cuya primera lectura no ve las filas confirmadas), como en `tests/integration/rofl-upload-repository.test.ts`.
+
 ---
 
 ## 3. Prerrequisitos de Compilación de Paquetes Internos
