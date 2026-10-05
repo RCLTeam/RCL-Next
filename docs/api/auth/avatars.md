@@ -41,7 +41,7 @@ El límite de 32 MiB cubre los cuerpos almacenados, no toda la memoria del proce
 
 ## Integración y despliegue
 
-`AuthControlsView` y `PredictorRankingPanel` usan el helper compartido `discordAvatarUrl(discordId, hash)` de `apps/web/src/shared/discord-avatar-url.ts`, que genera `/api/v1/discord-avatars/{discordId}/{hash}` codificando ambos segmentos con `encodeURIComponent`. El navegador carga la imagen mediante `<img>`; la elección de PNG/GIF se realiza en el servidor. Sin `avatarHash`, ambas vistas muestran iniciales. El ranking también muestra iniciales si falla la descarga (incluidos los errores 400/502/503 del proxy); en la cuenta este fallback por error no está implementado.
+`AuthControlsView` y `PredictorRankingPanel` usan el helper compartido `discordAvatarUrl(discordId, hash)` de `apps/web/src/shared/discord-avatar-url.ts`, que genera `/api/v1/discord-avatars/{discordId}/{hash}` codificando ambos segmentos con `encodeURIComponent`. El navegador carga la imagen mediante `<img>`; la elección de PNG/GIF se realiza en el servidor. Sin `avatarHash`, ambas vistas muestran iniciales. Ambas muestran también iniciales si falla la descarga (incluidos los errores 400/502/503 del proxy): el ranking con el estado local de `PredictorAvatar` y la cuenta con el de `AccountAvatar` en `AuthControls.tsx`.
 
 En desarrollo, Vite ya redirige `/api` al backend. En producción, el mismo origen de la web debe enrutar `/api/v1/discord-avatars/` hacia la API y el backend necesita acceso HTTPS saliente a `cdn.discordapp.com`. No se necesitan variables de entorno nuevas, migraciones ni credenciales de bot. Desplegar tanto API como frontend para aplicar el cambio.
 
@@ -53,4 +53,4 @@ El alcance incluye el avatar de la cuenta mostrado por `AuthControlsView` y los 
 2. Comprobar que la imagen se solicita a `/api/v1/discord-avatars/…` en el origen de la web y que su respuesta no incluye `Set-Cookie` de Discord.
 3. Comprobar un avatar animado y una cuenta sin avatar; esta última debe mostrar iniciales sin solicitar la imagen.
 4. Repetir la auditoría en la página pública de predicciones, con y sin sesión. Ni el avatar de la cuenta ni los del ranking deben generar solicitudes directas a `cdn.discordapp.com`; otras imágenes externas, si existen, pueden producir sus propios avisos.
-5. Forzar un error de descarga en un avatar del ranking y comprobar que se sustituye por las iniciales.
+5. Forzar un error de descarga en un avatar del ranking y en el de la cuenta (por ejemplo, bloqueando la URL en la pestaña Network) y comprobar que ambos se sustituyen por las iniciales.

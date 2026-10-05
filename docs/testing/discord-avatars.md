@@ -8,7 +8,7 @@ Las pruebas utilizan respuestas simuladas de Discord y no necesitan conexión al
 |---|---|
 | `apps/api/src/modules/auth/discord-avatars.router.test.ts` | 19 casos del proxy: bytes y cabeceras, ausencia de cookies reenviadas, PNG/GIF, identificadores inválidos, caché y caducidad, expulsión por cantidad y memoria, concurrencia y recuperación, errores remotos, cuerpos vacíos o de tipo incorrecto, tamaño declarado y cancelación por tamaño real. |
 | `tests/integration/api.test.ts` | Comprueba que `createApp` monta la ruta pública sin configurar OAuth, devuelve la imagen y la cabecera de caché y no transmite `Set-Cookie` de Discord. |
-| `tests/unit/render/AuthControls.test.tsx` | Comprueba que los avatares estáticos y animados usan la URL del proxy y conservan su texto alternativo; sin avatar, se muestran iniciales y no se genera una imagen. |
+| `tests/unit/render/AuthControls.test.tsx` | Comprueba que los avatares estáticos y animados usan la URL del proxy y conservan su texto alternativo; sin avatar, se muestran iniciales y no se genera una imagen. `AccountAvatarView` muestra iniciales cuando la descarga ha fallado y conecta el evento `error` del `<img>` con su manejador. |
 
 ## Ejecución
 
