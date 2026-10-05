@@ -9,7 +9,9 @@ export function pageMetadataRouter(service: PageMetadataService): Router {
   const router = Router();
   router.get('/api/v1/page-metadata', async (req, res) => {
     const path = typeof req.query.path === 'string' ? req.query.path : '/';
-    res.set('Cache-Control', 'no-store').json({ data: await service.resolve(path) });
+    const { metadata } = await service.resolve(path);
+    // The endpoint describes the page, not the resource, so a missing page still answers 200.
+    res.set('Cache-Control', 'no-store').json({ data: metadata });
   });
   return router;
 }
@@ -40,8 +42,14 @@ export function webPageRouter(directory: string, service: PageMetadataService): 
     )
       return next();
     const html = await readFile(resolve(root, 'index.html'), 'utf8');
-    const metadata = await service.resolve(req.path === '/index.html' ? '/' : req.path);
-    res.set('Cache-Control', 'no-cache').type('html').send(renderPageMetadata(html, metadata));
+    const { metadata, found } = await service.resolve(req.path === '/index.html' ? '/' : req.path);
+    // Unknown routes and missing records keep the same HTML, so the web renders its not-found
+    // page, but answer 404 so that crawlers do not index them as valid pages.
+    res
+      .status(found ? 200 : 404)
+      .set('Cache-Control', 'no-cache')
+      .type('html')
+      .send(renderPageMetadata(html, metadata));
   });
   return router;
 }
