@@ -3,7 +3,12 @@ import { notFound } from '../../shared/app-error.js';
 import { calculateChampionStats } from './champion-stats.js';
 import type { CompetitionRepository, Match, Team } from './competition.repository.js';
 import { matchMvpPlayerId } from './player-statistics.js';
-import { profileSlugs, resolveProfileId } from './profile-slugs.js';
+import {
+  playerProfileSlugs,
+  profileSlugs,
+  resolveProfileId,
+  teamProfileSlugs
+} from './profile-slugs.js';
 
 export function calculateStandings(teams: Team[], matches: Match[]) {
   const totals = new Map(
@@ -103,21 +108,11 @@ export class CompetitionService {
     };
   }
   private async teamSlugs() {
-    const teams = await this.repository.teamDirectory();
-    return profileSlugs(
-      teams.map((team) => ({ ...team, context: `${team.seasonName} ${team.divisionName}` })),
-      'equipo'
-    );
+    return teamProfileSlugs(await this.repository.teamDirectory());
   }
   private async playerDirectory() {
     const players = await this.repository.players();
-    const slugs = profileSlugs(
-      players.map((player) => ({
-        id: player.id,
-        name: `${player.gameName} ${player.riotTag ?? ''}`
-      })),
-      'jugador'
-    );
+    const slugs = playerProfileSlugs(players);
     return { players, slugs };
   }
   async players(divisionId?: string) {
