@@ -70,7 +70,7 @@ El método `replaceData(...)` (`postgres-database-transfer.repository.ts:131-170
 - Itera sobre `insertOrder` insertando los datos de cada tabla en bloques de 200 filas mediante `jsonb_populate_recordset` de PostgreSQL, optimizando el rendimiento de I/O y memoria.
 
 ### 4.3 Revocación Universal de Sesiones Activas
-- **Cita:** `postgres-database-transfer.repository.ts:154-155`
+- **Cita:** `postgres-database-transfer.repository.ts:164-165`
 - **Mecanismo:** Para prevenir que usuarios antiguos conserven sesiones válidas con identificadores que ya no coincidan o pertenezcan a estados previos:
   ```typescript
   await db.delete(schema.authSessions);
@@ -79,7 +79,7 @@ El método `replaceData(...)` (`postgres-database-transfer.repository.ts:131-170
   Fuerza a todos los usuarios a autenticarse nuevamente a través del flujo OAuth2 de Discord.
 
 ### 4.4 Salvaguarda Antidesalojo del Propietario (`owner`)
-- **Cita:** `postgres-database-transfer.repository.ts:156-159`
+- **Cita:** `postgres-database-transfer.repository.ts:166-169`
 - **Mecanismo de Salvaguarda:**
   - Si un volcado importado contiene una versión antigua de la tabla `discord_users` donde el usuario administrador actual aún no existía, o donde figuraba con rol `viewer`, el administrador quedaría inmediatamente bloqueado sin acceso a la plataforma.
   - Para neutralizar este vector de fallo crítico, el repositorio reinserta de forma explícita al usuario actuante forzando su rol a `owner`:
@@ -95,10 +95,19 @@ El método `replaceData(...)` (`postgres-database-transfer.repository.ts:131-170
   - Esto garantiza que el propietario que ejecuta la restauración conserve intactos sus privilegios de gobernanza independientemente del contenido histórico del archivo `.dump`.
 
 ### 4.5 Auditoría Inmutable
-- **Cita:** `postgres-database-transfer.repository.ts:161-169`
+- **Cita:** `postgres-database-transfer.repository.ts:170-178`
 - **Mecanismo:** Inserta un registro inmutable en `schema.auditLogs`:
   - `actorDiscordUserId`: ID del usuario `owner` que ordenó la importación.
   - `action`: `'database-transfer.import'`.
   - `entityType`: `'database'`.
-  - `entityId`: `'full_restore'`.
-  - `after`: Snapshot con los recuentos de filas importadas por tabla.
+  - `entityId`: `null`.
+  - `after`: hash SHA-256 del fichero (`fileHash`) y recuentos de filas importadas por tabla (`tables`).
+
+### 4.6 Registro de cada Exportación
+- **Cita:** `postgres-database-transfer.repository.ts:210-221`
+- **Mecanismo:** `exportDatabase` comprueba el rol del actor antes y después de `pg_dump` e inserta una entrada en `schema.auditLogs` antes de devolver el fichero:
+  - `actorDiscordUserId`: ID del usuario `admin` u `owner` que solicitó la exportación.
+  - `action`: `'database-transfer.export'`.
+  - `entityType`: `'database'`.
+  - `after`: `{ fileHash, bytes }`, el SHA-256 y el tamaño del fichero entregado.
+- Si la inserción falla, la petición devuelve error y el fichero no se envía. Las exportaciones fallidas (`pg_dump` con error o actor sin permisos) no dejan entrada.
