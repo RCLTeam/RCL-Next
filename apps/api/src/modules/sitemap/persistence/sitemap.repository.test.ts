@@ -29,77 +29,94 @@ describe('PostgresSitemapRepository with mocked DB', () => {
   });
 
   describe('getTeams()', () => {
-    it('queries active teams and maps id and updatedAt correctly', async () => {
-      const updatedDate = new Date('2026-09-01T10:00:00Z');
-      const mockRows = [
-        { id: 'team-uuid-1', updatedAt: updatedDate, createdAt: new Date('2026-08-01T10:00:00Z') },
-        { id: 'team-uuid-2', updatedAt: updatedDate, createdAt: new Date('2026-08-01T10:00:00Z') }
-      ];
-
-      const whereFn = vi.fn().mockResolvedValue(mockRows);
-      const fromFn = vi.fn().mockReturnValue({ where: whereFn });
+    const teamRow = (id: string, updatedAt: Date | null, createdAt: Date) => ({
+      id,
+      name: `Team ${id}`,
+      seasonName: 'Season',
+      divisionName: 'Division',
+      isActive: true,
+      updatedAt,
+      createdAt
+    });
+    const mockTeamsDb = (result: Promise<unknown>) => {
+      const innerJoinFn = vi.fn().mockReturnValue(result);
+      const fromFn = vi.fn().mockReturnValue({ innerJoin: innerJoinFn });
       const selectFn = vi.fn().mockReturnValue({ from: fromFn });
-      const mockDb = { select: selectFn };
+      return { db: { select: selectFn }, selectFn, fromFn, innerJoinFn };
+    };
 
-      const repo = new PostgresSitemapRepository(mockDb as never);
+    it('queries the whole team directory joined with its season and division', async () => {
+      const updatedDate = new Date('2026-09-01T10:00:00Z');
+      const created = new Date('2026-08-01T10:00:00Z');
+      const { db, selectFn, fromFn, innerJoinFn } = mockTeamsDb(
+        Promise.resolve([
+          teamRow('team-uuid-1', updatedDate, created),
+          { ...teamRow('team-uuid-2', updatedDate, created), isActive: false }
+        ])
+      );
+
+      const repo = new PostgresSitemapRepository(db as never);
       const result = await repo.getTeams();
 
       expect(selectFn).toHaveBeenCalledOnce();
       expect(fromFn).toHaveBeenCalledWith(teams);
-      expect(whereFn).toHaveBeenCalledOnce();
-      expect(result).toHaveLength(2);
-      expect(result[0]).toEqual({
-        id: 'team-uuid-1',
-        updatedAt: updatedDate
-      });
-      expect(result[1]).toEqual({
-        id: 'team-uuid-2',
-        updatedAt: updatedDate
-      });
-    });
-
-    it('falls back to createdAt when updatedAt is nullish', async () => {
-      const createdDate = new Date('2026-07-15T08:00:00Z');
-      const mockRows = [{ id: 'team-uuid-fallback', updatedAt: null, createdAt: createdDate }];
-
-      const whereFn = vi.fn().mockResolvedValue(mockRows);
-      const fromFn = vi.fn().mockReturnValue({ where: whereFn });
-      const selectFn = vi.fn().mockReturnValue({ from: fromFn });
-      const mockDb = { select: selectFn };
-
-      const repo = new PostgresSitemapRepository(mockDb as never);
-      const result = await repo.getTeams();
-
+      expect(innerJoinFn).toHaveBeenCalledOnce();
+      expect(innerJoinFn.mock.calls[0]?.[0]).toBe(seasonsDivisions);
       expect(result).toEqual([
         {
-          id: 'team-uuid-fallback',
-          updatedAt: createdDate
+          id: 'team-uuid-1',
+          name: 'Team team-uuid-1',
+          seasonName: 'Season',
+          divisionName: 'Division',
+          isActive: true,
+          updatedAt: updatedDate
+        },
+        {
+          id: 'team-uuid-2',
+          name: 'Team team-uuid-2',
+          seasonName: 'Season',
+          divisionName: 'Division',
+          isActive: false,
+          updatedAt: updatedDate
         }
       ]);
     });
 
-    it('propagates database query errors', async () => {
-      const whereFn = vi.fn().mockRejectedValue(new Error('DB query timeout'));
-      const fromFn = vi.fn().mockReturnValue({ where: whereFn });
-      const selectFn = vi.fn().mockReturnValue({ from: fromFn });
-      const mockDb = { select: selectFn };
+    it('falls back to createdAt when updatedAt is nullish', async () => {
+      const createdDate = new Date('2026-07-15T08:00:00Z');
+      const { db } = mockTeamsDb(
+        Promise.resolve([teamRow('team-uuid-fallback', null, createdDate)])
+      );
 
-      const repo = new PostgresSitemapRepository(mockDb as never);
+      const repo = new PostgresSitemapRepository(db as never);
+      const [result] = await repo.getTeams();
+
+      expect(result?.updatedAt).toEqual(createdDate);
+    });
+
+    it('propagates database query errors', async () => {
+      const { db } = mockTeamsDb(Promise.reject(new Error('DB query timeout')));
+
+      const repo = new PostgresSitemapRepository(db as never);
       await expect(repo.getTeams()).rejects.toThrow('DB query timeout');
     });
   });
 
   describe('getPlayers()', () => {
-    it('queries all players and maps id and updatedAt correctly', async () => {
+    it('queries all players and maps id, name, tag and updatedAt correctly', async () => {
       const updatedDate = new Date('2026-09-10T12:00:00Z');
       const mockRows = [
         {
           id: 'player-uuid-1',
+          gameName: 'Faker',
+          riotTag: 'KR1',
           updatedAt: updatedDate,
           createdAt: new Date('2026-08-01T10:00:00Z')
         },
         {
           id: 'player-uuid-2',
+          gameName: 'Caps',
+          riotTag: null,
           updatedAt: updatedDate,
           createdAt: new Date('2026-08-01T10:00:00Z')
         }
@@ -115,12 +132,16 @@ describe('PostgresSitemapRepository with mocked DB', () => {
       expect(selectFn).toHaveBeenCalledOnce();
       expect(fromFn).toHaveBeenCalledWith(players);
       expect(result).toHaveLength(2);
-      expect(result[0]).toEqual({
+      expect(result[0]).toStrictEqual({
         id: 'player-uuid-1',
+        gameName: 'Faker',
+        riotTag: 'KR1',
         updatedAt: updatedDate
       });
-      expect(result[1]).toEqual({
+      expect(result[1]).toStrictEqual({
         id: 'player-uuid-2',
+        gameName: 'Caps',
+        riotTag: null,
         updatedAt: updatedDate
       });
     });
@@ -228,42 +249,31 @@ describe('PostgresSitemapRepository with in-memory PGlite database', () => {
     await client.close();
   });
 
-  it('getTeams() returns only active teams, excluding inactive teams', async () => {
+  it('getTeams() returns active and inactive teams with their season, division and status', async () => {
     const [activeTeam] = await db
       .insert(teams)
-      .values({
-        name: 'Active Team Alpha',
-        seasonDivisionId: divisionId,
-        isActive: true
-      })
-      .returning({ id: teams.id, updatedAt: teams.updatedAt });
-
-    expect(activeTeam).toBeDefined();
-    if (!activeTeam) throw new Error('Active team insert failed');
-
-    await db.insert(teams).values({
-      name: 'Inactive Team Beta',
-      seasonDivisionId: divisionId,
-      isActive: false
-    });
+      .values({ name: 'Active Team Alpha', seasonDivisionId: divisionId, isActive: true })
+      .returning({ id: teams.id });
+    const [inactiveTeam] = await db
+      .insert(teams)
+      .values({ name: 'Inactive Team Beta', seasonDivisionId: divisionId, isActive: false })
+      .returning({ id: teams.id });
+    if (!activeTeam || !inactiveTeam) throw new Error('Team insert failed');
 
     const result = await repo.getTeams();
-    const teamIds = result.map((t) => t.id);
 
-    expect(teamIds).toContain(activeTeam.id);
-    const activeItem = result.find((t) => t.id === activeTeam.id);
-    expect(activeItem?.updatedAt).toBeInstanceOf(Date);
-
-    // Verify no inactive teams returned
-    const inactiveFound = result.find((t) => t.id !== activeTeam.id && teamIds.includes(t.id));
-    if (inactiveFound) {
-      // In case other tests added teams, verify the inactive team specifically is not present
-      const allInactive = await db.select().from(teams).where(eq(teams.isActive, false));
-      const inactiveIds = allInactive.map((i) => i.id);
-      for (const item of result) {
-        expect(inactiveIds).not.toContain(item.id);
-      }
-    }
+    // Inactive teams are needed to compute the same slugs as the competition API.
+    expect(result.find((team) => team.id === activeTeam.id)).toMatchObject({
+      name: 'Active Team Alpha',
+      seasonName: 'Sitemap Test Season',
+      divisionName: 'Division 1',
+      isActive: true
+    });
+    expect(result.find((team) => team.id === inactiveTeam.id)).toMatchObject({
+      name: 'Inactive Team Beta',
+      isActive: false
+    });
+    for (const team of result) expect(team.updatedAt).toBeInstanceOf(Date);
   });
 
   it('getPlayers() returns registered players with valid Date instances', async () => {
@@ -281,8 +291,7 @@ describe('PostgresSitemapRepository with in-memory PGlite database', () => {
     const result = await repo.getPlayers();
     const found = result.find((p) => p.id === player.id);
 
-    expect(found).toBeDefined();
-    expect(found?.id).toBe(player.id);
+    expect(found).toMatchObject({ id: player.id, gameName: 'FakerSitemap', riotTag: 'KR1' });
     expect(found?.updatedAt).toBeInstanceOf(Date);
   });
 
