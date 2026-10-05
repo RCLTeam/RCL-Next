@@ -61,6 +61,27 @@ Registra una nueva sugerencia en la cola de tramitación.
     }
     ```
   - La respuesta 202 indica que la propuesta ha sido aceptada en memoria y encolada para su transmisión asíncrona a Discord, sin esperar a que el bot cree el hilo ni confirme la entrega.
+- **Respuestas de rechazo** (cuerpo estándar `{ "error": { "code", "message" } }`; en ningún caso se crea registro ni se encola nada):
+
+  | Código | `error.code` | Condición |
+  |---|---|---|
+  | `429 Too Many Requests` | `RATE_LIMITED` | El cliente superó su límite de envíos (§3.3). Incluye la cabecera `Retry-After` con los segundos hasta que se abre la ventana (`suggestions.router.ts:109-118`). |
+  | `503 Service Unavailable` | `SUGGESTIONS_NOT_CONFIGURED` | `DISCORD_BOT_WS_URL` está vacío: el puente no puede entregar nada. |
+  | `503 Service Unavailable` | `SUGGESTIONS_UNAVAILABLE` | El almacén de estados alcanzó `maxRecords` o la cola del puente alcanzó `maxQueueSize`. |
+
+### 3.3 Límite de envíos
+
+`SuggestionsService.submit()` aplica un límite de ventana fija en memoria (`SuggestionRateLimiter`, `apps/api/src/modules/suggestions/suggestion-rate-limiter.ts`) a cada envío HTTP:
+
+| Cliente | Clave | Límite por defecto |
+|---|---|---|
+| Sin sesión | IP del cliente (`req.ip`) | 3 envíos cada 10 minutos |
+| Con sesión | `discordId` del usuario | 10 envíos cada 10 minutos |
+
+- Un usuario con sesión que marca `isAnonymous` sigue contando con su `discordId`; el anonimato solo afecta a la autoría publicada.
+- La tabla de clientes está acotada (`maxClients`, 10 000 por defecto). Si está llena, se purgan las ventanas caducadas y, si sigue llena, el envío se rechaza con `429` en lugar de crecer.
+- `req.ip` depende de `trust proxy`, que el servidor fija con la variable `TRUST_PROXY` (`apps/api/src/config/env.ts`, `apps/api/src/server.ts:102`). Por defecto vale `loopback`: se usa la cabecera `X-Forwarded-For` solo si la conexión llega de un proxy inverso en la misma máquina. Sin proxy, `false`; con proxies en otra máquina, su número de saltos o su lista de direcciones o subredes. `true` se rechaza, porque permitiría a cualquier cliente falsear su IP.
+- El límite se desactiva pasando `rateLimiter: false` a `SuggestionsService` (solo se usa en pruebas).
 
 ---
 
@@ -102,10 +123,10 @@ Consulta el estado actual de una sugerencia previamente aceptada.
     {
       "id": "550e8400-e29b-41d4-a716-446655440000",
       "status": "failed",
-      "incidentId": "c9a646d3-9c61-4cd7-bf5b-c2e7b5cb4e77",
-      "error": "Error al entregar en Discord"
+      "incidentId": "c9a646d3-9c61-4cd7-bf5b-c2e7b5cb4e77"
     }
     ```
+    La respuesta no incluye el texto del error: hosts, puertos, códigos de socket o motivos devueltos por el bot solo se escriben en el log del servidor, en la línea `[INCIDENT <incidentId>]` correspondiente (`suggestions.service.ts:234-251`).
   - En estado `confirmed`:
     ```json
     {

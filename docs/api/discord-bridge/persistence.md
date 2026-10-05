@@ -27,6 +27,7 @@ El cliente mantiene su estado exclusivamente a través de los siguientes miembro
 
 ### 3.1 Cola FIFO de Mensajes (`this.queue`)
 - **Tipo**: `QueueItem[]`
+- **Tamaño máximo**: `maxQueueSize` (100 por defecto). Con la cola llena, `send()` rechaza con `BridgeQueueFullError` sin encolar.
 - **Definición de Elemento** (`discord-bridge.client.ts:30-37`):
   ```typescript
   export interface QueueItem {
@@ -63,7 +64,7 @@ El módulo diferencia estrictamente dos tipos de sockets en memoria:
 | Tipo de Socket | Ámbito y Ciclo de Vida | Propósito | Limpieza de Memoria |
 |---|---|---|---|
 | **Socket de Trabajo (`this.ws`)** | Instanciado bajo demanda en `ensureConnected()`. Se mantiene activo mientras exista tráfico continuo. | Despacho de la cola secuencial y recepción de eventos de negocio en Fase 2. | Se cierra y libera mediante `socket.close(1000)` al alcanzar 30 minutos de inactividad, o al invocar `close()`. |
-| **Socket de Diagnóstico (`probeWs`)** | Instanciado dentro de `checkHealth()`. Estrictamente efímero e independiente. | Sonda de salud HTTP de `GET /api/v1/bridge/health`. | Se destruye y cierra con código `1000` inmediatamente tras recibir `LOGIN_SUCCESS`, o al expirar el timeout duro de 5 s. |
+| **Socket de Diagnóstico (`probeWs`)** | Instanciado dentro de `probeHealth()`, como máximo uno a la vez y uno por periodo de caché (`healthCacheMs`). Estrictamente efímero e independiente. | Sonda de salud HTTP de `GET /api/v1/bridge/health`. | Se destruye y cierra con código `1000` inmediatamente tras recibir `LOGIN_SUCCESS`, o al expirar el timeout duro de 5 s. |
 
 ---
 

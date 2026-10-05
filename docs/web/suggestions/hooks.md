@@ -59,6 +59,14 @@ Cuando el backend devuelve un estado `retrying` con `nextRetryInSeconds`:
 - Cada segundo despacha la acción `COUNTDOWN_TICK` hacia el reducer, decrementando la propiedad `countdown` hasta alcanzar cero.
 - Esto proyecta en la interfaz un temporizador descendente fluido (`Reintentando en 14 segundos...`, `13...`, `12...`), ofreciendo total transparencia ante las pausas anti-avalancha impuestas por Discord.
 
+### 2.5 Errores al enviar
+`createSuggestion()` (`apps/web/src/features/suggestions/api/suggestions-api.ts:12-72`) lee el cuerpo de error de la API (`{ error: { code, message } }`) y lanza un `Error` con un mensaje para el modal, que el hook despacha como `SUBMIT_ERROR`:
+- **`429 RATE_LIMITED`**: «Has enviado demasiadas sugerencias. Vuelve a intentarlo dentro de N minutos.», con N calculado a partir de la cabecera `Retry-After`.
+- **`503`** (`SUGGESTIONS_NOT_CONFIGURED` o `SUGGESTIONS_UNAVAILABLE`): «El servicio de sugerencias no está disponible en este momento. Inténtalo más tarde.»
+- Otros códigos: el `message` de la API o, si no hay cuerpo JSON, «Error al enviar la sugerencia (código)».
+
+Cuando una sugerencia termina en `failed`, la API solo devuelve el `incidentId` (sin texto de error), y el formulario muestra el mensaje genérico junto al código de incidencia.
+
 ---
 
 ## 3. Reducer Puro de Estados: `suggestionReducer`

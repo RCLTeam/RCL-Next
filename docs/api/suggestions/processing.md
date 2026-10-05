@@ -55,7 +55,7 @@ Cada propuesta transiciona a través de la unión canónica `SuggestionStatus` (
 | **`processing`** | Transitorio | El bot remoto acusa recibo del frame devolviendo la trama `{ type: 'QUEUED' }` (Fase 1 completada, `suggestions.service.ts:264-268`). | La propuesta está en manos del bot, pendiente de crear mensaje/hilo en Discord. |
 | **`retrying`** | Transitorio | El bot devuelve `{ type: 'ERROR', data: { code: 'RATE_LIMITED', retry_after_seconds } }`; el puente emite `frame:retrying` (`suggestions.service.ts:70-83`). | Incorpora `nextRetryInSeconds` en el registro para el contador del frontend. |
 | **`confirmed`** | **Terminal** | El bot completa la publicación en Discord y emite `SUGGESTION_CONFIRMED` (Fase 2, `suggestions.service.ts:85-102`). | Almacena `channelId`, `messageId` y `threadId`. Éxito definitivo. |
-| **`failed`** | **Terminal** | Fallo de conexión en Fase 1 (`BRIDGE_SEND_FAILED`), timeout de 5m por rate limit (`RATE_LIMIT_TIMEOUT`), o rechazo remoto en Fase 2 (`SUGGESTION_FAILED`) (`suggestions.service.ts:104-123, 270-287`). | Genera y almacena `incidentId` forense y mensaje `error`. Fracaso definitivo. |
+| **`failed`** | **Terminal** | Fallo de conexión en Fase 1 (`BRIDGE_SEND_FAILED`), timeout de 5m por rate limit (`RATE_LIMIT_TIMEOUT`), o rechazo remoto en Fase 2 (`SUGGESTION_FAILED`) (`suggestions.service.ts:104-123, 270-287`). | Genera y almacena el `incidentId` forense; el detalle del error solo va al log. Fracaso definitivo. |
 
 ---
 
@@ -75,25 +75,30 @@ Para garantizar consistencia ante llegadas desordenadas de eventos de red (*out-
 
 ## 4. Despacho en Segundo Plano (*Background Dispatch*)
 
-El método `submit(text, options)` (`suggestions.service.ts:127-163`) ejecuta el siguiente flujo:
+El método `submit(request, user, context)` (`suggestions.service.ts:150-213`) ejecuta el siguiente flujo:
 1. Valida imperativamente la longitud del texto.
-2. Resuelve la autoría mediante `this.resolveAuthor(options)`.
-3. Genera un identificador único UUID: `id = crypto.randomUUID()`.
-4. Almacena el registro inicial en `this.store.create({ id, suggestion: text, ... })`.
-5. Ejecuta el despacho hacia el puente de forma desacoplada:
+2. Si el puente no tiene URL (`bridgeClient.isConfigured()` es `false`), responde `503 SUGGESTIONS_NOT_CONFIGURED`.
+3. Si se recibe `context` (envíos HTTP), aplica el límite de envíos por `discordId` o por IP; al superarlo responde `429 RATE_LIMITED` con `retryAfterSeconds` (ver [routes.md](routes.md#33-límite-de-envíos)).
+4. Si el almacén está lleno (`store.hasCapacity()`) o la cola del puente también (`bridgeClient.hasCapacity()`), responde `503 SUGGESTIONS_UNAVAILABLE`.
+   Ninguno de estos rechazos crea registro ni encola la trama.
+5. Resuelve la autoría mediante `this.resolveAuthor(options)`.
+6. Genera un identificador único UUID: `id = crypto.randomUUID()`.
+7. Almacena el registro inicial en `this.store.set({ id, suggestion: text, ... })`.
+8. Ejecuta el despacho hacia el puente de forma desacoplada:
    ```typescript
    void this.dispatchToBridge(id, text, author);
    ```
-6. Retorna inmediatamente la tupla `{ id, status: 'queued' }` al router HTTP.
+9. Retorna inmediatamente la tupla `{ id, status: 'queued' }` al router HTTP.
 
-En `dispatchToBridge(id, text, author)` (`suggestions.service.ts:243-288`):
+En `dispatchToBridge(id, text, author)` (`suggestions.service.ts:289-329`):
 - Se construye la trama `BridgeSuggestionCreatedFrame` con la carga útil completa.
 - Se invoca `await this.bridgeClient.send(frame)`.
 - Si `send()` se resuelve con éxito (Fase 1 completada con acuse `QUEUED`), actualiza el estado a `'processing'`.
 - Si ocurre una excepción:
   - Si el error es `BridgeRateLimitTimeoutError`, extrae el `error.incidentId` existente y registra `RATE_LIMIT_TIMEOUT` en `logger`.
   - Si es otro error de transporte, genera un nuevo UUID de incidente y registra `BRIDGE_SEND_FAILED`.
-  - Actualiza el registro en `store` a `'failed'` con el `incidentId` y el mensaje de error correspondiente.
+  - Actualiza el registro en `store` a `'failed'` con el `incidentId`. El mensaje del error no se guarda en el registro: solo aparece en el log, junto al `incidentId`.
+  - `dispatchToBridge` captura todos los rechazos de `send()`, incluidos los de conexión (`BridgeUnavailableError`), por lo que un fallo del puente nunca deja una promesa rechazada sin manejar.
 
 ---
 
