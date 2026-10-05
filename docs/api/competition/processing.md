@@ -270,6 +270,8 @@ Para generar URLs semánticas y amigables para el usuario (ej. `/partidos/los-ch
    - **Paso 3**: Si ocurre una colisión sobre el hash, se añade un sufijo numérico incremental secuencial (`-2`, `-3`).
 4. **Resolución Inversa (`resolveProfileId`, `líneas 55-59`)**:
    - Si la referencia suministrada por el usuario ya es un UUID estándar, se devuelve directamente sin consultar el mapa en memoria. Si es un slug, se resuelve en tiempo $O(1)$ contra el mapa invertido `Map<string, string>`.
+5. **Entradas compartidas de equipos y jugadores (`teamProfileSlugs` y `playerProfileSlugs`, `líneas 61-85`)**:
+   - Encapsulan la entrada de `profileSlugs` para equipos (nombre, contexto `temporada división`, prefijo `equipo`) y jugadores (`gameName riotTag`, prefijo `jugador`). `CompetitionService` y el [sitemap](../sitemap/processing.md#32-rutas-dinámicas-de-base-de-datos) las usan para que el campo `slug` de la API y las URLs del sitemap coincidan.
 
 ---
 

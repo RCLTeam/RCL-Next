@@ -57,3 +57,29 @@ export function resolveProfileId(reference: string, slugs: Map<string, string>) 
     return reference;
   return [...slugs].find(([, slug]) => slug === reference)?.[0];
 }
+
+// Shared by the competition API and the sitemap so both publish the same team and player URLs.
+export function teamProfileSlugs(
+  teams: { id: string; name: string; seasonName: string; divisionName: string }[]
+) {
+  return profileSlugs(
+    teams.map((team) => ({
+      id: team.id,
+      name: team.name,
+      context: `${team.seasonName} ${team.divisionName}`
+    })),
+    'equipo'
+  );
+}
+
+export function playerProfileSlugs(
+  players: { id: string; gameName: string; riotTag: string | null }[]
+) {
+  return profileSlugs(
+    players.map((player) => ({
+      id: player.id,
+      name: `${player.gameName} ${player.riotTag ?? ''}`
+    })),
+    'jugador'
+  );
+}
