@@ -26,7 +26,7 @@ import {
 } from '../../apps/api/src/modules/rofl-upload/websocket/rofl-upload.gateway.js';
 import * as schema from '../../packages/database/src/schema.js';
 
-const fixtureRoflPath = path.resolve('apps/parser/data/EUW1-7982902321.rofl');
+const fixtureRoflPath = path.resolve('apps/parser/data/RCL-FIXTURE-0001.rofl');
 
 const mockCompetitionRepo: CompetitionRepository = {
   players: async () => [],
@@ -304,7 +304,7 @@ test('roflUploadGateway handles abrupt socket disconnect cleanly', async (t) => 
   assert.ok(true);
 });
 
-test('roflUploadGateway streams real .rofl file and aborts on unregistered summoners', async (t) => {
+test('roflUploadGateway streams the .rofl fixture and aborts on unregistered summoners', async (t) => {
   const { client, db } = await setupTestDb();
   t.after(() => client.close());
 
@@ -352,7 +352,7 @@ test('roflUploadGateway streams real .rofl file and aborts on unregistered summo
   await new Promise<void>((resolve) => ws.on('open', resolve));
 
   const roflBuffer = await readFile(fixtureRoflPath);
-  ws.send(JSON.stringify({ type: 'start', filename: 'EUW1-7982902321.rofl' }));
+  ws.send(JSON.stringify({ type: 'start', filename: 'RCL-FIXTURE-0001.rofl' }));
 
   // Stream in 64KB chunks
   const chunkSize = 64 * 1024;
@@ -372,27 +372,27 @@ test('roflUploadGateway streams real .rofl file and aborts on unregistered summo
   const errorMsg = messages.find((m) => m.type === 'error');
   assert.ok(errorMsg && errorMsg.type === 'error');
   assert.match(errorMsg.message, /Validation failed/i);
-  assert.match(errorMsg.message, /Iron Tou#EUW/i);
+  assert.match(errorMsg.message, /Anon Azul 1#ANON/i);
 });
 
 test('roflUploadGateway streams .zip batch and completes atomic persistence', async (t) => {
   const { client, db } = await setupTestDb();
   t.after(() => client.close());
 
-  // Register the 10 participants from EUW1-7982902321.rofl in the database
+  // Register the 10 participants from RCL-FIXTURE-0001.rofl in the database
   const bluePlayers = [
-    { name: 'Iron Tou', tag: 'EUW' },
-    { name: 'Melintavahalma', tag: '8835' },
-    { name: 'Mystery Shack', tag: 'EUW7' },
-    { name: 'Kento', tag: 'ROUX' },
-    { name: 'Gaby', tag: 'GoT' }
+    { name: 'Anon Azul 1', tag: 'ANON' },
+    { name: 'Anon Azul 2', tag: 'ANON' },
+    { name: 'Anon Azul 3', tag: 'ANON' },
+    { name: 'Anon Azul 4', tag: 'ANON' },
+    { name: 'Anon Azul 5', tag: 'ANON' }
   ];
   const redPlayers = [
-    { name: 'Meuleur Teigneux', tag: 'EUW' },
-    { name: 'Heinben', tag: 'EUW' },
-    { name: 'Hysbel', tag: 'EUW' },
-    { name: 'Jonibaba71', tag: '2277' },
-    { name: 'BigNikEnergy', tag: 'VEINY' }
+    { name: 'Anon Rojo 1', tag: 'ANON' },
+    { name: 'Anon Rojo 2', tag: 'ANON' },
+    { name: 'Anon Rojo 3', tag: 'ANON' },
+    { name: 'Anon Rojo 4', tag: 'ANON' },
+    { name: 'Anon Rojo 5', tag: 'ANON' }
   ];
 
   // Update players 1..5 for blue team (Lobos) and players 6..10 for red team (Cuervos)
@@ -467,11 +467,11 @@ test('roflUploadGateway streams .zip batch and completes atomic persistence', as
 
   await new Promise<void>((resolve) => ws.on('open', resolve));
 
-  // Create a zip archive containing the real EUW1-7982902321.rofl replay
+  // Create a zip archive containing the synthetic RCL-FIXTURE-0001.rofl replay
   const roflData = await readFile(fixtureRoflPath);
   const zipBuffer = createZipArchive([
     {
-      name: 'match1/EUW1-7982902321.rofl',
+      name: 'match1/RCL-FIXTURE-0001.rofl',
       content: roflData
     }
   ]);

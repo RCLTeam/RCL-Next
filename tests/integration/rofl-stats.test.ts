@@ -77,7 +77,7 @@ test('all ten ROFL JSON participants fit the normalized schema without losing me
   });
   const document: unknown = JSON.parse(
     await readFile(
-      new URL('../../apps/parser/result/EUW1-7982902321_estadisticas.json', import.meta.url),
+      new URL('../../apps/parser/result/RCL-FIXTURE-0001_estadisticas.json', import.meta.url),
       'utf8'
     )
   );
