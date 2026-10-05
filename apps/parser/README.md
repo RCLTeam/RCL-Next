@@ -37,14 +37,14 @@ Desde el directorio `apps/parser/` (o especificando rutas relativas/absolutas):
 # Ver opciones y sintaxis disponible
 python roflParser.py -h
 
-# Extracción estándar (genera data/EUW1-7982902321_estadisticas.json)
-python roflParser.py data/EUW1-7982902321.rofl
+# Extracción estándar (genera data/RCL-FIXTURE-0001_estadisticas.json)
+python roflParser.py data/RCL-FIXTURE-0001.rofl
 
 # Especificar ruta personalizada de salida (-o / --output)
-python roflParser.py data/EUW1-7982902321.rofl -o /tmp/salida_estadisticas.json
+python roflParser.py data/RCL-FIXTURE-0001.rofl -o /tmp/salida_estadisticas.json
 
 # Modo silencioso para scripts de automatización (-q / --quiet)
-python roflParser.py data/EUW1-7982902321.rofl -o /tmp/salida.json -q
+python roflParser.py data/RCL-FIXTURE-0001.rofl -o /tmp/salida.json -q
 ```
 
 El script toma por defecto el nombre y ubicación del archivo `.rofl` proporcionado y añade el sufijo `_estadisticas.json`, salvo que se suministre `-o / --output`.
@@ -59,12 +59,12 @@ El parser expone una API tipada y modular para integrarse directamente en worker
 from apps.parser.roflParser import parse_rofl
 
 # Extracción básica con guardado automático en <base>_estadisticas.json
-data = parse_rofl("apps/parser/data/EUW1-7982902321.rofl")
+data = parse_rofl("apps/parser/data/RCL-FIXTURE-0001.rofl")
 print(data["partida"]["equipo_ganador"])  # 100
 
 # Extracción con ruta personalizada y supresión de stdout
 data = parse_rofl(
-    "apps/parser/data/EUW1-7982902321.rofl",
+    "apps/parser/data/RCL-FIXTURE-0001.rofl",
     output_path="/tmp/partida.json",
     quiet=True,
 )
@@ -84,7 +84,22 @@ python -m unittest test_roflParser.py
 python3 -m unittest discover -s apps/parser/tests -p "test_*.py"
 ```
 
-La batería de pruebas comprueba la existencia de fixtures, la fidelidad de campos de los 10 jugadores, el rechazo de archivos sin cabecera `b"RIOT"`, la validación de cotas numéricas y el comportamiento de la CLI.
+La batería de pruebas comprueba la existencia de fixtures, la fidelidad de campos de los 10 jugadores, el rechazo de archivos sin cabecera `b"RIOT"`, la validación de cotas numéricas y el comportamiento de la CLI. También verifica que el fixture solo contenga identidades ficticias.
+
+### Fixture de pruebas anonimizado
+
+`data/RCL-FIXTURE-0001.rofl` es una repetición sintética de unos 100 KB. Conserva únicamente lo que lee el parser: la firma `b"RIOT"`, el bloque JSON de metadatos (`gameLength`, `lastGameChunkId`, `lastKeyFrameId` y `statsJson` con los 10 participantes) y el trailer de 4 bytes con su longitud. No incluye los bloques de paquetes de red de una repetición del cliente.
+
+Las estadísticas de juego (campeones, KDA, oro, runas, objetos, hechizos, etc.) proceden de una partida real; todos los identificadores de jugador se han sustituido por valores ficticios:
+
+| Campo de `statsJson` | Valor en el fixture |
+|---|---|
+| `RIOT_ID_GAME_NAME` | `Anon Azul 1`…`Anon Azul 5` (equipo 100) y `Anon Rojo 1`…`Anon Rojo 5` (equipo 200) |
+| `RIOT_ID_TAG_LINE` | `ANON` |
+| `PUUID` | `00000000-0000-4000-8000-000000000001`…`00000000-0000-4000-8000-000000000010` |
+| `SUMMONER_ID` e `ID` | `1`…`10` |
+
+El nombre del archivo tampoco corresponde a ningún identificador de partida de Riot; la API deriva de él el `externalGameId` (`RCL-FIXTURE-0001`). `result/RCL-FIXTURE-0001_estadisticas.json` es la salida del parser sobre este archivo y la prueba `test_parse_fixture_rofl` exige que coincidan. No se deben añadir repeticiones reales al repositorio: si hace falta un caso nuevo, se anonimizan los campos anteriores y se regenera el JSON esperado con `python roflParser.py data/<archivo>.rofl -o result/<archivo>_estadisticas.json`.
 
 ---
 
@@ -97,9 +112,9 @@ apps/parser/
 ├── tests/                  # Suite de pruebas unitarias (unittest)
 │   └── test_roflParser.py
 ├── data/                   # Archivos .rofl de entrada
-│   └── EUW1-7982902321.rofl
+│   └── RCL-FIXTURE-0001.rofl
 └── result/                 # Reportes generados en formato JSON
-    └── EUW1-7982902321_estadisticas.json
+    └── RCL-FIXTURE-0001_estadisticas.json
 ```
 
 ---
