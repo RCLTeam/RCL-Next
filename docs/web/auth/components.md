@@ -6,11 +6,11 @@
 
 ## 1. Componente Presentacional Puro (`AuthControlsView`)
 
-El componente `AuthControlsView` (`apps/web/src/features/auth/components/AuthControls.tsx:15-92`) es un componente puramente tonto (*Dumb Component*).
+El componente `AuthControlsView` (`apps/web/src/features/auth/components/AuthControls.tsx:54-117`) es un componente puramente tonto (*Dumb Component*).
 
 ### 1.1 Sin llamadas de red imperativas
 - **0 peticiones `fetch`**, **0 llamadas `WebSocket`** y **0 accesos a almacenamiento de red**.
-- No contiene hooks de efecto ni estado mutable interno.
+- No contiene hooks de efecto ni estado mutable propio. La única excepción está delegada en su hijo `AccountAvatar`, que guarda localmente si falló la descarga del avatar (ver §1.4).
 - Todo su comportamiento se define a través de las propiedades recibidas (`props`).
 - El navegador sí realiza la carga declarativa del `<img>` contra el proxy del mismo origen; esta garantía se refiere a las llamadas imperativas del componente.
 
@@ -18,7 +18,7 @@ El componente `AuthControlsView` (`apps/web/src/features/auth/components/AuthCon
 
 ### 1.2 Interfaz de Props (`AuthControlsViewProps`)
 
-Definida en `AuthControls.tsx:7-13`:
+Definida en `AuthControls.tsx:9-15`:
 ```typescript
 interface AuthControlsViewProps {
   state: AuthState;
@@ -53,7 +53,7 @@ El componente utiliza la unión discriminada de `state` para renderizar el fragm
    </a>
    ```
 3. **Estado Autenticado (`status: 'authenticated'`):**
-   - **Avatar Inteligente:** Si `state.user.avatarHash` existe, construye `/api/v1/discord-avatars/{discordId}/{hash}` codificando ambos segmentos con `encodeURIComponent`. El [proxy del backend](../../api/auth/avatars.md) elige GIF o PNG y evita la conexión directa del navegador al CDN de Discord. Si no tiene avatar (`avatarHash === null`), renderiza un contenedor con las dos primeras iniciales en mayúsculas (`AuthControls.tsx:40-50`).
+   - **Avatar Inteligente:** Si `state.user.avatarHash` existe, construye `/api/v1/discord-avatars/{discordId}/{hash}` codificando ambos segmentos con `encodeURIComponent`. El [proxy del backend](../../api/auth/avatars.md) elige GIF o PNG y evita la conexión directa del navegador al CDN de Discord. Si no tiene avatar (`avatarHash === null`) o la descarga falla, renderiza un contenedor con las dos primeras iniciales en mayúsculas (`AccountAvatar`, ver §1.4).
    - **Etiqueta de Rol:** Traduce los valores técnicos del enum a etiquetas de interfaz:
      - `'owner'` -> `"Owner"`
      - `'admin'` -> `"Administrador"`
@@ -63,11 +63,17 @@ El componente utiliza la unión discriminada de `state` para renderizar el fragm
 4. **Estado de Error (`status: 'error'`):**
    Muestra un aviso con `role="alert"` (`"No se pudo comprobar tu sesión."`) y un botón para invocar `onRetry`.
 
+### 1.4 Avatar de la cuenta (`AccountAvatarView` y `AccountAvatar`)
+
+- **`AccountAvatarView`** (`AuthControls.tsx:17-39`) es puramente presentacional: recibe `user`, `failed` y `onError`. Si `user.avatarHash` existe y `failed` es `false`, renderiza `<img className="auth-avatar">` con la URL del proxy, `alt` igual al nombre visible y `onError` conectado a la prop; en otro caso renderiza `<span className="auth-avatar" aria-hidden="true">` con las dos primeras iniciales en mayúsculas.
+- **`AccountAvatar`** (`AuthControls.tsx:41-52`) guarda en estado local la URL cuya descarga falló. Cuando el `<img>` dispara `error` (por ejemplo, respuestas 400, 502 o 503 del [proxy](../../api/auth/avatars.md)), pasa `failed={true}` y la cabecera muestra las iniciales en lugar de una imagen rota. Como el estado se compara con la URL actual, un cambio de `avatarHash` vuelve a intentar la descarga sin necesidad de remontar el componente.
+- No hay reintento automático de la misma URL: el fallo se mantiene mientras el componente siga montado con el mismo avatar.
+
 ---
 
 ## 2. Componente Conector (`AuthControls`)
 
-En `apps/web/src/features/auth/components/AuthControls.tsx:94-108`, el componente `AuthControls` actúa como adaptador entre el contexto de React y la vista presentacional:
+En `apps/web/src/features/auth/components/AuthControls.tsx:119-133`, el componente `AuthControls` actúa como adaptador entre el contexto de React y la vista presentacional:
 
 ```tsx
 export function AuthControls() {
