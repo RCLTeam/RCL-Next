@@ -60,7 +60,7 @@ Este directorio contiene pruebas unitarias que no están co-ubicadas en las carp
 | 29 | `tests/unit/current-season.test.ts` | 4 | 32 | Utilidad Competición | Lógica de ordenación cronológica descendente de temporadas y selección de la temporada activa. |
 | 30 | `tests/unit/profile-slugs.test.ts` | 4 | 51 | Formateo URLs | Generación y saneamiento de slugs URL para jugadores y equipos (eliminación de acentos, caracteres especiales y espacios). |
 | 31 | `tests/unit/team-logos.test.ts` | 2 | 15 | Activos Visuales | Resolución de rutas de escudos de equipos y URLs de respaldo para logos ausentes. |
-| 32 | `tests/unit/useRoflUploadWs.test.ts` | 13 | 222 | Hook Headless | Pruebas unitarias de la máquina de estados del hook `useRoflUploadWs`: progreso de subida, detección de anomalías y reconexión. |
+| 32 | `tests/unit/useRoflUploadWs.test.ts` | 16 | 256 | Hook Headless | Pruebas unitarias de la máquina de estados del hook `useRoflUploadWs`: progreso de subida, detección de anomalías, reconexión y resolución de la URL del WebSocket. |
 | 33 | `tests/unit/render/AdminPage.test.tsx` | 11 | 132 | Renderizado UI | Vistas del panel de administración (`/admin`), control de pestañas, barreras de autorización y selección de herramientas. |
 | 34 | `tests/unit/render/App.test.tsx` | 6 | 87 | Renderizado Shell | Montaje raíz de la aplicación web, resolución de rutas y renderizado de la página 404 ante rutas inexistentes. |
 | 35 | `tests/unit/render/AuthControls.test.tsx` | 6 | 64 | Renderizado UI | Botón de inicio de sesión de Discord, avatar de usuario y menú de opciones de desconexión. |
@@ -69,4 +69,4 @@ Este directorio contiene pruebas unitarias que no están co-ubicadas en las carp
 | 38 | `tests/unit/render/competition-pages.test.tsx` | 12 | 338 | Renderizado UI | Vistas de competición: calendarios de partidos, tablas de ligas, clasificaciones y eliminatorias de playoffs. |
 | 39 | `tests/unit/render/match-detail.test.tsx` | 5 | 134 | Renderizado UI | Vista detallada de una partida: marcadores de equipo, runas reforzadas, desglose de objetos y estadísticas de daño. |
 | 40 | `tests/unit/render/player-pages.test.tsx` | 6 | 199 | Renderizado UI | Perfiles individuales de jugadores: estadísticas por campeón, historial de partidas y porcentaje de participación. |
-| 41 | `tests/unit/render/rofl-upload.test.tsx` | 6 | 97 | Renderizado UI | Zona de arrastrar y soltar repeticiones, barras de progreso y visor de incidencias. |
+| 41 | `tests/unit/render/rofl-upload.test.tsx` | 7 | 128 | Renderizado UI | Zona de arrastrar y soltar repeticiones, barras de progreso, visor de incidencias y ausencia de conexión WebSocket sin `wsUrl` ni `window.location`. |

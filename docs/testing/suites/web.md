@@ -47,7 +47,7 @@ El frontend de RCL-Next (`apps/web`) cuenta con **23 suites de pruebas unitarias
    - *Dónde se prueba:* En `tests/unit/render/AuthControls.test.tsx` (6 pruebas, 64 LoC), que valida el botón de inicio de sesión de Discord, la visualización del avatar del usuario autenticado y las opciones del menú de desconexión.
 2. **Funcionalidad `rofl-upload` (`apps/web/src/features/rofl-upload/`):**
    - *Ausencia en carpeta local:* Cero archivos `*.test.tsx` directos dentro de `features/rofl-upload/`.
-   - *Dónde se prueba:* En `tests/unit/useRoflUploadWs.test.ts` (13 pruebas, 222 LoC) para toda la orquestación del hook de streaming binario y en `tests/unit/render/rofl-upload.test.tsx` (6 pruebas, 97 LoC) para la interfaz de arrastrar y soltar repeticiones.
+   - *Dónde se prueba:* En `tests/unit/useRoflUploadWs.test.ts` (16 pruebas, 256 LoC) para toda la orquestación del hook de streaming binario y en `tests/unit/render/rofl-upload.test.tsx` (7 pruebas, 128 LoC) para la interfaz de arrastrar y soltar repeticiones.
 3. **Página `crystal-ball`:**
    - *Ausencia de pruebas dedicadas:* No cuenta con un archivo `*.test.tsx` dedicado a su vista aislada.
    - *Dónde se prueba:* Su montaje y resolución de navegación están garantizados por la suite general de rutas `apps/web/src/site/routes.test.tsx` y la suite de integración de la aplicación `tests/unit/render/App.test.tsx`.
