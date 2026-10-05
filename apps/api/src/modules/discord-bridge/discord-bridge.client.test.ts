@@ -10,11 +10,7 @@ import {
   BridgeUnavailableError,
   DiscordBridgeClient
 } from './discord-bridge.client.js';
-import {
-  type BridgeHealthChecker,
-  createDiscordBridgeRouter,
-  discordBridgeRouter
-} from './discord-bridge.router.js';
+import { type BridgeHealthChecker, createDiscordBridgeRouter } from './discord-bridge.router.js';
 
 interface MockSentFrame {
   type: string;
@@ -824,7 +820,7 @@ describe('DiscordBridgeClient', () => {
     });
   });
 
-  describe('discordBridgeRouter HTTP endpoints', () => {
+  describe('createDiscordBridgeRouter HTTP endpoints', () => {
     it('returns 200 OK with connected health response and Cache-Control: no-store', async () => {
       const app = express();
       const mockChecker: BridgeHealthChecker = {
@@ -857,7 +853,7 @@ describe('DiscordBridgeClient', () => {
             'El websocket no pudo iniciarse, comprobar variables env para asegurar la url correcta'
         })
       };
-      app.use('/api/v1/bridge', discordBridgeRouter(mockChecker));
+      app.use('/api/v1/bridge', createDiscordBridgeRouter({ bridgeClient: mockChecker }));
 
       const res = await request(app).get('/api/v1/bridge/health');
       expect(res.status).toBe(503);

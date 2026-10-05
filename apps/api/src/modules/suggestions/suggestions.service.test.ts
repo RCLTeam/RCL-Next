@@ -33,7 +33,7 @@ describe('SuggestionsService', () => {
 
   describe('Validation boundaries', () => {
     it('rejects text < 10 characters with 400 AppError', async () => {
-      await expect(service.submitSuggestion({ suggestion: '123456789' })).rejects.toMatchObject({
+      await expect(service.submit({ suggestion: '123456789' })).rejects.toMatchObject({
         statusCode: 400,
         code: 'VALIDATION_ERROR'
       });
@@ -42,7 +42,7 @@ describe('SuggestionsService', () => {
     it('accepts boundary of exactly 10 characters', async () => {
       bridgeClient.send.mockResolvedValueOnce(undefined);
 
-      const res = await service.submitSuggestion({ suggestion: '1234567890' });
+      const res = await service.submit({ suggestion: '1234567890' });
       expect(res.id).toBeDefined();
       expect(res.status).toBe('queued');
     });
@@ -50,22 +50,20 @@ describe('SuggestionsService', () => {
     it('accepts boundary of exactly 1000 characters', async () => {
       bridgeClient.send.mockResolvedValueOnce(undefined);
 
-      const res = await service.submitSuggestion({ suggestion: 'A'.repeat(1000) });
+      const res = await service.submit({ suggestion: 'A'.repeat(1000) });
       expect(res.id).toBeDefined();
       expect(res.status).toBe('queued');
     });
 
     it('rejects text > 1000 characters with 400 AppError', async () => {
-      await expect(
-        service.submitSuggestion({ suggestion: 'A'.repeat(1001) })
-      ).rejects.toMatchObject({
+      await expect(service.submit({ suggestion: 'A'.repeat(1001) })).rejects.toMatchObject({
         statusCode: 400,
         code: 'VALIDATION_ERROR'
       });
     });
 
     it('rejects whitespace-only text', async () => {
-      await expect(service.submitSuggestion({ suggestion: '          ' })).rejects.toMatchObject({
+      await expect(service.submit({ suggestion: '          ' })).rejects.toMatchObject({
         statusCode: 400,
         code: 'VALIDATION_ERROR'
       });
@@ -84,7 +82,7 @@ describe('SuggestionsService', () => {
     it('handles whitespace padding correctly', async () => {
       bridgeClient.send.mockResolvedValueOnce(undefined);
 
-      const res = await service.submitSuggestion({
+      const res = await service.submit({
         suggestion: '   1234567890   '
       });
       expect(res.id).toBeDefined();
@@ -106,11 +104,13 @@ describe('SuggestionsService', () => {
     it('resolves real author when user is authenticated and isAnonymous is false', async () => {
       bridgeClient.send.mockResolvedValueOnce(undefined);
 
-      await service.submitSuggestion({
-        user,
-        suggestion: 'Sugerencia de usuario identificado',
-        isAnonymous: false
-      });
+      await service.submit(
+        {
+          suggestion: 'Sugerencia de usuario identificado',
+          isAnonymous: false
+        },
+        user
+      );
 
       expect(bridgeClient.send).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -127,11 +127,13 @@ describe('SuggestionsService', () => {
     it('masks author as Anónimo when user is authenticated but isAnonymous is true', async () => {
       bridgeClient.send.mockResolvedValueOnce(undefined);
 
-      await service.submitSuggestion({
-        user,
-        suggestion: 'Sugerencia anónima de usuario autenticado',
-        isAnonymous: true
-      });
+      await service.submit(
+        {
+          suggestion: 'Sugerencia anónima de usuario autenticado',
+          isAnonymous: true
+        },
+        user
+      );
 
       expect(bridgeClient.send).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -148,10 +150,12 @@ describe('SuggestionsService', () => {
     it('defaults to real author when isAnonymous is omitted', async () => {
       bridgeClient.send.mockResolvedValueOnce(undefined);
 
-      await service.submitSuggestion({
-        user,
-        suggestion: 'Sugerencia con isAnonymous omitido'
-      });
+      await service.submit(
+        {
+          suggestion: 'Sugerencia con isAnonymous omitido'
+        },
+        user
+      );
 
       expect(bridgeClient.send).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -167,11 +171,13 @@ describe('SuggestionsService', () => {
     it('defaults to anonymous when user is unauthenticated', async () => {
       bridgeClient.send.mockResolvedValueOnce(undefined);
 
-      await service.submitSuggestion({
-        user: null,
-        suggestion: 'Sugerencia sin login previo',
-        isAnonymous: false
-      });
+      await service.submit(
+        {
+          suggestion: 'Sugerencia sin login previo',
+          isAnonymous: false
+        },
+        null
+      );
 
       expect(bridgeClient.send).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -194,7 +200,7 @@ describe('SuggestionsService', () => {
       });
       bridgeClient.send.mockReturnValueOnce(sendPromise);
 
-      const { id } = await service.submitSuggestion({
+      const { id } = await service.submit({
         suggestion: 'Sugerencia con envio asincrono'
       });
 
@@ -225,7 +231,7 @@ describe('SuggestionsService', () => {
       });
       bridgeClient.send.mockReturnValueOnce(sendPromise);
 
-      const { id } = await service.submitSuggestion({
+      const { id } = await service.submit({
         suggestion: 'Sugerencia con confirmacion ultrarrapida'
       });
 
@@ -259,7 +265,7 @@ describe('SuggestionsService', () => {
         bridgeClient.send.mockResolvedValueOnce(undefined);
 
         promises.push(
-          service.submitSuggestion({
+          service.submit({
             suggestion: `Sugerencia concurrente numero ${i} valida`
           })
         );
@@ -283,7 +289,7 @@ describe('SuggestionsService', () => {
     it('updates store status to confirmed upon Phase 2 event', async () => {
       bridgeClient.send.mockResolvedValueOnce(undefined);
 
-      const { id } = await service.submitSuggestion({
+      const { id } = await service.submit({
         suggestion: 'Sugerencia que será confirmada'
       });
 
@@ -304,7 +310,7 @@ describe('SuggestionsService', () => {
       const loggerSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
       bridgeClient.send.mockResolvedValueOnce(undefined);
 
-      const { id } = await service.submitSuggestion({
+      const { id } = await service.submit({
         suggestion: 'Sugerencia que fallará en Discord'
       });
 
@@ -328,7 +334,7 @@ describe('SuggestionsService', () => {
     it('updates store to retrying during rate-limit pauses', async () => {
       bridgeClient.send.mockResolvedValueOnce(undefined);
 
-      const { id } = await service.submitSuggestion({
+      const { id } = await service.submit({
         suggestion: 'Sugerencia con pausa de reintento'
       });
 
@@ -348,7 +354,7 @@ describe('SuggestionsService', () => {
         new BridgeRateLimitTimeoutError('5m retry timeout', 'incident-term-123')
       );
 
-      const { id } = await service.submitSuggestion({
+      const { id } = await service.submit({
         suggestion: 'Sugerencia que agotará el timeout de 5m'
       });
 
@@ -363,7 +369,7 @@ describe('SuggestionsService', () => {
     it('handles generic bridge rejection without incident ID gracefully', async () => {
       bridgeClient.send.mockRejectedValueOnce(new Error('Network disconnected'));
 
-      const { id } = await service.submitSuggestion({
+      const { id } = await service.submit({
         suggestion: 'Sugerencia con desconexión súbita'
       });
 

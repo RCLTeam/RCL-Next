@@ -13,7 +13,6 @@ import { SuggestionsService } from './suggestions.service.js';
 
 interface MockSuggestionsService {
   submit: ReturnType<typeof vi.fn>;
-  submitSuggestion: ReturnType<typeof vi.fn>;
   getStatus: ReturnType<typeof vi.fn>;
 }
 
@@ -25,7 +24,6 @@ describe('suggestions.router', () => {
   beforeEach(() => {
     mockService = {
       submit: vi.fn(),
-      submitSuggestion: vi.fn(),
       getStatus: vi.fn()
     };
 

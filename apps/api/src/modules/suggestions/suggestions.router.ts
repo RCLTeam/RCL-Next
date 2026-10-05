@@ -6,39 +6,17 @@ import { readSessionCookie } from '../auth/session-cookie.js';
 import type { SuggestionsService } from './suggestions.service.js';
 
 export interface SuggestionsRouterOptions {
-  suggestionsService?: SuggestionsService | undefined;
-  service?: SuggestionsService | undefined;
+  suggestionsService: SuggestionsService;
+  /** Only origin allowed to submit; defaults to `auth.frontendOrigin`. */
   frontendOrigin?: string | undefined;
   auth?: AuthOptions | undefined;
 }
 
-export function createSuggestionsRouter(
-  optionsOrService: SuggestionsRouterOptions | SuggestionsService,
-  maybeAuthOptions?: AuthOptions
-): Router {
+export function createSuggestionsRouter(options: SuggestionsRouterOptions): Router {
   const router = Router();
-
-  let service: SuggestionsService;
-  let frontendOrigin: string | undefined;
-  let authOptions: AuthOptions | undefined;
-
-  if (
-    'getStatus' in optionsOrService &&
-    ('submit' in optionsOrService || 'submitSuggestion' in optionsOrService)
-  ) {
-    service = optionsOrService as SuggestionsService;
-    authOptions = maybeAuthOptions;
-    frontendOrigin = maybeAuthOptions?.frontendOrigin;
-  } else {
-    const opts = optionsOrService as SuggestionsRouterOptions;
-    const resolvedService = opts.suggestionsService ?? opts.service;
-    if (!resolvedService) {
-      throw new Error('SuggestionsRouter requires suggestionsService or service option');
-    }
-    service = resolvedService;
-    authOptions = opts.auth;
-    frontendOrigin = opts.frontendOrigin ?? opts.auth?.frontendOrigin;
-  }
+  const service = options.suggestionsService;
+  const authOptions = options.auth;
+  const frontendOrigin = options.frontendOrigin ?? authOptions?.frontendOrigin;
 
   // Ensure Cache-Control: no-store on all suggestions endpoints
   router.use((_req: Request, res: Response, next: NextFunction) => {
@@ -133,5 +111,3 @@ export function createSuggestionsRouter(
 
   return router;
 }
-
-export const suggestionsRouter = createSuggestionsRouter;

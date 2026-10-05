@@ -169,19 +169,8 @@ export function validateZipSlip(baseDir: string, entryPath: string): string {
 }
 
 export async function processBatchFiles(
-  optionsOrPath: ProcessBatchFilesOptions | string,
-  originalFileName?: string,
-  onQueueStatus?: (pos: number, total: number) => void
+  options: ProcessBatchFilesOptions
 ): Promise<ProcessBatchFilesResult> {
-  const options: ProcessBatchFilesOptions =
-    typeof optionsOrPath === 'string'
-      ? {
-          sourceFilePath: optionsOrPath,
-          originalFileName: originalFileName ?? path.basename(optionsOrPath),
-          onQueueStatus
-        }
-      : optionsOrPath;
-
   const tempDir = path.join(os.tmpdir(), `rcl-rofl-${crypto.randomUUID()}`);
   await fs.mkdir(tempDir, { recursive: true });
 

@@ -27,12 +27,6 @@ export interface SubmitContext {
   clientIp?: string | undefined;
 }
 
-export interface SubmitSuggestionOptions {
-  suggestion: string;
-  isAnonymous?: boolean | undefined;
-  user?: AuthUser | null | undefined;
-}
-
 interface ResolvedAuthor {
   author_id: string;
   author_username: string;
@@ -46,28 +40,12 @@ export class SuggestionsService {
   private readonly logger: IncidentLogger;
   private readonly rateLimiter: SuggestionRateLimiter | null;
 
-  constructor(
-    optionsOrStore: SuggestionStore | SuggestionsServiceOptions,
-    bridgeClient?: DiscordBridgeClient,
-    logger?: IncidentLogger
-  ) {
-    if ('bridgeClient' in optionsOrStore) {
-      this.store = optionsOrStore.store ?? new SuggestionStore();
-      this.bridgeClient = optionsOrStore.bridgeClient;
-      this.logger = optionsOrStore.logger ?? new IncidentLogger();
-      this.rateLimiter =
-        optionsOrStore.rateLimiter === false
-          ? null
-          : (optionsOrStore.rateLimiter ?? new SuggestionRateLimiter());
-    } else {
-      if (!bridgeClient) {
-        throw new Error('DiscordBridgeClient must be provided to SuggestionsService');
-      }
-      this.store = optionsOrStore;
-      this.bridgeClient = bridgeClient;
-      this.logger = logger ?? new IncidentLogger();
-      this.rateLimiter = new SuggestionRateLimiter();
-    }
+  constructor(options: SuggestionsServiceOptions) {
+    this.store = options.store ?? new SuggestionStore();
+    this.bridgeClient = options.bridgeClient;
+    this.logger = options.logger ?? new IncidentLogger();
+    this.rateLimiter =
+      options.rateLimiter === false ? null : (options.rateLimiter ?? new SuggestionRateLimiter());
 
     if (typeof this.bridgeClient?.on === 'function') {
       this.bridgeClient.on('frame:sending', (event: { type: string; id: string }) => {
@@ -210,25 +188,6 @@ export class SuggestionsService {
       id,
       status: 'queued'
     };
-  }
-
-  public async submitSuggestion(
-    options: SubmitSuggestionOptions
-  ): Promise<CreateSuggestionResponse> {
-    return this.submit(
-      {
-        suggestion: options.suggestion,
-        isAnonymous: options.isAnonymous
-      },
-      options.user
-    );
-  }
-
-  public async createSuggestion(
-    request: CreateSuggestionRequest,
-    user?: AuthUser | null
-  ): Promise<CreateSuggestionResponse> {
-    return this.submit(request, user);
   }
 
   public getStatus(id: string): SuggestionStatusResponse | null {
