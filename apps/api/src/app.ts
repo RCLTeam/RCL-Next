@@ -60,7 +60,7 @@ export function createApp(options: {
   const app = express();
   app.disable('x-powered-by');
   app.use(helmet());
-  app.use(cors({ origin: options.corsOrigin, credentials: true }));
+  app.use(cors({ origin: options.corsOrigin, credentials: true, exposedHeaders: ['Retry-After'] }));
   const metadata = new PageMetadataService(
     new CompetitionService(options.repository),
     options.homeContentRepository

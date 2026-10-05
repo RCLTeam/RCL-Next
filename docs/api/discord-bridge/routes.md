@@ -29,7 +29,10 @@ Esta ruta proporciona a los clientes frontend (como `useBridgeHealth`) y a las s
 
 ## 3. Comportamiento y Sonda Efímera (`checkHealth`)
 
-Cuando se recibe una petición en `/api/v1/bridge/health`, el router invoca el método `checkHealth()` del cliente (`discord-bridge.client.ts:125-283`).
+Cuando se recibe una petición en `/api/v1/bridge/health`, el router invoca el método `checkHealth()` del cliente (`discord-bridge.client.ts:186-213`).
+
+### 3.0 Sonda compartida y caché
+`checkHealth()` no abre una conexión por petición: las llamadas simultáneas comparten la misma sonda (`probeHealth()`), y su resultado se reutiliza durante `healthCacheMs` (5 s por defecto, `DEFAULT_BRIDGE_HEALTH_CACHE_MS`). Así la ruta pública abre como máximo una conexión con el bot por periodo. Con `healthCacheMs: 0` solo se comparte la sonda en curso, sin caché.
 
 ### 3.1 Arquitectura de Socket Aislado
 Para no comprometer la cola de trabajo ni las transacciones en vuelo, la sonda **no utiliza el socket de producción** de la aplicación:

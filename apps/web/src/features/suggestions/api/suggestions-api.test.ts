@@ -90,6 +90,57 @@ describe('suggestions API client', () => {
         createSuggestion({ suggestion: 'Texto suficientemente largo para validación' })
       ).rejects.toThrow('Error al enviar la sugerencia (500)');
     });
+    it('shows a wait message with the minutes from Retry-After on 429 RATE_LIMITED', async () => {
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValue(
+          Response.json(
+            { error: { code: 'RATE_LIMITED', message: 'Too many suggestions. Try again later.' } },
+            { status: 429, headers: { 'Retry-After': '540' } }
+          )
+        );
+      vi.stubGlobal('fetch', fetchMock);
+
+      await expect(
+        createSuggestion({ suggestion: 'Texto suficientemente largo para validación' })
+      ).rejects.toThrow(
+        'Has enviado demasiadas sugerencias. Vuelve a intentarlo dentro de 9 minutos.'
+      );
+    });
+
+    it.each(['SUGGESTIONS_NOT_CONFIGURED', 'SUGGESTIONS_UNAVAILABLE'])(
+      'shows a service unavailable message on 503 %s',
+      async (code) => {
+        const fetchMock = vi
+          .fn()
+          .mockResolvedValue(
+            Response.json({ error: { code, message: 'internal' } }, { status: 503 })
+          );
+        vi.stubGlobal('fetch', fetchMock);
+
+        await expect(
+          createSuggestion({ suggestion: 'Texto suficientemente largo para validación' })
+        ).rejects.toThrow(
+          'El servicio de sugerencias no está disponible en este momento. Inténtalo más tarde.'
+        );
+      }
+    );
+
+    it('uses the message of the API error envelope', async () => {
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValue(
+          Response.json(
+            { error: { code: 'VALIDATION_ERROR', message: 'Suggestion text is required.' } },
+            { status: 400 }
+          )
+        );
+      vi.stubGlobal('fetch', fetchMock);
+
+      await expect(
+        createSuggestion({ suggestion: 'Texto suficientemente largo para validación' })
+      ).rejects.toThrow('Suggestion text is required.');
+    });
   });
 
   describe('getSuggestionStatus', () => {

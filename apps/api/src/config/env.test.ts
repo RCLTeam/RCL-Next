@@ -78,4 +78,27 @@ describe('parseEnvironment', () => {
     process.env.PORT = '-1';
     expect(() => parseEnvironment(process.env)).toThrow('Invalid environment: PORT');
   });
+  describe('TRUST_PROXY', () => {
+    const base = { DATABASE_URL: 'postgres://user:pass@localhost:5432/testdb' };
+
+    it('defaults to trusting only loopback proxies', () => {
+      expect(parseEnvironment({ ...base }).TRUST_PROXY).toBe('loopback');
+    });
+
+    it('accepts false, a hop count and address lists', () => {
+      expect(parseEnvironment({ ...base, TRUST_PROXY: 'false' }).TRUST_PROXY).toBe(false);
+      expect(parseEnvironment({ ...base, TRUST_PROXY: '' }).TRUST_PROXY).toBe(false);
+      expect(parseEnvironment({ ...base, TRUST_PROXY: '1' }).TRUST_PROXY).toBe(1);
+      expect(
+        parseEnvironment({ ...base, TRUST_PROXY: 'loopback, 10.0.0.0/8, ::1' }).TRUST_PROXY
+      ).toBe('loopback,10.0.0.0/8,::1');
+    });
+
+    it.each(['true', 'everyone', '10.0.0.0/33', '300.1.1.1', 'loopback,'])(
+      'rejects %s',
+      (value) => {
+        expect(() => parseEnvironment({ ...base, TRUST_PROXY: value })).toThrow(/TRUST_PROXY/);
+      }
+    );
+  });
 });

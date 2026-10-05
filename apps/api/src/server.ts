@@ -98,6 +98,8 @@ const app = createApp({
       }
     : {})
 });
+// Lets req.ip resolve the client address behind a reverse proxy (suggestions rate limit).
+app.set('trust proxy', env.TRUST_PROXY);
 const server = http.createServer(app);
 const roflUploadRepo = new PostgresRoflUploadRepository(connection.db);
 const roflUploadGateway = attachRoflUploadGateway(server, roflUploadRepo, { authService });

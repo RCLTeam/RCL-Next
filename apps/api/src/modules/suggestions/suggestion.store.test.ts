@@ -188,4 +188,18 @@ describe('SuggestionStore', () => {
     store.updateStatus('term-2', 'sending');
     expect(store.get('term-2')?.status).toBe('failed');
   });
+  it('reports capacity against maxRecords and frees space by pruning expired records', () => {
+    const bounded = new SuggestionStore({
+      maxRecords: 2,
+      ttlMs: 1000,
+      enablePeriodicCleanup: false
+    });
+    const start = Date.now();
+    bounded.set({ id: 'a', status: 'queued', createdAt: start });
+    bounded.set({ id: 'b', status: 'queued', createdAt: start });
+
+    expect(bounded.hasCapacity(start)).toBe(false);
+    expect(bounded.hasCapacity(start + 1000)).toBe(true);
+    expect(bounded.size()).toBe(0);
+  });
 });

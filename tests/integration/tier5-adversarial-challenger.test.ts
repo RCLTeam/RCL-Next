@@ -116,6 +116,7 @@ describe('Tier 5 Adversarial Coverage Hardening Suite', () => {
 
     // 2. Setup backend with bridgeClient
     bridgeClient = new DiscordBridgeClient({
+      healthCacheMs: 0,
       wsUrl: bridgeWsUrl,
       supertoken,
       idleTimeoutMs: 30 * 60 * 1000,
@@ -125,6 +126,7 @@ describe('Tier 5 Adversarial Coverage Hardening Suite', () => {
     suggestionStore = new SuggestionStore({ ttlMs: 2 * 60 * 60 * 1000 });
     incidentLogger = new IncidentLogger();
     suggestionsService = new SuggestionsService({
+      rateLimiter: false,
       store: suggestionStore,
       bridgeClient,
       logger: incidentLogger
@@ -248,6 +250,7 @@ describe('Tier 5 Adversarial Coverage Hardening Suite', () => {
 
     it('1.5 GET /api/v1/bridge/health never leaks supertoken or stack traces under 503 auth failure', async () => {
       const badClient = new DiscordBridgeClient({
+        healthCacheMs: 0,
         wsUrl: bridgeWsUrl,
         supertoken: 'WRONG_INVALID_TOKEN',
         healthProbeTimeoutMs: 500
@@ -588,6 +591,7 @@ describe('Tier 5 Adversarial Coverage Hardening Suite', () => {
     it('3.1 SUGGESTION_CONFIRMED received BEFORE QUEUED is handled and locks status into confirmed', async () => {
       const store = new SuggestionStore();
       const mockBridge = new DiscordBridgeClient({
+        healthCacheMs: 0,
         wsUrl: bridgeWsUrl,
         supertoken
       });
@@ -601,6 +605,7 @@ describe('Tier 5 Adversarial Coverage Hardening Suite', () => {
       };
 
       const service = new SuggestionsService({
+        rateLimiter: false,
         store,
         bridgeClient: mockBridge,
         logger: new IncidentLogger()
@@ -636,6 +641,7 @@ describe('Tier 5 Adversarial Coverage Hardening Suite', () => {
     it('3.2 SUGGESTION_FAILED received BEFORE QUEUED locks status into failed with incidentId', async () => {
       const store = new SuggestionStore();
       const mockBridge = new DiscordBridgeClient({
+        healthCacheMs: 0,
         wsUrl: bridgeWsUrl,
         supertoken
       });
@@ -649,6 +655,7 @@ describe('Tier 5 Adversarial Coverage Hardening Suite', () => {
 
       const logger = new IncidentLogger();
       const service = new SuggestionsService({
+        rateLimiter: false,
         store,
         bridgeClient: mockBridge,
         logger

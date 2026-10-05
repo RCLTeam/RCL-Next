@@ -1,16 +1,20 @@
 import { EventEmitter } from 'node:events';
 import type { AuthUser } from '@rcl/contracts';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { AppError } from '../../shared/app-error.js';
 import {
   BridgeRateLimitTimeoutError,
   type DiscordBridgeClient
 } from '../discord-bridge/discord-bridge.client.js';
 import { IncidentLogger } from './incident-logger.js';
+import { SuggestionRateLimiter } from './suggestion-rate-limiter.js';
 import { SuggestionStore } from './suggestion.store.js';
 import { SuggestionsService } from './suggestions.service.js';
 
 class MockDiscordBridgeClient extends EventEmitter {
   public send = vi.fn().mockResolvedValue(undefined);
+  public isConfigured = vi.fn().mockReturnValue(true);
+  public hasCapacity = vi.fn().mockReturnValue(true);
 }
 
 describe('SuggestionsService', () => {
@@ -313,9 +317,11 @@ describe('SuggestionsService', () => {
 
       const status = service.getStatus(id);
       expect(status?.status).toBe('failed');
-      expect(status?.error).toBe('Missing permissions in suggestions channel');
+      expect(status?.error).toBeUndefined();
       expect(status?.incidentId).toBeDefined();
-      expect(loggerSpy).toHaveBeenCalled();
+      expect(loggerSpy).toHaveBeenCalledWith(
+        expect.stringContaining('Missing permissions in suggestions channel')
+      );
       loggerSpy.mockRestore();
     });
 
@@ -365,12 +371,152 @@ describe('SuggestionsService', () => {
 
       const status = service.getStatus(id);
       expect(status?.status).toBe('failed');
-      expect(status?.error).toBe('Network disconnected');
+      expect(status?.error).toBeUndefined();
       expect(status?.incidentId).toBeDefined();
     });
 
     it('returns null for getStatus on non-existent id', () => {
       expect(service.getStatus('non-existent-id')).toBeNull();
+    });
+  });
+  describe('Bridge failures and capacity', () => {
+    const flush = () => new Promise((r) => setTimeout(r, 0));
+
+    it('keeps technical error details out of the public status and logs them with the incidentId', async () => {
+      const lines: string[] = [];
+      const logged = new SuggestionsService({
+        bridgeClient: bridgeClient as unknown as DiscordBridgeClient,
+        store,
+        logger: new IncidentLogger((line) => lines.push(line))
+      });
+      bridgeClient.send.mockRejectedValueOnce(
+        new Error('Discord bridge is unavailable', {
+          cause: new Error('connect ECONNREFUSED 10.0.0.5:8765')
+        })
+      );
+
+      const { id } = await logged.submit({ suggestion: 'Sugerencia con el bot caído' });
+      await flush();
+
+      const status = logged.getStatus(id);
+      expect(status?.status).toBe('failed');
+      expect(status?.incidentId).toBeDefined();
+      expect(JSON.stringify(status)).not.toMatch(/ECONNREFUSED|10\.0\.0\.5|8765|unavailable/);
+      expect(lines).toHaveLength(1);
+      expect(lines[0]).toContain(`[INCIDENT ${status?.incidentId}]`);
+      expect(lines[0]).toContain('ECONNREFUSED 10.0.0.5:8765');
+    });
+
+    it('does not expose the reason reported by the bot on SUGGESTION_FAILED', async () => {
+      const { id } = await service.submit({ suggestion: 'Sugerencia rechazada por el bot' });
+      bridgeClient.emit('SUGGESTION_FAILED', {
+        id,
+        reason: 'Missing Permissions on channel 123456789',
+        incident_id: 'bot-incident-1'
+      });
+
+      expect(service.getStatus(id)).toEqual({
+        id,
+        status: 'failed',
+        incidentId: 'bot-incident-1'
+      });
+    });
+
+    it('responds 503 SUGGESTIONS_NOT_CONFIGURED without storing when the bridge URL is empty', async () => {
+      bridgeClient.isConfigured.mockReturnValue(false);
+
+      await expect(service.submit({ suggestion: 'Sugerencia sin puente' })).rejects.toMatchObject({
+        statusCode: 503,
+        code: 'SUGGESTIONS_NOT_CONFIGURED'
+      });
+      expect(store.size()).toBe(0);
+      expect(bridgeClient.send).not.toHaveBeenCalled();
+    });
+
+    it('responds 503 without storing or queueing when the bridge queue is full', async () => {
+      bridgeClient.hasCapacity.mockReturnValue(false);
+
+      await expect(
+        service.submit({ suggestion: 'Sugerencia con cola llena' })
+      ).rejects.toMatchObject({
+        statusCode: 503,
+        code: 'SUGGESTIONS_UNAVAILABLE'
+      });
+      expect(store.size()).toBe(0);
+      expect(bridgeClient.send).not.toHaveBeenCalled();
+    });
+
+    it('responds 503 and does not grow the store once maxRecords is reached', async () => {
+      const smallStore = new SuggestionStore({ maxRecords: 2, enablePeriodicCleanup: false });
+      const limited = new SuggestionsService({
+        bridgeClient: bridgeClient as unknown as DiscordBridgeClient,
+        store: smallStore
+      });
+      await limited.submit({ suggestion: 'Primera sugerencia válida' });
+      await limited.submit({ suggestion: 'Segunda sugerencia válida' });
+
+      await expect(
+        limited.submit({ suggestion: 'Tercera sugerencia válida' })
+      ).rejects.toMatchObject({
+        statusCode: 503,
+        code: 'SUGGESTIONS_UNAVAILABLE'
+      });
+      expect(smallStore.size()).toBe(2);
+      expect(bridgeClient.send).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  describe('Submission rate limit', () => {
+    const user: AuthUser = {
+      discordId: '111222333444555666',
+      username: 'jugador',
+      globalName: null,
+      avatarHash: null,
+      role: 'user'
+    } as unknown as AuthUser;
+
+    it('rejects anonymous submissions over the limit with 429 and retryAfterSeconds', async () => {
+      const limited = new SuggestionsService({
+        bridgeClient: bridgeClient as unknown as DiscordBridgeClient,
+        store,
+        rateLimiter: new SuggestionRateLimiter({ anonymous: { limit: 2, windowMs: 60_000 } })
+      });
+      const context = { clientIp: '203.0.113.7' };
+      await limited.submit({ suggestion: 'Sugerencia anónima uno' }, null, context);
+      await limited.submit({ suggestion: 'Sugerencia anónima dos' }, null, context);
+
+      const error = await limited
+        .submit({ suggestion: 'Sugerencia anónima tres' }, null, context)
+        .catch((err: unknown) => err);
+
+      expect(error).toBeInstanceOf(AppError);
+      expect(error).toMatchObject({ statusCode: 429, code: 'RATE_LIMITED' });
+      expect((error as AppError).details).toEqual({ retryAfterSeconds: 60 });
+      expect(bridgeClient.send).toHaveBeenCalledTimes(2);
+
+      await expect(
+        limited.submit({ suggestion: 'Sugerencia desde otra IP' }, null, {
+          clientIp: '203.0.113.8'
+        })
+      ).resolves.toMatchObject({ status: 'queued' });
+    });
+
+    it('applies a separate, higher limit to signed-in users keyed by Discord ID', async () => {
+      const limited = new SuggestionsService({
+        bridgeClient: bridgeClient as unknown as DiscordBridgeClient,
+        store,
+        rateLimiter: new SuggestionRateLimiter({
+          anonymous: { limit: 1, windowMs: 60_000 },
+          authenticated: { limit: 3, windowMs: 60_000 }
+        })
+      });
+      const context = { clientIp: '203.0.113.9' };
+      for (let i = 0; i < 3; i++) {
+        await limited.submit({ suggestion: `Sugerencia con sesión ${i}` }, user, context);
+      }
+      await expect(
+        limited.submit({ suggestion: 'Sugerencia con sesión extra' }, user, context)
+      ).rejects.toMatchObject({ statusCode: 429 });
     });
   });
 });
