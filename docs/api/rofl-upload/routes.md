@@ -12,26 +12,44 @@ El gateway está implementado en `apps/api/src/modules/rofl-upload/websocket/rof
 
 ---
 
-## 2. Autenticación y Autorización por Sesión
+## 2. Control de Acceso: Handshake, Sesión y Rol
 
-Antes de aceptar comandos o transmisiones de datos, el gateway valida la identidad y los privilegios del cliente en el evento `connection` (`rofl-upload.gateway.ts:63-82`):
+El acceso se comprueba en dos fases: primero sobre el handshake HTTP de *upgrade*, antes de aceptar la conexión, y después sobre la sesión, ya con el socket abierto.
 
-### 2.1 Extracción de Cookie de Sesión
-La función auxiliar `extractSessionToken()` (`rofl-upload.gateway.ts:27-41`) analiza la cabecera `Cookie` de la petición HTTP entrante:
-- Busca la clave estándar `rcl_session` o su variante reforzada de aislamiento de origen con prefijo de host `__Host-rcl_session`.
-- Si la cabecera está ausente o no contiene el token, rechaza la conexión inmediatamente.
+### 2.1 Opciones de Seguridad de `attachRoflUploadGateway()`
 
-### 2.2 Validación de Rol Administrativo
-Si se proporciona una instancia de `authService` en las opciones de configuración:
+| Opción | Tipo | Uso en `server.ts` | Efecto |
+|---|---|---|---|
+| `authService` | `AuthService \| undefined` | Se pasa solo si están configuradas las credenciales de Discord (`server.ts:49-58`). | Valida la cookie de sesión y el rol. Sin ella el gateway rechaza todos los handshakes (§2.2). |
+| `frontendOrigin` | `string \| undefined` | `env.CORS_ORIGIN` (`server.ts:103-106`). | Único valor admitido de la cabecera `Origin`. Sin ella el gateway rechaza todos los handshakes. |
+| `allowUnauthenticated` | `boolean \| undefined` | **No se usa.** | Exclusiva de los tests: permite conexiones sin sesión cuando no hay `authService`. |
+| `logIncident` | `(incidentId, context, error) => void` | No se pasa (usa `console.error`). | Registra el detalle de los errores inesperados (§7). |
+
+### 2.2 Validación del Handshake (`verifyClient`)
+
+La opción `verifyClient` del `WebSocketServer` (`rofl-upload.gateway.ts:76-90`) se ejecuta antes de aceptar el *upgrade*; un handshake rechazado nunca llega al evento `connection` ni a `authorize()`. Las comprobaciones, en este orden:
+
+1. **Autenticación no configurada → HTTP `503`** (`Authentication is not configured`): si no hay `authService` y `allowUnauthenticated` no es `true`. Equivale a las rutas HTTP de administración, que responden `503` en la misma situación (`app.ts`). Una API arrancada sin credenciales de Discord no acepta subidas.
+2. **Origen no admitido → HTTP `403`** (`Request origin is not allowed`): si `frontendOrigin` no está definido o la cabecera `Origin` no es exactamente igual a él. Es el mismo criterio de igualdad estricta que `requireTrustedOrigin` aplica a las mutaciones HTTP con cookie (`auth.router.ts:33-40`). Un handshake sin cabecera `Origin` (por ejemplo, un cliente que no es un navegador) también se rechaza.
+
+El cliente recibe la respuesta HTTP de rechazo, no un código de cierre de WebSocket; en el navegador se observa como un cierre `1006` y el hook web lo muestra como conexión perdida. La web no necesita cambios: abre el socket en el mismo origen desde el que se sirve (`useRoflUploadWs.ts:121-123`), y en desarrollo el proxy de Vite (`apps/web/vite.config.ts`) conserva la cabecera `Origin` del navegador, que coincide con el valor por defecto de `CORS_ORIGIN` (`http://localhost:5173`).
+
+### 2.3 Extracción de Cookie de Sesión
+La función auxiliar `extractSessionToken()` (`rofl-upload.gateway.ts:50-64`) analiza la cabecera `Cookie` de la petición HTTP de *upgrade*:
+- Busca la clave estándar `rcl_session` o su variante con prefijo de host `__Host-rcl_session`.
+- Si la cabecera está ausente o no contiene el token, `authorize()` cierra la conexión con `4001`.
+
+### 2.4 Validación de Rol Administrativo
+`authorize()` (`rofl-upload.gateway.ts:107-127`) se ejecuta al abrir la conexión y se repite antes de procesar (`finish`) y antes de persistir:
 - Se consulta el usuario activo correspondiente al token de sesión (`authService.currentUser(sessionToken)`).
-- **Código de cierre `4001` (No Autorizado):** Si el token de sesión no existe o ha expirado (`rofl-upload.gateway.ts:68, 73`).
-- **Código de cierre `4003` (Prohibido):** Si el usuario autenticado carece de rol administrativo (`user.role !== 'admin' && user.role !== 'owner'`) (`rofl-upload.gateway.ts:77`).
+- **Código de cierre `4001` (No Autorizado):** si el token no existe o ha expirado (`rofl-upload.gateway.ts:114, 119`). También si no hay `authService` (`rofl-upload.gateway.ts:110`); en la práctica este caso ya lo rechaza el handshake con `503`, salvo con `allowUnauthenticated`, en cuyo caso `authorize()` devuelve `true` sin consultar sesión.
+- **Código de cierre `4003` (Prohibido):** si el usuario carece de rol administrativo (`user.role !== 'admin' && user.role !== 'owner'`) (`rofl-upload.gateway.ts:123`).
 
 ---
 
 ## 3. Ciclo de Vida de la Conexión y Máquina de Estados
 
-La conexión del WebSocket transiciona secuencialmente por cuatro estados internos en el servidor (`rofl-upload.gateway.ts:83`):
+La conexión del WebSocket transiciona secuencialmente por cuatro estados internos en el servidor (`rofl-upload.gateway.ts:129`):
 
 ```
        [Conexión establecida]
@@ -61,18 +79,18 @@ La conexión del WebSocket transiciona secuencialmente por cuatro estados intern
 El protocolo opera mediante dos tipos de tramas de WebSocket:
 
 ### 4.1 Mensajes de Control del Cliente (JSON)
-Definidos en `packages/contracts/src/rofl-upload.ts:74-84`:
+Definidos en `packages/contracts/src/rofl-upload.ts:76-85`:
 
 | Tipo | Formato de Carga Útil | Descripción y Momento de Envío |
 |---|---|---|
-| `start` | `{"type": "start", "filename": "serie_final.zip"}` | Inicializa la sesión de subida en el servidor. Crea el directorio temporal en `os.tmpdir()` y abre el `WriteStream` a disco (`rofl-upload.gateway.ts:162-187`). |
-| `finish` | `{"type": "finish"}` | Notifica que se transmitieron todos los bytes binarios. Cierra el `WriteStream` en disco y transiciona al pipeline de procesamiento (`rofl-upload.gateway.ts:189-218`). |
+| `start` | `{"type": "start", "filename": "serie_final.zip"}` | Inicializa la sesión de subida en el servidor. Crea el directorio temporal en `os.tmpdir()` y abre el `WriteStream` a disco (`rofl-upload.gateway.ts:221-260`). |
+| `finish` | `{"type": "finish"}` | Notifica que se transmitieron todos los bytes binarios. Cierra el `WriteStream` en disco y transiciona al pipeline de procesamiento (`rofl-upload.gateway.ts:262-283`). |
 
 > [!NOTE]
-> **Comportamiento Específico:** Si el cliente envía un mensaje `{ "type": "start" }` cuando la sesión ya no está en estado `'idle'` (`state !== 'idle'`), el gateway responde con `{ type: 'error', message: 'Upload already in progress' }` (`rofl-upload.gateway.ts:164-166`) **sin reiniciar el acumulador `receivedBytes` ni recrear los streams**, anulando cualquier intento de saltarse el control de cuotas mediante mensajes intercalados.
+> **Comportamiento Específico:** Si el cliente envía un mensaje `{ "type": "start" }` cuando la sesión ya no está en estado `'idle'` (`state !== 'idle'`), el gateway responde con `{ type: 'error', message: 'Upload already in progress' }` (`rofl-upload.gateway.ts:222-224`) **sin reiniciar el acumulador `receivedBytes` ni recrear los streams**, anulando cualquier intento de saltarse el control de cuotas mediante mensajes intercalados.
 
 ### 4.2 Tramas Binarias de Datos (Chunks)
-Cuando el servidor recibe tramas marcadas como binarias (`isBinary === true`, `rofl-upload.gateway.ts:117-152`):
+Cuando el servidor recibe tramas marcadas como binarias (`isBinary === true`, `rofl-upload.gateway.ts:174-209`):
 - Verifica que el estado sea estrictamente `'uploading'` y que `fileWriteStream` esté activo. Si no, emite error: `Binary data chunk received before upload was started`.
 - Concatena el búfer y actualiza `receivedBytes += buffer.length`.
 - Escribe el chunk directamente en el stream de disco (`fileWriteStream.write(buffer)`).
@@ -82,8 +100,8 @@ Cuando el servidor recibe tramas marcadas como binarias (`isBinary === true`, `r
 ## 5. Cuota de Subida y Código de Cierre 1009
 
 Para proteger el sistema contra la saturación de espacio en disco en particiones temporales:
-- **Límite máximo por archivo/paquete:** `MAX_UPLOAD_BYTES = 50 * 1024 * 1024` (50 MB exactos, `rofl-upload.gateway.ts:89`).
-- **Comprobación en tiempo real:** Se evalúa en cada trama binaria (`rofl-upload.gateway.ts:133-142`).
+- **Límite máximo por archivo/paquete:** `MAX_UPLOAD_BYTES = 50 * 1024 * 1024` (50 MB exactos, `rofl-upload.gateway.ts:135`).
+- **Comprobación en tiempo real:** Se evalúa en cada trama binaria (`rofl-upload.gateway.ts:190-199`).
 - **Comportamiento ante exceso:**
   1. Envía mensaje JSON de error: `{"type": "error", "message": "File exceeds maximum upload size (50MB)"}`.
   2. Purga y destruye los recursos en disco (`await cleanupResources()`).
@@ -93,7 +111,7 @@ Para proteger el sistema contra la saturación de espacio en disco en particione
 
 ## 6. Eventos Emitidos por el Servidor
 
-Definidos en `packages/contracts/src/rofl-upload.ts:21-72`:
+Definidos en `packages/contracts/src/rofl-upload.ts:21-74`:
 
 | Evento (`type`) | Carga Útil | Significado / Contexto |
 |---|---|---|
@@ -104,4 +122,26 @@ Definidos en `packages/contracts/src/rofl-upload.ts:21-72`:
 | `warning` | `{ type: 'warning', message: string }` | Advertencia no fatal (ej. archivo con cabecera no-ROFL omitido dentro de un ZIP). |
 | `anomaly` | `{ type: 'anomaly', anomaly: MultiAccountAnomaly }` | Alerta de un usuario de Discord jugando con múltiples cuentas en la misma partida. |
 | `success` | `{ type: 'success', summary: BatchUploadSummary }` | Ingesta completada exitosamente; incluye partidas procesadas, jugadores y anomalías. |
-| `error` | `{ type: 'error', message: string }` | Error fatal que aborta la transacción y revierte cambios en base de datos. |
+| `error` | `{ type: 'error', message: string, incidentId?: string }` | Error fatal que aborta la subida; si ya se estaba persistiendo, la transacción se revierte. `incidentId` solo aparece en los errores inesperados (§7). |
+
+---
+
+## 7. Errores de Dominio frente a Errores Inesperados
+
+El gateway separa dos clases de error al enviar el evento `error`:
+
+- **Errores de dominio (`RoflUploadDomainError`, `apps/api/src/modules/rofl-upload/types/rofl-upload.errors.ts`):** rechazos causados por el contenido de la subida, útiles para el administrador. Su mensaje se envía tal cual. Son: tipo de fichero no admitido; límites del ZIP (número de ficheros, tamaño individual, ratio de compresión, tamaño total) y *Zip Slip*; ZIP sin `.rofl`; lote sin ninguna cabecera ROFL válida; invocadores no registrados (`Validation failed: …`); jugadores fuera de plantilla (`Roster violation: …`, `rofl-upload.gateway.ts:389`); y las reglas del repositorio sobre cuenta principal, membresía, unanimidad de equipos y partido inexistente o cerrado (`postgres-rofl-upload.repository.ts`). Los mensajes que el gateway emite directamente (JSON inválido, secuencia de mensajes incorrecta, cuota de 50 MB) también se envían tal cual.
+- **Errores inesperados:** cualquier otro, por ejemplo fallos de escritura en disco, de creación del directorio temporal, de vaciado del stream, del subproceso del parser (incluido el *timeout*), de lectura de un ZIP corrupto o de PostgreSQL. `sendIncident()` (`rofl-upload.gateway.ts:145-154`) genera un `incidentId` (UUID v4), registra el detalle con `logIncident` y envía:
+
+```json
+{
+  "type": "error",
+  "message": "Unexpected server error while processing the upload. Contact an administrator with the incident ID (<incidentId>).",
+  "incidentId": "<incidentId>"
+}
+```
+
+El identificador va también dentro de `message` porque la web solo muestra ese campo. El registro por defecto escribe en `stderr` una línea `[INCIDENT <incidentId>] Type: ROFL_UPLOAD_<contexto> | Message: <stack>`, con los contextos `DISK_WRITE`, `INIT_UPLOAD_DIR`, `FLUSH_FILE` y `PROCESSING`.
+
+> [!NOTE]
+> **Comportamiento Específico:** Si el cliente se desconecta durante el procesamiento, el `AbortController` de la conexión aborta la cola de descompresión; ese error no se registra como incidente ni se envía, porque el socket ya está cerrado (`rofl-upload.gateway.ts:429`).

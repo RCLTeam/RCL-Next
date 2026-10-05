@@ -7,7 +7,6 @@ import { AdminPage } from './pages/admin/AdminPage.js';
 import { CalendarPage } from './pages/calendar/CalendarPage.js';
 import { ChampionsPage } from './pages/champions/ChampionsPage.js';
 import { CrystalBallPage } from './pages/crystal-ball/CrystalBallPage.js';
-import { FantasyPage } from './pages/fantasy/FantasyPage.js';
 import { HomePage } from './pages/home/HomePage.js';
 import { LeaguesPage } from './pages/leagues/LeaguesPage.js';
 import { MatchDetailPage } from './pages/match-details/MatchDetailPage.js';
@@ -82,13 +81,6 @@ export const siteRoutes = [
     title: 'Campeones',
     competition: ['calendar'],
     render: ({ competition }) => <ChampionsPage competition={competition} />
-  },
-  {
-    path: '/fantasy',
-    id: 'fantasy',
-    title: 'Fantasy',
-    competition: ['calendar'],
-    render: () => <FantasyPage />
   },
   {
     path: '/predicciones',

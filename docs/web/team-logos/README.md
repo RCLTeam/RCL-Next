@@ -16,7 +16,7 @@ El diseño del módulo sigue con rigor el estándar de arquitectura modular desa
 4. **Hojas de Estilo Confinadas:** `team-logos.css` (`apps/web/src/features/team-logos/team-logos.css:1-24`) define la maquetación responsiva bajo el espacio de nombres `.rcl-site`, implementando rejillas adaptativas con `minmax(min(260px, 100%), 1fr)` y estilos coherentes con el sistema visual corporativo.
 5. **Resolutor de Rutas y Compatibilidad Histórica:** `team-logos.ts` (`apps/web/src/shared/resources/team-logos.ts:8-22`) normaliza rutas almacenadas previamente con prefijos públicos o de desarrollo (`/images/teams_logo/` y `/src/shared/assets/teams_logo/`) hacia la ruta de servicio administrada `/api/v1/team-logos/images/`.
 6. **Insignia Resiliente con Fallback Multinivel:** `TeamBadge.tsx` (`apps/web/src/features/competition/components/TeamBadge.tsx:13-50`) implementa una máquina de degradación elegante ante errores de red (`onError`), alternando de forma transparente entre la imagen asignada al equipo, el logo de reserva `/api/v1/team-logos/images/placeholder.webp` y las iniciales textuales del club deportivo.
-7. **Control de Acceso y Enrutamiento Central:** Integrado en el panel administrativo `AdminPage.tsx` (`apps/web/src/site/pages/admin/AdminPage.tsx:46-50, 58-59`) bajo el perímetro de autenticación `<RequireAdmin>`, y catalogado en la tabla de rutas de la aplicación `routes.tsx` (`apps/web/src/site/routes.tsx:153`).
+7. **Control de Acceso y Enrutamiento Central:** Integrado en el panel administrativo `AdminPage.tsx` (`apps/web/src/site/pages/admin/AdminPage.tsx:46-50, 58-59`) bajo el perímetro de autenticación `<RequireAdmin>`, y catalogado en la tabla de rutas de la aplicación `routes.tsx` (`apps/web/src/site/routes.tsx:145`).
 
 ---
 

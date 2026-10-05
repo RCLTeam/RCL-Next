@@ -29,7 +29,7 @@ describe('SitemapService', () => {
   });
 
   describe('Static Routes', () => {
-    it('generates XML containing all 11 static platform routes with exact priorities and frequencies', async () => {
+    it('generates XML containing all 10 static platform routes with exact priorities and frequencies', async () => {
       const repo = createMockRepo();
       const service = new SitemapService(repo);
 
@@ -85,15 +85,13 @@ describe('SitemapService', () => {
         /<loc>https:\/\/rebelcrownlegacy\.es\/champions<\/loc>\s*(?:<[^>]+>\s*)*<changefreq>weekly<\/changefreq>\s*<priority>0\.6<\/priority>/
       );
 
-      expect(xml).toContain('<loc>https://rebelcrownlegacy.es/fantasy</loc>');
-      expect(xml).toMatch(
-        /<loc>https:\/\/rebelcrownlegacy\.es\/fantasy<\/loc>\s*(?:<[^>]+>\s*)*<changefreq>weekly<\/changefreq>\s*<priority>0\.6<\/priority>/
-      );
-
       expect(xml).toContain('<loc>https://rebelcrownlegacy.es/crystal-ball</loc>');
       expect(xml).toMatch(
         /<loc>https:\/\/rebelcrownlegacy\.es\/crystal-ball<\/loc>\s*(?:<[^>]+>\s*)*<changefreq>weekly<\/changefreq>\s*<priority>0\.6<\/priority>/
       );
+
+      expect(xml.match(/<url>/g)).toHaveLength(10);
+      expect(xml).not.toContain('/fantasy');
     });
 
     it('outputs valid standard XML header and urlset tag', async () => {

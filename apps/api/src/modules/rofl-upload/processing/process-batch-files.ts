@@ -3,6 +3,7 @@ import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import AdmZip from 'adm-zip';
+import { RoflUploadDomainError } from '../types/rofl-upload.errors.js';
 
 export interface ProcessBatchFilesOptions {
   sourceFilePath: string;
@@ -159,7 +160,9 @@ export function validateZipSlip(baseDir: string, entryPath: string): string {
     path.isAbsolute(relative) ||
     !resolvedTarget.startsWith(resolvedBase + path.sep)
   ) {
-    throw new Error(`Zip slip security violation: path traversal detected in entry '${entryPath}'`);
+    throw new RoflUploadDomainError(
+      `Zip slip security violation: path traversal detected in entry '${entryPath}'`
+    );
   }
 
   return resolvedTarget;
@@ -188,7 +191,7 @@ export async function processBatchFiles(
 
   if (!isZip && !isRofl) {
     await cleanupTempDir(tempDir);
-    throw new Error(
+    throw new RoflUploadDomainError(
       `Unsupported file type: expected .rofl or .zip, received '${options.originalFileName}'`
     );
   }
@@ -225,7 +228,7 @@ export async function processBatchFiles(
     );
 
     if (roflEntries.length > MAX_FILES) {
-      throw new Error(
+      throw new RoflUploadDomainError(
         `Zip archive contains too many files (${roflEntries.length}). Maximum allowed is ${MAX_FILES}.`
       );
     }
@@ -236,20 +239,20 @@ export async function processBatchFiles(
       const compressed = entry.header.compressedSize;
 
       if (uncompressed > MAX_SINGLE_FILE_BYTES) {
-        throw new Error(
+        throw new RoflUploadDomainError(
           `File '${entry.entryName}' exceeds maximum size of 50MB (projected: ${Math.round(uncompressed / 1024 / 1024)}MB)`
         );
       }
 
       if (compressed > 0 && uncompressed / compressed > MAX_COMPRESSION_RATIO) {
-        throw new Error(
+        throw new RoflUploadDomainError(
           `File '${entry.entryName}' exceeds maximum compression ratio (${MAX_COMPRESSION_RATIO}:1)`
         );
       }
 
       projectedTotal += uncompressed;
       if (projectedTotal > MAX_TOTAL_UNCOMPRESSED_BYTES) {
-        throw new Error('Total uncompressed size of archive exceeds 300MB');
+        throw new RoflUploadDomainError('Total uncompressed size of archive exceeds 300MB');
       }
     }
 
@@ -266,7 +269,7 @@ export async function processBatchFiles(
     }
 
     if (roflFilePaths.length === 0) {
-      throw new Error('No .rofl files found in zip archive');
+      throw new RoflUploadDomainError('No .rofl files found in zip archive');
     }
 
     return { tempDir, roflFilePaths };

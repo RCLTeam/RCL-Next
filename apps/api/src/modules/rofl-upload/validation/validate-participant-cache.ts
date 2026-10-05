@@ -1,4 +1,5 @@
 import type { RoflUploadRepository } from '../persistence/rofl-upload.repository.js';
+import { RoflUploadDomainError } from '../types/rofl-upload.errors.js';
 import type { ParsedGameData, PlayerLookupResult } from '../types/rofl-upload.types.js';
 
 export async function validateParticipantCache(
@@ -40,7 +41,7 @@ export async function validateParticipantCache(
   }
 
   if (missingPlayers.length > 0) {
-    throw new Error(
+    throw new RoflUploadDomainError(
       `Validation failed: The following summoners are not registered in the database: ${missingPlayers.join(', ')}`
     );
   }

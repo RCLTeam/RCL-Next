@@ -20,7 +20,7 @@ A diferencia de clientes de pasarela convencionales, este componente no mantiene
 
 | Documento | Enlace | Resumen Funcional |
 |---|---|---|
-| **Rutas y Sonda de Salud** | [routes.md](routes.md) | Endpoint `GET /api/v1/bridge/health`, cabeceras `no-store`, sonda efímera `checkHealth()` con timeout duro de 5s y respuestas HTTP 200/503. |
+| **Rutas y Sonda de Salud** | [routes.md](routes.md) | Endpoint `GET /api/v1/bridge/health`, cabeceras `no-store`, sonda efímera `checkHealth()` compartida y cacheada 5 s, timeout duro de 5 s y respuestas HTTP 200/503. |
 | **Ciclo de Vida y Procesamiento** | [processing.md](processing.md) | Conexión lazy, autenticación `LOGIN` con supertoken, protocolo en 2 fases, pausa por rate limit, timeout de 5m e inactividad de 30m (código 1000). |
 | **Persistencia y Memoria** | [persistence.md](persistence.md) | Arquitectura 100% en memoria en proceso Node.js, cola FIFO `QueueItem[]`, cero interacción con PostgreSQL/Drizzle y aislamiento de sockets efímeros. |
 | **Validación y Errores** | [validation.md](validation.md) | Verificación de frames salientes, tolerancia ante frames JSON corruptos, discriminación de códigos de error y catálogo de excepciones. |

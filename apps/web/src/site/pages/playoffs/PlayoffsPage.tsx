@@ -20,7 +20,7 @@ export function PlayoffsPage({ competition }: { competition: Competition }) {
   return (
     <PageLayout
       id="playoffs"
-      number="11"
+      number="10"
       title="Playoffs"
       subtitle="La corona vacía"
       description="El último paso hacia el trono. Sigue las eliminatorias de tu división."

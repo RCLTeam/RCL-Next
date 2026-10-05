@@ -5,6 +5,8 @@ import { join } from 'node:path';
 import { AppError } from '../../shared/app-error.js';
 import { MAX_DATABASE_BACKUP_BYTES } from './database-transfer.service.js';
 
+// Sessions and OAuth states are revoked on every restore, so their rows are never exported.
+export const EXCLUDED_DATA_TABLES = ['auth_sessions', 'oauth_states'] as const;
 export interface PostgresBackupTools {
   exportDump(): Promise<Buffer>;
   readDump(backup: Buffer): Promise<{ data: string; exportedAt: string | null }>;
@@ -102,7 +104,8 @@ export class NativePostgresBackupTools implements PostgresBackupTools {
         '--schema=drizzle',
         '--no-publications',
         '--no-subscriptions',
-        '--no-security-labels'
+        '--no-security-labels',
+        ...EXCLUDED_DATA_TABLES.map((table) => `--exclude-table-data=public.${table}`)
       ],
       MAX_DATABASE_BACKUP_BYTES
     );

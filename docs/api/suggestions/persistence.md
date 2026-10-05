@@ -46,10 +46,16 @@ export interface SuggestionRecord {
   - El temporizador está configurado con `.unref()` (`suggestion.store.ts:55-57`), asegurando que la existencia del barrido no impida el cierre o apagado limpio del proceso Node.js ante señales del sistema operativo (`SIGTERM`/`SIGINT`).
   - El método `cleanup(now)` itera los registros y purga todos aquellos cuyo `now - record.createdAt >= this.ttlMs`, retornando el número total de registros desalojados (`suggestion.store.ts:140-149`).
 
-### 2.3 Métodos Principales de la API del Store
+### 2.3 Tamaño máximo
+- **Constante**: `DEFAULT_SUGGESTION_STORE_MAX_RECORDS = 1000` (`suggestion.store.ts:40`), configurable con la opción `maxRecords`.
+- `hasCapacity()` (`suggestion.store.ts:69-75`) indica si cabe un registro más; si el almacén está lleno, primero purga los registros caducados.
+- `SuggestionsService.submit()` consulta `hasCapacity()` antes de crear el registro: con el almacén lleno responde `503 SUGGESTIONS_UNAVAILABLE` sin crear el registro ni encolar la trama, de modo que el número de registros nunca supera `maxRecords`.
+
+### 2.4 Métodos Principales de la API del Store
 | Método | Firma | Propósito Técnico |
 |---|---|---|
 | `create` | `create(data): SuggestionRecord` | Inicializa un nuevo registro con timestamps `createdAt` y `updatedAt`, guardándolo en el mapa (`L61-75`). |
+| `hasCapacity` | `hasCapacity(now?: number): boolean` | Indica si cabe un registro más bajo `maxRecords`, purgando antes los caducados si está lleno. |
 | `get` | `get(id: string): SuggestionRecord \| undefined` | Obtiene un registro aplicando la guarda de expiración pasiva (`L87-98`). |
 | `updateStatus` | `updateStatus(id, update): SuggestionRecord \| undefined` | Aplica una transición de estado respetando la inmutabilidad de estados terminales (`L101-127`). |
 | `delete` | `delete(id: string): boolean` | Elimina manualmente un registro del almacén (`L129-131`). |
@@ -80,6 +86,9 @@ Validado en pruebas unitarias mediante la expresión regular estricta (`incident
 ### 3.3 Catálogo Canónico de Tipos de Incidencia
 | Tipo de Incidencia | Origen Técnico | Causa y Contexto |
 |---|---|---|
-| **`RATE_LIMIT_TIMEOUT`** | `SuggestionsService.dispatchToBridge` (`suggestions.service.ts:273-277`) | La propuesta superó el límite máximo de 5 minutos continuos acumulados en reintentos por rate limit en Discord. |
-| **`BRIDGE_SEND_FAILED`** | `SuggestionsService.dispatchToBridge` (`suggestions.service.ts:277-280`) | Excepción de red, socket inalcanzable, o fallo de transporte al transmitir el frame `SUGGESTION_CREATED` en Fase 1. |
-| **`DISCORD_DELIVERY_FAILED`** | `SuggestionsService.setupBridgeListeners` (`suggestions.service.ts:104-123`) | El bot de Discord procesó la propuesta en Fase 2 pero devolvió un frame `SUGGESTION_FAILED` (p. ej. canal borrado, permisos insuficientes). |
+| **`RATE_LIMIT_TIMEOUT`** | `SuggestionsService.dispatchToBridge` (`suggestions.service.ts:316-326`) | La propuesta superó el límite máximo de 5 minutos continuos acumulados en reintentos por rate limit en Discord. |
+| **`BRIDGE_SEND_FAILED`** | `SuggestionsService.dispatchToBridge` (`suggestions.service.ts:316-326`) | Excepción de red, socket inalcanzable, o fallo de transporte al transmitir el frame `SUGGESTION_CREATED` en Fase 1. Para `BridgeUnavailableError` el mensaje incluye la causa original (`describeError`, `suggestions.service.ts:331-337`). |
+| **`DISCORD_DELIVERY_FAILED`** | Listener de `SUGGESTION_FAILED` en el constructor (`suggestions.service.ts:115-142`) | El bot de Discord procesó la propuesta en Fase 2 pero devolvió un frame `SUGGESTION_FAILED` (p. ej. canal borrado, permisos insuficientes). Si el bot envía `incident_id`, se registra con ese identificador. |
+
+### 3.4 Separación entre log y respuesta pública
+El detalle técnico del fallo (mensajes de socket, hosts, puertos, motivos del bot) solo se escribe en la línea `[INCIDENT <uuid>]` del log. El registro guarda `status: 'failed'` y el `incidentId`, y `GET /api/v1/suggestions/status/:id` devuelve únicamente ese identificador para que el usuario pueda comunicarlo.

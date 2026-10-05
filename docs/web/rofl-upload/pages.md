@@ -32,7 +32,7 @@ En cumplimiento del estándar de documentación técnica del monorepo:
 ## 3. Declaración de Rutas y Navegación
 
 ### 3.1 Registro en el Sitemap de la Aplicación
-La ruta está registrada formalmente en el mapa de navegación del sitio en `apps/web/src/site/routes.tsx:150`:
+La ruta está registrada formalmente en el mapa de navegación del sitio en `apps/web/src/site/routes.tsx:142`:
 ```typescript
 {
   path: '/admin/rofl/upload',

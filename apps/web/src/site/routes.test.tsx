@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import { adminRoutes, resolveSiteRoute } from './routes.js';
+import { adminRoutes, resolveSiteRoute, siteRoutes } from './routes.js';
 
 test('Detail routes retain encoded parameters and their parent navigation', () => {
   for (const [path, navigationPath] of [
@@ -14,6 +14,11 @@ test('Detail routes retain encoded parameters and their parent navigation', () =
   expect(resolveSiteRoute('/equipos/equipo%20uno')?.parameter).toBe('equipo%20uno');
   expect(resolveSiteRoute('/equipos/one/two')).toBeUndefined();
   expect(resolveSiteRoute('/admin/unknown')).toBeUndefined();
+});
+
+test('Retired sections are neither routable nor listed in the navigation', () => {
+  expect(resolveSiteRoute('/fantasy')).toBeUndefined();
+  expect(siteRoutes.some((route) => route.id === 'fantasy')).toBe(false);
 });
 
 test('Routes only request their own data and the visible live-match header', () => {

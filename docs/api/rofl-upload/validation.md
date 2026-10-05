@@ -25,14 +25,14 @@ La función `validateParticipantCache()` (`apps/api/src/modules/rofl-upload/vali
 3. **Comprobación de Cobertura:** Compara el conjunto de identidades solicitadas contra las identidades encontradas en la tabla `players`.
 4. **Interrupción Inmediata:** Si falta al menos un participante:
    ```typescript
-   // validate-participant-cache.ts:43-46
-   throw new Error(
+   // validate-participant-cache.ts:44-46
+   throw new RoflUploadDomainError(
      `Validation failed: The following summoners are not registered in the database: ${missingPlayers.join(', ')}`
    );
    ```
 
 > [!NOTE]
-> **Comportamiento Específico:** La validación aborta la totalidad de la transacción de forma inmediata. Si un archivo `.rofl` de una serie de 3 partidas tiene 9 jugadores registrados y 1 no registrado, **ninguna partida de la serie se guarda en la base de datos**. El sistema no admite inserciones parciales ni deja marcadores a medias. La responsabilidad de dar de alta a los invocadores en la tabla `players` y asignarlos al roster recae en el administrador antes de proceder con la subida.
+> **Comportamiento Específico:** La validación aborta la totalidad de la transacción de forma inmediata. El error es de dominio (`RoflUploadDomainError`), por lo que el cliente recibe el mensaje completo con la lista de invocadores (ver [routes.md §7](routes.md#7-errores-de-dominio-frente-a-errores-inesperados)). Si un archivo `.rofl` de una serie de 3 partidas tiene 9 jugadores registrados y 1 no registrado, **ninguna partida de la serie se guarda en la base de datos**. El sistema no admite inserciones parciales ni deja marcadores a medias. La responsabilidad de dar de alta a los invocadores en la tabla `players` y asignarlos al roster recae en el administrador antes de proceder con la subida.
 
 ---
 
@@ -45,9 +45,9 @@ Antes de asignar los puntos de una partida en la serie, el repositorio valida qu
 3. **Equipos Distintos:** El equipo del lado azul no puede ser idéntico al del lado rojo (`blueTeamId !== redTeamId`).
 4. **Alineación No Contaminada:** Si se detectan jugadores pertenecientes a un tercer equipo o sin membresía activa en el equipo en juego, la transacción se aborta con un mensaje descriptivo que desglosa el roster:
    ```typescript
-   // postgres-rofl-upload.repository.ts:262-264
-   throw new Error(
-     `Validation failed: Blue team participants belong to multiple teams. Roster breakdown: [${breakdown.join(', ')}]`
+   // postgres-rofl-upload.repository.ts:325-327
+   throw new RoflUploadDomainError(
+     `Unanimous team membership validation failed: blue side players belong to ${blueTeamIds.size} different teams in game ${game.fileName}. Roster breakdown: [${breakdown}]`
    );
    ```
 
@@ -73,7 +73,7 @@ El módulo `detect-multi-account-anomalies.ts` (`apps/api/src/modules/rofl-uploa
    ```
 
 > [!WARNING]
-> **Comportamiento Específico:** A diferencia del error por invocadores no registrados, **la detección de anomalías multi-cuenta NO aborta la transacción ni detiene la inserción en base de datos** (`rofl-upload.gateway.ts:299-302`).
+> **Comportamiento Específico:** A diferencia del error por invocadores no registrados, **la detección de anomalías multi-cuenta NO aborta la transacción ni detiene la inserción en base de datos** (`rofl-upload.gateway.ts:355-357`).
 > - Las partidas se insertan con normalidad para evitar bloqueos operativos.
 > - El gateway emite inmediatamente un evento WebSocket de tipo `{ type: 'anomaly', anomaly }` hacia la consola de la interfaz de usuario.
 > - Las anomalías detectadas se adjuntan en el resumen final `BatchUploadSummary.anomalies` para que el cuerpo arbitral y los administradores inicien los expedientes sancionadores oportunos.

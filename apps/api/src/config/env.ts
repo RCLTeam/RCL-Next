@@ -1,6 +1,39 @@
+import { isIP } from 'node:net';
 import { fileURLToPath } from 'node:url';
 import { config } from 'dotenv';
 import { z } from 'zod';
+
+const trustProxyNames = new Set(['loopback', 'linklocal', 'uniquelocal']);
+
+function isTrustProxyEntry(entry: string): boolean {
+  if (trustProxyNames.has(entry)) return true;
+  const [address, prefix, ...rest] = entry.split('/');
+  if (rest.length > 0 || !address) return false;
+  const version = isIP(address);
+  if (version === 0) return false;
+  if (prefix === undefined) return true;
+  if (!/^\d{1,3}$/.test(prefix)) return false;
+  return Number(prefix) <= (version === 4 ? 32 : 128);
+}
+
+/**
+ * Express `trust proxy` value. `false` ignores X-Forwarded-For; a number trusts
+ * that many proxy hops; otherwise a comma-separated list of trusted proxy
+ * addresses, subnets or the names loopback, linklocal and uniquelocal.
+ * `true` (trust every hop) is rejected because clients could spoof their IP.
+ */
+const trustProxySchema = z
+  .string()
+  .default('loopback')
+  .transform((value, ctx): false | number | string => {
+    const trimmed = value.trim();
+    if (trimmed === '' || trimmed === 'false') return false;
+    if (/^\d+$/.test(trimmed)) return Number(trimmed);
+    const entries = trimmed.split(',').map((entry) => entry.trim());
+    if (entries.every(isTrustProxyEntry)) return entries.join(',');
+    ctx.addIssue({ code: 'custom', message: 'Invalid trust proxy value' });
+    return z.NEVER;
+  });
 
 export function parseEnvironment(environment: NodeJS.ProcessEnv) {
   const result = z
@@ -18,7 +51,8 @@ export function parseEnvironment(environment: NodeJS.ProcessEnv) {
       DISCORD_CLIENT_SECRET: z.string().default(''),
       DISCORD_REDIRECT_URI: z.string().default(''),
       DISCORD_BOT_WS_URL: z.string().default(''),
-      DISCORD_BOT_WS_SUPERTOKEN: z.string().default('')
+      DISCORD_BOT_WS_SUPERTOKEN: z.string().default(''),
+      TRUST_PROXY: trustProxySchema
     })
     .superRefine((env, ctx) => {
       const keys = ['DISCORD_CLIENT_ID', 'DISCORD_CLIENT_SECRET', 'DISCORD_REDIRECT_URI'] as const;

@@ -285,10 +285,10 @@ Si la imagen proviene del directorio administrado de logos (`teamLogoDirectory`)
 
 ### 5.1 Enrutamiento Canónico (`routes.tsx`)
 
-En `apps/web/src/site/routes.tsx:153`, el array `adminRoutes` declara formalmente el endpoint:
+En `apps/web/src/site/routes.tsx:145`, el array `adminRoutes` declara formalmente el endpoint:
 
 ```typescript
-// apps/web/src/site/routes.tsx:147-155
+// apps/web/src/site/routes.tsx:139-147
 export const adminRoutes = [
   { path: '/admin/home-content', title: 'Contenido de la home' },
   { path: '/admin', title: 'Admin' },
