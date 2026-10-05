@@ -139,7 +139,7 @@ async getArticles(): Promise<SitemapArticleItem[]> {
 
 ## 4. Eficiencia de I/O y Concurrencia de Consultas
 
-1. **Ejecución Paralela con `Promise.all`:** En el servicio orquestador (`sitemap.service.ts:99-103`), las llamadas a `getTeams()`, `getPlayers()` y `getArticles()` se despachan en paralelo. La latencia total del acceso a datos corresponde al tiempo de la consulta más lenta, en lugar de acumular la suma secuencial de las tres.
+1. **Ejecución Paralela con `Promise.all`:** En el servicio orquestador (`sitemap.service.ts:98-102`), las llamadas a `getTeams()`, `getPlayers()` y `getArticles()` se despachan en paralelo. La latencia total del acceso a datos corresponde al tiempo de la consulta más lenta, en lugar de acumular la suma secuencial de las tres.
 2. **Uso de Índices de Base de Datos:**
    - La tabla `editorial_articles` cuenta con el índice compuesto `editorial_home_idx` sobre `(published, show_on_home, home_order)` (`schema.ts:687`), lo que permite a PostgreSQL resolver rápidamente el filtro `published = true`.
    - Las consultas a `teams` y `players` operan sobre claves primarias `id` indexadas por defecto como índices B-tree únicos.

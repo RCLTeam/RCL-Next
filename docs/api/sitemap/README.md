@@ -23,7 +23,7 @@ El diseño del módulo se rige por los siguientes principios de arquitectura e i
 | Documento | Enlace | Resumen Funcional |
 |---|---|---|
 | **Rutas y Controladores** | [routes.md](routes.md) | Exposición del endpoint `GET /api/sitemap.xml`, montaje en Express, cabeceras HTTP (`Cache-Control`, `Content-Type`), manejo de errores 404/500 e integración con Nginx. |
-| **Lógica de Procesamiento** | [processing.md](processing.md) | Orquestación en `SitemapService`, catálogo de 11 rutas estáticas, resolución de URL base canónica, deduplicación *single-flight*, algoritmo puro de serialización y formateo de fechas. |
+| **Lógica de Procesamiento** | [processing.md](processing.md) | Orquestación en `SitemapService`, catálogo de 10 rutas estáticas, resolución de URL base canónica, deduplicación *single-flight*, algoritmo puro de serialización y formateo de fechas. |
 | **Persistencia y Consultas** | [persistence.md](persistence.md) | Interfaz `SitemapRepository`, implementación con Drizzle ORM sobre `teams`, `players` y `editorial_articles`, filtros activos/publicados y optimización de transferencias. |
 | **Contratos y Tipos** | [contracts.md](contracts.md) | Definiciones de tipos TypeScript en `sitemap.types.ts` (`SitemapUrlEntry`, `SitemapChangeFrequency`, modelos de persistencia, opciones de servicio) y formato XML estándar. |
 

@@ -6,7 +6,7 @@
 
 ## 1. Resumen Ejecutivo
 
-El frontend de RCL-Next (`apps/web`) cuenta con **23 suites de pruebas unitarias y de componentes**, que ejecutan **130 pruebas automáticas** distribuidas en **2.433 líneas de código**. Estas pruebas operan bajo Vitest y el entorno simulado de DOM/Node, validando la separación estricta de responsabilidades del Golden Standard: desacoplamiento entre componentes visuales puros (*Dumb UI*), *headless hooks*, reducers de estado puro, adaptadores de cliente API y servicios de activos externos de Riot Games (DataDragon y CommunityDragon).
+El frontend de RCL-Next (`apps/web`) cuenta con **23 suites de pruebas unitarias y de componentes**, que ejecutan **131 pruebas automáticas** distribuidas en **2.438 líneas de código**. Estas pruebas operan bajo Vitest y el entorno simulado de DOM/Node, validando la separación estricta de responsabilidades del Golden Standard: desacoplamiento entre componentes visuales puros (*Dumb UI*), *headless hooks*, reducers de estado puro, adaptadores de cliente API y servicios de activos externos de Riot Games (DataDragon y CommunityDragon).
 
 ---
 
@@ -36,7 +36,7 @@ El frontend de RCL-Next (`apps/web`) cuenta con **23 suites de pruebas unitarias
 | 20 | `apps/web/src/site/pages/champions/ChampionsTable.test.tsx` | 3 | 56 | Página Campeones | Tabla de estadísticas de campeones de la liga: ordenación por columnas (partidas, victorias, KDA), filtrado y estado vacío. |
 | 21 | `apps/web/src/site/pages/players/PlayersPage.test.tsx` | 4 | 174 | Página Jugadores | Catálogo general de jugadores, selector de temporada/división, podio de aspirantes a MVP y filtrado por rol en equipo. |
 | 22 | `apps/web/src/site/pages/predictions/PredictionCard.test.tsx` | 2 | 53 | Tarjeta Predicciones | Componente interactivo para emitir votos en series Bo1/Bo3/Bo5, selección de marcador y estado bloqueado tras el cierre de jornada. |
-| 23 | `apps/web/src/site/routes.test.tsx` | 2 | 32 | Enrutamiento Global | Resolución del mapa de rutas (`/`, `/competition`, `/teams`, `/players`, `/predictions` con recursos `['calendar', 'rounds']`, `/admin`), parámetros dinámicos de URL y ruta 404. |
+| 23 | `apps/web/src/site/routes.test.tsx` | 3 | 37 | Enrutamiento Global | Resolución del mapa de rutas (`/`, `/competition`, `/teams`, `/players`, `/predictions` con recursos `['calendar', 'rounds']`, `/admin`), parámetros dinámicos de URL, ruta 404 y ausencia de secciones retiradas (`/fantasy`). |
 
 ---
 
@@ -48,6 +48,6 @@ El frontend de RCL-Next (`apps/web`) cuenta con **23 suites de pruebas unitarias
 2. **Funcionalidad `rofl-upload` (`apps/web/src/features/rofl-upload/`):**
    - *Ausencia en carpeta local:* Cero archivos `*.test.tsx` directos dentro de `features/rofl-upload/`.
    - *Dónde se prueba:* En `tests/unit/useRoflUploadWs.test.ts` (13 pruebas, 222 LoC) para toda la orquestación del hook de streaming binario y en `tests/unit/render/rofl-upload.test.tsx` (6 pruebas, 97 LoC) para la interfaz de arrastrar y soltar repeticiones.
-3. **Páginas `crystal-ball` y `fantasy`:**
-   - *Ausencia de pruebas dedicadas:* No cuentan con archivos `*.test.tsx` dedicados a su vista aislada.
+3. **Página `crystal-ball`:**
+   - *Ausencia de pruebas dedicadas:* No cuenta con un archivo `*.test.tsx` dedicado a su vista aislada.
    - *Dónde se prueba:* Su montaje y resolución de navegación están garantizados por la suite general de rutas `apps/web/src/site/routes.test.tsx` y la suite de integración de la aplicación `tests/unit/render/App.test.tsx`.

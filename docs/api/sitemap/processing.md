@@ -38,10 +38,10 @@ export interface SitemapServiceOptions {
 
 ### 2.2 Resolución de URL Base Canónica (`getBaseUrl`)
 
-Para prevenir discrepancias en las URLs generadas o la presencia de barras diagonales redundantes, el método privado `getBaseUrl()` (`sitemap.service.ts:48-54`) aplica un orden de resolución determinista y normaliza la salida eliminando cualquier barra final:
+Para prevenir discrepancias en las URLs generadas o la presencia de barras diagonales redundantes, el método privado `getBaseUrl()` (`sitemap.service.ts:47-53`) aplica un orden de resolución determinista y normaliza la salida eliminando cualquier barra final:
 
 ```typescript
-// apps/api/src/modules/sitemap/processing/sitemap.service.ts:48-54
+// apps/api/src/modules/sitemap/processing/sitemap.service.ts:47-53
 private getBaseUrl(): string {
   const envUrl = process.env.FRONTEND_URL;
   const candidate =
@@ -58,7 +58,7 @@ Bajo condiciones de tráfico elevado o durante el rastreo simultáneo por múlti
 Para resolver este problema, `SitemapService` emplea el patrón de promesa en vuelo compartida (`inFlightPromise`):
 
 ```typescript
-// apps/api/src/modules/sitemap/processing/sitemap.service.ts:59-84
+// apps/api/src/modules/sitemap/processing/sitemap.service.ts:58-83
 async getSitemapXml(): Promise<string> {
   const now = Date.now();
 
@@ -97,10 +97,10 @@ async getSitemapXml(): Promise<string> {
 
 ### 2.4 Invalidación Explícita de Caché (`invalidateCache`)
 
-El servicio expone el método `invalidateCache(): void` (`sitemap.service.ts:89-93`):
+El servicio expone el método `invalidateCache(): void` (`sitemap.service.ts:88-92`):
 
 ```typescript
-// apps/api/src/modules/sitemap/processing/sitemap.service.ts:89-93
+// apps/api/src/modules/sitemap/processing/sitemap.service.ts:88-92
 invalidateCache(): void {
   this.cachedXml = null;
   this.cachedAt = null;
@@ -118,7 +118,7 @@ El método privado `generateXml()` reúne tanto las rutas estáticas predefinida
 
 ### 3.1 Rutas Estáticas de la Plataforma (`STATIC_ROUTES`)
 
-Definidas en `sitemap.service.ts:18-30`, abarcan las secciones fijas de la plataforma:
+Definidas en `sitemap.service.ts:18-29`, abarcan las secciones fijas de la plataforma:
 
 | Ruta | Prioridad (`priority`) | Frecuencia de Cambio (`changefreq`) | Justificación de Negocio |
 |---|:---:|:---:|---|
@@ -131,12 +131,11 @@ Definidas en `sitemap.service.ts:18-30`, abarcan las secciones fijas de la plata
 | `/ligas` | `0.7` | `weekly` | Información general de temporadas y divisiones. |
 | `/playoffs` | `0.7` | `weekly` | Cuadros eliminatorios y fases finales de temporada. |
 | `/champions` | `0.6` | `weekly` | Información del torneo Champions de la comunidad. |
-| `/fantasy` | `0.6` | `weekly` | Sección de juego Fantasy de la liga. |
 | `/crystal-ball` | `0.6` | `weekly` | Predicciones globales a largo plazo de la competición. |
 
 ### 3.2 Rutas Dinámicas de Base de Datos
 
-El servicio ejecuta concurrentemente con `Promise.all` las tres consultas del repositorio (`sitemap.service.ts:99-103`):
+El servicio ejecuta concurrentemente con `Promise.all` las tres consultas del repositorio (`sitemap.service.ts:98-102`):
 
 1. **Equipos (`teams`):**
    - URL: `${baseUrl}/equipos/${team.id}`

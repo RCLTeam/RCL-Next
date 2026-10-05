@@ -25,7 +25,6 @@ const STATIC_ROUTES: readonly StaticRouteDefinition[] = [
   { path: '/ligas', priority: 0.7, changefreq: 'weekly' },
   { path: '/playoffs', priority: 0.7, changefreq: 'weekly' },
   { path: '/champions', priority: 0.6, changefreq: 'weekly' },
-  { path: '/fantasy', priority: 0.6, changefreq: 'weekly' },
   { path: '/crystal-ball', priority: 0.6, changefreq: 'weekly' }
 ] as const;
 
