@@ -110,6 +110,11 @@ describe('database transfer permissions and atomic restoration', () => {
     dump += `COPY drizzle.__drizzle_migrations (id, hash, created_at) FROM stdin;\n${history.rows.map((row) => `${row.id}\t${row.hash}\t${row.created_at}`).join('\n')}\n\\.\n`;
   });
   afterAll(() => client.close());
+  const exportLogs = () =>
+    db
+      .select()
+      .from(schema.auditLogs)
+      .where(eq(schema.auditLogs.action, 'database-transfer.export'));
   it('exports native files for admins and owners only, requiring a trusted origin', async () => {
     for (const role of ['admin', 'owner'] as const) {
       const response = await post('export', role).expect(200);
@@ -126,6 +131,20 @@ describe('database transfer permissions and atomic restoration', () => {
       .set('Cookie', `rcl_session=${tokens.admin}`)
       .expect(403);
   });
+  it('records every successful export with its actor, size and file hash', async () => {
+    const logs = await exportLogs();
+    expect(logs.map((log) => log.actorDiscordUserId).sort()).toEqual([ids.owner, ids.admin].sort());
+    for (const log of logs) {
+      expect(log.entityType).toBe('database');
+      expect(log.after).toEqual({
+        fileHash: createHash('sha256').update('PGDMPtest').digest('hex'),
+        bytes: Buffer.byteLength('PGDMPtest')
+      });
+    }
+    tools.exportDump.mockRejectedValueOnce(new Error('pg_dump failed'));
+    await post('export', 'admin').expect(500);
+    expect(await exportLogs()).toHaveLength(2);
+  });
   it('rejects admin uploads before reading or restoring the backup', async () => {
     tools.readDump.mockClear();
     for (const path of ['import-preview', 'import'])
@@ -140,8 +159,25 @@ describe('database transfer permissions and atomic restoration', () => {
     expect(response.body.data.tables).toHaveLength(21);
     expect(response.body.data.confirmation).toMatch(/^[a-f0-9]{64}$/);
     expect(await db.select().from(schema.authSessions)).toHaveLength(3);
-    expect(await db.select().from(schema.auditLogs)).toHaveLength(1);
+    expect(
+      (await db.select().from(schema.auditLogs)).filter(
+        (log) => log.action !== 'database-transfer.export'
+      )
+    ).toHaveLength(1);
     expect((await db.select().from(schema.seasons))[0]?.name).toBe('Backup season');
+  });
+  it('accepts dumps that exclude session and OAuth state rows', async () => {
+    const withoutSessions = dump.replace(
+      /COPY public\.(auth_sessions|oauth_states) [^\n]+\n(?:[^\n]*\n)*?\\\.\n/g,
+      ''
+    );
+    expect(withoutSessions).not.toContain('COPY public.auth_sessions');
+    expect(withoutSessions).not.toContain('COPY public.oauth_states');
+    const response = await preview(withoutSessions).expect(200);
+    const tables = response.body.data.tables as { table: string; importedRows: number }[];
+    expect(tables).toHaveLength(21);
+    expect(tables.find((table) => table.table === 'auth_sessions')?.importedRows).toBe(0);
+    expect(tables.find((table) => table.table === 'seasons')?.importedRows).toBe(1);
   });
   it('rejects incompatible migrations, missing tables and invalid rows without changing data', async () => {
     await preview(dump.replace('COPY public.seasons', 'COPY public.unknown')).expect(422);

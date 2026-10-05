@@ -27,7 +27,12 @@ export function decodeCopyValue(value: string): string | null {
 
 // Extract only COPY payloads from pg_restore output. Never execute SQL or psql commands
 // supplied by a dump (functions, triggers, extensions and permissions remain local).
-export function parseCopyBackup(source: string, expected: Record<string, string[]>) {
+// Optional tables may be absent, but their columns are still validated when present.
+export function parseCopyBackup(
+  source: string,
+  expected: Record<string, string[]>,
+  optional: readonly string[] = []
+) {
   const result: Record<string, Record<string, string | null>[]> = {};
   let current: { name: string; columns: string[] } | undefined;
   for (const line of source.split('\n')) {
@@ -60,7 +65,7 @@ export function parseCopyBackup(source: string, expected: Record<string, string[
     result[name] = [];
     current = { name, columns };
   }
-  if (current || Object.keys(result).sort().join(',') !== Object.keys(expected).sort().join(','))
+  if (current || Object.keys(expected).some((name) => !result[name] && !optional.includes(name)))
     throw invalid();
   return result;
 }
