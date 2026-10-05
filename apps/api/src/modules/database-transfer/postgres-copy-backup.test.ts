@@ -15,6 +15,19 @@ describe('native PostgreSQL COPY decoding', () => {
       )
     ).toEqual({ 'public.seasons': [{ name: 'League\tname' }] });
   });
+  it('accepts missing optional tables but validates them when present', () => {
+    const expected = { 'public.seasons': ['name'], 'public.auth_sessions': ['token_hash'] };
+    const seasons = 'COPY public.seasons (name) FROM stdin;\nLeague\n\\.\n';
+    expect(parseCopyBackup(seasons, expected, ['public.auth_sessions'])).toEqual({
+      'public.seasons': [{ name: 'League' }]
+    });
+    expect(() => parseCopyBackup(seasons, expected)).toThrow();
+    expect(() =>
+      parseCopyBackup(`${seasons}COPY public.auth_sessions (extra) FROM stdin;\n\\.\n`, expected, [
+        'public.auth_sessions'
+      ])
+    ).toThrow();
+  });
   it.each([
     'COPY public.unknown (name) FROM stdin;\n\\.\n',
     'COPY public.seasons (extra) FROM stdin;\n\\.\n',

@@ -24,10 +24,11 @@ El enrutador de transferencias de base de datos (`apps/api/src/modules/database-
 - **Parámetros de entrada:** Ninguno.
 - **Comportamiento:**
   1. Adquiere el cerrojo de exclusión mutua `service.exclusive(...)`.
-  2. Ejecuta `pg_dump` con argumentos optimizados (`--format=custom`, `--schema=public`, `--schema=drizzle`).
-  3. Establece la cabecera `Content-Type: application/octet-stream`.
-  4. Establece la cabecera `Content-Disposition: attachment; filename="rcl-YYYY-MM-DDTHH-MM-SS.sssZ.dump"`.
-  5. Envía el búfer binario directamente al cliente.
+  2. Ejecuta `pg_dump` con argumentos optimizados (`--format=custom`, `--schema=public`, `--schema=drizzle`). El volcado conserva la definición de `auth_sessions` y `oauth_states`, pero no sus filas (`--exclude-table-data`, `postgres-backup-tools.ts:9, 96-111`).
+  3. Vuelve a comprobar el rol del actor y registra la exportación en `audit_logs` con la acción `database-transfer.export`, el actor, el tamaño en bytes y el SHA-256 del fichero (`postgres-database-transfer.repository.ts:210-221`). Si el registro falla, la exportación falla y no se entrega el fichero.
+  4. Establece la cabecera `Content-Type: application/octet-stream`.
+  5. Establece la cabecera `Content-Disposition: attachment; filename="rcl-YYYY-MM-DDTHH-MM-SS.sssZ.dump"`.
+  6. Envía el búfer binario directamente al cliente.
 - **Respuesta exitosa (HTTP 200 OK):** Secuencia binaria del volcado custom de PostgreSQL.
 
 ---

@@ -54,7 +54,8 @@ La interacción con los binarios del motor de base de datos se realiza bajo estr
 ### 3.2 Protección de Credenciales y Parámetros de Volcado
 - Las contraseñas de conexión jamás se pasan en la línea de comandos (donde serían visibles mediante herramientas como `ps` o `/proc`). Se transmiten únicamente a través de la variable de entorno protegida `PGPASSWORD`.
 - `pg_dump` se ejecuta con `--no-password` e incluye de forma selectiva únicamente los esquemas de la aplicación:
-  `--format=custom`, `--no-owner`, `--no-privileges`, `--schema=public`, `--schema=drizzle`, `--no-publications`, `--no-subscriptions`, `--no-security-labels`.
+  `--format=custom`, `--no-owner`, `--no-privileges`, `--schema=public`, `--schema=drizzle`, `--no-publications`, `--no-subscriptions`, `--no-security-labels`, `--exclude-table-data=public.auth_sessions` y `--exclude-table-data=public.oauth_states` (`postgres-backup-tools.ts:96-111`).
+- Las tablas sin datos exportados se declaran en `EXCLUDED_DATA_TABLES` (`postgres-backup-tools.ts:9`). Sus filas (hash del token de cada sesión, estados OAuth pendientes) nunca se reutilizan, porque la restauración las elimina; el volcado conserva su definición para que la estructura restaurada no cambie.
 
 ### 3.3 Aislamiento Temporal y Limpieza Garantizada
 - En operaciones de lectura y restauración (`readDump`), se valida primero la cabecera binaria mágica:
@@ -80,6 +81,7 @@ Para evitar ejecutar volcados SQL arbitrarios que pudieran contener instruccione
 - Extrae el nombre de la tabla y las columnas declaradas.
 - Compara las columnas extraídas contra las columnas esperadas en el esquema actual de Drizzle (`expectedColumns`). Si las columnas del volcado no coinciden con exactitud quirúrgica con el modelo de datos activo, la importación se aborta con HTTP 422 `INCOMPATIBLE_BACKUP`.
 - Lee los registros tabulados fila por fila hasta detectar el delimitador de cierre de bloque `\.`.
+- Cada tabla esperada debe aparecer una sola vez. Las tablas indicadas en el parámetro `optional` (`postgres-copy-backup.ts:31-35, 68-69`) pueden faltar; si aparecen, sus columnas se validan igual. El repositorio declara opcionales `public.auth_sessions` y `public.oauth_states` y descarta sus filas aunque un volcado anterior las incluya (`postgres-database-transfer.repository.ts:39-53`).
 
 ### 4.2 Decodificación de Secuencias de Escape PostgreSQL (`decodeCopyValue`)
 - **Cita:** `postgres-copy-backup.ts:9-26`
