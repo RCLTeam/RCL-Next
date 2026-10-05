@@ -9,6 +9,11 @@ test('Public sections have distinct descriptions and normalize query strings and
   expect(getPageMetadata('/toString').title).toBe('Página no encontrada');
 });
 
+test('Retired sections do not expose metadata', () => {
+  expect(Object.hasOwn(pageMetadata, '/fantasy')).toBe(false);
+  expect(getPageMetadata('/fantasy').title).toBe('Página no encontrada');
+});
+
 test('HTML metadata escapes attribute values and replaces previous tags without duplication', () => {
   const template =
     '<head><!-- page-metadata:start --><title>Old</title><!-- page-metadata:end --></head>';
