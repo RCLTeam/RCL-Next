@@ -99,6 +99,10 @@ docs/
 │   │   ├── persistence.md                       # Tablas editorial_articles y home_weekly_teams
 │   │   ├── validation.md                        # Restricciones de 5 roles únicos en quinteto ideal
 │   │   └── contracts.md                         # DTOs de artículos y composición del equipo ideal
+│   ├── page-metadata/                           # Rebanada: Metadatos de página para vistas previas de enlaces
+│   │   ├── README.md                            # Resumen del endpoint JSON y del HTML inicial con metadatos
+│   │   ├── routes.md                            # GET /api/v1/page-metadata y webPageRouter
+│   │   └── processing.md                        # Consultas ligeras de fichas y caché con TTL y single-flight
 │   ├── predictions/                             # Rebanada: Quinielas y predicciones comunitarias
 │   │   ├── README.md                            # Resumen de pronósticos con límite horario Europe/Madrid
 │   │   ├── routes.md                            # Endpoints de votación, consulta de resultados y rankings
@@ -226,6 +230,7 @@ Plataforma de servicios HTTP y WebSocket construida con Node.js 22 y Express, or
 - **Operaciones CRUD:** [crud-operations/README.md](api/crud-operations/README.md) | [routes.md](api/crud-operations/routes.md) | [processing.md](api/crud-operations/processing.md) | [persistence.md](api/crud-operations/persistence.md) | [validation.md](api/crud-operations/validation.md) | [contracts.md](api/crud-operations/contracts.md)
 - **Transferencia de BD:** [database-transfer/README.md](api/database-transfer/README.md) | [routes.md](api/database-transfer/routes.md) | [processing.md](api/database-transfer/processing.md) | [persistence.md](api/database-transfer/persistence.md) | [validation.md](api/database-transfer/validation.md) | [contracts.md](api/database-transfer/contracts.md)
 - **Contenido Editorial:** [home-content/README.md](api/home-content/README.md) | [routes.md](api/home-content/routes.md) | [processing.md](api/home-content/processing.md) | [persistence.md](api/home-content/persistence.md) | [validation.md](api/home-content/validation.md) | [contracts.md](api/home-content/contracts.md)
+- **Metadatos de Página:** [page-metadata/README.md](api/page-metadata/README.md) | [routes.md](api/page-metadata/routes.md) | [processing.md](api/page-metadata/processing.md)
 - **Predicciones:** [predictions/README.md](api/predictions/README.md) | [routes.md](api/predictions/routes.md) | [processing.md](api/predictions/processing.md) | [persistence.md](api/predictions/persistence.md) | [validation.md](api/predictions/validation.md) | [contracts.md](api/predictions/contracts.md)
 - **Logos de Equipos:** [team-logos/README.md](api/team-logos/README.md) | [routes.md](api/team-logos/routes.md) | [persistence.md](api/team-logos/persistence.md) | [contracts.md](api/team-logos/contracts.md)
 

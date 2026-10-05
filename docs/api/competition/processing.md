@@ -217,7 +217,7 @@ Para seleccionar el MVP definitivo de un enfrentamiento o serie (`matchMvps`), s
 2. **Nivel 2 — Mayor Cantidad de Mapas Ganados (`b.wins - a.wins`):** En caso de empate en puntuación, prioriza al candidato que haya obtenido más victorias de mapa dentro de la serie.
 3. **Nivel 3 — Desempate Determinista Alfanumérico (`a.playerId.localeCompare(b.playerId)`):** Si persiste el empate en puntuación y victorias, se desempata por orden lexicográfico ascendente del identificador de jugador (`playerId`), garantizando un resultado determinista sin aleatoriedad.
 
-El candidato posicionado en primer lugar tras la ordenación (`candidates.slice(0, 1)`) se designa formalmente como MVP de la serie (`mvpPlayerId`, referenciado por `competition.service.ts:101`).
+El candidato posicionado en primer lugar tras la ordenación (`candidates.slice(0, 1)`) se designa formalmente como MVP de la serie (`mvpPlayerId`, referenciado por `competition.service.ts:133`).
 
 ---
 
@@ -235,7 +235,7 @@ Para garantizar consistencia con los datos provenientes de la Riot API o de hoja
 Para seleccionar el campeón más representativo de un jugador en la temporada (`player-statistics.ts:255-268`):
 - Se contabilizan las partidas disputadas con cada campeón.
 - La evaluación se realiza mediante `count >= mostGames`.
-- Dado que las partidas se consultan ordenadas cronológicamente por `asc(matches.finishedAt)` (`postgres-competition.repository.ts:211`), en caso de empate en número de partidas, el campeón utilizado más recientemente sobrescribe la selección, garantizando un resultado determinista sin aleatoriedad.
+- Dado que las partidas se consultan ordenadas cronológicamente por `asc(matches.finishedAt)` (`postgres-competition.repository.ts:223`), en caso de empate en número de partidas, el campeón utilizado más recientemente sobrescribe la selección, garantizando un resultado determinista sin aleatoriedad.
 
 ---
 

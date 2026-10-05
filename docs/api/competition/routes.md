@@ -45,28 +45,28 @@ A continuación se detalla la matriz completa de las 12 rutas registradas en `co
 - **Parámetros de Ruta**:
   - `matchId` (`string`, requerido): Identificador UUID del partido o slug determinista (ej. `los-chicos-vs-team-rebel-jornada-1`). Validado con regex unicode: `z.string().min(1).max(400).regex(/^[\p{L}\p{N}-]+$/u)` (`competition.controller.ts:10-15`).
 - **Comportamiento Específico**:
-  - Si el partido existe pero su estado es `'scheduled'`, `'live'` o `'cancelled'`, el servicio arroja deliberadamente un error `notFound('Match')` -> **HTTP 404** (`competition.service.ts:77-78`). Únicamente se exponen enfrentamientos finalizados (`'completed'` o `'forfeit'`).
+  - Si el partido existe pero su estado es `'scheduled'`, `'live'` o `'cancelled'`, el servicio arroja deliberadamente un error `notFound('Match')` -> **HTTP 404** (`competition.service.ts:109-110`). Únicamente se exponen enfrentamientos finalizados (`'completed'` o `'forfeit'`).
 - **Respuesta**: HTTP 200 `{ data: MatchDetail }`.
 
 ### 3.2 `GET /api/v1/players`
-- **Propósito**: Devuelve el censo global de todos los jugadores registrados en el sistema, ordenados alfabéticamente por `gameName`, `riotTag` e `id` (`postgres-competition.repository.ts:158`).
+- **Propósito**: Devuelve el censo global de todos los jugadores registrados en el sistema, ordenados alfabéticamente por `gameName`, `riotTag` e `id` (`postgres-competition.repository.ts:170`).
 - **Parámetros**: Ninguno.
 - **Respuesta**: HTTP 200 `{ data: Player[] }`.
 
 ### 3.3 `GET /api/v1/players/:playerId`
-- **Propósito**: Obtiene la ficha consolidada de un jugador, sus cuentas vinculadas y su historial completo de equipos y divisiones disputadas ordenadas cronológicamente (`postgres-competition.repository.ts:314-319`).
+- **Propósito**: Obtiene la ficha consolidada de un jugador, sus cuentas vinculadas y su historial completo de equipos y divisiones disputadas ordenadas cronológicamente (`postgres-competition.repository.ts:326-331`).
 - **Parámetros de Ruta**:
   - `playerId` (`string`, requerido): UUID del jugador o slug alfanumérico normalizado (`competition.controller.ts:28-33`).
 - **Respuesta**: HTTP 200 `{ data: PlayerDetail }`. Si no se localiza -> HTTP 404.
 
 ### 3.4 `GET /api/v1/teams/:teamId`
-- **Propósito**: Devuelve el perfil completo de un equipo, incluyendo miembros de la plantilla, roles (`top`, `jungle`, `mid`, `adc`, `support`, `coach`, `staff`), capitanía y estadísticas agregadas por miembro (`rosterStats`: partidas, MVPs, variedad de campeones, `competition.service.ts:167-181`).
+- **Propósito**: Devuelve el perfil completo de un equipo, incluyendo miembros de la plantilla, roles (`top`, `jungle`, `mid`, `adc`, `support`, `coach`, `staff`), capitanía y estadísticas agregadas por miembro (`rosterStats`: partidas, MVPs, variedad de campeones, `competition.service.ts:225-239`).
 - **Parámetros de Ruta**:
   - `teamId` (`string`, requerido): UUID del equipo o slug de equipo (`competition.controller.ts:40-45`).
 - **Respuesta**: HTTP 200 `{ data: TeamDetail }`. Si no se localiza -> HTTP 404.
 
 ### 3.5 `GET /api/v1/seasons`
-- **Propósito**: Lista todas las temporadas registradas, ordenadas por fecha de inicio descendente (`sql\`${seasons.startsOn} DESC NULLS LAST\``, `postgres-competition.repository.ts:369`).
+- **Propósito**: Lista todas las temporadas registradas, ordenadas por fecha de inicio descendente (`sql\`${seasons.startsOn} DESC NULLS LAST\``, `postgres-competition.repository.ts:381`).
 - **Parámetros**: Ninguno.
 - **Respuesta**: HTTP 200 `{ data: Season[] }`.
 
@@ -74,17 +74,17 @@ A continuación se detalla la matriz completa de las 12 rutas registradas en `co
 - **Propósito**: Devuelve las divisiones asociadas a una temporada concreta (ej. Premier, Segunda).
 - **Parámetros de Ruta**:
   - `seasonId` (`string`, requerido): Nombre canónico de la temporada (validado con `z.string().min(1).max(120)`, `competition.controller.ts:54`).
-- **Comportamiento**: Si la temporada no existe en la base de datos, arroja `notFound('Season')` -> HTTP 404 (`competition.service.ts:188`).
+- **Comportamiento**: Si la temporada no existe en la base de datos, arroja `notFound('Season')` -> HTTP 404 (`competition.service.ts:260`).
 - **Respuesta**: HTTP 200 `{ data: Division[] }`.
 
 ### 3.7 `GET /api/v1/divisions/:divisionId/teams`
-- **Propósito**: Lista los equipos inscritos en una división específica (`seasons_divisions.id`), ordenados alfabéticamente por nombre (`postgres-competition.repository.ts:418`).
+- **Propósito**: Lista los equipos inscritos en una división específica (`seasons_divisions.id`), ordenados alfabéticamente por nombre (`postgres-competition.repository.ts:430`).
 - **Parámetros de Ruta**:
   - `divisionId` (`string`, requerido): UUID canónico validado con `z.string().uuid()` (`competition.controller.ts:58`). Formatos no UUID provocan HTTP 422.
 - **Respuesta**: HTTP 200 `{ data: Team[] }`.
 
 ### 3.8 `GET /api/v1/divisions/:divisionId/players`
-- **Propósito**: Devuelve los jugadores que forman parte de la división, enriquecidos con sus estadísticas de temporada acumuladas, campeón más utilizado y el jugador MVP destacado de la jornada más reciente (`postgres-competition.repository.ts:160-285`).
+- **Propósito**: Devuelve los jugadores que forman parte de la división, enriquecidos con sus estadísticas de temporada acumuladas, campeón más utilizado y el jugador MVP destacado de la jornada más reciente (`postgres-competition.repository.ts:172-297`).
 - **Parámetros de Ruta**:
   - `divisionId` (`string`, requerido): UUID canónico (`z.string().uuid()`).
 - **Respuesta**: HTTP 200 `{ data: Player[] }`.
@@ -102,7 +102,7 @@ A continuación se detalla la matriz completa de las 12 rutas registradas en `co
 - **Parámetros de Consulta (Query String)**:
   - `roundId` (`string`, opcional): Identificador numérico de jornada. Validado estrictamente mediante `z.string().regex(/^-?\d+$/).refine(v => Number(v) >= -32768 && Number(v) <= 32767)` (`competition.controller.ts:67-71`).
   - **Validación Estricta**: La consulta aplica `.strict()` (`competition.controller.ts:73`). Si el cliente suministra claves de consulta inesperadas (ej. `?unexpected=1`), la petición es rechazada de inmediato con HTTP 422.
-- **Comportamiento**: Si se proporciona un `roundId` numérico que no corresponde a ninguna jornada de la división, arroja `notFound('Round')` -> HTTP 404 (`competition.service.ts:210`).
+- **Comportamiento**: Si se proporciona un `roundId` numérico que no corresponde a ninguna jornada de la división, arroja `notFound('Round')` -> HTTP 404 (`competition.service.ts:282`).
 - **Respuesta**: HTTP 200 `{ data: Match[] }`.
 
 ### 3.11 `GET /api/v1/divisions/:divisionId/champions`
@@ -127,6 +127,6 @@ A continuación se detalla la matriz completa de las 12 rutas registradas en `co
 | Código HTTP | Causa Técnica | Estructura de Respuesta |
 |---|---|---|
 | **`200 OK`** | Petición procesada con éxito y recurso serializado. | `{"data": ...}` |
-| **`404 Not Found`** | Recurso no encontrado (temporada, división, jornada, equipo, jugador o partido inexistente), o partido no finalizado (`competition.service.ts:77-78, 124, 188, 192, 210`). | `{"error": "NOT_FOUND", "message": "<Resource> not found"}` |
+| **`404 Not Found`** | Recurso no encontrado (temporada, división, jornada, equipo, jugador o partido inexistente), o partido no finalizado (`competition.service.ts:109-110, 175, 260, 264, 282`). | `{"error": "NOT_FOUND", "message": "<Resource> not found"}` |
 | **`422 Unprocessable Entity`** | Error de validación Zod en parámetros de ruta (UUID inválido, regex slug inválida) o en query string (claves extra no permitidas por `.strict()`, rango numérico excedido). | `{"error": "VALIDATION_ERROR", "details": [...]}` |
 | **`500 Internal Server Error`** | Error inesperado del motor de base de datos PostgreSQL o fallo no capturado en ejecución. | `{"error": "INTERNAL_SERVER_ERROR", "message": "..."}` |
