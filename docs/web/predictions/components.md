@@ -36,7 +36,7 @@ interface PredictionCardProps {
      <small>{summary.votes} votos de la comunidad</small>
      ```
    - **Ventana Cerrada sin Votos (`summary.closed && summary.votes !== null && summary.homePercent === null`):** Muestra `<p className="prediction-notice">Sin votos para esta serie.</p>`.
-   - **Ventana Cerrada con Datos Ocultos (`summary.closed && summary.votes === null`):** Renderiza una barra `.prediction-gauge` con ancho fijo `50%` y dos etiquetas `??` dentro de `.prediction-percent`, con `aria-label="Porcentajes pendientes de revelar"`. Este placeholder neutral no representa votos reales. Debajo mantiene `<small>Los porcentajes se revelan al finalizar el partido.</small>`.
+   - **Ventana Cerrada con Datos Ocultos (`summary.closed && summary.votes === null`):** Renderiza una barra `.prediction-gauge` con ancho fijo `50%` y dos etiquetas `??` dentro de `.prediction-percent`. Este placeholder neutral no representa votos reales. Tanto la barra como `.prediction-percent` llevan `aria-hidden="true"`, de modo que los lectores de pantalla no anuncian los `??`; el único texto accesible es `<small>Los porcentajes se revelan al finalizar el partido.</small>`. No se usa `aria-label` sobre el `<div>`, porque ARIA 1.2 no lo admite en elementos sin rol.
    - **Ventana No Cerrada (`!summary.closed`):** No renderiza la barra y muestra el aviso:
      ```tsx
      <p className="prediction-notice">Los porcentajes se revelan al finalizar el partido.</p>
@@ -65,7 +65,7 @@ Componente presentacional estático que expone las tres reglas oficiales de las 
 
 ---
 
-### 2.3 `PredictorRankingPanel.tsx` (`apps/web/src/site/pages/predictions/PredictorRankingPanel.tsx:4-64`)
+### 2.3 `PredictorRankingPanel.tsx` (`apps/web/src/site/pages/predictions/PredictorRankingPanel.tsx:5-66`)
 Panel que renderiza la tabla de clasificación de pronosticadores de la temporada.
 
 #### Props:
@@ -84,10 +84,13 @@ interface PredictorRankingPanelProps {
    const rows = ranking.slice(0, 5);
    if (own && !rows.includes(own)) rows.push(own);
    ```
-   El componente extrae las 5 mejores posiciones de la temporada. Si el usuario autenticado (`userId`) está clasificado fuera del Top 5, añade su fila como sexta entrada. Su fila lleva la clase CSS `.is-you` tanto dentro como fuera del Top 5. El nombre se muestra sin prefijo:
+   El componente extrae las 5 mejores posiciones de la temporada. Si el usuario autenticado (`userId`) está clasificado fuera del Top 5, añade su fila como sexta entrada. Su fila lleva la clase CSS `.is-you` tanto dentro como fuera del Top 5. El nombre se muestra sin prefijo visible; en la fila propia se añade un texto solo para lectores de pantalla (clase `sr-only` de `apps/web/src/shared/styles/base.css`), para que la fila no se identifique únicamente por el color de `.is-you`:
    ```tsx
-   <strong>{displayName(row.name)}</strong>
+   <strong>
+     {displayName(row.name)}
+     {row.userId === userId && <span className="sr-only"> (tú)</span>}
+   </strong>
    ```
-2. **Tabla Placeholder para Temporadas sin Resultados (Líneas 42-60):**
+2. **Tabla Placeholder para Temporadas sin Resultados (Líneas 44-61):**
    Si la temporada aún no ha disputado enfrentamientos puntuables (`ranking.length === 0`), renderiza una tabla accesible (`<table aria-label="Ranking pendiente de resultados">`) con 5 filas vacías rotuladas con `"Por clasificar"`, evitando colapsos visuales de diseño.
 3. **Avatar de Discord:** `PredictorAvatar` utiliza `discordAvatarUrl(row.userId, row.avatarHash)` para cargar la imagen desde `/api/v1/discord-avatars/:discordId/:hash`, con ambos segmentos codificados. El proxy elige PNG o GIF para los hashes con prefijo `a_`; el navegador no consulta directamente el CDN. La imagen decorativa mide 40 × 40 y usa `loading="lazy"`. Si `avatarHash` es `null` o se dispara `onError`, muestra los dos primeros caracteres de `displayName(row.name)` en mayúsculas. La clave del componente combina usuario y hash para reiniciar el estado de error cuando cambia el avatar. Véase el [contrato del proxy](../../api/auth/avatars.md).
