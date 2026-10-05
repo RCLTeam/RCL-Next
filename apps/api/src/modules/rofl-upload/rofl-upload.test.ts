@@ -531,13 +531,13 @@ test('DecompressionQueue enforces concurrency 1 and FIFO ordering', async () => 
   assert.equal(decompressionQueue.getQueueLength(), 0);
 });
 
-test('executePythonParser processes real ROFL file and emits progress', async (t) => {
+test('executePythonParser processes the ROFL fixture and emits progress', async (t) => {
   const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'parser-exec-test-'));
   t.after(async () => {
     await cleanupTempDir(tempDir);
   });
 
-  const fixtureRofl = path.resolve('apps/parser/data/EUW1-7982902321.rofl');
+  const fixtureRofl = path.resolve('apps/parser/data/RCL-FIXTURE-0001.rofl');
   const progressCalls: Array<{ count: number; total: number; file: string }> = [];
 
   const result = await executePythonParser({
@@ -557,8 +557,8 @@ test('executePythonParser processes real ROFL file and emits progress', async (t
   assert.equal(transformedGames.length, 1);
   const game = transformedGames[0];
   assert.ok(game);
-  assert.equal(game.fileName, 'EUW1-7982902321.rofl');
-  assert.equal(game.externalGameId, 'EUW1-7982902321');
+  assert.equal(game.fileName, 'RCL-FIXTURE-0001.rofl');
+  assert.equal(game.externalGameId, 'RCL-FIXTURE-0001');
   assert.equal(game.participants.length, 10);
   assert.equal(game.participants.filter((p) => p.side === 'blue').length, 5);
   assert.equal(game.participants.filter((p) => p.side === 'red').length, 5);
@@ -580,7 +580,7 @@ test('executePythonParser skips files with invalid magic header (code 11) and em
     await cleanupTempDir(tempDir);
   });
 
-  const fixtureRofl = path.resolve('apps/parser/data/EUW1-7982902321.rofl');
+  const fixtureRofl = path.resolve('apps/parser/data/RCL-FIXTURE-0001.rofl');
   const fakeRofl = path.join(tempDir, 'fake_invalid_magic.rofl');
   await fs.writeFile(fakeRofl, 'NOT_RIOT_MAGIC_HEADER_SAMPLE');
 

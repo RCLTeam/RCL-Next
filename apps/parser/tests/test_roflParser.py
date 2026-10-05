@@ -28,10 +28,17 @@ from roflParser import (
     RoflFileNotFoundError,
     main,
     parse_rofl,
+    read_rofl,
 )
 
-FIXTURE_PATH = os.path.join(PARSER_DIR, "data", "EUW1-7982902321.rofl")
-EXPECTED_RESULT_PATH = os.path.join(PARSER_DIR, "result", "EUW1-7982902321_estadisticas.json")
+FIXTURE_PATH = os.path.join(PARSER_DIR, "data", "RCL-FIXTURE-0001.rofl")
+EXPECTED_RESULT_PATH = os.path.join(PARSER_DIR, "result", "RCL-FIXTURE-0001_estadisticas.json")
+
+# El fixture es sintético: identificador de partida e identidades de jugador ficticios.
+SYNTHETIC_GAME_ID = "RCL-FIXTURE-0001"
+SYNTHETIC_TAG = "ANON"
+SYNTHETIC_NAME_PATTERN = r"^Anon (Azul|Rojo) [1-5]$"
+SYNTHETIC_PUUID_PATTERN = r"^00000000-0000-4000-8000-0000000000(0[1-9]|10)$"
 
 
 class TestRoflParser(unittest.TestCase):
@@ -42,8 +49,8 @@ class TestRoflParser(unittest.TestCase):
             f"El archivo fixture no existe en: {FIXTURE_PATH}",
         )
 
-    def test_parse_real_rofl(self):
-        """Parsea apps/parser/data/EUW1-7982902321.rofl a un archivo temporal y comprueba estructura y métricas."""
+    def test_parse_fixture_rofl(self):
+        """Parsea el fixture sintético apps/parser/data/RCL-FIXTURE-0001.rofl y comprueba estructura y métricas."""
         with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as tmp:
             tmp_path = tmp.name
 
@@ -80,13 +87,42 @@ class TestRoflParser(unittest.TestCase):
                     self.assertIn("id", slot_info)
 
             # Comprobar además que el archivo generado coincide con el fixture de referencia esperado
-            if os.path.isfile(EXPECTED_RESULT_PATH):
-                with open(EXPECTED_RESULT_PATH, "r", encoding="utf-8") as f:
-                    expected_data = json.load(f)
-                self.assertEqual(data, expected_data)
+            self.assertTrue(
+                os.path.isfile(EXPECTED_RESULT_PATH),
+                f"El resultado de referencia no existe en: {EXPECTED_RESULT_PATH}",
+            )
+            with open(EXPECTED_RESULT_PATH, "r", encoding="utf-8") as f:
+                expected_data = json.load(f)
+            self.assertEqual(data, expected_data)
         finally:
             if os.path.exists(tmp_path):
                 os.remove(tmp_path)
+
+    def test_fixture_uses_only_synthetic_identities(self):
+        """Comprueba que el fixture solo contiene identidades ficticias (sin Riot ID ni PUUID reales)."""
+        with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as tmp:
+            tmp_path = tmp.name
+
+        try:
+            data = parse_rofl(FIXTURE_PATH, output_path=tmp_path, quiet=True)
+        finally:
+            if os.path.exists(tmp_path):
+                os.remove(tmp_path)
+
+        self.assertEqual(data["fuente"]["archivo"], f"{SYNTHETIC_GAME_ID}.rofl")
+        self.assertEqual(len(data["jugadores"]), 10)
+        for p in data["jugadores"]:
+            self.assertRegex(p["nombre"], SYNTHETIC_NAME_PATTERN)
+            self.assertEqual(p["tag"], SYNTHETIC_TAG)
+            self.assertEqual(p["riot_id"], f"{p['nombre']}#{SYNTHETIC_TAG}")
+            self.assertRegex(p["puuid"], SYNTHETIC_PUUID_PATTERN)
+
+        # Los identificadores internos de invocador que el parser no exporta también son ficticios.
+        raw_players = json.loads(read_rofl(FIXTURE_PATH)["statsJson"])
+        synthetic_ids = {str(n) for n in range(1, 11)}
+        for raw in raw_players:
+            self.assertIn(raw["SUMMONER_ID"], synthetic_ids)
+            self.assertIn(raw["ID"], synthetic_ids)
 
     def test_invalid_header_rejection(self):
         """Comprueba que un archivo sin cabecera b'RIOT' levante ValueError."""

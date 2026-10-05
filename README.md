@@ -83,7 +83,7 @@ RCL-Next/
 │   └── parser/                                  # Motor de análisis binario en Python 3
 │       ├── roflParser.py                        # CLI de extracción de metadatos LoL por seek inverso
 │       ├── README.md                            # Guía técnica interna del módulo de extracción
-│       ├── data/                                # Archivos de repetición sintéticos (.rofl) de prueba
+│       ├── data/                                # Repetición .rofl sintética y anonimizada de prueba
 │       ├── result/                              # Cargas útiles JSON esperadas para verificación
 │       └── tests/                               # Batería de pruebas unitarias en Python unittest
 │           └── test_roflParser.py               # Casos de prueba para cabecera b"RIOT" y cotas de memoria

@@ -20,7 +20,7 @@ import * as schema from '../../packages/database/src/schema.js';
 
 const FRONTEND_ORIGIN = 'http://localhost:5173';
 
-const fixtureRoflPath = path.resolve('apps/parser/data/EUW1-7982902321.rofl');
+const fixtureRoflPath = path.resolve('apps/parser/data/RCL-FIXTURE-0001.rofl');
 
 const mockCompetitionRepo: CompetitionRepository = {
   players: async () => [],
@@ -41,19 +41,19 @@ const mockCompetitionRepo: CompetitionRepository = {
 };
 
 const bluePlayers = [
-  { name: 'Iron Tou', tag: 'EUW' },
-  { name: 'Melintavahalma', tag: '8835' },
-  { name: 'Mystery Shack', tag: 'EUW7' },
-  { name: 'Kento', tag: 'ROUX' },
-  { name: 'Gaby', tag: 'GoT' }
+  { name: 'Anon Azul 1', tag: 'ANON' },
+  { name: 'Anon Azul 2', tag: 'ANON' },
+  { name: 'Anon Azul 3', tag: 'ANON' },
+  { name: 'Anon Azul 4', tag: 'ANON' },
+  { name: 'Anon Azul 5', tag: 'ANON' }
 ];
 
 const redPlayers = [
-  { name: 'Meuleur Teigneux', tag: 'EUW' },
-  { name: 'Heinben', tag: 'EUW' },
-  { name: 'Hysbel', tag: 'EUW' },
-  { name: 'Jonibaba71', tag: '2277' },
-  { name: 'BigNikEnergy', tag: 'VEINY' }
+  { name: 'Anon Rojo 1', tag: 'ANON' },
+  { name: 'Anon Rojo 2', tag: 'ANON' },
+  { name: 'Anon Rojo 3', tag: 'ANON' },
+  { name: 'Anon Rojo 4', tag: 'ANON' },
+  { name: 'Anon Rojo 5', tag: 'ANON' }
 ];
 
 async function setupTestDb() {
@@ -168,7 +168,7 @@ test('Test 1: Full legitimate upload and atomic persistence across 5 tables with
   await new Promise<void>((resolve) => ws.on('open', resolve));
 
   const roflBuffer = await readFile(fixtureRoflPath);
-  streamBufferOverWs(ws, 'EUW1-7982902321.rofl', roflBuffer);
+  streamBufferOverWs(ws, 'RCL-FIXTURE-0001.rofl', roflBuffer);
 
   await completionPromise;
 
@@ -188,7 +188,7 @@ test('Test 1: Full legitimate upload and atomic persistence across 5 tables with
   const matchGameRows = await db
     .select()
     .from(schema.matchGames)
-    .where(eq(schema.matchGames.externalGameId, 'EUW1-7982902321'));
+    .where(eq(schema.matchGames.externalGameId, 'RCL-FIXTURE-0001'));
   assert.equal(matchGameRows.length, 1);
   const insertedGame = matchGameRows[0];
   assert.ok(insertedGame);
@@ -291,15 +291,15 @@ test('Test 2: Unregistered players abort immediately with descriptive list of mi
   await new Promise<void>((resolve) => ws.on('open', resolve));
 
   const roflBuffer = await readFile(fixtureRoflPath);
-  streamBufferOverWs(ws, 'EUW1-7982902321.rofl', roflBuffer);
+  streamBufferOverWs(ws, 'RCL-FIXTURE-0001.rofl', roflBuffer);
 
   await completionPromise;
 
   const errorMsg = messages.find((m) => m.type === 'error');
   assert.ok(errorMsg && errorMsg.type === 'error');
   assert.match(errorMsg.message, /Validation failed/i);
-  assert.match(errorMsg.message, /Iron Tou#EUW/i);
-  assert.match(errorMsg.message, /Melintavahalma#8835/i);
+  assert.match(errorMsg.message, /Anon Azul 1#ANON/i);
+  assert.match(errorMsg.message, /Anon Azul 2#ANON/i);
 
   // Assert NO new rows were inserted in any of the tables
   const allMatchGames = await db.select().from(schema.matchGames);
@@ -363,7 +363,7 @@ test('Test 3: Multiple main accounts for one Discord user reject the upload with
   await new Promise<void>((resolve) => ws.on('open', resolve));
 
   const roflBuffer = await readFile(fixtureRoflPath);
-  streamBufferOverWs(ws, 'EUW1-7982902321.rofl', roflBuffer);
+  streamBufferOverWs(ws, 'RCL-FIXTURE-0001.rofl', roflBuffer);
 
   await completionPromise;
 
@@ -447,7 +447,7 @@ test('Test 4: Batch containing non-ROFL (exit code 11) emitting warning and succ
         content: 'NOT_A_VALID_RIOT_HEADER_BINARY_DATA'
       },
       {
-        name: 'match1/EUW1-7982902321.rofl',
+        name: 'match1/RCL-FIXTURE-0001.rofl',
         content: roflData
       }
     ]);
@@ -473,7 +473,7 @@ test('Test 4: Batch containing non-ROFL (exit code 11) emitting warning and succ
     const matchGameRows = await db
       .select()
       .from(schema.matchGames)
-      .where(eq(schema.matchGames.externalGameId, 'EUW1-7982902321'));
+      .where(eq(schema.matchGames.externalGameId, 'RCL-FIXTURE-0001'));
     assert.equal(matchGameRows.length, 1);
   }
 

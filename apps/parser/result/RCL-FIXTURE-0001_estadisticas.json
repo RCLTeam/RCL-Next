@@ -2,7 +2,7 @@
   "version": 2,
   "fuente": {
     "tipo": "rofl",
-    "archivo": "EUW1-7982902321.rofl"
+    "archivo": "RCL-FIXTURE-0001.rofl"
   },
   "rofl": {
     "game_length_raw": 1475698,
@@ -34,11 +34,11 @@
         "inhibidores": 2
       },
       "jugadores": [
-        "Iron Tou#EUW",
-        "Melintavahalma#8835",
-        "Mystery Shack#EUW7",
-        "Kento#ROUX",
-        "Gaby#GoT"
+        "Anon Azul 1#ANON",
+        "Anon Azul 2#ANON",
+        "Anon Azul 3#ANON",
+        "Anon Azul 4#ANON",
+        "Anon Azul 5#ANON"
       ]
     },
     "200": {
@@ -60,20 +60,20 @@
         "inhibidores": 0
       },
       "jugadores": [
-        "Meuleur Teigneux#EUW",
-        "Heinben#EUW",
-        "Hysbel#EUW",
-        "Jonibaba71#2277",
-        "BigNikEnergy#VEINY"
+        "Anon Rojo 1#ANON",
+        "Anon Rojo 2#ANON",
+        "Anon Rojo 3#ANON",
+        "Anon Rojo 4#ANON",
+        "Anon Rojo 5#ANON"
       ]
     }
   },
   "jugadores": [
     {
-      "nombre": "Iron Tou",
-      "tag": "EUW",
-      "riot_id": "Iron Tou#EUW",
-      "puuid": "2bc8d38f-dd29-55e2-9f62-8dd8be48a046",
+      "nombre": "Anon Azul 1",
+      "tag": "ANON",
+      "riot_id": "Anon Azul 1#ANON",
+      "puuid": "00000000-0000-4000-8000-000000000001",
       "campeon": "Malphite",
       "posicion": "TOP",
       "equipo": 100,
@@ -186,10 +186,10 @@
       }
     },
     {
-      "nombre": "Melintavahalma",
-      "tag": "8835",
-      "riot_id": "Melintavahalma#8835",
-      "puuid": "41187809-700d-5296-9738-55500a55b254",
+      "nombre": "Anon Azul 2",
+      "tag": "ANON",
+      "riot_id": "Anon Azul 2#ANON",
+      "puuid": "00000000-0000-4000-8000-000000000002",
       "campeon": "Ambessa",
       "posicion": "JUNGLE",
       "equipo": 100,
@@ -302,10 +302,10 @@
       }
     },
     {
-      "nombre": "Mystery Shack",
-      "tag": "EUW7",
-      "riot_id": "Mystery Shack#EUW7",
-      "puuid": "c6b99a52-9393-5c1f-8ccd-a7f19565ee15",
+      "nombre": "Anon Azul 3",
+      "tag": "ANON",
+      "riot_id": "Anon Azul 3#ANON",
+      "puuid": "00000000-0000-4000-8000-000000000003",
       "campeon": "Sylas",
       "posicion": "MIDDLE",
       "equipo": 100,
@@ -418,10 +418,10 @@
       }
     },
     {
-      "nombre": "Kento",
-      "tag": "ROUX",
-      "riot_id": "Kento#ROUX",
-      "puuid": "4d5316ea-c46d-5bd1-8b8f-6de99b2743b4",
+      "nombre": "Anon Azul 4",
+      "tag": "ANON",
+      "riot_id": "Anon Azul 4#ANON",
+      "puuid": "00000000-0000-4000-8000-000000000004",
       "campeon": "Zeri",
       "posicion": "BOTTOM",
       "equipo": 100,
@@ -534,10 +534,10 @@
       }
     },
     {
-      "nombre": "Gaby",
-      "tag": "GoT",
-      "riot_id": "Gaby#GoT",
-      "puuid": "9d69416d-5bdc-5a20-83bf-b25d220708df",
+      "nombre": "Anon Azul 5",
+      "tag": "ANON",
+      "riot_id": "Anon Azul 5#ANON",
+      "puuid": "00000000-0000-4000-8000-000000000005",
       "campeon": "Yuumi",
       "posicion": "UTILITY",
       "equipo": 100,
@@ -650,10 +650,10 @@
       }
     },
     {
-      "nombre": "Meuleur Teigneux",
-      "tag": "EUW",
-      "riot_id": "Meuleur Teigneux#EUW",
-      "puuid": "0ddb757c-0940-5add-97f5-c5ad1894b0c4",
+      "nombre": "Anon Rojo 1",
+      "tag": "ANON",
+      "riot_id": "Anon Rojo 1#ANON",
+      "puuid": "00000000-0000-4000-8000-000000000006",
       "campeon": "Renekton",
       "posicion": "TOP",
       "equipo": 200,
@@ -766,10 +766,10 @@
       }
     },
     {
-      "nombre": "Heinben",
-      "tag": "EUW",
-      "riot_id": "Heinben#EUW",
-      "puuid": "614bfcb7-332b-5927-8379-d3a8f3a8781c",
+      "nombre": "Anon Rojo 2",
+      "tag": "ANON",
+      "riot_id": "Anon Rojo 2#ANON",
+      "puuid": "00000000-0000-4000-8000-000000000007",
       "campeon": "Zed",
       "posicion": "JUNGLE",
       "equipo": 200,
@@ -882,10 +882,10 @@
       }
     },
     {
-      "nombre": "Hysbel",
-      "tag": "EUW",
-      "riot_id": "Hysbel#EUW",
-      "puuid": "6af18b9e-a577-587e-a071-9a208de37c65",
+      "nombre": "Anon Rojo 3",
+      "tag": "ANON",
+      "riot_id": "Anon Rojo 3#ANON",
+      "puuid": "00000000-0000-4000-8000-000000000008",
       "campeon": "Akali",
       "posicion": "MIDDLE",
       "equipo": 200,
@@ -998,10 +998,10 @@
       }
     },
     {
-      "nombre": "Jonibaba71",
-      "tag": "2277",
-      "riot_id": "Jonibaba71#2277",
-      "puuid": "9585ff77-5346-5a11-bd54-c46b0c07507d",
+      "nombre": "Anon Rojo 4",
+      "tag": "ANON",
+      "riot_id": "Anon Rojo 4#ANON",
+      "puuid": "00000000-0000-4000-8000-000000000009",
       "campeon": "Twitch",
       "posicion": "BOTTOM",
       "equipo": 200,
@@ -1114,10 +1114,10 @@
       }
     },
     {
-      "nombre": "BigNikEnergy",
-      "tag": "VEINY",
-      "riot_id": "BigNikEnergy#VEINY",
-      "puuid": "4d9c510c-fd9f-559f-8698-0f889bc341c2",
+      "nombre": "Anon Rojo 5",
+      "tag": "ANON",
+      "riot_id": "Anon Rojo 5#ANON",
+      "puuid": "00000000-0000-4000-8000-000000000010",
       "campeon": "Leona",
       "posicion": "UTILITY",
       "equipo": 200,
