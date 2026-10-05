@@ -18,6 +18,8 @@ import { createZipArchive } from '../../apps/api/src/modules/rofl-upload/process
 import { attachRoflUploadGateway } from '../../apps/api/src/modules/rofl-upload/websocket/rofl-upload.gateway.js';
 import * as schema from '../../packages/database/src/schema.js';
 
+const FRONTEND_ORIGIN = 'http://localhost:5173';
+
 const fixtureRoflPath = path.resolve('apps/parser/data/EUW1-7982902321.rofl');
 
 const mockCompetitionRepo: CompetitionRepository = {
@@ -126,7 +128,10 @@ test('Test 1: Full legitimate upload and atomic persistence across 5 tables with
   });
   const server = http.createServer(app);
   const repository = new PostgresRoflUploadRepository(db);
-  const wss = attachRoflUploadGateway(server, repository);
+  const wss = attachRoflUploadGateway(server, repository, {
+    frontendOrigin: FRONTEND_ORIGIN,
+    allowUnauthenticated: true
+  });
 
   t.after(async () => {
     wss.close();
@@ -138,7 +143,7 @@ test('Test 1: Full legitimate upload and atomic persistence across 5 tables with
   assert.ok(address && typeof address === 'object');
   const port = address.port;
 
-  const ws = new WebSocket(`ws://127.0.0.1:${port}/ws/rofl-upload`);
+  const ws = new WebSocket(`ws://127.0.0.1:${port}/ws/rofl-upload`, { origin: FRONTEND_ORIGIN });
   t.after(() => {
     try {
       ws.terminate();
@@ -246,7 +251,10 @@ test('Test 2: Unregistered players abort immediately with descriptive list of mi
   });
   const server = http.createServer(app);
   const repository = new PostgresRoflUploadRepository(db);
-  const wss = attachRoflUploadGateway(server, repository);
+  const wss = attachRoflUploadGateway(server, repository, {
+    frontendOrigin: FRONTEND_ORIGIN,
+    allowUnauthenticated: true
+  });
 
   t.after(async () => {
     wss.close();
@@ -258,7 +266,7 @@ test('Test 2: Unregistered players abort immediately with descriptive list of mi
   assert.ok(address && typeof address === 'object');
   const port = address.port;
 
-  const ws = new WebSocket(`ws://127.0.0.1:${port}/ws/rofl-upload`);
+  const ws = new WebSocket(`ws://127.0.0.1:${port}/ws/rofl-upload`, { origin: FRONTEND_ORIGIN });
   t.after(() => {
     try {
       ws.terminate();
@@ -315,7 +323,10 @@ test('Test 3: Multiple main accounts for one Discord user reject the upload with
   });
   const server = http.createServer(app);
   const repository = new PostgresRoflUploadRepository(db);
-  const wss = attachRoflUploadGateway(server, repository);
+  const wss = attachRoflUploadGateway(server, repository, {
+    frontendOrigin: FRONTEND_ORIGIN,
+    allowUnauthenticated: true
+  });
 
   t.after(async () => {
     wss.close();
@@ -327,7 +338,7 @@ test('Test 3: Multiple main accounts for one Discord user reject the upload with
   assert.ok(address && typeof address === 'object');
   const port = address.port;
 
-  const ws = new WebSocket(`ws://127.0.0.1:${port}/ws/rofl-upload`);
+  const ws = new WebSocket(`ws://127.0.0.1:${port}/ws/rofl-upload`, { origin: FRONTEND_ORIGIN });
   t.after(() => {
     try {
       ws.terminate();
@@ -388,7 +399,10 @@ test('Test 4: Batch containing non-ROFL (exit code 11) emitting warning and succ
   });
   const server = http.createServer(app);
   const repository = new PostgresRoflUploadRepository(db);
-  const wss = attachRoflUploadGateway(server, repository);
+  const wss = attachRoflUploadGateway(server, repository, {
+    frontendOrigin: FRONTEND_ORIGIN,
+    allowUnauthenticated: true
+  });
 
   t.after(async () => {
     wss.close();
@@ -402,7 +416,7 @@ test('Test 4: Batch containing non-ROFL (exit code 11) emitting warning and succ
 
   // Part A: Batch containing non-ROFL fake file AND valid ROFL replay
   {
-    const ws = new WebSocket(`ws://127.0.0.1:${port}/ws/rofl-upload`);
+    const ws = new WebSocket(`ws://127.0.0.1:${port}/ws/rofl-upload`, { origin: FRONTEND_ORIGIN });
     t.after(() => {
       try {
         ws.terminate();
@@ -465,7 +479,7 @@ test('Test 4: Batch containing non-ROFL (exit code 11) emitting warning and succ
 
   // Part B: Batch containing ONLY non-ROFL files aborts cleanly with descriptive error
   {
-    const ws = new WebSocket(`ws://127.0.0.1:${port}/ws/rofl-upload`);
+    const ws = new WebSocket(`ws://127.0.0.1:${port}/ws/rofl-upload`, { origin: FRONTEND_ORIGIN });
     t.after(() => {
       try {
         ws.terminate();

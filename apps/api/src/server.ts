@@ -102,7 +102,10 @@ const app = createApp({
 app.set('trust proxy', env.TRUST_PROXY);
 const server = http.createServer(app);
 const roflUploadRepo = new PostgresRoflUploadRepository(connection.db);
-const roflUploadGateway = attachRoflUploadGateway(server, roflUploadRepo, { authService });
+const roflUploadGateway = attachRoflUploadGateway(server, roflUploadRepo, {
+  authService,
+  frontendOrigin: env.CORS_ORIGIN
+});
 const homeContent = new HomeContentService(new PostgresHomeContentRepository(connection.db));
 let imageCleanup: Promise<void> | undefined;
 function cleanupImages() {

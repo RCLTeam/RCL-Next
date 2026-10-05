@@ -21,9 +21,9 @@ Para evitar desbordamientos de memoria en el runtime de Node.js al recibir repet
 
 1. **Aislamiento en Disco Temporal:**
    Al iniciarse la subida (`type: 'start'`), el gateway crea un subdirectorio exclusivo en el directorio temporal del sistema operativo:
-   `sessionDir = path.join(os.tmpdir(), 'rcl-ws-upload-' + crypto.randomUUID())` (`rofl-upload.gateway.ts:170-176`).
+   `sessionDir = path.join(os.tmpdir(), 'rcl-ws-upload-' + crypto.randomUUID())` (`rofl-upload.gateway.ts:243`).
 2. **Streaming por Chunks con Detección de Drenaje:**
-   A medida que llegan los fragmentos binarios por WebSocket, se escriben en un flujo físico (`fsSync.createWriteStream`). Si el búfer del sistema de archivos se llena (`canWrite === false`), el gateway pausa la recepción de tramas del socket para impedir saturar la RAM y la reanuda cuando el kernel drena los datos al disco (`rofl-upload.gateway.ts:144-150`):
+   A medida que llegan los fragmentos binarios por WebSocket, se escriben en un flujo físico (`fsSync.createWriteStream`). Si el búfer del sistema de archivos se llena (`canWrite === false`), el gateway pausa la recepción de tramas del socket para impedir saturar la RAM y la reanuda cuando el kernel drena los datos al disco (`rofl-upload.gateway.ts:201-207`):
    ```typescript
    const canWrite = fileWriteStream.write(buffer);
    if (!canWrite) {
@@ -66,7 +66,9 @@ export function validateZipSlip(baseDir: string, entryPath: string): string {
     path.isAbsolute(relative) ||
     !resolvedTarget.startsWith(resolvedBase + path.sep)
   ) {
-    throw new Error(`Zip slip security violation: path traversal detected in entry '${entryPath}'`);
+    throw new RoflUploadDomainError(
+      `Zip slip security violation: path traversal detected in entry '${entryPath}'`
+    );
   }
 
   return resolvedTarget;
