@@ -23,6 +23,8 @@ export interface DiscordBridgeClientOptions {
   maxRetryDurationMs?: number | undefined; // Default: 5 minutes (5 * 60 * 1000)
   connectTimeoutMs?: number | undefined; // Default: 10 seconds (10 * 1000)
   healthProbeTimeoutMs?: number | undefined; // Default: 5 seconds (5 * 1000)
+  maxQueueSize?: number | undefined; // Default: 100 pending frames
+  healthCacheMs?: number | undefined; // Default: 5 seconds (5 * 1000)
   wsFactory?: WebSocketFactory | undefined;
   sleepFn?: ((ms: number) => Promise<void>) | undefined;
 }
@@ -52,6 +54,36 @@ export class BridgeRateLimitTimeoutError extends Error {
   }
 }
 
+/** The bridge URL is not configured, so no frame can be delivered. */
+export class BridgeNotConfiguredError extends Error {
+  constructor() {
+    super('Discord bridge is not configured');
+    this.name = 'BridgeNotConfiguredError';
+  }
+}
+
+/** The pending queue reached `maxQueueSize`; the frame was not queued. */
+export class BridgeQueueFullError extends Error {
+  constructor() {
+    super('Discord bridge queue is full');
+    this.name = 'BridgeQueueFullError';
+  }
+}
+
+/**
+ * The connection with the bridge could not be established. The message is
+ * generic; the underlying socket error is kept in `cause` for server logs only.
+ */
+export class BridgeUnavailableError extends Error {
+  constructor(cause?: unknown) {
+    super('Discord bridge is unavailable', cause === undefined ? undefined : { cause });
+    this.name = 'BridgeUnavailableError';
+  }
+}
+
+export const DEFAULT_BRIDGE_MAX_QUEUE_SIZE = 100;
+export const DEFAULT_BRIDGE_HEALTH_CACHE_MS = 5 * 1000;
+
 class HandledRateLimitError extends Error {
   constructor(public readonly pauseMs: number) {
     super('RATE_LIMITED handled by queue pause');
@@ -66,6 +98,10 @@ export class DiscordBridgeClient extends EventEmitter {
   private readonly maxRetryDurationMs: number;
   private readonly connectTimeoutMs: number;
   private readonly healthProbeTimeoutMs: number;
+  private readonly maxQueueSize: number;
+  private readonly healthCacheMs: number;
+  private healthInFlight: Promise<BridgeHealthResponse> | null = null;
+  private healthCache: { value: BridgeHealthResponse; expiresAt: number } | null = null;
   private readonly wsFactory: WebSocketFactory;
   private readonly sleepFn?: ((ms: number) => Promise<void>) | undefined;
 
@@ -88,8 +124,25 @@ export class DiscordBridgeClient extends EventEmitter {
     this.maxRetryDurationMs = options.maxRetryDurationMs ?? 5 * 60 * 1000;
     this.connectTimeoutMs = options.connectTimeoutMs ?? 10 * 1000;
     this.healthProbeTimeoutMs = options.healthProbeTimeoutMs ?? 5 * 1000;
+    this.maxQueueSize = options.maxQueueSize ?? DEFAULT_BRIDGE_MAX_QUEUE_SIZE;
+    this.healthCacheMs = options.healthCacheMs ?? DEFAULT_BRIDGE_HEALTH_CACHE_MS;
     this.wsFactory = options.wsFactory ?? ((url: string) => new WebSocket(url));
     this.sleepFn = options.sleepFn;
+  }
+
+  /** Whether a bridge URL is configured. Without it every `send()` is rejected. */
+  public isConfigured(): boolean {
+    return this.wsUrl.trim().length > 0;
+  }
+
+  /** Number of frames waiting in the queue, including the one in flight. */
+  public pendingCount(): number {
+    return this.queue.length;
+  }
+
+  /** Whether `send()` can accept another frame without exceeding `maxQueueSize`. */
+  public hasCapacity(): boolean {
+    return this.queue.length < this.maxQueueSize;
   }
 
   public async send(frame: BridgeOutgoingFrame): Promise<void> {
@@ -99,6 +152,14 @@ export class DiscordBridgeClient extends EventEmitter {
 
     if (!frame?.data?.id) {
       throw new Error('Frame must have a data.id');
+    }
+
+    if (!this.isConfigured()) {
+      throw new BridgeNotConfiguredError();
+    }
+
+    if (!this.hasCapacity()) {
+      throw new BridgeQueueFullError();
     }
 
     const id = frame.data.id;
@@ -115,14 +176,43 @@ export class DiscordBridgeClient extends EventEmitter {
       this.queue.push(item);
 
       if (!this.socket || !this.isAuthenticated) {
-        void this.ensureConnected();
+        this.connectOrFailQueue();
       } else {
         void this.processQueue();
       }
     });
   }
 
-  public async checkHealth(): Promise<BridgeHealthResponse> {
+  /**
+   * Reports whether the bot accepts the configured credentials. Concurrent
+   * calls share one probe and the result is reused for `healthCacheMs`, so the
+   * public health endpoint opens at most one connection with the bot per period.
+   */
+  public checkHealth(): Promise<BridgeHealthResponse> {
+    if (this.healthCache && Date.now() < this.healthCache.expiresAt) {
+      return Promise.resolve(this.healthCache.value);
+    }
+    if (this.healthInFlight) {
+      return this.healthInFlight;
+    }
+
+    const probe = this.probeHealth().then((value) => {
+      if (this.healthCacheMs > 0) {
+        this.healthCache = { value, expiresAt: Date.now() + this.healthCacheMs };
+      }
+      return value;
+    });
+    this.healthInFlight = probe;
+    const clear = () => {
+      if (this.healthInFlight === probe) {
+        this.healthInFlight = null;
+      }
+    };
+    probe.then(clear, clear);
+    return probe;
+  }
+
+  private async probeHealth(): Promise<BridgeHealthResponse> {
     const probeUrl = this.wsUrl;
     const probeToken = this.supertoken;
 
@@ -303,6 +393,27 @@ export class DiscordBridgeClient extends EventEmitter {
     this.cleanupSocket(1000, 'Client shutdown');
     this.isAuthenticated = false;
     this.connectPromise = null;
+  }
+
+  /**
+   * Starts (or joins) the connection attempt. If it fails, every queued frame
+   * is rejected with `BridgeUnavailableError` so that no promise is left
+   * pending and no rejection escapes unhandled.
+   */
+  private connectOrFailQueue(): void {
+    this.ensureConnected().catch((error: unknown) => {
+      this.failQueue(new BridgeUnavailableError(error));
+    });
+  }
+
+  private failQueue(error: Error): void {
+    // A connection attempt only fails while no frame is in flight, so every
+    // queued item is still waiting and can be rejected here.
+    const items = this.queue;
+    this.queue = [];
+    for (const item of items) {
+      item.reject(error);
+    }
   }
 
   private async ensureConnected(): Promise<WebSocket> {
@@ -491,7 +602,7 @@ export class DiscordBridgeClient extends EventEmitter {
     }
 
     if (!this.socket || this.socket.readyState !== WebSocket.OPEN || !this.isAuthenticated) {
-      void this.ensureConnected();
+      this.connectOrFailQueue();
       return;
     }
 
@@ -511,11 +622,11 @@ export class DiscordBridgeClient extends EventEmitter {
       };
     });
 
-    socket.send(JSON.stringify(currentItem.frame));
-    this.emit('frame:sending', { type: currentItem.frame.type, id: currentItem.id });
-    this.resetIdleTimeout();
-
     try {
+      socket.send(JSON.stringify(currentItem.frame));
+      this.emit('frame:sending', { type: currentItem.frame.type, id: currentItem.id });
+      this.resetIdleTimeout();
+
       await phase1Promise;
 
       this.queue.shift();
@@ -633,8 +744,14 @@ export class DiscordBridgeClient extends EventEmitter {
     if (this.socket) {
       try {
         this.socket.removeAllListeners();
+        // A discarded socket can still emit 'error' (for example, a connection
+        // attempt that fails after the connect timeout). Without a listener
+        // that event would be thrown as an uncaught exception.
+        this.socket.on('error', () => {});
         if (this.socket.readyState === WebSocket.OPEN) {
           this.socket.close(code, reason);
+        } else if (this.socket.readyState === WebSocket.CONNECTING) {
+          this.socket.terminate();
         }
       } catch {
         // Ignore socket cleanup exceptions
