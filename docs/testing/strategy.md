@@ -93,7 +93,7 @@ Conforme al diseño de la suite de pruebas del monorepo, se documentan de forma 
    - *Observación:* Las carpetas `apps/web/src/features/auth/` y `apps/web/src/features/rofl-upload/` no tienen archivos de prueba directos dentro de su árbol local.
    - *Cobertura real:*
      - `auth`: se prueba visualmente en `tests/unit/render/AuthControls.test.tsx` (6 pruebas) e integralmente en `tests/integration/auth*.test.ts` (51 pruebas).
-     - `rofl-upload`: el hook desacoplado de subida WebSocket se prueba en `tests/unit/useRoflUploadWs.test.ts` (13 pruebas) y los controles visuales en `tests/unit/render/rofl-upload.test.tsx` (6 pruebas).
+     - `rofl-upload`: el hook desacoplado de subida WebSocket se prueba en `tests/unit/useRoflUploadWs.test.ts` (16 pruebas) y los controles visuales en `tests/unit/render/rofl-upload.test.tsx` (7 pruebas).
 
 3. **Páginas de la Web sin suite de renderizado dedicada:**
    - *Observación:* La ruta `crystal-ball` no cuenta con un archivo de prueba individual dedicado en `apps/web/src/site/pages/`.

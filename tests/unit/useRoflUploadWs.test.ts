@@ -2,6 +2,10 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { BatchUploadSummary, MultiAccountAnomaly } from '@rcl/contracts';
 import {
+  MISSING_WS_URL_MESSAGE,
+  resolveRoflUploadWsUrl
+} from '../../apps/web/src/features/rofl-upload/hooks/useRoflUploadWs.js';
+import {
   initialUploadState,
   uploadReducer
 } from '../../apps/web/src/features/rofl-upload/state/upload-reducer.js';
@@ -219,4 +223,34 @@ test('uploadReducer handles upload timeout error', () => {
     state.errorMessage,
     'Upload backpressure timeout: network stalled for over 15 seconds'
   );
+});
+
+test('resolveRoflUploadWsUrl derives the gateway URL from the page location', () => {
+  assert.equal(
+    resolveRoflUploadWsUrl(undefined, { protocol: 'http:', host: 'localhost:5173' }),
+    'ws://localhost:5173/ws/rofl-upload'
+  );
+  assert.equal(
+    resolveRoflUploadWsUrl(undefined, { protocol: 'https:', host: 'rcl.example' }),
+    'wss://rcl.example/ws/rofl-upload'
+  );
+  assert.equal(
+    resolveRoflUploadWsUrl('ws://gateway.test/ws/rofl-upload', { protocol: 'https:', host: 'x' }),
+    'ws://gateway.test/ws/rofl-upload'
+  );
+});
+
+test('resolveRoflUploadWsUrl returns null without wsUrl nor window.location', () => {
+  assert.equal(resolveRoflUploadWsUrl(undefined, undefined), null);
+  assert.equal(resolveRoflUploadWsUrl(undefined, { protocol: 'http:' }), null);
+  assert.equal(resolveRoflUploadWsUrl('', { protocol: 'http:', host: '' }), null);
+});
+
+test('uploadReducer exposes the missing WebSocket URL error', () => {
+  const state = uploadReducer(initialUploadState, {
+    type: 'error',
+    message: MISSING_WS_URL_MESSAGE
+  });
+  assert.equal(state.status, 'error');
+  assert.equal(state.errorMessage, MISSING_WS_URL_MESSAGE);
 });

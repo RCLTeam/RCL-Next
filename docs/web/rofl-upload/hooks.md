@@ -21,23 +21,24 @@ export interface UseRoflUploadWsReturn {
 
 ## 2. Resolución Dinámica de la URL del WebSocket
 
-El hook determina automáticamente la dirección del gateway según el contexto del entorno (`useRoflUploadWs.ts:110-127`):
+El hook determina la dirección del gateway con la función pura exportada `resolveRoflUploadWsUrl(wsUrl, location)` (`useRoflUploadWs.ts:29-37`), que `uploadFile` invoca antes de marcar la subida como iniciada (`useRoflUploadWs.ts:125-130`):
 - Si se proporciona `options.wsUrl`, se utiliza dicho valor explícito.
 - En caso contrario, inspecciona `window.location`:
   - Si el protocolo es `https:`, establece `wss:`.
   - Si el protocolo es `http:`, establece `ws:`.
-  - Apunta automáticamente a `${protocol}//${window.location.host}/ws/rofl-upload`.
-  - Si se ejecuta fuera del navegador (ej. pruebas unitarias o SSR), utiliza el fallback `ws://localhost:3000/ws/rofl-upload`.
+  - Apunta a `${protocol}//${window.location.host}/ws/rofl-upload`, es decir, al mismo host que sirve la página. Así la cabecera `Origin` del handshake coincide con el origen del frontend que exige el gateway, y en desarrollo el proxy de Vite (`apps/web/vite.config.ts`) redirige `/ws/rofl-upload` desde el puerto 5173 a la API en el 3001.
+- Sin `options.wsUrl` y sin `window.location.host` (fuera del navegador, por ejemplo en SSR o en pruebas unitarias) no hay dirección válida: la función devuelve `null` y el hook despacha la acción `error` con el mensaje `MISSING_WS_URL_MESSAGE` (`useRoflUploadWs.ts:22-23`) sin crear ningún `WebSocket` ni pasar por el estado `uploading`.
+- Pruebas: `tests/unit/useRoflUploadWs.test.ts` cubre `resolveRoflUploadWsUrl` y `tests/unit/render/rofl-upload.test.tsx` comprueba que `uploadFile` no crea ningún `WebSocket` en ese caso.
 
 ---
 
 ## 3. Streaming Binario por Chunks (64 KB)
 
 Al invocar `uploadFile(file)` tras la apertura del socket (`socket.onopen`):
-1. Envía el mensaje de control inicial: `{"type": "start", "filename": file.name}` (`useRoflUploadWs.ts:143-147`).
+1. Envía el mensaje de control inicial: `{"type": "start", "filename": file.name}` (`useRoflUploadWs.ts:157-161`).
 2. Al recibir el evento `{ type: 'started' }` del servidor, inicia el bucle de transmisión fragmentada:
    ```typescript
-   // useRoflUploadWs.ts:162-171
+   // useRoflUploadWs.ts:176-185
    const chunkSize = options?.chunkSize ?? 64 * 1024; // 64 KB por fragmento
    let offset = 0;
    const totalSize = file.size;
@@ -51,7 +52,7 @@ Al invocar `uploadFile(file)` tras la apertura del socket (`socket.onopen`):
      offset = end;
    }
    ```
-3. Una vez transmitido el último chunk, envía el mensaje de fin de subida: `{"type": "finish"}` (`useRoflUploadWs.ts:200`).
+3. Una vez transmitido el último chunk, envía el mensaje de fin de subida: `{"type": "finish"}` (`useRoflUploadWs.ts:214`).
 
 ---
 
@@ -59,7 +60,7 @@ Al invocar `uploadFile(file)` tras la apertura del socket (`socket.onopen`):
 
 Si el cliente envía fragmentos binarios a una velocidad superior a la capacidad de transmisión del canal de red o el servidor se demora en procesarlos, el búfer de salida del socket en el navegador (`socket.bufferedAmount`) comenzará a crecer, lo que puede provocar congelación de memoria o desconexiones abruptas.
 
-Para prevenir esta anomalía, el hook implementa un bucle de espera activa con temporizador de seguridad (`useRoflUploadWs.ts:173-184`):
+Para prevenir esta anomalía, el hook implementa un bucle de espera activa con temporizador de seguridad (`useRoflUploadWs.ts:187-198`):
 ```typescript
 const backpressureStart = Date.now();
 while (
@@ -83,7 +84,7 @@ while (
 
 Durante la subida de un archivo de 40 MB en bloques de 64 KB se generan más de 600 eventos de progreso. Despachar una acción de Redux o de `useReducer` por cada chunk saturaría el hilo principal de React provocando pérdida de fluidez (*frame drops*).
 
-El hook soluciona este cuello de botella mediante una cola en memoria con despacho en lotes cada 50 ms (`useRoflUploadWs.ts:21-46`):
+El hook soluciona este cuello de botella mediante una cola en memoria con despacho en lotes cada 50 ms (`useRoflUploadWs.ts:48-73`):
 ```typescript
 const bufferedLogsRef = useRef<string[]>([]);
 const logTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -104,5 +105,5 @@ Esto compacta cientos de registros en actualizaciones periódicas agrupadas (`ty
 ## 6. Limpieza de Recursos y Desconexión
 
 El hook garantiza la ausencia de fugas de memoria o sockets huérfanos mediante:
-1. **Método `reset()`:** Cierra explícitamente el socket activo con código estándar `1000 ('User reset')`, cancela temporizadores pendientes y reinicia el estado a `initialUploadState` (`useRoflUploadWs.ts:48-64`).
-2. **Efecto de Desmontaje (`useEffect`):** Al desmontar el componente que consume el hook, se cierran las conexiones de red y se destruyen los temporizadores de debounce (`useRoflUploadWs.ts:66-81`).
+1. **Método `reset()`:** Cierra explícitamente el socket activo con código estándar `1000 ('User reset')`, cancela temporizadores pendientes y reinicia el estado a `initialUploadState` (`useRoflUploadWs.ts:75-91`).
+2. **Efecto de Desmontaje (`useEffect`):** Al desmontar el componente que consume el hook, se cierran las conexiones de red y se destruyen los temporizadores de debounce (`useRoflUploadWs.ts:93-108`).
