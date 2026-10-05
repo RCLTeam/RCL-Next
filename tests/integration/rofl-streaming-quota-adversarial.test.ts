@@ -5,6 +5,8 @@ import { WebSocket } from 'ws';
 import type { RoflUploadRepository } from '../../apps/api/src/modules/rofl-upload/persistence/rofl-upload.repository.js';
 import { attachRoflUploadGateway } from '../../apps/api/src/modules/rofl-upload/websocket/rofl-upload.gateway.js';
 
+const FRONTEND_ORIGIN = 'http://localhost:5173';
+
 describe('Streaming Chunk Accumulator Quota Adversarial Tests', () => {
   let server: http.Server;
   let port: number;
@@ -19,7 +21,10 @@ describe('Streaming Chunk Accumulator Quota Adversarial Tests', () => {
 
   beforeAll(async () => {
     server = http.createServer();
-    attachRoflUploadGateway(server, stubRepo);
+    attachRoflUploadGateway(server, stubRepo, {
+      frontendOrigin: FRONTEND_ORIGIN,
+      allowUnauthenticated: true
+    });
     await new Promise<void>((resolve) => {
       server.listen(0, '127.0.0.1', () => {
         port = (server.address() as AddressInfo).port;
@@ -33,7 +38,7 @@ describe('Streaming Chunk Accumulator Quota Adversarial Tests', () => {
   });
 
   it('aborts upload and sends error event when streamed binary bytes exceed 50MB limit', async () => {
-    const ws = new WebSocket(`ws://127.0.0.1:${port}/ws/rofl-upload`);
+    const ws = new WebSocket(`ws://127.0.0.1:${port}/ws/rofl-upload`, { origin: FRONTEND_ORIGIN });
     await new Promise<void>((resolve) => ws.on('open', resolve));
 
     // Send start payload
@@ -69,7 +74,7 @@ describe('Streaming Chunk Accumulator Quota Adversarial Tests', () => {
   });
 
   it('does not reset byte accumulator on mid-stream start messages and terminates connection when cumulative payload exceeds 50MB', async () => {
-    const ws = new WebSocket(`ws://127.0.0.1:${port}/ws/rofl-upload`);
+    const ws = new WebSocket(`ws://127.0.0.1:${port}/ws/rofl-upload`, { origin: FRONTEND_ORIGIN });
     await new Promise<void>((resolve) => ws.on('open', resolve));
 
     let receivedError: string | null = null;

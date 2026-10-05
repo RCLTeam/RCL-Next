@@ -16,6 +16,8 @@ import { attachRoflUploadGateway } from '../../apps/api/src/modules/rofl-upload/
 import type { RoflUploadGatewayOptions } from '../../apps/api/src/modules/rofl-upload/websocket/rofl-upload.gateway.js';
 import * as schema from '../../packages/database/src/schema.js';
 
+const FRONTEND_ORIGIN = 'http://localhost:5173';
+
 const hash = (value: string) => createHash('sha256').update(value).digest('hex');
 
 describe('Adversarial Security Verification', () => {
@@ -48,7 +50,8 @@ describe('Adversarial Security Verification', () => {
 
     server = http.createServer();
     attachRoflUploadGateway(server, stubRoflUploadRepo, {
-      authService
+      authService,
+      frontendOrigin: FRONTEND_ORIGIN
     });
 
     await new Promise<void>((resolve) => {
@@ -82,6 +85,7 @@ describe('Adversarial Security Verification', () => {
         new Date(Date.now() + 60000)
       );
       const ws = new WebSocket(`ws://127.0.0.1:${port}/ws/rofl-upload`, {
+        origin: FRONTEND_ORIGIN,
         headers: { cookie: `rcl_session=${token}` }
       });
       try {
@@ -120,13 +124,16 @@ describe('Adversarial Security Verification', () => {
       }
     });
     it('closes with 4001 if no cookie is provided', async () => {
-      const ws = new WebSocket(`ws://127.0.0.1:${port}/ws/rofl-upload`);
+      const ws = new WebSocket(`ws://127.0.0.1:${port}/ws/rofl-upload`, {
+        origin: FRONTEND_ORIGIN
+      });
       const { code } = await waitForClose(ws);
       expect(code).toBe(4001);
     });
 
     it('closes with 4001 if cookie is invalid', async () => {
       const ws = new WebSocket(`ws://127.0.0.1:${port}/ws/rofl-upload`, {
+        origin: FRONTEND_ORIGIN,
         headers: { cookie: 'rcl_session=invalid' }
       });
       const { code } = await waitForClose(ws);
@@ -150,6 +157,7 @@ describe('Adversarial Security Verification', () => {
       );
 
       const ws = new WebSocket(`ws://127.0.0.1:${port}/ws/rofl-upload`, {
+        origin: FRONTEND_ORIGIN,
         headers: { cookie: `rcl_session=${token}` }
       });
       const { code } = await waitForClose(ws);
@@ -158,6 +166,7 @@ describe('Adversarial Security Verification', () => {
 
     it('closes with 4001 if cookie header has arbitrary other keys without rcl_session', async () => {
       const ws = new WebSocket(`ws://127.0.0.1:${port}/ws/rofl-upload`, {
+        origin: FRONTEND_ORIGIN,
         headers: { cookie: 'other_cookie=xyz; foo=bar; theme=dark' }
       });
       const { code } = await waitForClose(ws);
@@ -166,6 +175,7 @@ describe('Adversarial Security Verification', () => {
 
     it('closes with 4001 if cookie has rcl_session key with empty value', async () => {
       const ws = new WebSocket(`ws://127.0.0.1:${port}/ws/rofl-upload`, {
+        origin: FRONTEND_ORIGIN,
         headers: { cookie: 'rcl_session=; theme=dark' }
       });
       const { code } = await waitForClose(ws);
@@ -189,6 +199,7 @@ describe('Adversarial Security Verification', () => {
       );
 
       const ws = new WebSocket(`ws://127.0.0.1:${port}/ws/rofl-upload`, {
+        origin: FRONTEND_ORIGIN,
         headers: { cookie: `rcl_session=${token}` }
       });
 
@@ -217,6 +228,7 @@ describe('Adversarial Security Verification', () => {
       );
 
       const ws = new WebSocket(`ws://127.0.0.1:${port}/ws/rofl-upload`, {
+        origin: FRONTEND_ORIGIN,
         headers: { cookie: `__Host-rcl_session=${token}` }
       });
 
@@ -245,6 +257,7 @@ describe('Adversarial Security Verification', () => {
       );
 
       const ws = new WebSocket(`ws://127.0.0.1:${port}/ws/rofl-upload`, {
+        origin: FRONTEND_ORIGIN,
         headers: { cookie: `rcl_session=${token}; theme=dark; analytics_id=12345` }
       });
 
@@ -273,6 +286,7 @@ describe('Adversarial Security Verification', () => {
       );
 
       const ws = new WebSocket(`ws://127.0.0.1:${port}/ws/rofl-upload`, {
+        origin: FRONTEND_ORIGIN,
         headers: { cookie: `pref=compact; rcl_session=${token}; theme=dark` }
       });
 
@@ -301,6 +315,7 @@ describe('Adversarial Security Verification', () => {
       );
 
       const ws = new WebSocket(`ws://127.0.0.1:${port}/ws/rofl-upload`, {
+        origin: FRONTEND_ORIGIN,
         headers: { cookie: `pref=compact; theme=dark; rcl_session=${token}` }
       });
 
@@ -312,9 +327,11 @@ describe('Adversarial Security Verification', () => {
       ws.close();
     });
 
-    it('backward compatibility: allows connection without cookies when gateway is configured without authService', async () => {
+    it('rejects every handshake with 503 when the gateway is configured without authService', async () => {
       const unauthServer = http.createServer();
-      attachRoflUploadGateway(unauthServer, stubRoflUploadRepo);
+      attachRoflUploadGateway(unauthServer, stubRoflUploadRepo, {
+        frontendOrigin: FRONTEND_ORIGIN
+      });
 
       let unauthPort = 0;
       await new Promise<void>((resolve) => {
@@ -325,13 +342,18 @@ describe('Adversarial Security Verification', () => {
       });
 
       try {
-        const ws = new WebSocket(`ws://127.0.0.1:${unauthPort}/ws/rofl-upload`);
-        await new Promise<void>((resolve, reject) => {
-          ws.on('open', resolve);
+        const ws = new WebSocket(`ws://127.0.0.1:${unauthPort}/ws/rofl-upload`, {
+          origin: FRONTEND_ORIGIN
+        });
+        const status = await new Promise<number>((resolve, reject) => {
+          ws.on('open', () => resolve(101));
+          ws.on('unexpected-response', (_req, res) => {
+            resolve(res.statusCode ?? 0);
+            res.resume();
+          });
           ws.on('error', reject);
         });
-        expect(ws.readyState).toBe(WebSocket.OPEN);
-        ws.close();
+        expect(status).toBe(503);
       } finally {
         await new Promise<void>((resolve) => unauthServer.close(() => resolve()));
       }

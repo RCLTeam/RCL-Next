@@ -59,6 +59,8 @@ export type WsServerSuccessEvent = {
 export type WsServerErrorEvent = {
   type: 'error';
   message: string;
+  /** Present only for unexpected server failures; the detail is in the server log under this id. */
+  incidentId?: string;
 };
 
 export type WsServerEvent =

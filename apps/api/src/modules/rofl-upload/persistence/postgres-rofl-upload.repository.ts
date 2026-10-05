@@ -13,6 +13,7 @@ import {
 import type * as schema from '@rcl/database/schema';
 import { and, asc, eq, inArray, or, sql } from 'drizzle-orm';
 import type { PgDatabase, PgQueryResultHKT } from 'drizzle-orm/pg-core';
+import { RoflUploadDomainError } from '../types/rofl-upload.errors.js';
 import type {
   ExecuteBatchResult,
   ParsedGameData,
@@ -118,7 +119,7 @@ export class PostgresRoflUploadRepository implements RoflUploadRepository {
       const mains = mainAccounts.filter((account) => account.discordUserId === row.discordUserId);
       const main = mains[0];
       if (!main || mains.length !== 1) {
-        throw new Error(
+        throw new RoflUploadDomainError(
           `Cannot import statistics for ${row.gameName}#${row.riotTag ?? ''}: exactly one main account must exist for this Discord user.`
         );
       }
@@ -274,7 +275,9 @@ export class PostgresRoflUploadRepository implements RoflUploadRepository {
         const redParticipants = game.participants.filter((p) => p.side === 'red');
 
         if (blueParticipants.length === 0 || redParticipants.length === 0) {
-          throw new Error(`Game ${game.fileName} does not contain participants for both sides`);
+          throw new RoflUploadDomainError(
+            `Game ${game.fileName} does not contain participants for both sides`
+          );
         }
 
         // Validate unanimous team membership on blue side
@@ -284,11 +287,11 @@ export class PostgresRoflUploadRepository implements RoflUploadRepository {
           const key = `${p.gameName.toLowerCase()}#${p.riotTag.toLowerCase()}`;
           const lookup = playerLookupMap.get(key);
           if (!lookup) {
-            throw new Error(`Player not found: ${p.gameName}#${p.riotTag}`);
+            throw new RoflUploadDomainError(`Player not found: ${p.gameName}#${p.riotTag}`);
           }
           const teamId = teamMap.get(lookup.discordUserId);
           if (!teamId) {
-            throw new Error(
+            throw new RoflUploadDomainError(
               `Team membership not found for player ${p.gameName}#${p.riotTag} (${lookup.discordUserId})`
             );
           }
@@ -303,11 +306,11 @@ export class PostgresRoflUploadRepository implements RoflUploadRepository {
           const key = `${p.gameName.toLowerCase()}#${p.riotTag.toLowerCase()}`;
           const lookup = playerLookupMap.get(key);
           if (!lookup) {
-            throw new Error(`Player not found: ${p.gameName}#${p.riotTag}`);
+            throw new RoflUploadDomainError(`Player not found: ${p.gameName}#${p.riotTag}`);
           }
           const teamId = teamMap.get(lookup.discordUserId);
           if (!teamId) {
-            throw new Error(
+            throw new RoflUploadDomainError(
               `Team membership not found for player ${p.gameName}#${p.riotTag} (${lookup.discordUserId})`
             );
           }
@@ -319,7 +322,7 @@ export class PostgresRoflUploadRepository implements RoflUploadRepository {
           const breakdown = bluePlayerTeams
             .map((pt) => `${pt.player} (team: ${pt.teamId})`)
             .join(', ');
-          throw new Error(
+          throw new RoflUploadDomainError(
             `Unanimous team membership validation failed: blue side players belong to ${blueTeamIds.size} different teams in game ${game.fileName}. Roster breakdown: [${breakdown}]`
           );
         }
@@ -327,7 +330,7 @@ export class PostgresRoflUploadRepository implements RoflUploadRepository {
           const breakdown = redPlayerTeams
             .map((pt) => `${pt.player} (team: ${pt.teamId})`)
             .join(', ');
-          throw new Error(
+          throw new RoflUploadDomainError(
             `Unanimous team membership validation failed: red side players belong to ${redTeamIds.size} different teams in game ${game.fileName}. Roster breakdown: [${breakdown}]`
           );
         }
@@ -336,11 +339,13 @@ export class PostgresRoflUploadRepository implements RoflUploadRepository {
         const [redTeamId] = redTeamIds;
 
         if (!blueTeamId || !redTeamId) {
-          throw new Error(`Unable to resolve team identifiers for game ${game.fileName}`);
+          throw new RoflUploadDomainError(
+            `Unable to resolve team identifiers for game ${game.fileName}`
+          );
         }
 
         if (blueTeamId === redTeamId) {
-          throw new Error(
+          throw new RoflUploadDomainError(
             `Unanimous team membership validation failed: blue team and red team are identical (${blueTeamId}) in game ${game.fileName}`
           );
         }
@@ -350,12 +355,14 @@ export class PostgresRoflUploadRepository implements RoflUploadRepository {
         const matchResult = await this.findMatchForTeams(blueTeamId, redTeamId, gameDate, tx);
 
         if (!matchResult) {
-          throw new Error(
+          throw new RoflUploadDomainError(
             `No match found between teams ${blueTeamId} and ${redTeamId} for game ${game.fileName}`
           );
         }
         if (matchResult.isClosed) {
-          throw new Error(`Match ${matchResult.matchId} is already completed/closed`);
+          throw new RoflUploadDomainError(
+            `Match ${matchResult.matchId} is already completed/closed`
+          );
         }
 
         const matchId = matchResult.matchId;
@@ -368,10 +375,10 @@ export class PostgresRoflUploadRepository implements RoflUploadRepository {
             .where(eq(matches.id, matchId))
             .for('update');
           if (!matchRow) {
-            throw new Error(`Match ${matchId} not found in database`);
+            throw new RoflUploadDomainError(`Match ${matchId} not found in database`);
           }
           if (matchRow.status === 'completed') {
-            throw new Error(`Match ${matchId} is already completed/closed`);
+            throw new RoflUploadDomainError(`Match ${matchId} is already completed/closed`);
           }
           matchStateMap.set(matchId, {
             team1Id: matchRow.team1Id,
@@ -419,7 +426,7 @@ export class PostgresRoflUploadRepository implements RoflUploadRepository {
           const key = `${p.gameName.toLowerCase()}#${p.riotTag.toLowerCase()}`;
           const lookup = playerLookupMap.get(key);
           if (!lookup) {
-            throw new Error(`Player not found: ${p.gameName}#${p.riotTag}`);
+            throw new RoflUploadDomainError(`Player not found: ${p.gameName}#${p.riotTag}`);
           }
           const infoId = crypto.randomUUID();
           const teamId = p.side === 'blue' ? blueTeamId : redTeamId;

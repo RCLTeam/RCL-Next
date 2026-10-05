@@ -4,6 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
+import { RoflUploadDomainError } from '../types/rofl-upload.errors.js';
 
 const execFileAsync = promisify(execFile);
 
@@ -154,7 +155,7 @@ export async function executePythonParser(
   const validRoflCount = roflFilePaths.length - skippedFiles.length;
 
   if (validRoflCount === 0) {
-    throw new Error(
+    throw new RoflUploadDomainError(
       'No valid ROFL files found in batch to process (all files had invalid ROFL headers)'
     );
   }
