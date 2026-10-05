@@ -49,8 +49,8 @@ Nivel 1: Pruebas Unitarias de Módulo (Co-ubicadas en apps/api y apps/web)
 - **Garantía:** Verificación de restricciones `CHECK`, índices únicos parciales, claves foráneas en cascada y disparadores PL/pgSQL diferidos (`complete_player_game`).
 
 ### Nivel 4 — Pruebas del Motor Binario ROFL (Python)
-- **Ubicación:** `apps/parser/tests/test_roflParser.py` (1 archivo, 11 pruebas).
-- **Alcance:** Desempaquetado del archivo binario `data/EUW1-7982902321.rofl`, lectura inversa del trailer de longitud, extracción de 10 participantes, KDA, runas y objetos, y verificación de los códigos de salida de la CLI (0 a 14) ante archivos corruptos o inexistentes.
+- **Ubicación:** `apps/parser/tests/test_roflParser.py` (1 archivo, 12 pruebas).
+- **Alcance:** Desempaquetado del archivo binario sintético y anonimizado `data/RCL-FIXTURE-0001.rofl`, lectura inversa del trailer de longitud, extracción de 10 participantes, KDA, runas y objetos, y verificación de los códigos de salida de la CLI (0 a 14) ante archivos corruptos o inexistentes.
 - **Garantía:** Cero dependencias de paquetes pip; compatibilidad estricta con Python 3.10+.
 
 ### Nivel 5 — Pruebas de Caos y Estrés Adversario
@@ -72,7 +72,7 @@ Todas las pruebas del monorepo pueden ejecutarse y certificarse mediante la sigu
 |---|---|---:|---|:---:|
 | `pnpm check` | `pnpm typecheck`<br>`biome check .`<br>`vitest run` | ~13.7s | Verificación integral: tipado limpio en todos los workspaces, 0 advertencias de linter/formateador, 76 suites y 886 pruebas de Vitest superadas. | **0** |
 | `vitest run` | `vitest run` | ~13.5s | Ejecuta los 76 archivos de prueba de TypeScript en paralelo acotado (4 workers). 886 pruebas pasadas. | **0** |
-| `python3 -m unittest discover apps/parser/tests` | `test_roflParser.py` | ~0.010s | Ejecuta las 11 pruebas del motor de parsing binario ROFL en Python. 11 pruebas pasadas. | **0** |
+| `python3 -m unittest discover apps/parser/tests` | `test_roflParser.py` | ~0.013s | Ejecuta las 12 pruebas del motor de parsing binario ROFL en Python. 12 pruebas pasadas. | **0** |
 | `pnpm db:generate` | `drizzle-kit generate` | ~3.2s | Inspecciona `drizzle.config.ts` y las 21 tablas relacionales. Confirma 0 cambios pendientes de migración. | **0** |
 
 ---

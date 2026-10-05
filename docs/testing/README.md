@@ -14,7 +14,7 @@ El censo de pruebas del monorepo certifica una cobertura exhaustiva y libre de p
 - **77 archivos de pruebas** distribuidos en todas las capas del proyecto.
 - **897 pruebas unitarias, de integración y de estrés adversario**, con una tasa de éxito del **100% (0 fallos)**.
 - **0 suites fantasma (*ghost suites*)**: cada archivo de pruebas contiene aserciones activas verificadas en ejecución.
-- **Dos ejecutores complementarios**: **Vitest v3** (v8 runtime / JSDOM-Node) para TypeScript/JavaScript (76 archivos, 886 pruebas) y **Python unittest** para el motor binario ROFL (1 archivo, 11 pruebas).
+- **Dos ejecutores complementarios**: **Vitest v3** (v8 runtime / JSDOM-Node) para TypeScript/JavaScript (76 archivos, 886 pruebas) y **Python unittest** para el motor binario ROFL (1 archivo, 12 pruebas).
 
 ---
 
@@ -25,7 +25,7 @@ La pirámide de pruebas de RCL-Next se estructura en cinco niveles escalonados (
 1. **Nivel 1 — Pruebas Unitarias de Módulo (Co-ubicadas):** Pruebas de bajo acoplamiento situadas junto al código fuente en `apps/api/src/` (15 archivos, 128 pruebas) y `apps/web/src/` (21 archivos, 127 pruebas), validando transformaciones funcionales puras, reducers de estado, clientes API y políticas de negocio.
 2. **Nivel 2 — Pruebas de Renderizado e Interfaz (*Dumb UI*):** Pruebas en `tests/unit/render/` (15 archivos, 102 pruebas) que certifican el aislamiento visual de los componentes de React 19, verificando que los componentes presentacionales no disparen efectos de red ni mutaciones de estado colaterales.
 3. **Nivel 3 — Pruebas de Integración Relacional (PGlite):** Pruebas en `tests/integration/` (25 archivos, 529 pruebas) que levantan una base de datos PostgreSQL efímera e independiente por cada hilo de ejecución, aplicando el historial completo de migraciones Drizzle (`packages/database/drizzle/`) y validando transacciones ACID reales.
-4. **Nivel 4 — Pruebas del Motor Binario ROFL:** Pruebas nativas en Python (`apps/parser/tests/test_roflParser.py`, 11 pruebas) que verifican el algoritmo de lectura inversa $O(1)$, la cabecera mágica `b"RIOT"` y la totalidad de los códigos de salida ante repeticiones truncadas o corruptas.
+4. **Nivel 4 — Pruebas del Motor Binario ROFL:** Pruebas nativas en Python (`apps/parser/tests/test_roflParser.py`, 12 pruebas) que verifican el algoritmo de lectura inversa $O(1)$, la cabecera mágica `b"RIOT"` y la totalidad de los códigos de salida ante repeticiones truncadas o corruptas.
 5. **Nivel 5 — Pruebas de Caos y Estrés Adversario:** Suites especializadas (`tier5-chaos-concurrency.test.ts`, `tier5-adversarial-challenger.test.ts`, `auth-adversarial.test.ts`, `rofl-concurrency-adversarial.test.ts`) que someten a la API a desconexiones abruptas de WebSocket, paquetes JSON sobredimensionados (*payload bomb*), falsificación de cookies de sesión y colisiones de concurrencia.
 
 ---
