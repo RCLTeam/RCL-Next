@@ -205,6 +205,61 @@ describe('suggestions.router', () => {
     });
   });
 
+  describe('session cookie selection', () => {
+    function appWithAuth(secureCookies: boolean, currentUser: ReturnType<typeof vi.fn>) {
+      const authApp = express();
+      authApp.use(express.json());
+      authApp.use(
+        '/api/v1/suggestions',
+        createSuggestionsRouter({
+          suggestionsService: mockService as unknown as SuggestionsService,
+          frontendOrigin: trustedOrigin,
+          auth: {
+            service: { currentUser } as unknown as AuthService,
+            secureCookies,
+            frontendOrigin: trustedOrigin
+          }
+        })
+      );
+      authApp.use(errorHandler);
+      return authApp;
+    }
+
+    it.each([
+      [false, 'rcl_session=token-a', 'token-a'],
+      [false, 'theme=dark; rcl_session=token-a; lang=es', 'token-a'],
+      [false, '__Host-rcl_session=token-a', undefined],
+      [false, 'rcl_session=token-a; rcl_session=token-b', undefined],
+      [true, '__Host-rcl_session=token-a', 'token-a'],
+      [true, 'rcl_session=token-a', undefined],
+      [true, '__Host-rcl_session=token-a; __Host-rcl_session=token-b', undefined]
+    ])('secureCookies=%s with Cookie "%s" reads token %s', async (secure, cookie, expected) => {
+      const currentUser = vi.fn().mockResolvedValue({
+        discordId: '987654321',
+        username: 'AuthGamer',
+        globalName: null,
+        avatarHash: null,
+        role: 'viewer'
+      });
+      mockService.submit.mockResolvedValueOnce({ id: 'uuid-cookie', status: 'queued' });
+
+      const res = await request(appWithAuth(secure, currentUser))
+        .post('/api/v1/suggestions')
+        .set('Origin', trustedOrigin)
+        .set('Cookie', cookie)
+        .send({ suggestion: 'Sugerencia para probar la cookie', isAnonymous: false });
+
+      expect(res.status).toBe(202);
+      if (expected) {
+        expect(currentUser).toHaveBeenCalledWith(expected);
+        expect(mockService.submit.mock.calls[0]?.[1]).toMatchObject({ discordId: '987654321' });
+      } else {
+        expect(currentUser).not.toHaveBeenCalled();
+        expect(mockService.submit.mock.calls[0]?.[1]).toBeUndefined();
+      }
+    });
+  });
+
   describe('GET /api/v1/suggestions/status/:id', () => {
     it('returns 200 with status response and Cache-Control: no-store for known ID', async () => {
       mockService.getStatus.mockReturnValueOnce({

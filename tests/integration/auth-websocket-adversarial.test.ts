@@ -23,6 +23,8 @@ const hash = (value: string) => createHash('sha256').update(value).digest('hex')
 describe('Adversarial Security Verification', () => {
   let server: http.Server;
   let port: number;
+  let secureServer: http.Server;
+  let securePort: number;
   let authService: AuthService;
   let db: ReturnType<typeof drizzle<typeof schema>>;
   let client: PGlite;
@@ -60,10 +62,24 @@ describe('Adversarial Security Verification', () => {
         resolve();
       });
     });
+
+    secureServer = http.createServer();
+    attachRoflUploadGateway(secureServer, stubRoflUploadRepo, {
+      authService,
+      frontendOrigin: FRONTEND_ORIGIN,
+      secureCookies: true
+    });
+    await new Promise<void>((resolve) => {
+      secureServer.listen(0, '127.0.0.1', () => {
+        securePort = (secureServer.address() as AddressInfo).port;
+        resolve();
+      });
+    });
   });
 
   afterAll(async () => {
     server.close();
+    secureServer.close();
     await client.close();
   });
 
@@ -211,7 +227,7 @@ describe('Adversarial Security Verification', () => {
       ws.close();
     });
 
-    it('connects successfully with __Host-rcl_session cookie for admin user', async () => {
+    it('connects successfully with __Host-rcl_session cookie for admin user when secureCookies is on', async () => {
       const token = 'e'.repeat(64);
       await db.insert(schema.discordUsers).values({
         discordId: 'admin_host',
@@ -227,7 +243,7 @@ describe('Adversarial Security Verification', () => {
         new Date(Date.now() + 60000)
       );
 
-      const ws = new WebSocket(`ws://127.0.0.1:${port}/ws/rofl-upload`, {
+      const ws = new WebSocket(`ws://127.0.0.1:${securePort}/ws/rofl-upload`, {
         origin: FRONTEND_ORIGIN,
         headers: { cookie: `__Host-rcl_session=${token}` }
       });
@@ -357,6 +373,96 @@ describe('Adversarial Security Verification', () => {
       } finally {
         await new Promise<void>((resolve) => unauthServer.close(() => resolve()));
       }
+    });
+  });
+
+  describe('Session cookie selection', () => {
+    const token = '3'.repeat(64);
+
+    beforeAll(async () => {
+      await db.insert(schema.discordUsers).values({
+        discordId: 'admin_cookie',
+        username: 'admin_cookie',
+        role: 'admin',
+        globalName: null,
+        avatarHash: null
+      });
+      await new PostgresAuthRepository(db).createSession(
+        { discordId: 'admin_cookie', username: 'admin_cookie', globalName: null, avatarHash: null },
+        hash(token),
+        new Date(Date.now() + 60000)
+      );
+    });
+
+    /** Opens the socket and reports whether an upload can start or how the server closed it. */
+    async function connectWithCookie(
+      targetPort: number,
+      cookie: string
+    ): Promise<{ accepted: boolean; code?: number; reason?: string }> {
+      const ws = new WebSocket(`ws://127.0.0.1:${targetPort}/ws/rofl-upload`, {
+        origin: FRONTEND_ORIGIN,
+        headers: { cookie }
+      });
+      try {
+        return await new Promise((resolve, reject) => {
+          const timer = setInterval(() => {
+            if (ws.readyState === WebSocket.OPEN)
+              ws.send(JSON.stringify({ type: 'start', filename: 'cookie.rofl' }));
+          }, 20);
+          const timeout = setTimeout(() => {
+            clearInterval(timer);
+            reject(new Error('The gateway neither accepted nor closed the socket'));
+          }, 3000);
+          const done = (result: { accepted: boolean; code?: number; reason?: string }) => {
+            clearInterval(timer);
+            clearTimeout(timeout);
+            resolve(result);
+          };
+          ws.on('message', (data) => {
+            if (JSON.parse(data.toString()).type === 'started') done({ accepted: true });
+          });
+          ws.once('close', (code, reason) =>
+            done({ accepted: false, code, reason: reason.toString() })
+          );
+          ws.once('error', reject);
+        });
+      } finally {
+        ws.terminate();
+      }
+    }
+
+    const missing = { accepted: false, code: 4001, reason: 'Unauthorized: Missing session cookie' };
+
+    it('without secureCookies accepts a single rcl_session cookie among others', async () => {
+      expect(await connectWithCookie(port, `theme=dark; rcl_session=${token}; lang=es`)).toEqual({
+        accepted: true
+      });
+    });
+
+    it('without secureCookies rejects the __Host- prefixed name', async () => {
+      expect(await connectWithCookie(port, `__Host-rcl_session=${token}`)).toEqual(missing);
+    });
+
+    it('without secureCookies rejects a duplicated rcl_session cookie', async () => {
+      expect(await connectWithCookie(port, `rcl_session=${token}; rcl_session=other`)).toEqual(
+        missing
+      );
+    });
+
+    it('with secureCookies accepts a single __Host-rcl_session cookie', async () => {
+      expect(await connectWithCookie(securePort, `__Host-rcl_session=${token}`)).toEqual({
+        accepted: true
+      });
+    });
+
+    it('with secureCookies rejects an unprefixed rcl_session cookie', async () => {
+      expect(await connectWithCookie(securePort, `rcl_session=${token}`)).toEqual(missing);
+    });
+
+    it('with secureCookies rejects a duplicated __Host-rcl_session cookie', async () => {
+      expect(
+        await connectWithCookie(securePort, `__Host-rcl_session=${token}; __Host-rcl_session=other`)
+      ).toEqual(missing);
     });
   });
 
