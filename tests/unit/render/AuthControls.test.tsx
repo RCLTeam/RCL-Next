@@ -3,7 +3,10 @@ import React from 'react';
 import { renderToString } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import { discordLoginUrl } from '../../../apps/web/src/features/auth/api/auth-api.js';
-import { AuthControlsView } from '../../../apps/web/src/features/auth/components/AuthControls.js';
+import {
+  AccountAvatarView,
+  AuthControlsView
+} from '../../../apps/web/src/features/auth/components/AuthControls.js';
 
 const user: AuthUser = {
   discordId: '123456789012345678',
@@ -36,6 +39,32 @@ describe('Discord header controls', () => {
     expect(html).toContain('>JU</span>');
     expect(html).not.toContain('<img');
     expect(html).not.toContain('/api/v1/discord-avatars/');
+  });
+  it('falls back to initials after the avatar download fails', () => {
+    const html = renderToString(
+      <AccountAvatarView
+        user={{ ...user, avatarHash: '0123456789abcdef0123456789abcdef' }}
+        failed
+        onError={() => {}}
+      />
+    );
+    expect(html).toContain('>JU</span>');
+    expect(html).not.toContain('<img');
+    expect(html).not.toContain('/api/v1/discord-avatars/');
+  });
+  it('reports avatar download errors to the fallback handler', () => {
+    let errors = 0;
+    const element = AccountAvatarView({
+      user: { ...user, avatarHash: '0123456789abcdef0123456789abcdef' },
+      failed: false,
+      onError: () => {
+        errors += 1;
+      }
+    });
+    expect(element.type).toBe('img');
+    const { onError } = element.props as { onError: () => void };
+    onError();
+    expect(errors).toBe(1);
   });
   it('normalizes Discord display names and initials without changing the account', () => {
     const account = Object.freeze({ ...user, globalName: '𝑶𝒛𝒂𝒓𝒖' });

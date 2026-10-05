@@ -1,4 +1,5 @@
-import React from 'react';
+import type { AuthUser } from '@rcl/contracts';
+import React, { useState } from 'react';
 import { discordAvatarUrl } from '../../../shared/discord-avatar-url.js';
 import { displayName } from '../../../shared/display-name.js';
 import { discordLoginUrl } from '../api/auth-api.js';
@@ -11,6 +12,43 @@ interface AuthControlsViewProps {
   logoutError?: boolean;
   onRetry: () => void;
   onLogout: () => void;
+}
+
+interface AccountAvatarViewProps {
+  user: AuthUser;
+  failed: boolean;
+  onError: () => void;
+}
+
+export function AccountAvatarView({ user, failed, onError }: AccountAvatarViewProps) {
+  const name = displayName(user.globalName || user.username);
+  if (user.avatarHash && !failed)
+    return (
+      <img
+        className="auth-avatar"
+        src={discordAvatarUrl(user.discordId, user.avatarHash)}
+        alt={name}
+        onError={onError}
+      />
+    );
+  return (
+    <span className="auth-avatar" aria-hidden="true">
+      {name.slice(0, 2).toUpperCase()}
+    </span>
+  );
+}
+
+function AccountAvatar({ user }: { user: AuthUser }) {
+  // Keyed by URL so a new avatar hash gets a fresh download attempt.
+  const [failedUrl, setFailedUrl] = useState<string | null>(null);
+  const url = user.avatarHash ? discordAvatarUrl(user.discordId, user.avatarHash) : null;
+  return (
+    <AccountAvatarView
+      user={user}
+      failed={url !== null && failedUrl === url}
+      onError={() => setFailedUrl(url)}
+    />
+  );
 }
 
 export function AuthControlsView({
@@ -35,19 +73,7 @@ export function AuthControlsView({
       {state.status === 'authenticated' && (
         <>
           <div className="auth-identity">
-            {state.user.avatarHash ? (
-              <img
-                className="auth-avatar"
-                src={discordAvatarUrl(state.user.discordId, state.user.avatarHash)}
-                alt={displayName(state.user.globalName || state.user.username)}
-              />
-            ) : (
-              <span className="auth-avatar" aria-hidden="true">
-                {displayName(state.user.globalName || state.user.username)
-                  .slice(0, 2)
-                  .toUpperCase()}
-              </span>
-            )}
+            <AccountAvatar user={state.user} />
             <div className="auth-user">
               <span className="auth-name">
                 {displayName(state.user.globalName || state.user.username)}
