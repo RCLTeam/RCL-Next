@@ -644,8 +644,8 @@ describe('Dual Track Opaque-Box E2E Testing Suite', () => {
       expect(mockSupertoken.length).toBeGreaterThanOrEqual(16);
       recordTest('tier1', true);
     });
-    it('T1-F07-03: apps/api/.env.example documents environment variables with placeholders', () => {
-      const envExamplePath = path.resolve(currentDir, '../../apps/api/.env.example');
+    it('T1-F07-03: .env.example documents environment variables with placeholders', () => {
+      const envExamplePath = path.resolve(currentDir, '../../.env.example');
       expect(fs.existsSync(envExamplePath)).toBe(true);
       const envText = fs.readFileSync(envExamplePath, 'utf-8');
       expect(envText).toContain('DISCORD_BOT_WS_URL=');
