@@ -201,13 +201,16 @@ test('Match series concurrency locking updates match scores and games without ra
   assert.equal(res1.insertedGames, 1);
   assert.equal(res2.insertedGames, 1);
 
-  // Validate query ordering within transactions: row lock on matches MUST precede match_games query
+  // Validate query ordering within transactions: row lock on matches MUST precede the game number read
   assert.equal(txQueryLog.length, 2, 'Expected 2 transactions for the 2 batch insert operations');
   for (const queries of txQueryLog) {
     const lockMatchIndex = queries.findIndex(
       (q) => /from "matches"/i.test(q) && /for update/i.test(q)
     );
-    const queryMatchGamesIndex = queries.findIndex((q) => /from "match_games"/i.test(q));
+    // The duplicate check by external_game_id may run earlier; the game numbers are read per match.
+    const queryMatchGamesIndex = queries.findIndex(
+      (q) => /from "match_games"/i.test(q) && /"matches_id"/i.test(q)
+    );
 
     assert.ok(
       lockMatchIndex !== -1,
