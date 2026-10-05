@@ -21,7 +21,7 @@ El diseño sigue una **arquitectura en capas desacopladas (*Vertical Slice Archi
 
 | Documento | Enlace | Resumen Funcional |
 |---|---|---|
-| **Gateway WebSocket y Rutas** | [routes.md](routes.md) | Endpoint `/ws/rofl-upload`, autenticación de sesión administrativa, ciclo de vida de conexión, opcodes y cuota de 50 MB (código 1009). |
+| **Gateway WebSocket y Rutas** | [routes.md](routes.md) | Endpoint `/ws/rofl-upload`, validación de `Origin` en el handshake (403/503), autenticación de sesión administrativa, errores de dominio frente a incidentes con `incidentId`, ciclo de vida de conexión, opcodes y cuota de 50 MB (código 1009). |
 | **Pipeline de Procesamiento y Colas** | [processing.md](processing.md) | Spooling a `os.tmpdir()`, contrapresión `pause/drain`, cola de descompresión FIFO ($N=1$), defensas Zip Slip / Bomb y subprocesos. |
 | **Persistencia Transaccional ACID** | [persistence.md](persistence.md) | `postgres-rofl-upload.repository.ts`, bloqueo pesimista `SELECT ... FOR UPDATE`, inserción en 5 tablas y triggers diferidos. |
 | **Validaciones y Reglas Deportivas** | [validation.md](validation.md) | Validación fail-fast de participantes registrados, auditoría de rosters unánimes y detección no bloqueante de anomalías multi-cuenta. |

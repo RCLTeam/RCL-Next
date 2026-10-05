@@ -14,7 +14,7 @@ El subsistema de ingesta de repeticiones define sus contratos de comunicación a
 
 ### 2.1 Mensajes Enviados por el Cliente (`WsClientMessage`)
 ```typescript
-// packages/contracts/src/rofl-upload.ts:74-83
+// packages/contracts/src/rofl-upload.ts:76-85
 export type WsClientStartMessage = {
   type: 'start';
   filename: string;
@@ -29,7 +29,7 @@ export type WsClientMessage = WsClientStartMessage | WsClientFinishMessage;
 
 ### 2.2 Eventos Emitidos por el Servidor (`WsServerEvent`)
 ```typescript
-// packages/contracts/src/rofl-upload.ts:21-72
+// packages/contracts/src/rofl-upload.ts:21-74
 export type WsServerStartedEvent = {
   type: 'started';
   filename: string;
@@ -71,6 +71,8 @@ export type WsServerSuccessEvent = {
 export type WsServerErrorEvent = {
   type: 'error';
   message: string;
+  /** Present only for unexpected server failures; the detail is in the server log under this id. */
+  incidentId?: string;
 };
 
 export type WsServerEvent =
