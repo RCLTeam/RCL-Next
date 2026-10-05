@@ -55,7 +55,7 @@ Cada propuesta transiciona a través de la unión canónica `SuggestionStatus` (
 | **`processing`** | Transitorio | El bot remoto acusa recibo del frame devolviendo la trama `{ type: 'QUEUED' }` (Fase 1 completada, `suggestions.service.ts:264-268`). | La propuesta está en manos del bot, pendiente de crear mensaje/hilo en Discord. |
 | **`retrying`** | Transitorio | El bot devuelve `{ type: 'ERROR', data: { code: 'RATE_LIMITED', retry_after_seconds } }`; el puente emite `frame:retrying` (`suggestions.service.ts:70-83`). | Incorpora `nextRetryInSeconds` en el registro para el contador del frontend. |
 | **`confirmed`** | **Terminal** | El bot completa la publicación en Discord y emite `SUGGESTION_CONFIRMED` (Fase 2, `suggestions.service.ts:85-102`). | Almacena `channelId`, `messageId` y `threadId`. Éxito definitivo. |
-| **`failed`** | **Terminal** | Fallo de conexión en Fase 1 (`BRIDGE_SEND_FAILED`), timeout de 5m por rate limit (`RATE_LIMIT_TIMEOUT`), o rechazo remoto en Fase 2 (`SUGGESTION_FAILED`) (`suggestions.service.ts:104-123, 270-287`). | Genera y almacena el `incidentId` forense; el detalle del error solo va al log. Fracaso definitivo. |
+| **`failed`** | **Terminal** | Fallo de conexión en Fase 1 (`BRIDGE_SEND_FAILED`), timeout de 5m por rate limit (`RATE_LIMIT_TIMEOUT`), o rechazo remoto en Fase 2 (`SUGGESTION_FAILED`) (`suggestions.service.ts:115-142, 315-327`). | Genera y almacena el `incidentId` forense; el detalle del error solo va al log. Fracaso definitivo. |
 
 ---
 

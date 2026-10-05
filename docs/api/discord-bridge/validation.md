@@ -61,4 +61,4 @@ Discriminados en `checkHealth()` y consumidos por el router:
 - **`BridgeQueueFullError`:** `send()` con `maxQueueSize` elementos ya en cola. La trama no se encola.
 - **`BridgeUnavailableError`:** La conexión con el bot no se pudo establecer. Se rechaza con ella cada elemento de la cola; el error original queda en `cause` (`discord-bridge.client.ts:58-82`).
 - **`connectTimeout`:** Arrojado si el socket de trabajo no completa el handshake inicial antes de 10 segundos (`connectTimeoutMs = 10000`); se entrega a los emisores envuelto en `BridgeUnavailableError`.
-- **`ECONNRESET` / Cierre Inesperado:** Si el socket se desconecta mientras un elemento aguardaba confirmación en Fase 1, `handleSocketDisconnect(err)` rechaza la promesa pendiente (`discord-bridge.client.ts:624-630`) para evitar que el emisor quede suspendido en espera indefinida.
+- **`ECONNRESET` / Cierre Inesperado:** Si el socket se desconecta mientras un elemento aguardaba confirmación en Fase 1, `handleSocketDisconnect(err)` rechaza la promesa pendiente (`discord-bridge.client.ts:738-744`) para evitar que el emisor quede suspendido en espera indefinida.

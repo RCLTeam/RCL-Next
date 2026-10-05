@@ -23,12 +23,12 @@ Una inspección forense exhaustiva de `discord-bridge.client.ts` y `discord-brid
 
 ## 3. Estructuras de Memoria y Ciclo de Vida
 
-El cliente mantiene su estado exclusivamente a través de los siguientes miembros en memoria (`discord-bridge.client.ts:63-80`):
+El cliente mantiene su estado exclusivamente a través de los siguientes miembros en memoria (`discord-bridge.client.ts:108-117`):
 
 ### 3.1 Cola FIFO de Mensajes (`this.queue`)
 - **Tipo**: `QueueItem[]`
 - **Tamaño máximo**: `maxQueueSize` (100 por defecto). Con la cola llena, `send()` rechaza con `BridgeQueueFullError` sin encolar.
-- **Definición de Elemento** (`discord-bridge.client.ts:30-37`):
+- **Definición de Elemento** (`discord-bridge.client.ts:32-39`):
   ```typescript
   export interface QueueItem {
     id: string;
@@ -53,7 +53,7 @@ El cliente mantiene su estado exclusivamente a través de los siguientes miembro
     reject: (err: Error) => void;
   }
   ```
-- **Función**: Almacena las funciones de resolución o rechazo de la promesa bloqueante de la Fase 1 mientras se espera la trama `QUEUED` del servidor remoto. Si el socket se desconecta abruptamente durante la espera, `handleSocketDisconnect(err)` invoca `pending.reject(err)` liberando la memoria y desbloqueando el pipeline (`discord-bridge.client.ts:627`).
+- **Función**: Almacena las funciones de resolución o rechazo de la promesa bloqueante de la Fase 1 mientras se espera la trama `QUEUED` del servidor remoto. Si el socket se desconecta abruptamente durante la espera, `handleSocketDisconnect(err)` invoca `pending.reject(err)` liberando la memoria y desbloqueando el pipeline (`discord-bridge.client.ts:741`).
 
 ---
 

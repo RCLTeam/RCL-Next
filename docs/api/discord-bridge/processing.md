@@ -46,18 +46,18 @@ El cliente no se conecta de forma anticipada en el arranque del servidor (`boots
 ```
 
 ### 2.0 Fallos de conexión
-`send()` y `processQueue()` no llaman a `ensureConnected()` directamente, sino a `connectOrFailQueue()` (`discord-bridge.client.ts:403-418`), que captura el rechazo de la conexión y rechaza todos los elementos de la cola con `BridgeUnavailableError`. Así:
+`send()` y `processQueue()` no llaman a `ensureConnected()` directamente, sino a `connectOrFailQueue()` (`discord-bridge.client.ts:406-420`), que captura el rechazo de la conexión y rechaza todos los elementos de la cola con `BridgeUnavailableError`. Así:
 - Ningún fallo de conexión (URL no válida, conexión rechazada, cierre antes de `LOGIN_SUCCESS`, tiempo de espera agotado) deja una promesa rechazada sin manejar ni elementos pendientes para siempre.
 - `BridgeUnavailableError` tiene un mensaje genérico; el error original va en `cause` y solo se escribe en el log del servidor.
 - El siguiente `send()` vuelve a intentar la conexión, así que cuando el bot vuelve a estar disponible los envíos nuevos se entregan sin reiniciar la API.
-- Al descartar un socket (`cleanupSocket()`, `discord-bridge.client.ts:743-760`) se deja un listener de `error` vacío y se termina el socket si aún está conectando, para que un fallo tardío de ese socket no se convierta en una excepción no capturada.
+- Al descartar un socket (`cleanupSocket()`, `discord-bridge.client.ts:746-766`) se deja un listener de `error` vacío y se termina el socket si aún está conectando, para que un fallo tardío de ese socket no se convierta en una excepción no capturada. La sonda de salud aplica lo mismo al socket efímero cuando termina por tiempo agotado con el handshake sin completar (`probeHealth()`).
 
 Antes de encolar, `send()` rechaza de inmediato con `BridgeNotConfiguredError` si `wsUrl` está vacío (`isConfigured()`) y con `BridgeQueueFullError` si la cola tiene `maxQueueSize` elementos (100 por defecto; `hasCapacity()`, `pendingCount()`, `discord-bridge.client.ts:134-146`). `SuggestionsService` consulta ambos métodos antes de aceptar una sugerencia y responde `503`.
 
 ### 2.1 Prevención de Carreras de Conexión
 Si múltiples peticiones concurrentes invocan `send()` cuando el socket está desconectado:
-- La primera llamada crea `this.connectPromise` e inicia el handshake (`discord-bridge.client.ts:313, 328`).
-- Las siguientes peticiones detectan `this.connectPromise` y retornan la misma referencia (`discord-bridge.client.ts:313-315`), evitando la creación de sockets duplicados.
+- La primera llamada crea `this.connectPromise` e inicia el handshake (`discord-bridge.client.ts:427, 431`).
+- Las siguientes peticiones detectan `this.connectPromise` y retornan la misma referencia (`discord-bridge.client.ts:427-429`), evitando la creación de sockets duplicados.
 
 ### 2.2 Handshake de Autenticación
 Al abrirse el socket (`open`), el cliente emite la trama de acceso inicial (`discord-bridge.client.ts:340-350`):
