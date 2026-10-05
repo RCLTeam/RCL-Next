@@ -58,8 +58,8 @@ Todas las rutas inyectan de forma homogénea la cabecera HTTP defensiva (`member
 - **Ruta:** `PATCH /api/v1/member-roles/:discordId`
 - **Controlador:** `member-roles.router.ts:14-26`
 - **Autenticación requerida:**
-  1. `requireTrustedOrigin(auth.frontendOrigin)` (`auth.router.ts:33-40`): Exige que la cabecera `Origin` sea idéntica al origen del frontend autorizado para neutralizar ataques CSRF.
-  2. `requireAuth(auth, 'owner')` (`auth.router.ts:22-30`): **Exclusivo para propietarios**. Un administrador (`admin`) no tiene permisos para otorgar, retirar ni modificar roles de miembros.
+  1. `requireTrustedOrigin(auth.frontendOrigin)` (`auth.router.ts:26-33`): Exige que la cabecera `Origin` sea idéntica al origen del frontend autorizado para neutralizar ataques CSRF.
+  2. `requireAuth(auth, 'owner')` (`auth.router.ts:13-23`): **Exclusivo para propietarios**. Un administrador (`admin`) no tiene permisos para otorgar, retirar ni modificar roles de miembros.
 - **Parámetros de ruta:**
   - `discordId` (*string*): Snowflake de Discord del miembro a actualizar. Debe cumplir `/^\d{17,20}$/` (`member-roles.service.ts:18-21`).
 - **Cuerpo de la Petición (JSON Body):**

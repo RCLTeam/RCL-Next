@@ -6,7 +6,7 @@
 
 ## 1. Visión General
 
-El servicio de sugerencias (`SuggestionsService`, implementado en `apps/api/src/modules/suggestions/suggestions.service.ts:34-289`) coordina el ciclo de vida de las propuestas comunitarias actuando como intermediario entre las peticiones HTTP y el cliente de transporte WebSocket del puente Discord.
+El servicio de sugerencias (`SuggestionsService`, implementado en `apps/api/src/modules/suggestions/suggestions.service.ts:37-288`) coordina el ciclo de vida de las propuestas comunitarias actuando como intermediario entre las peticiones HTTP y el cliente de transporte WebSocket del puente Discord.
 
 Para evitar retrasos en la experiencia del usuario y tolerar la latencia intrínseca de Discord, la arquitectura desacopla completamente la recepción HTTP de la entrega física mediante despacho en segundo plano (*background dispatch*), sincronizando el avance a través de una máquina reactiva de seis estados.
 
@@ -50,12 +50,12 @@ Cada propuesta transiciona a través de la unión canónica `SuggestionStatus` (
 
 | Estado | Tipo | Desencadenante Técnico | Observabilidad y Metadatos |
 |---|---|---|---|
-| **`queued`** | Transitorio | Inserción inicial en `SuggestionStore` dentro del método `submit()` (`suggestions.service.ts:148-154`). | Propuesta registrada en memoria; API devuelve HTTP 202. |
-| **`sending`** | Transitorio | El cliente WebSocket toma el frame de la cola y lo envía a través del socket; emite evento `frame:sending` (`suggestions.service.ts:59-68`). | El frame viaja por la red hacia el bot de Discord. |
-| **`processing`** | Transitorio | El bot remoto acusa recibo del frame devolviendo la trama `{ type: 'QUEUED' }` (Fase 1 completada, `suggestions.service.ts:264-268`). | La propuesta está en manos del bot, pendiente de crear mensaje/hilo en Discord. |
-| **`retrying`** | Transitorio | El bot devuelve `{ type: 'ERROR', data: { code: 'RATE_LIMITED', retry_after_seconds } }`; el puente emite `frame:retrying` (`suggestions.service.ts:70-83`). | Incorpora `nextRetryInSeconds` en el registro para el contador del frontend. |
-| **`confirmed`** | **Terminal** | El bot completa la publicación en Discord y emite `SUGGESTION_CONFIRMED` (Fase 2, `suggestions.service.ts:85-102`). | Almacena `channelId`, `messageId` y `threadId`. Éxito definitivo. |
-| **`failed`** | **Terminal** | Fallo de conexión en Fase 1 (`BRIDGE_SEND_FAILED`), timeout de 5m por rate limit (`RATE_LIMIT_TIMEOUT`), o rechazo remoto en Fase 2 (`SUGGESTION_FAILED`) (`suggestions.service.ts:115-142, 315-327`). | Genera y almacena el `incidentId` forense; el detalle del error solo va al log. Fracaso definitivo. |
+| **`queued`** | Transitorio | Inserción inicial en `SuggestionStore` dentro del método `submit()` (`suggestions.service.ts:176-182`). | Propuesta registrada en memoria; API devuelve HTTP 202. |
+| **`sending`** | Transitorio | El cliente WebSocket toma el frame de la cola y lo envía a través del socket; emite evento `frame:sending` (`suggestions.service.ts:51-60`). | El frame viaja por la red hacia el bot de Discord. |
+| **`processing`** | Transitorio | El bot remoto acusa recibo del frame devolviendo la trama `{ type: 'QUEUED' }` (Fase 1 completada, `suggestions.service.ts:269-273`). | La propuesta está en manos del bot, pendiente de crear mensaje/hilo en Discord. |
+| **`retrying`** | Transitorio | El bot devuelve `{ type: 'ERROR', data: { code: 'RATE_LIMITED', retry_after_seconds } }`; el puente emite `frame:retrying` (`suggestions.service.ts:62-75`). | Incorpora `nextRetryInSeconds` en el registro para el contador del frontend. |
+| **`confirmed`** | **Terminal** | El bot completa la publicación en Discord y emite `SUGGESTION_CONFIRMED` (Fase 2, `suggestions.service.ts:77-94`). | Almacena `channelId`, `messageId` y `threadId`. Éxito definitivo. |
+| **`failed`** | **Terminal** | Fallo de conexión en Fase 1 (`BRIDGE_SEND_FAILED`), timeout de 5m por rate limit (`RATE_LIMIT_TIMEOUT`), o rechazo remoto en Fase 2 (`SUGGESTION_FAILED`) (`suggestions.service.ts:96-119, 274-286`). | Genera y almacena el `incidentId` forense; el detalle del error solo va al log. Fracaso definitivo. |
 
 ---
 
@@ -75,7 +75,7 @@ Para garantizar consistencia ante llegadas desordenadas de eventos de red (*out-
 
 ## 4. Despacho en Segundo Plano (*Background Dispatch*)
 
-El método `submit(request, user, context)` (`suggestions.service.ts:150-213`) ejecuta el siguiente flujo:
+El método `submit(request, user, context)` (`suggestions.service.ts:128-191`) ejecuta el siguiente flujo:
 1. Valida imperativamente la longitud del texto.
 2. Si el puente no tiene URL (`bridgeClient.isConfigured()` es `false`), responde `503 SUGGESTIONS_NOT_CONFIGURED`.
 3. Si se recibe `context` (envíos HTTP), aplica el límite de envíos por `discordId` o por IP; al superarlo responde `429 RATE_LIMITED` con `retryAfterSeconds` (ver [routes.md](routes.md#33-límite-de-envíos)).
@@ -90,7 +90,7 @@ El método `submit(request, user, context)` (`suggestions.service.ts:150-213`) e
    ```
 9. Retorna inmediatamente la tupla `{ id, status: 'queued' }` al router HTTP.
 
-En `dispatchToBridge(id, text, author)` (`suggestions.service.ts:289-329`):
+En `dispatchToBridge(id, text, author)` (`suggestions.service.ts:248-288`):
 - Se construye la trama `BridgeSuggestionCreatedFrame` con la carga útil completa.
 - Se invoca `await this.bridgeClient.send(frame)`.
 - Si `send()` se resuelve con éxito (Fase 1 completada con acuse `QUEUED`), actualiza el estado a `'processing'`.
@@ -104,7 +104,7 @@ En `dispatchToBridge(id, text, author)` (`suggestions.service.ts:289-329`):
 
 ## 5. Algoritmo de Resolución de Autoría (`resolveAuthor`)
 
-La identidad del autor se computa en `suggestions.service.ts:211-241` bajo las siguientes reglas de negocio:
+La identidad del autor se computa en `suggestions.service.ts:216-246` bajo las siguientes reglas de negocio:
 
 ### 5.1 Caso Usuario Autenticado y No Anónimo
 Condición: `options.user !== null && options.isAnonymous !== true`.

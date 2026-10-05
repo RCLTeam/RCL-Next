@@ -21,9 +21,9 @@ Para evitar desbordamientos de memoria en el runtime de Node.js al recibir repet
 
 1. **Aislamiento en Disco Temporal:**
    Al iniciarse la subida (`type: 'start'`), el gateway crea un subdirectorio exclusivo en el directorio temporal del sistema operativo:
-   `sessionDir = path.join(os.tmpdir(), 'rcl-ws-upload-' + crypto.randomUUID())` (`rofl-upload.gateway.ts:243`).
+   `sessionDir = path.join(os.tmpdir(), 'rcl-ws-upload-' + crypto.randomUUID())` (`rofl-upload.gateway.ts:232`).
 2. **Streaming por Chunks con Detección de Drenaje:**
-   A medida que llegan los fragmentos binarios por WebSocket, se escriben en un flujo físico (`fsSync.createWriteStream`). Si el búfer del sistema de archivos se llena (`canWrite === false`), el gateway pausa la recepción de tramas del socket para impedir saturar la RAM y la reanuda cuando el kernel drena los datos al disco (`rofl-upload.gateway.ts:201-207`):
+   A medida que llegan los fragmentos binarios por WebSocket, se escriben en un flujo físico (`fsSync.createWriteStream`). Si el búfer del sistema de archivos se llena (`canWrite === false`), el gateway pausa la recepción de tramas del socket para impedir saturar la RAM y la reanuda cuando el kernel drena los datos al disco (`rofl-upload.gateway.ts:190-196`):
    ```typescript
    const canWrite = fileWriteStream.write(buffer);
    if (!canWrite) {
@@ -46,7 +46,7 @@ La clase `DecompressionQueue` (`process-batch-files.ts:19-110`) implementa un pa
 - **Cancelación Limpia con `AbortSignal`:** Si el cliente se desconecta o cierra la ventana del navegador mientras espera en cola, el listener del evento `abort` purga la entrada de la lista y re-notifica a los demás clientes sin dejar promesas huérfanas ni fugas de memoria (`process-batch-files.ts:66-77`).
 
 > [!NOTE]
-> **Comportamiento Específico:** Los archivos `.rofl` individuales **no entran en la cola de descompresión**. Si el archivo subido termina en `.rofl`, la función `processBatchFiles` omite por completo `decompressionQueue.acquire()` y procede a copiar directamente el archivo en el directorio temporal de trabajo (`process-batch-files.ts:198-209`).
+> **Comportamiento Específico:** Los archivos `.rofl` individuales **no entran en la cola de descompresión**. Si el archivo subido termina en `.rofl`, la función `processBatchFiles` omite por completo `decompressionQueue.acquire()` y procede a copiar directamente el archivo en el directorio temporal de trabajo (`process-batch-files.ts:187-198`).
 
 ---
 
@@ -76,14 +76,14 @@ export function validateZipSlip(baseDir: string, entryPath: string): string {
 ```
 
 ### 4.2 Mitigación de Bombas de Descompresión (*Zip Bombs*)
-Antes de extraer el contenido a disco, el módulo inspecciona los encabezados del archivo comprimido (`process-batch-files.ts:218-254`) y aplica 4 filtros de seguridad:
+Antes de extraer el contenido a disco, el módulo inspecciona los encabezados del archivo comprimido (`process-batch-files.ts:207-243`) y aplica 4 filtros de seguridad:
 
 | Regla / Cota | Límite Máximo | Motivo de Seguridad |
 |---|:---:|---|
-| **Número de partidas ROFL** | `MAX_FILES = 10` | Evita ataques de denegación de servicio por exceso de subprocesos (`process-batch-files.ts:218, 227-231`). |
-| **Tamaño descomprimido por archivo** | `50 * 1024 * 1024` (50 MB) | Impide que una sola repetición manipulada colapse la partición de `/tmp` (`process-batch-files.ts:219, 238-242`). |
-| **Volumen total descomprimido del lote** | `300 * 1024 * 1024` (300 MB) | Acota el tamaño total proyectado de la suma de todas las entradas del ZIP (`process-batch-files.ts:220, 251-253`). |
-| **Ratio de compresión máximo** | `100:1` (`MAX_COMPRESSION_RATIO = 100`) | Detecta patrones altamente repetitivos característicos de bombas de compresión recursivas (`process-batch-files.ts:221, 244-248`). |
+| **Número de partidas ROFL** | `MAX_FILES = 10` | Evita ataques de denegación de servicio por exceso de subprocesos (`process-batch-files.ts:207, 216-220`). |
+| **Tamaño descomprimido por archivo** | `50 * 1024 * 1024` (50 MB) | Impide que una sola repetición manipulada colapse la partición de `/tmp` (`process-batch-files.ts:208, 227-231`). |
+| **Volumen total descomprimido del lote** | `300 * 1024 * 1024` (300 MB) | Acota el tamaño total proyectado de la suma de todas las entradas del ZIP (`process-batch-files.ts:209, 240-242`). |
+| **Ratio de compresión máximo** | `100:1` (`MAX_COMPRESSION_RATIO = 100`) | Detecta patrones altamente repetitivos característicos de bombas de compresión recursivas (`process-batch-files.ts:210, 233-237`). |
 
 ---
 

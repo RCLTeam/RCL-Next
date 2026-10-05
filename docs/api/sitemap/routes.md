@@ -35,10 +35,10 @@ El enrutador se monta sin prefijo antes de `webPageRouter`, de modo que `/sitema
 if (sitemapService) app.use(sitemapRouter(sitemapService));
 ```
 
-En el arranque del servidor de producción (`apps/api/src/server.ts:84`), se inicializa la instancia `PostgresSitemapRepository` conectada a PostgreSQL mediante Drizzle ORM:
+En el arranque del servidor de producción (`apps/api/src/server.ts:87`), se inicializa la instancia `PostgresSitemapRepository` conectada a PostgreSQL mediante Drizzle ORM:
 
 ```typescript
-// apps/api/src/server.ts:84
+// apps/api/src/server.ts:87
 sitemapRepository: new PostgresSitemapRepository(connection.db),
 ```
 

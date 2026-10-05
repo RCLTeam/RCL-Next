@@ -4,6 +4,8 @@
 
 Las suites `tests/integration/api.test.ts` y `tests/unit/render/AuthControls.test.tsx` incorporan la integración y el renderizado del [proxy de avatares](../discord-avatars.md). Los recuentos históricos siguientes preceden a esta ampliación.
 
+`tests/integration/auth.test.ts` fija los flags de la cookie de sesión (`HttpOnly`, `SameSite=Lax`, `Path=/`, `Secure` solo en HTTPS) y el rechazo del nombre equivocado y de las cookies duplicadas en `/me`. `tests/integration/auth-websocket-adversarial.test.ts` comprueba lo mismo en el WebSocket de subida ROFL, con un gateway sin `secureCookies` y otro con `secureCookies: true` (bloque `Session cookie selection`). Estos casos son posteriores a los recuentos históricos.
+
 ---
 
 ## 1. Resumen Ejecutivo

@@ -86,9 +86,9 @@ Validado en pruebas unitarias mediante la expresión regular estricta (`incident
 ### 3.3 Catálogo Canónico de Tipos de Incidencia
 | Tipo de Incidencia | Origen Técnico | Causa y Contexto |
 |---|---|---|
-| **`RATE_LIMIT_TIMEOUT`** | `SuggestionsService.dispatchToBridge` (`suggestions.service.ts:316-326`) | La propuesta superó el límite máximo de 5 minutos continuos acumulados en reintentos por rate limit en Discord. |
-| **`BRIDGE_SEND_FAILED`** | `SuggestionsService.dispatchToBridge` (`suggestions.service.ts:316-326`) | Excepción de red, socket inalcanzable, o fallo de transporte al transmitir el frame `SUGGESTION_CREATED` en Fase 1. Para `BridgeUnavailableError` el mensaje incluye la causa original (`describeError`, `suggestions.service.ts:331-337`). |
-| **`DISCORD_DELIVERY_FAILED`** | Listener de `SUGGESTION_FAILED` en el constructor (`suggestions.service.ts:115-142`) | El bot de Discord procesó la propuesta en Fase 2 pero devolvió un frame `SUGGESTION_FAILED` (p. ej. canal borrado, permisos insuficientes). Si el bot envía `incident_id`, se registra con ese identificador. |
+| **`RATE_LIMIT_TIMEOUT`** | `SuggestionsService.dispatchToBridge` (`suggestions.service.ts:275-285`) | La propuesta superó el límite máximo de 5 minutos continuos acumulados en reintentos por rate limit en Discord. |
+| **`BRIDGE_SEND_FAILED`** | `SuggestionsService.dispatchToBridge` (`suggestions.service.ts:275-285`) | Excepción de red, socket inalcanzable, o fallo de transporte al transmitir el frame `SUGGESTION_CREATED` en Fase 1. Para `BridgeUnavailableError` el mensaje incluye la causa original (`describeError`, `suggestions.service.ts:290-296`). |
+| **`DISCORD_DELIVERY_FAILED`** | Listener de `SUGGESTION_FAILED` en el constructor (`suggestions.service.ts:96-119`) | El bot de Discord procesó la propuesta en Fase 2 pero devolvió un frame `SUGGESTION_FAILED` (p. ej. canal borrado, permisos insuficientes). Si el bot envía `incident_id`, se registra con ese identificador. |
 
 ### 3.4 Separación entre log y respuesta pública
 El detalle técnico del fallo (mensajes de socket, hosts, puertos, motivos del bot) solo se escribe en la línea `[INCIDENT <uuid>]` del log. El registro guarda `status: 'failed'` y el `incidentId`, y `GET /api/v1/suggestions/status/:id` devuelve únicamente ese identificador para que el usuario pueda comunicarlo.

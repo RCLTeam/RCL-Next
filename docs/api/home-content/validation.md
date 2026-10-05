@@ -125,7 +125,7 @@ En `home-content.router.ts:34`:
 router.use('/admin', requireAuth(auth, 'admin'));
 ```
 - Valida la sesión activa del usuario frente al middleware de autenticación (`requireAuth`).
-- Exige que `user.role` sea `'admin'` u `'owner'`. La invocación con `'admin'` valida automáticamente ambos roles jerárquicos (`auth.router.ts:25`).
+- Exige que `user.role` sea `'admin'` u `'owner'`. La invocación con `'admin'` valida automáticamente ambos roles jerárquicos (`auth.router.ts:18`).
 - **Refutación:** Peticiones realizadas por usuarios anónimos devuelven **HTTP 401**. Peticiones de usuarios autenticados con rol `'viewer'` devuelven **HTTP 403**.
 
 ### Guardia de Origen Confiable (CSRF Guard)
