@@ -47,7 +47,7 @@ export type SitemapEntry = SitemapUrlEntry;
 ```
 
 #### Definición de Campos:
-- **`loc` (`string`, obligatorio):** Dirección URL canónica absoluta del recurso indexable (por ejemplo, `https://rebelcrownlegacy.es/calendario` o `https://rebelcrownlegacy.es/equipos/10000000-0000-4000-8000-000000000001`).
+- **`loc` (`string`, obligatorio):** Dirección URL canónica absoluta del recurso indexable (por ejemplo, `https://rebelcrownlegacy.es/calendario` o `https://rebelcrownlegacy.es/equipos/lobos-demo`).
 - **`lastmod` (`string`, opcional):** Marca de fecha en formato W3C Datetime (`YYYY-MM-DD`) que indica la última modificación del recurso.
 - **`changefreq` (`SitemapChangeFrequency`, opcional):** Frecuencia con la que es probable que el contenido de la página cambie (`'daily'`, `'weekly'`, `'monthly'`, etc.).
 - **`priority` (`number`, opcional):** Prioridad relativa de la URL con respecto a otras páginas del sitio, en el rango numérico de `0.0` a `1.0`.
@@ -57,14 +57,24 @@ export type SitemapEntry = SitemapUrlEntry;
 Modelan los registros proyectados desde PostgreSQL por `SitemapRepository`:
 
 ```typescript
-// apps/api/src/modules/sitemap/types/sitemap.types.ts:19-32
+// apps/api/src/modules/sitemap/types/sitemap.types.ts:19-42
+/**
+ * Every team of the directory (active or not): slugs are disambiguated against the whole
+ * directory, exactly as the competition API does, and only active teams are published.
+ */
 export interface SitemapTeamItem {
   id: string;
+  name: string;
+  seasonName: string;
+  divisionName: string;
+  isActive: boolean;
   updatedAt: Date;
 }
 
 export interface SitemapPlayerItem {
   id: string;
+  gameName: string;
+  riotTag: string | null;
   updatedAt: Date;
 }
 
@@ -74,14 +84,16 @@ export interface SitemapArticleItem {
 }
 ```
 
-Cada modelo aísla el identificador primario UUID (`id`) y el objeto temporal normalizado (`updatedAt`), eliminando cualquier dependencia de campos innecesarios del esquema de la base de datos.
+- **`SitemapTeamItem`:** `name`, `seasonName` y `divisionName` son la entrada de `teamProfileSlugs`; `isActive` decide si el equipo se publica.
+- **`SitemapPlayerItem`:** `gameName` y `riotTag` son la entrada de `playerProfileSlugs`.
+- **`SitemapArticleItem`:** Solo el identificador, porque la web enlaza los artículos como `/editorial/:id`.
 
 ### 2.4 Configuración del Módulo (`SitemapConfig`)
 
 Opciones de configuración desacopladas para el módulo:
 
 ```typescript
-// apps/api/src/modules/sitemap/types/sitemap.types.ts:34-37
+// apps/api/src/modules/sitemap/types/sitemap.types.ts:44-47
 export interface SitemapConfig {
   baseUrl?: string;
   cacheTtlMs?: number;
@@ -97,7 +109,7 @@ En `apps/api/src/modules/sitemap/processing/sitemap.service.ts`, se definen cont
 ### 3.1 Opciones del Servicio (`SitemapServiceOptions`)
 
 ```typescript
-// apps/api/src/modules/sitemap/processing/sitemap.service.ts:7-10
+// apps/api/src/modules/sitemap/processing/sitemap.service.ts:10-13
 export interface SitemapServiceOptions {
   baseUrl?: string;
   cacheTtlMs?: number;
@@ -106,18 +118,31 @@ export interface SitemapServiceOptions {
 
 Permite inyectar en el constructor de `SitemapService` un dominio base personalizado o ajustar la duración de la caché en memoria para entornos de prueba o staging.
 
-### 3.2 Definición de Rutas Estáticas (`StaticRouteDefinition`)
+### 3.2 Rutas Estáticas (`SITEMAP_STATIC_PATHS` y `StaticRouteSettings`)
 
 ```typescript
-// apps/api/src/modules/sitemap/processing/sitemap.service.ts:12-16
-interface StaticRouteDefinition {
-  path: string;
+// apps/api/src/modules/sitemap/processing/sitemap.service.ts:15-18
+interface StaticRouteSettings {
   priority: number;
   changefreq: SitemapChangeFrequency;
 }
 ```
 
-Estructura inmutable utilizada internamente por el catálogo `STATIC_ROUTES` para declarar la prioridad y periodicidad de rastreo de las páginas fijas de la plataforma.
+`SITEMAP_STATIC_PATHS` (exportada, `sitemap.service.ts:39-41`) es la lista de rutas públicas derivada de `pageMetadata` de `@rcl/contracts`. `StaticRouteSettings` solo describe la prioridad y la frecuencia de cada ruta en `STATIC_ROUTE_SETTINGS` (ver [processing.md](processing.md#31-rutas-estáticas-de-la-plataforma-sitemap_static_paths)).
+
+### 3.3 Funciones de Slug Compartidas (`profile-slugs.ts`)
+
+```typescript
+// apps/api/src/modules/competition/profile-slugs.ts:62-85
+export function teamProfileSlugs(
+  teams: { id: string; name: string; seasonName: string; divisionName: string }[]
+): Map<string, string>;
+export function playerProfileSlugs(
+  players: { id: string; gameName: string; riotTag: string | null }[]
+): Map<string, string>;
+```
+
+Devuelven el mapa `id → slug` que usan tanto `CompetitionService` (campo `slug` de la API) como `SitemapService`.
 
 ---
 
