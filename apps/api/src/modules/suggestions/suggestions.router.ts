@@ -2,6 +2,7 @@ import type { AuthUser, CreateSuggestionResponse } from '@rcl/contracts';
 import { type NextFunction, type Request, type Response, Router } from 'express';
 import { AppError, notFound } from '../../shared/app-error.js';
 import type { AuthOptions } from '../auth/auth.router.js';
+import { readSessionCookie } from '../auth/session-cookie.js';
 import type { SuggestionsService } from './suggestions.service.js';
 
 export interface SuggestionsRouterOptions {
@@ -9,13 +10,6 @@ export interface SuggestionsRouterOptions {
   service?: SuggestionsService | undefined;
   frontendOrigin?: string | undefined;
   auth?: AuthOptions | undefined;
-}
-
-function extractSessionCookie(req: Request, secureCookies: boolean): string | undefined {
-  const name = secureCookies ? '__Host-rcl_session' : 'rcl_session';
-  const entries = (req.headers.cookie ?? '').split(';').map((part) => part.trim());
-  const matches = entries.filter((part) => part.startsWith(`${name}=`));
-  return matches.length === 1 ? matches[0]?.slice(name.length + 1) : undefined;
 }
 
 export function createSuggestionsRouter(
@@ -81,7 +75,7 @@ export function createSuggestionsRouter(
         res.locals.user ?? (req as unknown as { user?: AuthUser }).user ?? undefined;
 
       if (!user && authOptions?.service) {
-        const token = extractSessionCookie(req, authOptions.secureCookies);
+        const token = readSessionCookie(req.headers.cookie, authOptions.secureCookies);
         if (token) {
           try {
             user = (await authOptions.service.currentUser(token)) ?? undefined;
