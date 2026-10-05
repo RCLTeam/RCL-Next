@@ -41,12 +41,12 @@ Para asociar una partida individual de una repetición a su serie oficial en la 
 
 ## 4. Transacción Atómica y Bloqueo Pesimista de Filas
 
-Todas las partidas del lote se insertan dentro de una **única transacción de base de datos** (`await this.db.transaction(async (tx) => { ... })`, `postgres-rofl-upload.repository.ts:194`).
+Todas las partidas del lote se insertan dentro de una **única transacción de base de datos** (`await this.db.transaction(async (tx) => { ... })`, `postgres-rofl-upload.repository.ts:258`).
 
 ### 4.1 Bloqueo Pesimista (`SELECT ... FOR UPDATE`)
 En series al mejor de 3 (Bo3) o al mejor de 5 (Bo5), dos administradores o procesos podrían subir concurrentemente repeticiones de diferentes juegos de la misma serie. Para erradicar colisiones de clave única en `(matches_id, game_number)`:
 ```typescript
-// apps/api/src/modules/rofl-upload/persistence/postgres-rofl-upload.repository.ts:303-308
+// apps/api/src/modules/rofl-upload/persistence/postgres-rofl-upload.repository.ts:383-397
 const [matchRow] = await tx
   .select()
   .from(matches)
@@ -54,16 +54,28 @@ const [matchRow] = await tx
   .for('update');
 
 if (!matchRow) {
-  throw new Error(`Match ${matchId} not found in database`);
+  throw new RoflUploadDomainError(`Match ${matchId} not found in database`);
 }
 if (matchRow.status === 'completed') {
-  throw new Error(`Match ${matchId} is already completed/closed`);
+  if (await registeredMeanwhile(game.externalGameId)) {
+    skippedDuplicates.push(game.externalGameId);
+    continue;
+  }
+  throw new RoflUploadDomainError(`Match ${matchId} is already completed/closed`);
 }
 ```
 El bloqueo pesimista `for('update')` asegura que la fila del partido queda bloqueada exclusivamente para esta transacción. Las demás transacciones concurrentes deben esperar en la base de datos hasta que se determine `nextGameNumber` y se confirmen las inserciones, serializando matemáticamente la asignación de números de juego.
 
 ### 4.2 Comprobación Idempotente de Duplicados
-Antes de insertar, el repositorio verifica si `externalGameId` ya está registrado en `match_games` o si ya fue procesado previamente en el mismo lote (`postgres-rofl-upload.repository.ts:185-205`). Si se detecta una partida duplicada, se agrega al listado `skippedDuplicates` y se omite silenciosamente sin arrojar excepción ni corromper los marcadores.
+Una partida es duplicada si su `externalGameId` ya está registrado en `match_games` o ya apareció antes en el mismo lote. Toda partida duplicada se agrega a `skippedDuplicates` y se omite sin arrojar excepción, sin consumir número de juego y sin modificar los marcadores; el resto del lote se inserta con normalidad. `skippedDuplicates` es el único mecanismo para informar de duplicados.
+
+La detección se hace en tres puntos, todos dentro de la transacción:
+
+1. **Lectura inicial dentro de la transacción** (`postgres-rofl-upload.repository.ts:259-260`): `checkExternalGamesExist(externalIds, tx)` consulta todos los identificadores del lote con el ejecutor de la transacción. Una subida concurrente que ya confirmó la misma partida queda reflejada en esta lectura.
+2. **Inserción con `ON CONFLICT (external_game_id) DO NOTHING`** (`postgres-rofl-upload.repository.ts:422-441`): si otra subida confirma la misma partida después de la lectura inicial, la restricción única `match_games_external_game_id_key` (`packages/database/src/schema.ts:399`) resuelve la carrera. La inserción usa `.returning()`; si no devuelve filas, la partida se informa como duplicada y no se insertan sus filas hijas. El conflicto se limita a `external_game_id`: una colisión en `(matches_id, game_number)` sigue siendo un error.
+3. **Partido ya cerrado** (`postgres-rofl-upload.repository.ts:369-376` y `391-397`): si la otra subida completó el partido con esa misma partida, la resolución de la serie lo encuentra cerrado antes de llegar a la inserción. Antes de rechazar el lote por partido cerrado, `registeredMeanwhile` vuelve a consultar el `externalGameId` dentro de la transacción; si ya existe, la partida se trata como duplicada.
+
+Antes de este diseño la comprobación se hacía fuera de la transacción: dos subidas simultáneas con una partida común pasaban ambas la comprobación y la segunda se revertía entera con un error de clave única.
 
 ---
 
