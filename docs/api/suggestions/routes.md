@@ -65,7 +65,7 @@ Registra una nueva sugerencia en la cola de tramitación.
 
   | Código | `error.code` | Condición |
   |---|---|---|
-  | `429 Too Many Requests` | `RATE_LIMITED` | El cliente superó su límite de envíos (§3.3). Incluye la cabecera `Retry-After` con los segundos hasta que se abre la ventana (`suggestions.router.ts:109-118`). |
+  | `429 Too Many Requests` | `RATE_LIMITED` | El cliente superó su límite de envíos (§3.3). Incluye la cabecera `Retry-After` con los segundos hasta que se abre la ventana (`suggestions.router.ts:109-118`); la configuración CORS de `app.ts` la expone (`exposedHeaders`) para que la web pueda leerla también desde otro origen. |
   | `503 Service Unavailable` | `SUGGESTIONS_NOT_CONFIGURED` | `DISCORD_BOT_WS_URL` está vacío: el puente no puede entregar nada. |
   | `503 Service Unavailable` | `SUGGESTIONS_UNAVAILABLE` | El almacén de estados alcanzó `maxRecords` o la cola del puente alcanzó `maxQueueSize`. |
 

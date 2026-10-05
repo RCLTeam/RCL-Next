@@ -85,6 +85,13 @@ describe('Suggestions Integration (Full App Pipeline)', () => {
     });
   });
 
+  describe('CORS', () => {
+    it('exposes Retry-After to the frontend origin', async () => {
+      const res = await request(app).get('/api/v1/bridge/health').set('Origin', corsOrigin);
+      expect(res.headers['access-control-expose-headers']).toContain('Retry-After');
+    });
+  });
+
   describe('End-to-end suggestion flow (POST 202 -> polling GET 200 -> Confirmed)', () => {
     it('completes the suggestion lifecycle successfully', async () => {
       mockBridgeClient.send.mockResolvedValueOnce(undefined);
