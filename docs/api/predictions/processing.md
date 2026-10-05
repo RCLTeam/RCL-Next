@@ -127,7 +127,7 @@ export function predictionPoints(correctWinner: boolean, exactScore: boolean) {
 - Los porcentajes de la comunidad se calculan como un entero puro mediante redondeo estándar:
   ```typescript
   // predictions.repository.ts (overview)
-  homePercent = Math.round((100 * homeVotes) / totalVotes);
+  homePercent: revealVotes && votes ? Math.round((100 * home) / votes) : null
   ```
 - El porcentaje del equipo visitante es calculado por el cliente como `100 - homePercent`.
 

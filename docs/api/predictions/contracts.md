@@ -92,7 +92,7 @@ Entrada individual en la tabla de clasificación de la temporada:
 | `avatarHash` | `string \| null` | Sí | Hash del avatar de Discord, sin extensión; puede llevar el prefijo `a_` para avatares animados. `null` si el usuario no tiene avatar. Se combina con `userId` para solicitar la imagen al proxy `/api/v1/discord-avatars/:discordId/:hash`. |
 | `position` | `number` | Sí | Posición secuencial en la tabla (1-indexed). |
 | `correct` | `number` | Sí | Número total de enfrentamientos en los que acertó el equipo ganador. |
-| `total` | `number` | Sí | Número total de partidos pronosticados por el usuario. |
+| `total` | `number` | Sí | Número de partidos pronosticados por el usuario en la temporada que ya están finalizados (`completed` o `forfeit`) y tienen ganador asignado. |
 | `points` | `number` | Sí | Puntuación total acumulada según el baremo oficial (3/1/0 puntos). |
 
 #### Criterio de Ordenación del Ranking (`predictions.repository.ts`, método `overview`):
