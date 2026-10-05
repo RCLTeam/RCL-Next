@@ -1,11 +1,15 @@
 import type { EditorialInput } from '@rcl/contracts';
 import React from 'react';
+import { formatLeagueDate } from '../../../shared/league-time.js';
 import './editorial.css';
 
 export function ArticleView({
   article,
   publishedAt
 }: { article: EditorialInput; publishedAt?: string | null | undefined }) {
+  const publishedDate = publishedAt
+    ? formatLeagueDate(publishedAt, { day: 'numeric', month: 'long', year: 'numeric' })
+    : null;
   const minutes = Math.max(1, Math.ceil(article.body.split(/\s+/).length / 220));
   return (
     <article className="editorial-article">
@@ -16,15 +20,7 @@ export function ArticleView({
         {article.excerpt && <p className="editorial-excerpt">{article.excerpt}</p>}
         <div className="editorial-byline">
           <span>Por {article.author}</span>
-          {publishedAt && (
-            <time dateTime={publishedAt}>
-              {new Date(publishedAt).toLocaleDateString('es-ES', {
-                day: 'numeric',
-                month: 'long',
-                year: 'numeric'
-              })}
-            </time>
-          )}
+          {publishedDate && <time dateTime={publishedAt ?? undefined}>{publishedDate}</time>}
           <span>{minutes} min de lectura</span>
         </div>
       </header>
