@@ -28,6 +28,7 @@ import type { PredictionsRepository } from './modules/predictions/predictions.re
 import { predictionsRouter } from './modules/predictions/predictions.router.js';
 import type { SitemapRepository } from './modules/sitemap/persistence/sitemap.repository.js';
 import { SitemapService } from './modules/sitemap/processing/sitemap.service.js';
+import { invalidateSitemapOnWrite } from './modules/sitemap/sitemap-invalidation.js';
 import { sitemapRouter } from './modules/sitemap/sitemap.router.js';
 import { IncidentLogger } from './modules/suggestions/incident-logger.js';
 import { SuggestionStore } from './modules/suggestions/suggestion.store.js';
@@ -68,6 +69,18 @@ export function createApp(options: {
       : undefined
   );
   app.use(pageMetadataRouter(metadata));
+  const sitemapService =
+    options.sitemapService ??
+    (options.sitemapRepository ? new SitemapService(options.sitemapRepository) : undefined);
+  // Admin modules that change teams, players or articles refresh the sitemap on success.
+  if (sitemapService) {
+    for (const path of [
+      '/api/v1/database-transfer',
+      '/api/v1/crud-operations',
+      '/api/v1/home-content'
+    ])
+      app.use(path, invalidateSitemapOnWrite(sitemapService));
+  }
   if (options.auth && options.databaseTransferRepository) {
     app.use(
       '/api/v1/database-transfer',
@@ -171,12 +184,7 @@ export function createApp(options: {
       auth: options.auth
     })
   );
-  const sitemapService =
-    options.sitemapService ??
-    (options.sitemapRepository ? new SitemapService(options.sitemapRepository) : undefined);
-  if (sitemapService) {
-    app.use('/api/sitemap.xml', sitemapRouter(sitemapService));
-  }
+  if (sitemapService) app.use(sitemapRouter(sitemapService));
   app.get('/health/live', (_req, res) => {
     res.json({ data: { status: 'ok' } });
   });

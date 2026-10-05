@@ -1,6 +1,9 @@
 import { type RequestHandler, Router } from 'express';
 import type { SitemapService } from './processing/sitemap.service.js';
 
+/** Public sitemap paths: the root one is the one referenced by robots.txt. */
+export const SITEMAP_PATHS = ['/sitemap.xml', '/api/sitemap.xml'] as const;
+
 export function sitemapRouter(service: SitemapService): Router {
   const router = Router();
 
@@ -8,15 +11,15 @@ export function sitemapRouter(service: SitemapService): Router {
     try {
       const xml = await service.getSitemapXml();
       res.set('Content-Type', 'application/xml; charset=utf-8');
-      res.set('Cache-Control', 'public, max-age=3600, s-maxage=43200');
+      // Short shared cache so admin changes are not hidden behind a proxy for hours.
+      res.set('Cache-Control', 'public, max-age=300');
       res.status(200).send(xml);
     } catch (error) {
       next(error);
     }
   };
 
-  router.get('/', handleSitemap);
-  router.get('/sitemap.xml', handleSitemap);
+  for (const path of SITEMAP_PATHS) router.get(path, handleSitemap);
 
   return router;
 }
