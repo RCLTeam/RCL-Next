@@ -6,22 +6,25 @@
 
 ## 1. Resumen Ejecutivo
 
-El monorepo RCL-Next cuenta con una cobertura integral compuesta por **79 archivos de pruebas** que ejecutan **901 pruebas verificadas**, totalizando **19.014 líneas de código de pruebas**. Todas las pruebas pasan sin excepciones (**100% de tasa de éxito, 0 pruebas fallidas**), y se certifica la existencia de **0 suites fantasma (*ghost suites*)** en todo el repositorio.
+Este directorio es el censo por archivo de las pruebas del monorepo. Las cifras son una medición fechada, no un valor permanente: cada PR que añade, quita o amplía suites actualiza la fila correspondiente y, si cambia, la fecha. Para conocer el total actual basta con ejecutar `pnpm test` (Vitest) y `python3 -m unittest discover apps/parser/tests` (parser); el [apartado 5](#5-cómo-actualizar-este-censo) explica cómo obtener las cifras por archivo.
 
-La distribución de suites abarca pruebas unitarias co-ubicadas en el backend y el frontend, pruebas de interfaz y renderizado en aislamiento, pruebas transversales de integración con base de datos en memoria, y pruebas nativas de bajo nivel para el motor de parsing de repeticiones en Python.
+Medición del 6 de octubre de 2026: **97 archivos de pruebas y 1.149 pruebas** (96 archivos y 1.137 pruebas de Vitest, más 1 archivo y 12 pruebas de Python), **24.120 líneas brutas** (`wc -l`, incluidas líneas vacías y comentarios). Todas pasaron.
+
+La distribución abarca pruebas unitarias co-ubicadas en el backend, el frontend y `packages/contracts`, pruebas de clientes y renderizado en `tests/unit/`, pruebas transversales de integración (en su mayoría con base de datos en memoria) y pruebas de bajo nivel del parser de repeticiones en Python.
 
 ---
 
-## 2. Censo Cuantitativo de Suites
+## 2. Censo Cuantitativo de Suites (6 de octubre de 2026)
 
-| Dominio / Área del Proyecto | Ejecutor / Arnés | Archivos de Prueba | Total Pruebas | Líneas de Código (LoC) | Tasa de Aprobación |
+| Dominio / Área del Proyecto | Ejecutor / Entorno | Archivos de Prueba | Total Pruebas | LoC brutas | Aprobadas |
 |---|---|---:|---:|---:|:---:|
-| **Backend API (`apps/api`)** | Vitest (v8 / Node) | 15 | 128 | 2.992 | 100% (128/128) |
-| **Frontend Web (`apps/web`)** | Vitest (v8 / JSDOM-Node) | 23 | 131 | 2.438 | 100% (131/131) |
-| **Parser ROFL (`apps/parser`)** | Python `unittest` | 1 | 12 | 254 | 100% (12/12) |
-| **Integración Relacional (`tests/integration`)** | Vitest (PGlite en memoria) | 25 | 529 | 11.687 | 100% (529/529) |
-| **Renderizado y Shell (`tests/unit`)** | Vitest (Node / Render) | 15 | 102 | 1.679 | 100% (102/102) |
-| **Total Global del Monorepo** | | **79** | **901** | **19.014** | **100% (901/901)** |
+| **Backend API (`apps/api`)** | Vitest (`node`) | 23 | 268 | 5.358 | 268/268 |
+| **Contratos (`packages/contracts`)** | Vitest (`node`) | 1 | 3 | 28 | 3/3 |
+| **Frontend Web (`apps/web`)** | Vitest (`node`, `react-dom/server`) | 28 | 168 | 2.962 | 168/168 |
+| **Parser ROFL (`apps/parser`)** | Python `unittest` | 1 | 12 | 254 | 12/12 |
+| **Integración (`tests/integration`)** | Vitest (PGlite en memoria o dobles) | 29 | 573 | 13.589 | 573/573 |
+| **Clientes y Renderizado (`tests/unit`)** | Vitest (`node`, `react-dom/server`) | 15 | 125 | 1.929 | 125/125 |
+| **Total Global del Monorepo** | | **97** | **1.149** | **24.120** | **1.149/1.149** |
 
 ---
 
@@ -29,10 +32,10 @@ La distribución de suites abarca pruebas unitarias co-ubicadas en el backend y 
 
 | Catálogo | Enlace | Resumen del Dominio y Suites |
 |---|---|---|
-| **Suites Backend API** | [api.md](api.md) | Catálogo de las 15 suites de `apps/api` (128 pruebas): variables de entorno, cliente Discord OAuth, estadísticas de competición, cliente bridge de Discord, políticas de predicciones, procesamiento de repeticiones y buzón de sugerencias. |
-| **Suites Frontend Web** | [web.md](web.md) | Catálogo de las 23 suites de `apps/web` (131 pruebas): clientes API, diálogos modales CRUD, panel de transferencias, hooks de puente, selector y filtrado de jornadas, formulario de sugerencias, reducers de estado, servicios CDN de Riot y páginas del sitio. |
-| **Suites del Parser ROFL** | [parser.md](parser.md) | Catálogo de las 12 pruebas de `apps/parser/tests/test_roflParser.py`: validación de cabecera `b"RIOT"`, fixture anonimizado, unpack de metadatos, integridad de 10 participantes y matriz de códigos de salida de la CLI (0-14). |
-| **Suites de Integración y Renderizado** | [integration.md](integration.md) | Catálogo de las 25 suites de integración en `tests/integration/` (529 pruebas) y las 15 suites de renderizado en `tests/unit/` (102 pruebas): subida adversarial de repeticiones, seguridad OAuth, caos de WebSocket y suite E2E de sugerencias (345 pruebas). |
+| **Suites Backend API** | [api.md](api.md) | Suites co-ubicadas de `apps/api` y `packages/contracts`: configuración del entorno, OAuth y cookie de sesión, proxy de avatares, competición, transferencia de base de datos, puente de Discord, metadatos de página, predicciones, subida de repeticiones, sitemap y buzón de sugerencias. |
+| **Suites Frontend Web** | [web.md](web.md) | Suites co-ubicadas de `apps/web`: clientes API, diálogos CRUD, panel de transferencias, hooks del puente, editor de noticias, selector de jornadas, sugerencias, servicios CDN de Riot, hora de la liga, navegación y páginas del sitio. |
+| **Suites del Parser ROFL** | [parser.md](parser.md) | Pruebas de `apps/parser/tests/test_roflParser.py`: cabecera `b"RIOT"`, fixture anonimizado, metadatos, 10 participantes y códigos de salida de la CLI (0-14). |
+| **Suites de Integración y Renderizado** | [integration.md](integration.md) | Suites de `tests/integration/` (subida adversarial de repeticiones, OAuth, WebSocket, CRUD, sitemap, sugerencias de extremo a extremo) y de `tests/unit/` (clientes, hooks y renderizado aislado). |
 
 ---
 
@@ -42,3 +45,21 @@ Cada archivo de prueba fue auditado mediante análisis estático y ejecución en
 1. **Presencia de Aserciones Reales:** Ninguna suite contiene llamadas vacías a `test()` o bloques `it()` comentados o sin aserciones comprobables.
 2. **Validación de Casos Parametrizados:** Suites que emplean `it.each` (como `discord.client.test.ts` tanto en `apps/api` como en `tests/integration/`) ejecutan activamente sus 4 casos parametrizados de red, sanitización y errores de perfil.
 3. **Cero Omisiones en Cobertura:** Todos los módulos críticos cuentan con trazabilidad hacia sus respectivas pruebas unitarias o hacia suites de integración relacional equivalentes.
+
+---
+
+## 5. Cómo actualizar este censo
+
+Desde la raíz del repositorio, con las dependencias instaladas:
+
+```bash
+pnpm build:packages
+pnpm exec vitest run --reporter=json --outputFile=vitest-report.json
+python3 -m unittest discover -v apps/parser/tests
+wc -l <archivo de prueba>
+```
+
+- En el JSON de Vitest, `testResults` tiene una entrada por archivo y su `assertionResults` una por prueba; `numTotalTests` es el total de pruebas. `numTotalTestSuites` también cuenta los bloques `describe`, así que no equivale al número de archivos.
+- Las pruebas parametrizadas (`it.each`, `test.each`) cuentan una vez por caso.
+- `unittest` imprime una línea por prueba con `-v` y el total en `Ran N tests`.
+- Borra `vitest-report.json` al terminar: no forma parte del repositorio.
