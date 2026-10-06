@@ -78,7 +78,7 @@ export function PredictionCard({
           <div className="prediction-gauge" aria-hidden="true">
             <span style={{ width: '50%' }} />
           </div>
-          <div className="prediction-percent" aria-label="Porcentajes pendientes de revelar">
+          <div className="prediction-percent" aria-hidden="true">
             <span>??</span>
             <span>??</span>
           </div>

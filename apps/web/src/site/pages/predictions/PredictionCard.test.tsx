@@ -95,7 +95,24 @@ test('ranking shows the top five and the current user outside them', () => {
   expect(rows).toHaveLength(6);
   const highlightedRows = rows.filter((row) => row.includes('class="predictor-row is-you"'));
   expect(highlightedRows).toHaveLength(1);
-  expect(highlightedRows[0]).toContain('<strong>Predictor 7</strong>');
+  expect(highlightedRows[0]).toContain(
+    '<strong>Predictor 7<span class="sr-only"> (tú)</span></strong>'
+  );
+  // Only the user's row carries the text marker; the others rely on nothing hidden.
+  expect(rows.filter((row) => row.includes('class="sr-only"'))).toHaveLength(1);
+});
+
+test('the user row is identified by text, not only by its highlight colour', () => {
+  const ranking = [
+    { userId: '1', name: 'Uno', avatarHash: null, position: 1, points: 9, correct: 3, total: 3 },
+    { userId: '2', name: 'Dos', avatarHash: null, position: 2, points: 6, correct: 2, total: 3 }
+  ];
+  const own = renderToStaticMarkup(<PredictorRankingPanel ranking={ranking} userId="2" />);
+  const ownRow = own.match(/<li class="predictor-row is-you">[\s\S]*?<\/li>/)?.[0] ?? '';
+  expect(ownRow).toContain('<span class="sr-only"> (tú)</span>');
+  const visitor = renderToStaticMarkup(<PredictorRankingPanel ranking={ranking} />);
+  expect(visitor).not.toContain('is-you');
+  expect(visitor).not.toContain('(tú)');
 });
 
 test.each(['0123456789abcdef0123456789abcdef', 'a_0123456789abcdef0123456789abcdef'])(
@@ -160,6 +177,23 @@ test('closed voting keeps community data hidden until completion, including zero
     expect(html.includes('width:50%')).toBe(votes === null);
     expect(html.match(/>\?\?<\/span>/g) ?? []).toHaveLength(votes === null ? 2 : 0);
   }
+});
+
+test('the hidden-percentage placeholder only announces the explanatory note', () => {
+  const html = renderToStaticMarkup(
+    <PredictionCard
+      match={match}
+      summary={{ matchId: 'm', open: false, closed: true, votes: null, homePercent: null }}
+      authenticated
+      save={async () => {}}
+    />
+  );
+  expect(html).toContain(
+    '<div class="prediction-percent" aria-hidden="true"><span>??</span><span>??</span></div>'
+  );
+  // aria-label is not allowed on an element without a role (generic div or span).
+  expect(html).not.toMatch(/<(div|span)\b(?![^>]*\brole=)[^>]*\baria-label=/);
+  expect(html).toContain('<small>Los porcentajes se revelan al finalizar el partido.</small>');
 });
 
 test('shows the match day and time in Madrid time, not the browser time zone', () => {

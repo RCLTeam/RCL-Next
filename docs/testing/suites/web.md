@@ -35,7 +35,7 @@ El frontend de RCL-Next (`apps/web`) cuenta con **23 suites de pruebas unitarias
 | 19 | `apps/web/src/site/layout/SiteLayout.test.tsx` | 1 | 21 | Layout General | Montaje del caparazón estructural de la aplicación: barra de navegación superior, contenedor principal de vista y pie de página. |
 | 20 | `apps/web/src/site/pages/champions/ChampionsTable.test.tsx` | 3 | 56 | Página Campeones | Tabla de estadísticas de campeones de la liga: ordenación por columnas (partidas, victorias, KDA), filtrado y estado vacío. |
 | 21 | `apps/web/src/site/pages/players/PlayersPage.test.tsx` | 4 | 174 | Página Jugadores | Catálogo general de jugadores, selector de temporada/división, podio de aspirantes a MVP y filtrado por rol en equipo. |
-| 22 | `apps/web/src/site/pages/predictions/PredictionCard.test.tsx` | 2 | 53 | Tarjeta Predicciones | Componente interactivo para emitir votos en series Bo1/Bo3/Bo5, selección de marcador y estado bloqueado tras el cierre de jornada. |
+| 22 | `apps/web/src/site/pages/predictions/PredictionCard.test.tsx` | 9 | 212 | Tarjeta Predicciones | Componente interactivo para emitir votos en series Bo1/Bo3/Bo5, selección de marcador y estado bloqueado tras el cierre de jornada. Cubre también el ranking de predictores (top 5 más la fila propia, avatares e iniciales) y la accesibilidad: texto `sr-only` en la fila propia y placeholder 50/50 sin `aria-label` en un `<div>` sin rol. |
 | 23 | `apps/web/src/site/routes.test.tsx` | 3 | 37 | Enrutamiento Global | Resolución del mapa de rutas (`/`, `/competition`, `/teams`, `/players`, `/predictions` con recursos `['calendar', 'rounds']`, `/admin`), parámetros dinámicos de URL, ruta 404 y ausencia de secciones retiradas (`/fantasy`). |
 
 ---
