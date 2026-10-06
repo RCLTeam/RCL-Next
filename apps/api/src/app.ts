@@ -175,7 +175,7 @@ export function createApp(options: {
       bridgeClient,
       logger: incidentLogger
     });
-  app.use('/api/v1/bridge', createDiscordBridgeRouter(bridgeClient));
+  app.use('/api/v1/bridge', createDiscordBridgeRouter({ bridgeClient }));
   app.use(
     '/api/v1/suggestions',
     createSuggestionsRouter({

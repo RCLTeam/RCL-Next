@@ -44,7 +44,7 @@ Cualquier entrada que no sea exactamente una cadena hexadecimal de 64 caracteres
 
 ### 1.4 Código de Autorización de Discord
 
-En `apps/api/src/modules/auth/auth.router.ts:69-75`:
+En `apps/api/src/modules/auth/auth.router.ts:66-72`:
 ```typescript
 if (typeof req.query.code !== 'string' || !req.query.code || req.query.code.length > 2048) {
   throw new AppError(
@@ -58,7 +58,7 @@ Previene ataques de desbordamiento de búfer o inyección de cargas de gran tama
 
 ### 1.5 Verificación de Origen Confiable (`requireTrustedOrigin`)
 
-En `apps/api/src/modules/auth/auth.router.ts:33-40`:
+En `apps/api/src/modules/auth/auth.router.ts:26-33`:
 ```typescript
 export function requireTrustedOrigin(frontendOrigin: string): RequestHandler {
   return (req, _res, next) => {

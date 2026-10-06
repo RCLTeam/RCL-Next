@@ -6,7 +6,7 @@
 
 ## 1. Visión General
 
-El módulo expone una ruta HTTP de diagnóstico montada en el router Fastify/Express mediante la factoría `createDiscordBridgeRouter()` (`apps/api/src/modules/discord-bridge/discord-bridge.router.ts:18-44`). 
+El módulo expone una ruta HTTP de diagnóstico montada en el router Fastify/Express mediante la factoría `createDiscordBridgeRouter()` (`apps/api/src/modules/discord-bridge/discord-bridge.router.ts:13-40`). 
 
 Esta ruta proporciona a los clientes frontend (como `useBridgeHealth`) y a las sondas de infraestructura un mecanismo no invasivo para verificar en tiempo real si el bot externo de Discord se encuentra operativo, accesible por red y autenticado correctamente con el supertoken configurado.
 
@@ -15,11 +15,11 @@ Esta ruta proporciona a los clientes frontend (como `useBridgeHealth`) y a las s
 ## 2. Definición del Endpoint
 
 ### `GET /api/v1/bridge/health`
-- **Ruta física**: Declarada como `GET /health` en el enrutador hijo (`discord-bridge.router.ts:24`) y prefijada globalmente en `/api/v1/bridge/health`.
+- **Ruta física**: Declarada como `GET /health` en el enrutador hijo (`discord-bridge.router.ts:22`) y prefijada globalmente en `/api/v1/bridge/health`.
 - **Método**: `GET`
 - **Autenticación**: Pública / Abierta (no requiere cookie de sesión ni permisos de rol).
 - **Políticas de Caché**:
-  - Middleware obligatorio en `discord-bridge.router.ts:19-22`:
+  - Middleware obligatorio en `discord-bridge.router.ts:17-20`:
     ```http
     Cache-Control: no-store
     ```
@@ -50,20 +50,20 @@ Para no comprometer la cola de trabajo ni las transacciones en vuelo, la sonda *
 | **`200 OK`** | El socket efímero se conectó, transmitió `LOGIN` y recibió `LOGIN_SUCCESS` en menos de 5 segundos. | `{"status": "connected", "healthy": true, "message": "Conexión correcta"}` |
 | **`503 Service Unavailable`** | `wsUrl` no configurada, socket inalcanzable, o fallo de red en la apertura. | `{"status": "unreachable", "healthy": false, "message": "No se puede llegar a él", "details": "El websocket no pudo iniciarse..."}` |
 | **`503 Service Unavailable`** | El socket abrió la conexión pero se cerró antes de `LOGIN_SUCCESS`, o expiró el temporizador de 5 segundos tras el `LOGIN`. | `{"status": "authentication_failed", "healthy": false, "message": "No se pudo autenticar", "details": "Enviar el login, no recibir respuesta y cerrarse el websocket por parte del servidor, revisen el super token en env"}` |
-| **`503 Service Unavailable`** | Excepción imprevista no controlada en la ejecución de `checkHealth()`. Capturada por el router (`discord-bridge.router.ts:29-38`). | `{"status": "unreachable", "healthy": false, "message": "No se puede llegar a él", "details": "<error.message>"}` |
+| **`503 Service Unavailable`** | Excepción imprevista no controlada en la ejecución de `checkHealth()`. Capturada por el router (`discord-bridge.router.ts:27-36`). | `{"status": "unreachable", "healthy": false, "message": "No se puede llegar a él", "details": "<error.message>"}` |
 
 ---
 
 ## 5. Inyección de Dependencias en el Router
 
-La factoría `createDiscordBridgeRouter(input)` (`discord-bridge.router.ts:18`) permite desacoplar la capa de transporte:
+La factoría `createDiscordBridgeRouter(options)` (`discord-bridge.router.ts:13`) recibe un único objeto de opciones, lo que desacopla la capa de transporte:
 ```typescript
 export interface BridgeHealthChecker {
   checkHealth(): Promise<BridgeHealthResponse>;
 }
 
-export type DiscordBridgeRouterInput =
-  | { bridgeClient: BridgeHealthChecker }
-  | BridgeHealthChecker;
+export interface DiscordBridgeRouterOptions {
+  bridgeClient: Pick<DiscordBridgeClient, 'checkHealth'> | BridgeHealthChecker;
+}
 ```
-Esto permite inyectar tanto la instancia completa de `DiscordBridgeClient` como implementaciones simuladas (*mocks*) para pruebas unitarias sin levantar sockets físicos (`discord-bridge.client.test.ts:577-628`).
+`app.ts` la monta con `createDiscordBridgeRouter({ bridgeClient })`. La opción `bridgeClient` admite tanto la instancia completa de `DiscordBridgeClient` como implementaciones simuladas (*mocks*) para pruebas unitarias sin levantar sockets físicos (`discord-bridge.client.test.ts`, bloque `createDiscordBridgeRouter HTTP endpoints`). No existe otra forma de llamada: pasar el cliente directamente, sin el objeto, no compila.

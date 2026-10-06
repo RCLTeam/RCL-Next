@@ -73,7 +73,7 @@ El módulo `detect-multi-account-anomalies.ts` (`apps/api/src/modules/rofl-uploa
    ```
 
 > [!WARNING]
-> **Comportamiento Específico:** A diferencia del error por invocadores no registrados, **la detección de anomalías multi-cuenta NO aborta la transacción ni detiene la inserción en base de datos** (`rofl-upload.gateway.ts:355-357`).
+> **Comportamiento Específico:** A diferencia del error por invocadores no registrados, **la detección de anomalías multi-cuenta NO aborta la transacción ni detiene la inserción en base de datos** (`rofl-upload.gateway.ts:344-346`).
 > - Las partidas se insertan con normalidad para evitar bloqueos operativos.
 > - El gateway emite inmediatamente un evento WebSocket de tipo `{ type: 'anomaly', anomaly }` hacia la consola de la interfaz de usuario.
 > - Las anomalías detectadas se adjuntan en el resumen final `BatchUploadSummary.anomalies` para que el cuerpo arbitral y los administradores inicien los expedientes sancionadores oportunos.

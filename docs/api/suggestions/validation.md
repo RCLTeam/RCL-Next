@@ -14,7 +14,7 @@ Esta arquitectura asegura un comportamiento *fail-fast*, defensas activas contra
 
 ## 2. Validación de Origen contra CSRF (`Origin`)
 
-Antes de inspeccionar los datos enviados en el cuerpo de la petición, el enrutador HTTP verifica la legitimidad del origen de la solicitud (`suggestions.router.ts:58-63`):
+Antes de inspeccionar los datos enviados en el cuerpo de la petición, el enrutador HTTP verifica la legitimidad del origen de la solicitud (`suggestions.router.ts:30-35`):
 
 ```typescript
 if (frontendOrigin) {
@@ -33,7 +33,7 @@ if (frontendOrigin) {
 
 ## 3. Validación de Longitud del Texto de Sugerencia
 
-El contenido de la propuesta se somete a validación tanto en el enrutador (`suggestions.router.ts:65-77`) como en el servicio de dominio (`suggestions.service.ts:131-143`).
+El contenido de la propuesta se somete a validación tanto en el enrutador (`suggestions.router.ts:37-49`) como en el servicio de dominio (`suggestions.service.ts:133-145`).
 
 ### 3.1 Reglas de Validación
 1. **Comprobación de Tipo Primitivo:**
@@ -77,5 +77,5 @@ Ante cualquier incumplimiento de las reglas anteriores, el servidor emite una re
 
 El campo `isAnonymous` en el cuerpo de la petición se evalúa de forma defensiva:
 - Solo se interpreta como anónimo explícito si su valor es el booleano estricto `true`.
-- Si se omite, o si se envía `false` o cualquier otro valor falso, se procede a resolver la identidad del usuario a través de la sesión en cookies (`suggestions.router.ts:89-91`).
+- Si se omite, o si se envía `false` o cualquier otro valor falso, se procede a resolver la identidad del usuario a través de la sesión en cookies (`suggestions.router.ts:55-64`).
 - Si el usuario no cuenta con una sesión válida activa, el servicio fuerza el anonimato automáticamente sin arrojar error, garantizando que los usuarios no registrados puedan aportar sugerencias constructivas sin fricción.

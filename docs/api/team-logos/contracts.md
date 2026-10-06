@@ -136,9 +136,9 @@ Todos los errores generados por el módulo siguen la estructura tipada de `AppEr
 | HTTP Status | Código de Error (`code`) | Mensaje Emitido / Descripción | Origen / Condición de Activación | Referencia en Código |
 |:---:|---|---|---|---|
 | **400** | `INVALID_JSON` | `Invalid request body.` | Cuerpo de petición malformado en middlewares de parsing. | `http.ts:24-30` |
-| **401** | `UNAUTHORIZED` | *Mensaje de autenticación* | Petición a ruta administrativa sin cookie de sesión o con sesión inválida/expirada. | `auth.router.ts:24` |
-| **403** | `FORBIDDEN` | `Insufficient permissions.` | Usuario autenticado cuyo rol no es `admin` ni `owner` (ej. rol `viewer`). | `auth.router.ts:25-26` |
-| **403** | `INVALID_ORIGIN` | `Request origin is not allowed.` | Cabecera `Origin` ausente o no coincidente con `auth.frontendOrigin`. | `auth.router.ts:35-37` |
+| **401** | `UNAUTHORIZED` | *Mensaje de autenticación* | Petición a ruta administrativa sin cookie de sesión o con sesión inválida/expirada. | `auth.router.ts:15-17` |
+| **403** | `FORBIDDEN` | `Insufficient permissions.` | Usuario autenticado cuyo rol no es `admin` ni `owner` (ej. rol `viewer`). | `auth.router.ts:18-19` |
+| **403** | `INVALID_ORIGIN` | `Request origin is not allowed.` | Cabecera `Origin` ausente o no coincidente con `auth.frontendOrigin`. | `auth.router.ts:28-30` |
 | **403** | `PROTECTED_LOGO` | `El logo de reserva está protegido y no se puede modificar ni eliminar.` | Intento de sobrescribir o eliminar `placeholder.webp` (evaluado de forma insensible a mayúsculas). | `team-logos.store.ts:83-88` |
 | **404** | `NOT_FOUND` | `Logo was not found.` | El archivo solicitado no existe (`ENOENT`), es un directorio o constituye un enlace simbólico (`isSymbolicLink()`). | `team-logos.store.ts:25-28` |
 | **409** | `LOGO_EXISTS` | `Ya existe un logo con ese nombre.` | Colisión atómica al escribir con bandera `wx`; el archivo ya existe en disco (`EEXIST`). | `team-logos.store.ts:70-71` |

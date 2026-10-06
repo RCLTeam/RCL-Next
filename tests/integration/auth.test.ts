@@ -296,6 +296,57 @@ describe('Discord OAuth with real PostgreSQL sessions', () => {
     ).toBe(true);
   });
 
+  it('sets the HTTP session cookie with fixed flags and reads exactly one unprefixed copy', async () => {
+    const { callback, session } = await login();
+    const setCookie = cookieHeaders(callback).find((value) => value.startsWith('rcl_session='));
+    expect(setCookie).toContain('HttpOnly');
+    expect(setCookie).toContain('SameSite=Lax');
+    expect(setCookie).toContain('Path=/');
+    expect(setCookie).toContain('Max-Age=');
+    expect(setCookie).not.toContain('Secure');
+    expect(setCookie).not.toContain('Domain=');
+    const token = session.split('=')[1] as string;
+    await request(app)
+      .get(`${prefix}/me`)
+      .set('Cookie', `theme=dark; ${session}; lang=es`)
+      .expect(200);
+    await request(app).get(`${prefix}/me`).set('Cookie', `${session}; ${session}`).expect(401);
+    await request(app).get(`${prefix}/me`).set('Cookie', `__Host-rcl_session=${token}`).expect(401);
+  });
+
+  it('over HTTPS sets and reads only the __Host- session cookie and rejects duplicates', async () => {
+    const secureApp = createApp({
+      repository: new PostgresCompetitionRepository(db),
+      checkDatabase: async () => {},
+      corsOrigin: origin,
+      auth: { ...options, secureCookies: true }
+    });
+    const start = await request(secureApp).get(`${prefix}/discord`).expect(302);
+    const state = new URL(start.headers.location as string).searchParams.get('state');
+    mockDiscord();
+    const callback = await request(secureApp)
+      .get(`${prefix}/discord/callback`)
+      .set('Cookie', getCookie(start, '__Host-rcl_oauth_state'))
+      .query({ state, code: 'valid' })
+      .expect(302);
+    const setCookie = cookieHeaders(callback).find((value) =>
+      value.startsWith('__Host-rcl_session=')
+    );
+    expect(setCookie).toContain('HttpOnly');
+    expect(setCookie).toContain('SameSite=Lax');
+    expect(setCookie).toContain('Path=/');
+    expect(setCookie).toContain('Secure');
+    expect(setCookie).not.toContain('Domain=');
+    const session = getCookie(callback, '__Host-rcl_session');
+    const token = session.split('=')[1] as string;
+    await request(secureApp).get(`${prefix}/me`).set('Cookie', session).expect(200);
+    await request(secureApp).get(`${prefix}/me`).set('Cookie', `rcl_session=${token}`).expect(401);
+    await request(secureApp)
+      .get(`${prefix}/me`)
+      .set('Cookie', `${session}; ${session}`)
+      .expect(401);
+  });
+
   it('uses Secure host-only cookies over HTTPS', async () => {
     const secureApp = createApp({
       repository: new PostgresCompetitionRepository(db),

@@ -6,9 +6,9 @@
 
 ## 1. Resumen de la Capa de Transporte
 
-El enrutador de autenticación (`apps/api/src/modules/auth/auth.router.ts:42-92`) se monta bajo el prefijo `/api/v1/auth`. Gestiona el apretón de manos (*handshake*) con el proveedor OAuth2 de Discord, la emisión y revocación de cookies de sesión con atributos de alta seguridad, la resolución del usuario actual y la protección de mutaciones frente a ataques de origen cruzado.
+El enrutador de autenticación (`apps/api/src/modules/auth/auth.router.ts:35-88`) se monta bajo el prefijo `/api/v1/auth`. Gestiona el apretón de manos (*handshake*) con el proveedor OAuth2 de Discord, la emisión y revocación de cookies de sesión con atributos de alta seguridad, la resolución del usuario actual y la protección de mutaciones frente a ataques de origen cruzado.
 
-Todas las rutas del enrutador `auth.router.ts` inyectan de forma centralizada las cabeceras HTTP defensivas (`auth.router.ts:52-56`):
+Todas las rutas del enrutador `auth.router.ts` inyectan de forma centralizada las cabeceras HTTP defensivas (`auth.router.ts:45-49`):
 - `Cache-Control: no-store`: Impide que intermediarios, servidores proxy o cachés de navegador almacenen respuestas con datos de identidad o tokens.
 - `Referrer-Policy: no-referrer`: Evita que las cabeceras `Referer` filtren identificadores internos o URLs de retorno hacia dominios de terceros.
 
@@ -21,11 +21,11 @@ El [proxy de avatares](avatars.md) usa un enrutador separado, montado en `GET /a
 ### 2.1 Iniciar Flujo OAuth2 de Discord
 
 - **Ruta:** `GET /api/v1/auth/discord`
-- **Controlador:** `auth.router.ts:57-61`
+- **Controlador:** `auth.router.ts:50-54`
 - **Autenticación requerida:** Ninguna (pública).
 - **Parámetros de entrada:** Ninguno.
 - **Cabeceras / Cookies entrantes:**
-  - Si el cliente envía una cookie de estado previo (`stateCookie`), el servicio la consume para invalidarla (`auth.router.ts:58`).
+  - Si el cliente envía una cookie de estado previo (`stateCookie`), el servicio la consume para invalidarla (`auth.router.ts:51`).
 - **Comportamiento:**
   1. Invoca `options.service.start(previousState)` para purgar sesiones caducadas y generar un nuevo estado criptográfico aleatorio de 32 bytes (`auth.service.ts:19-26`).
   2. Emite la cookie HTTP con el token de estado en claro y tiempo de expiración de 10 minutos (`maxAge: 600000` ms).
@@ -39,7 +39,7 @@ El [proxy de avatares](avatars.md) usa un enrutador separado, montado en `GET /a
 ### 2.2 Callback de Autorización de Discord
 
 - **Ruta:** `GET /api/v1/auth/discord/callback`
-- **Controlador:** `auth.router.ts:62-84`
+- **Controlador:** `auth.router.ts:55-80`
 - **Autenticación requerida:** Ninguna (validación por cookie de estado de un solo uso).
 - **Parámetros de consulta (Query String):**
   - `state` (*string*): Token de estado devuelto por Discord para mitigar CSRF.
@@ -49,14 +49,14 @@ El [proxy de avatares](avatars.md) usa un enrutador separado, montado en `GET /a
   - `stateCookie` (`__Host-rcl_oauth_state` o `rcl_oauth_state`): Token de estado almacenado en el navegador del usuario.
   - `sessionCookie` (`__Host-rcl_session` o `rcl_session`, opcional): Si existía una sesión previa, se extrae para rotarla e invalidarla en base de datos.
 - **Comportamiento:**
-  1. Extrae la cookie de estado y la elimina de inmediato del cliente mediante `res.clearCookie(stateCookie, cookieOptions)` (`auth.router.ts:63-64`).
-  2. Valida la coincidencia temporal y criptográfica entre `req.query.state` y la cookie mediante `options.service.validateState(req.query.state, state)` (`auth.router.ts:65`). Si no coincide o caducó, se lanza `AppError(400, 'INVALID_OAUTH_STATE')` antes de evaluar cualquier parámetro de error.
-  3. Si el usuario canceló la autorización en Discord (`req.query.error === 'access_denied'`), la cookie de estado ya ha sido eliminada y se emite de inmediato una redirección limpia HTTP 302 hacia `options.frontendOrigin` (`auth.router.ts:66-69`, `tests/integration/auth.test.ts:181-200`) sin crear sesión en base de datos y sin retornar error al cliente.
-  4. Si `req.query.error` está definido con cualquier otro código de error distinto a `access_denied`, lanza `AppError(400, 'DISCORD_ACCESS_DENIED', 'Discord authorization was not completed.')` (`auth.router.ts:70-72`).
-  5. Si `req.query.code` no es una cadena válida o excede 2048 caracteres, lanza `AppError(400, 'INVALID_OAUTH_CODE')` (`auth.router.ts:73-79`).
+  1. Extrae la cookie de estado y la elimina de inmediato del cliente mediante `res.clearCookie(stateCookie, cookieOptions)` (`auth.router.ts:56-57`).
+  2. Valida la coincidencia temporal y criptográfica entre `req.query.state` y la cookie mediante `options.service.validateState(req.query.state, state)` (`auth.router.ts:58`). Si no coincide o caducó, se lanza `AppError(400, 'INVALID_OAUTH_STATE')` antes de evaluar cualquier parámetro de error.
+  3. Si el usuario canceló la autorización en Discord (`req.query.error === 'access_denied'`), la cookie de estado ya ha sido eliminada y se emite de inmediato una redirección limpia HTTP 302 hacia `options.frontendOrigin` (`auth.router.ts:59-62`, `tests/integration/auth.test.ts:181-200`) sin crear sesión en base de datos y sin retornar error al cliente.
+  4. Si `req.query.error` está definido con cualquier otro código de error distinto a `access_denied`, lanza `AppError(400, 'DISCORD_ACCESS_DENIED', 'Discord authorization was not completed.')` (`auth.router.ts:63-65`).
+  5. Si `req.query.code` no es una cadena válida o excede 2048 caracteres, lanza `AppError(400, 'INVALID_OAUTH_CODE')` (`auth.router.ts:66-72`).
   6. Ejecuta `options.service.login(req.query.code, previousSession)`: intercambia el código con Discord, obtiene el perfil, actualiza `discord_users`, destruye la sesión anterior e inserta la nueva sesión con expiración de 7 días (`auth.service.ts:49-59`).
-  7. Emite la cookie de sesión con `maxAge: 604800000` ms (7 días) (`auth.router.ts:80-81`).
-  8. Redirige (HTTP 302) a `options.frontendOrigin` (`auth.router.ts:83`). **Inmunidad a redirección abierta**: el destino es fijo y jamás se lee de query parameters.
+  7. Emite la cookie de sesión con `maxAge: 604800000` ms (7 días) (`auth.router.ts:73-77`).
+  8. Redirige (HTTP 302) a `options.frontendOrigin` (`auth.router.ts:79`). **Inmunidad a redirección abierta**: el destino es fijo y jamás se lee de query parameters.
 - **Códigos de Estado:**
   - `302 Found`:
     - Login exitoso: se establece la cookie de sesión y se redirige limpiamente al frontend (`options.frontendOrigin`).
@@ -71,8 +71,8 @@ El [proxy de avatares](avatars.md) usa un enrutador separado, montado en `GET /a
 ### 2.3 Obtener Usuario Autenticado Actual
 
 - **Ruta:** `GET /api/v1/auth/me`
-- **Controlador:** `auth.router.ts:85`
-- **Middleware:** `requireAuth(options)` (`auth.router.ts:22-30`).
+- **Controlador:** `auth.router.ts:81`
+- **Middleware:** `requireAuth(options)` (`auth.router.ts:13-23`).
 - **Cookies requeridas:**
   - Cookie de sesión activa (`__Host-rcl_session` o `rcl_session`).
 - **Respuesta (HTTP 200 OK):**
@@ -96,8 +96,8 @@ El [proxy de avatares](avatars.md) usa un enrutador separado, montado en `GET /a
 ### 2.4 Cierre de Sesión (Logout)
 
 - **Ruta:** `POST /api/v1/auth/logout`
-- **Controlador:** `auth.router.ts:86-90`
-- **Middleware:** `requireTrustedOrigin(options.frontendOrigin)` (`auth.router.ts:33-40`).
+- **Controlador:** `auth.router.ts:82-86`
+- **Middleware:** `requireTrustedOrigin(options.frontendOrigin)` (`auth.router.ts:26-33`).
 - **Cabeceras obligatorias:**
   - `Origin`: Debe coincidir exactamente con `options.frontendOrigin`.
 - **Cookies requeridas:**
@@ -116,20 +116,33 @@ El [proxy de avatares](avatars.md) usa un enrutador separado, montado en `GET /a
 
 ### 3.1 Prevención de Cookie Shadowing
 
-La extracción de cookies se efectúa mediante una función artesanal (`auth.router.ts:12-17`):
+La lectura de cookies está centralizada en `apps/api/src/modules/auth/session-cookie.ts`, que es la única implementación del parseo de la cookie de sesión en la API. La usan el router de autenticación (`requireAuth`, callback y logout), el router de sugerencias (`suggestions.router.ts`) y el gateway WebSocket de subida ROFL (`rofl-upload.gateway.ts`):
+
 ```typescript
-function cookie(req: Request, name: string): string | undefined {
-  const entries = (req.headers.cookie ?? '').split(';').map((part) => part.trim());
+export function readCookie(cookieHeader: string | undefined, name: string): string | undefined {
+  const entries = (cookieHeader ?? '').split(';').map((part) => part.trim());
   const matches = entries.filter((part) => part.startsWith(`${name}=`));
-  // Reject ambiguous cookies; only our fixed-format, opaque tokens are accepted.
   return matches.length === 1 ? matches[0]?.slice(name.length + 1) : undefined;
 }
+
+export function sessionCookieName(secureCookies: boolean): string {
+  return secureCookies ? '__Host-rcl_session' : 'rcl_session';
+}
+
+export function readSessionCookie(cookieHeader: string | undefined, secureCookies: boolean) {
+  return readCookie(cookieHeader, sessionCookieName(secureCookies));
+}
 ```
-Si un atacante inyecta una cookie duplicada desde un subdominio menos restringido para intentar sombrear o invalidar la cookie legítima del dominio principal, `matches.length` será mayor a 1 y la función devolverá `undefined`, bloqueando el ataque de inmediato.
+
+- `readCookie()` (`session-cookie.ts:6-10`) recibe la cabecera `Cookie` en crudo, de modo que sirve tanto para un `Request` de Express como para el `http.IncomingMessage` del *upgrade* WebSocket. El router de autenticación la usa también para la cookie de estado OAuth.
+- `readSessionCookie()` (`session-cookie.ts:21-26`) solo lee el nombre que corresponde a `secureCookies`: con `true`, `__Host-rcl_session`; con `false`, `rcl_session`. El otro nombre se ignora aunque esté presente.
+- El valor se devuelve tal cual, sin recortar espacios internos; una cookie con valor vacío (`rcl_session=`) devuelve `''`, que `AuthService.currentUser()` rechaza con `401` y el gateway trata como cookie ausente (`4001`).
+
+Si un atacante inyecta una cookie duplicada desde un subdominio menos restringido para intentar sombrear o invalidar la cookie legítima del dominio principal, `matches.length` será mayor a 1 y la función devolverá `undefined`, bloqueando el ataque de inmediato: la petición HTTP se trata como no autenticada (`401` en `/me` y en las rutas con `requireAuth`, envío anónimo en sugerencias) y el gateway WebSocket cierra con `4001`.
 
 ### 3.2 Prefijo de Host y Opciones de Cookies
 
-Las cookies se configuran según el entorno de ejecución (`auth.router.ts:19-20, 44-51`):
+Las cookies se configuran según el entorno de ejecución (`auth.router.ts:37-44`, `session-cookie.ts:13-15`):
 
 | Atributo | Entorno Seguro (`secureCookies === true`) | Entorno Local / Desarrollo (`secureCookies === false`) |
 |---|---|---|
@@ -142,7 +155,7 @@ Las cookies se configuran según el entorno de ejecución (`auth.router.ts:19-20
 
 ### 3.3 Jerarquía y Control de Acceso (`requireAuth`)
 
-El middleware `requireAuth(options, role?)` (`auth.router.ts:22-30`) implementa las siguientes reglas de evaluación de permisos sobre `res.locals.user`:
+El middleware `requireAuth(options, role?)` (`auth.router.ts:13-23`) implementa las siguientes reglas de evaluación de permisos sobre `res.locals.user`:
 ```typescript
 if (role && user.role !== role && !(role === 'admin' && user.role === 'owner'))
   throw new AppError(403, 'FORBIDDEN', 'Insufficient permissions.');

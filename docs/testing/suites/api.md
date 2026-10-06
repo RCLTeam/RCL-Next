@@ -4,6 +4,8 @@
 
 La suite `apps/api/src/modules/auth/discord-avatars.router.test.ts` añade 19 casos del proxy. Consulta su [cobertura y comandos de ejecución](../discord-avatars.md); el censo histórico siguiente precede a esta incorporación.
 
+La suite `apps/api/src/modules/auth/session-cookie.test.ts` (12 casos) cubre el lector único de la cookie de sesión (`session-cookie.ts`): nombre según `secureCookies`, cookie entre otras, valor vacío y rechazo de duplicadas. `suggestions.router.test.ts` añade 7 casos parametrizados sobre la cookie que lee el router de sugerencias en HTTP y HTTPS. Tampoco figuran en el censo histórico.
+
 ---
 
 ## 1. Resumen Ejecutivo

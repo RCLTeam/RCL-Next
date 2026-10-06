@@ -7,6 +7,7 @@ import path from 'node:path';
 import type { BatchUploadSummary, WsClientMessage, WsServerEvent } from '@rcl/contracts';
 import { type RawData, WebSocket, WebSocketServer } from 'ws';
 import type { AuthService } from '../../auth/auth.service.js';
+import { readSessionCookie } from '../../auth/session-cookie.js';
 import type { RoflUploadRepository } from '../persistence/rofl-upload.repository.js';
 import { executePythonParser } from '../processing/execute-python-parser.js';
 import { cleanupTempDir, processBatchFiles } from '../processing/process-batch-files.js';
@@ -22,7 +23,11 @@ export interface RoflUploadGatewayOptions {
   pythonExecutable?: string | undefined;
   concurrency?: number | undefined;
   authService?: AuthService | undefined;
-  sessionCookieName?: string | undefined;
+  /**
+   * Same value as the HTTP API (`AuthOptions.secureCookies`): with it only `__Host-rcl_session` is
+   * read, without it only `rcl_session`. A duplicated session cookie is always rejected.
+   */
+  secureCookies?: boolean | undefined;
   /**
    * Only origin allowed to open the socket (the frontend, `CORS_ORIGIN`). It is compared with the
    * handshake `Origin` header by strict equality, like `requireTrustedOrigin` does for HTTP
@@ -45,22 +50,6 @@ export const UNEXPECTED_UPLOAD_ERROR_MESSAGE =
 function defaultLogIncident(incidentId: string, context: string, error: unknown): void {
   const detail = error instanceof Error ? (error.stack ?? error.message) : String(error);
   console.error(`[INCIDENT ${incidentId}] Type: ROFL_UPLOAD_${context} | Message: ${detail}`);
-}
-
-function extractSessionToken(
-  cookieHeader: string | undefined,
-  cookieName = 'rcl_session'
-): string | null {
-  if (!cookieHeader) return null;
-  const cookies = cookieHeader.split(';');
-  for (const cookie of cookies) {
-    const [rawKey, ...rest] = cookie.trim().split('=');
-    const key = rawKey?.trim();
-    if (key === cookieName || key === `__Host-${cookieName}`) {
-      return rest.join('=').trim() || null;
-    }
-  }
-  return null;
 }
 
 export function attachRoflUploadGateway(
@@ -103,7 +92,7 @@ export function attachRoflUploadGateway(
   };
 
   wss.on('connection', async (ws: WebSocket, req: http.IncomingMessage) => {
-    const sessionToken = extractSessionToken(req.headers.cookie, options?.sessionCookieName);
+    const sessionToken = readSessionCookie(req.headers.cookie, options?.secureCookies === true);
     async function authorize(): Promise<boolean> {
       if (!authService) {
         if (allowUnauthenticated) return true;
