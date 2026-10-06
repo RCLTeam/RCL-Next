@@ -1,14 +1,13 @@
-import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import http from 'node:http';
 import path from 'node:path';
-import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { PGlite } from '@electric-sql/pglite';
 import type { WsServerEvent } from '@rcl/contracts';
 import { eq } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/pglite';
 import { migrate } from 'drizzle-orm/pglite/migrator';
+import { assert, expect, test } from 'vitest';
 import { WebSocket } from 'ws';
 import { createApp } from '../../apps/api/src/app.js';
 import type { CompetitionRepository } from '../../apps/api/src/modules/competition/competition.repository.js';
@@ -118,7 +117,7 @@ function streamBufferOverWs(ws: WebSocket, filename: string, buffer: Buffer): vo
 
 test('Test 1: Full legitimate upload and atomic persistence across 5 tables with score updates', async (t) => {
   const { client, db } = await setupTestDb();
-  t.after(() => client.close());
+  t.onTestFinished(() => client.close());
 
   await registerAllPlayers(db);
 
@@ -134,7 +133,7 @@ test('Test 1: Full legitimate upload and atomic persistence across 5 tables with
     allowUnauthenticated: true
   });
 
-  t.after(async () => {
+  t.onTestFinished(async () => {
     wss.close();
     await new Promise<void>((resolve) => server.close(() => resolve()));
   });
@@ -145,7 +144,7 @@ test('Test 1: Full legitimate upload and atomic persistence across 5 tables with
   const port = address.port;
 
   const ws = new WebSocket(`ws://127.0.0.1:${port}/ws/rofl-upload`, { origin: FRONTEND_ORIGIN });
-  t.after(() => {
+  t.onTestFinished(() => {
     try {
       ws.terminate();
     } catch {
@@ -174,34 +173,34 @@ test('Test 1: Full legitimate upload and atomic persistence across 5 tables with
   await completionPromise;
 
   // 1. Verify WebSocket event sequence
-  assert.ok(messages.some((m) => m.type === 'started'));
-  assert.ok(messages.some((m) => m.type === 'stage' && m.stage === 'parsing'));
-  assert.ok(messages.some((m) => m.type === 'stage' && m.stage === 'validating'));
-  assert.ok(messages.some((m) => m.type === 'stage' && m.stage === 'persisting'));
-  assert.ok(messages.some((m) => m.type === 'stage' && m.stage === 'completed'));
+  expect(messages.some((m) => m.type === 'started')).toBeTruthy();
+  expect(messages.some((m) => m.type === 'stage' && m.stage === 'parsing')).toBeTruthy();
+  expect(messages.some((m) => m.type === 'stage' && m.stage === 'validating')).toBeTruthy();
+  expect(messages.some((m) => m.type === 'stage' && m.stage === 'persisting')).toBeTruthy();
+  expect(messages.some((m) => m.type === 'stage' && m.stage === 'completed')).toBeTruthy();
 
   const successMsg = messages.find((m) => m.type === 'success');
   assert.ok(successMsg && successMsg.type === 'success');
-  assert.equal(successMsg.summary.processedGames, 1);
-  assert.equal(successMsg.summary.detectedPlayersCount, 10);
+  expect(successMsg.summary.processedGames).toBe(1);
+  expect(successMsg.summary.detectedPlayersCount).toBe(10);
 
   // 2. Verify match_games persistence
   const matchGameRows = await db
     .select()
     .from(schema.matchGames)
     .where(eq(schema.matchGames.externalGameId, 'RCL-FIXTURE-0001'));
-  assert.equal(matchGameRows.length, 1);
+  expect(matchGameRows.length).toBe(1);
   const insertedGame = matchGameRows[0];
   assert.ok(insertedGame);
-  assert.equal(insertedGame.gameNumber, 1);
-  assert.equal(insertedGame.winnerTeamId, '30000000-0000-4000-8000-000000000001');
+  expect(insertedGame.gameNumber).toBe(1);
+  expect(insertedGame.winnerTeamId).toBe('30000000-0000-4000-8000-000000000001');
 
   // 3. Verify player_game_info has 10 rows
   const infoRows = await db
     .select()
     .from(schema.playerGameInfo)
     .where(eq(schema.playerGameInfo.matchGameId, insertedGame.id));
-  assert.equal(infoRows.length, 10);
+  expect(infoRows.length).toBe(10);
 
   // 4. Verify player_game_stats, player_game_runes, player_game_build for each player
   for (const info of infoRows) {
@@ -209,21 +208,21 @@ test('Test 1: Full legitimate upload and atomic persistence across 5 tables with
       .select()
       .from(schema.playerGameStats)
       .where(eq(schema.playerGameStats.id, info.id));
-    assert.equal(statsRows.length, 1);
-    assert.ok(statsRows[0] && statsRows[0].damageToChampions > 0);
+    expect(statsRows.length).toBe(1);
+    expect(statsRows[0] && statsRows[0].damageToChampions > 0).toBeTruthy();
 
     const runesRows = await db
       .select()
       .from(schema.playerGameRunes)
       .where(eq(schema.playerGameRunes.id, info.id));
-    assert.equal(runesRows.length, 1);
-    assert.ok(runesRows[0] && runesRows[0].primaryKeystoneId > 0);
+    expect(runesRows.length).toBe(1);
+    expect(runesRows[0] && runesRows[0].primaryKeystoneId > 0).toBeTruthy();
 
     const buildRows = await db
       .select()
       .from(schema.playerGameBuild)
       .where(eq(schema.playerGameBuild.id, info.id));
-    assert.equal(buildRows.length, 1);
+    expect(buildRows.length).toBe(1);
   }
 
   // 5. Verify match score update in matches table
@@ -231,17 +230,17 @@ test('Test 1: Full legitimate upload and atomic persistence across 5 tables with
     .select()
     .from(schema.matches)
     .where(eq(schema.matches.id, insertedGame.matchesId));
-  assert.equal(matchRows.length, 1);
+  expect(matchRows.length).toBe(1);
   const matchRecord = matchRows[0];
   assert.ok(matchRecord);
-  assert.equal(matchRecord.status, 'live');
-  assert.equal(matchRecord.team2Score, 1); // Blue team (Lobos) is team2 in match 70000000-...-0002
-  assert.equal(matchRecord.team1Score, 0);
+  expect(matchRecord.status).toBe('live');
+  expect(matchRecord.team2Score).toBe(1); // Blue team (Lobos) is team2 in match 70000000-...-0002
+  expect(matchRecord.team1Score).toBe(0);
 });
 
 test('Test 2: Unregistered players abort immediately with descriptive list of missing summoners', async (t) => {
   const { client, db } = await setupTestDb();
-  t.after(() => client.close());
+  t.onTestFinished(() => client.close());
 
   // Intentionally do NOT register the 10 players, so players in ROFL are unregistered
 
@@ -257,7 +256,7 @@ test('Test 2: Unregistered players abort immediately with descriptive list of mi
     allowUnauthenticated: true
   });
 
-  t.after(async () => {
+  t.onTestFinished(async () => {
     wss.close();
     await new Promise<void>((resolve) => server.close(() => resolve()));
   });
@@ -268,7 +267,7 @@ test('Test 2: Unregistered players abort immediately with descriptive list of mi
   const port = address.port;
 
   const ws = new WebSocket(`ws://127.0.0.1:${port}/ws/rofl-upload`, { origin: FRONTEND_ORIGIN });
-  t.after(() => {
+  t.onTestFinished(() => {
     try {
       ws.terminate();
     } catch {
@@ -298,21 +297,21 @@ test('Test 2: Unregistered players abort immediately with descriptive list of mi
 
   const errorMsg = messages.find((m) => m.type === 'error');
   assert.ok(errorMsg && errorMsg.type === 'error');
-  assert.match(errorMsg.message, /Validation failed/i);
-  assert.match(errorMsg.message, /Anon Azul 1#ANON/i);
-  assert.match(errorMsg.message, /Anon Azul 2#ANON/i);
+  expect(errorMsg.message).toMatch(/Validation failed/i);
+  expect(errorMsg.message).toMatch(/Anon Azul 1#ANON/i);
+  expect(errorMsg.message).toMatch(/Anon Azul 2#ANON/i);
 
   // Assert NO new rows were inserted in any of the tables
   const allMatchGames = await db.select().from(schema.matchGames);
-  assert.equal(allMatchGames.length, 1); // Only demo game
+  expect(allMatchGames.length).toBe(1); // Only demo game
 
   const allPlayerInfos = await db.select().from(schema.playerGameInfo);
-  assert.equal(allPlayerInfos.length, 10); // Only demo player infos
+  expect(allPlayerInfos.length).toBe(10); // Only demo player infos
 });
 
 test('Test 3: Multiple main accounts for one Discord user reject the upload without persistence', async (t) => {
   const { client, db } = await setupTestDb();
-  t.after(() => client.close());
+  t.onTestFinished(() => client.close());
 
   // Both seeded accounts are main accounts, making the shared Discord identity ambiguous.
   await registerAllPlayers(db, { shareDiscordId: true });
@@ -329,7 +328,7 @@ test('Test 3: Multiple main accounts for one Discord user reject the upload with
     allowUnauthenticated: true
   });
 
-  t.after(async () => {
+  t.onTestFinished(async () => {
     wss.close();
     await new Promise<void>((resolve) => server.close(() => resolve()));
   });
@@ -340,7 +339,7 @@ test('Test 3: Multiple main accounts for one Discord user reject the upload with
   const port = address.port;
 
   const ws = new WebSocket(`ws://127.0.0.1:${port}/ws/rofl-upload`, { origin: FRONTEND_ORIGIN });
-  t.after(() => {
+  t.onTestFinished(() => {
     try {
       ws.terminate();
     } catch {
@@ -370,26 +369,20 @@ test('Test 3: Multiple main accounts for one Discord user reject the upload with
 
   const errorMsg = messages.find((m) => m.type === 'error');
   assert.ok(errorMsg && errorMsg.type === 'error');
-  assert.match(errorMsg.message, /exactly one main account/);
-  assert.equal(
-    messages.some((m) => m.type === 'success'),
-    false
-  );
-  assert.equal(
-    messages.some((m) => m.type === 'stage' && m.stage === 'persisting'),
-    false
-  );
+  expect(errorMsg.message).toMatch(/exactly one main account/);
+  expect(messages.some((m) => m.type === 'success')).toBe(false);
+  expect(messages.some((m) => m.type === 'stage' && m.stage === 'persisting')).toBe(false);
 
   // Only the demo records remain after validation rejects the upload.
   const matchGamesCount = await db.select().from(schema.matchGames);
-  assert.equal(matchGamesCount.length, 1);
+  expect(matchGamesCount.length).toBe(1);
   const playerInfos = await db.select().from(schema.playerGameInfo);
-  assert.equal(playerInfos.length, 10);
+  expect(playerInfos.length).toBe(10);
 });
 
 test('Test 4: Batch containing non-ROFL (exit code 11) emitting warning and successfully processing remaining valid replays', async (t) => {
   const { client, db } = await setupTestDb();
-  t.after(() => client.close());
+  t.onTestFinished(() => client.close());
 
   await registerAllPlayers(db);
 
@@ -405,7 +398,7 @@ test('Test 4: Batch containing non-ROFL (exit code 11) emitting warning and succ
     allowUnauthenticated: true
   });
 
-  t.after(async () => {
+  t.onTestFinished(async () => {
     wss.close();
     await new Promise<void>((resolve) => server.close(() => resolve()));
   });
@@ -418,7 +411,7 @@ test('Test 4: Batch containing non-ROFL (exit code 11) emitting warning and succ
   // Part A: Batch containing non-ROFL fake file AND valid ROFL replay
   {
     const ws = new WebSocket(`ws://127.0.0.1:${port}/ws/rofl-upload`, { origin: FRONTEND_ORIGIN });
-    t.after(() => {
+    t.onTestFinished(() => {
       try {
         ws.terminate();
       } catch {
@@ -460,28 +453,27 @@ test('Test 4: Batch containing non-ROFL (exit code 11) emitting warning and succ
     // 1. Verify warning event was emitted for the invalid file
     const warningMsg = messages.find((m) => m.type === 'warning');
     assert.ok(warningMsg && warningMsg.type === 'warning');
-    assert.match(
-      warningMsg.message,
+    expect(warningMsg.message).toMatch(
       /El archivo 'corrupted_fake\.rofl' no tiene la cabecera ROFL válida y ha sido omitido/
     );
 
     // 2. Verify success event was received for the valid replay
     const successMsg = messages.find((m) => m.type === 'success');
     assert.ok(successMsg && successMsg.type === 'success');
-    assert.equal(successMsg.summary.processedGames, 1);
+    expect(successMsg.summary.processedGames).toBe(1);
 
     // 3. Verify valid replay was saved to DB
     const matchGameRows = await db
       .select()
       .from(schema.matchGames)
       .where(eq(schema.matchGames.externalGameId, 'RCL-FIXTURE-0001'));
-    assert.equal(matchGameRows.length, 1);
+    expect(matchGameRows.length).toBe(1);
   }
 
   // Part B: Batch containing ONLY non-ROFL files aborts cleanly with descriptive error
   {
     const ws = new WebSocket(`ws://127.0.0.1:${port}/ws/rofl-upload`, { origin: FRONTEND_ORIGIN });
-    t.after(() => {
+    t.onTestFinished(() => {
       try {
         ws.terminate();
       } catch {
@@ -517,13 +509,12 @@ test('Test 4: Batch containing non-ROFL (exit code 11) emitting warning and succ
 
     const warningMsg = messages.find((m) => m.type === 'warning');
     assert.ok(warningMsg && warningMsg.type === 'warning');
-    assert.match(
-      warningMsg.message,
+    expect(warningMsg.message).toMatch(
       /El archivo 'only_fake\.rofl' no tiene la cabecera ROFL válida y ha sido omitido/
     );
 
     const errorMsg = messages.find((m) => m.type === 'error');
     assert.ok(errorMsg && errorMsg.type === 'error');
-    assert.match(errorMsg.message, /No valid ROFL files found in batch/i);
+    expect(errorMsg.message).toMatch(/No valid ROFL files found in batch/i);
   }
 });

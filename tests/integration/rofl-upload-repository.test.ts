@@ -1,11 +1,10 @@
-import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { PGlite } from '@electric-sql/pglite';
 import { asc, eq } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/pglite';
 import { migrate } from 'drizzle-orm/pglite/migrator';
+import { assert, expect, test } from 'vitest';
 import { PostgresRoflUploadRepository } from '../../apps/api/src/modules/rofl-upload/persistence/postgres-rofl-upload.repository.js';
 import type {
   ParsedGameData,
@@ -98,7 +97,7 @@ function createParticipant(
 
 test('PostgresRoflUploadRepository complete lifecycle and constraints', async (t) => {
   const client = new PGlite();
-  t.after(() => client.close());
+  t.onTestFinished(() => client.close());
   const db = drizzle(client, { schema });
   const migrationsFolder = fileURLToPath(
     new URL('../../packages/database/drizzle', import.meta.url)
@@ -123,89 +122,88 @@ test('PostgresRoflUploadRepository complete lifecycle and constraints', async (t
     .returning();
   assert.ok(secondary);
 
-  await t.test(
-    'secondary Riot IDs resolve to the main account and require a unique main',
-    async () => {
-      const identity = [{ gameName: 'secondary demo', riotTag: 'alt' }];
-      const [main] = await repo.findPlayersByRiotIds([
-        { gameName: 'Jugador Demo 1', riotTag: 'DEMO' }
-      ]);
-      const [alternate] = await repo.findPlayersByRiotIds(identity);
-      assert.ok(main);
-      assert.ok(alternate);
-      assert.equal(alternate.playerId, main.playerId);
-      assert.equal(alternate.gameName, 'Secondary Demo');
-      assert.equal(alternate.riotTag, 'ALT');
-      await db
-        .update(schema.players)
-        .set({ isMain: false })
-        .where(eq(schema.players.id, main.playerId));
-      await assert.rejects(repo.findPlayersByRiotIds(identity), /exactly one main account/);
-      await db
-        .update(schema.players)
-        .set({ isMain: true })
-        .where(eq(schema.players.id, main.playerId));
-      await db
-        .update(schema.players)
-        .set({ isMain: true })
-        .where(eq(schema.players.id, secondary.id));
-      await assert.rejects(repo.findPlayersByRiotIds(identity), /exactly one main account/);
-      await db
-        .update(schema.players)
-        .set({ isMain: false })
-        .where(eq(schema.players.id, secondary.id));
-    }
-  );
+  // secondary Riot IDs resolve to the main account and require a unique main
+  {
+    const identity = [{ gameName: 'secondary demo', riotTag: 'alt' }];
+    const [main] = await repo.findPlayersByRiotIds([
+      { gameName: 'Jugador Demo 1', riotTag: 'DEMO' }
+    ]);
+    const [alternate] = await repo.findPlayersByRiotIds(identity);
+    assert.ok(main);
+    assert.ok(alternate);
+    expect(alternate.playerId).toBe(main.playerId);
+    expect(alternate.gameName).toBe('Secondary Demo');
+    expect(alternate.riotTag).toBe('ALT');
+    await db
+      .update(schema.players)
+      .set({ isMain: false })
+      .where(eq(schema.players.id, main.playerId));
+    await expect(repo.findPlayersByRiotIds(identity)).rejects.toThrow(/exactly one main account/);
+    await db
+      .update(schema.players)
+      .set({ isMain: true })
+      .where(eq(schema.players.id, main.playerId));
+    await db
+      .update(schema.players)
+      .set({ isMain: true })
+      .where(eq(schema.players.id, secondary.id));
+    await expect(repo.findPlayersByRiotIds(identity)).rejects.toThrow(/exactly one main account/);
+    await db
+      .update(schema.players)
+      .set({ isMain: false })
+      .where(eq(schema.players.id, secondary.id));
+  }
 
-  await t.test(
-    'findPlayersByRiotIds performs case-insensitive search and joins discord username',
-    async () => {
-      const found = await repo.findPlayersByRiotIds([
-        { gameName: 'jugador demo 1', riotTag: 'demo' },
-        { gameName: 'JUGADOR DEMO 2', riotTag: 'DEMO' },
-        { gameName: 'NonExistent', riotTag: 'NONE' }
-      ]);
+  // findPlayersByRiotIds performs case-insensitive search and joins discord username
+  {
+    const found = await repo.findPlayersByRiotIds([
+      { gameName: 'jugador demo 1', riotTag: 'demo' },
+      { gameName: 'JUGADOR DEMO 2', riotTag: 'DEMO' },
+      { gameName: 'NonExistent', riotTag: 'NONE' }
+    ]);
 
-      assert.equal(found.length, 2);
-      const p1 = found.find((p) => p.gameName === 'Jugador Demo 1');
-      assert.ok(p1);
-      assert.equal(p1.discordUsername, 'Jugador Discord DEMO 1');
-      assert.equal(p1.discordUserId, '900000000000000001');
+    expect(found.length).toBe(2);
+    const p1 = found.find((p) => p.gameName === 'Jugador Demo 1');
+    assert.ok(p1);
+    expect(p1.discordUsername).toBe('Jugador Discord DEMO 1');
+    expect(p1.discordUserId).toBe('900000000000000001');
 
-      const empty = await repo.findPlayersByRiotIds([]);
-      assert.deepEqual(empty, []);
-    }
-  );
+    const empty = await repo.findPlayersByRiotIds([]);
+    expect(empty).toStrictEqual([]);
+  }
 
-  await t.test('checkExternalGamesExist returns only existing external IDs', async () => {
+  // checkExternalGamesExist returns only existing external IDs
+  {
     const existing = await repo.checkExternalGamesExist(['DEMO-GAME-001', 'NON-EXISTENT-GAME-123']);
-    assert.deepEqual(existing, ['DEMO-GAME-001']);
+    expect(existing).toStrictEqual(['DEMO-GAME-001']);
 
     const empty = await repo.checkExternalGamesExist([]);
-    assert.deepEqual(empty, []);
-  });
+    expect(empty).toStrictEqual([]);
+  }
 
-  await t.test('findTeamMembershipsForDiscordUsers maps discord IDs to team UUIDs', async () => {
+  // findTeamMembershipsForDiscordUsers maps discord IDs to team UUIDs
+  {
     const teamMap = await repo.findTeamMembershipsForDiscordUsers([
       '900000000000000001',
       '900000000000000006',
       '900000000000000099'
     ]);
 
-    assert.equal(teamMap.get('900000000000000001'), '30000000-0000-4000-8000-000000000001');
-    assert.equal(teamMap.get('900000000000000006'), '30000000-0000-4000-8000-000000000002');
-    assert.equal(teamMap.has('900000000000000099'), false);
-  });
+    expect(teamMap.get('900000000000000001')).toBe('30000000-0000-4000-8000-000000000001');
+    expect(teamMap.get('900000000000000006')).toBe('30000000-0000-4000-8000-000000000002');
+    expect(teamMap.has('900000000000000099')).toBe(false);
+  }
 
-  await t.test('findMatchForTeams discovers scheduled match and weekly closed match', async () => {
+  // findMatchForTeams discovers scheduled match and weekly closed match
+  {
     const team1Id = '30000000-0000-4000-8000-000000000001';
     const team2Id = '30000000-0000-4000-8000-000000000002';
 
     // Primary: finds Match 2 which is scheduled
     const openMatch = await repo.findMatchForTeams(team1Id, team2Id);
     assert.ok(openMatch);
-    assert.equal(openMatch.matchId, '70000000-0000-4000-8000-000000000002');
-    assert.equal(openMatch.isClosed, false);
+    expect(openMatch.matchId).toBe('70000000-0000-4000-8000-000000000002');
+    expect(openMatch.isClosed).toBe(false);
 
     // Secondary: with date of Match 1 week (2050-01-10), when no open match exists
     // Temporarily update Match 2 to completed to test secondary fallback
@@ -220,8 +218,8 @@ test('PostgresRoflUploadRepository complete lifecycle and constraints', async (t
       new Date('2050-01-10T19:00:00Z')
     );
     assert.ok(closedMatch);
-    assert.equal(closedMatch.matchId, '70000000-0000-4000-8000-000000000001');
-    assert.equal(closedMatch.isClosed, true);
+    expect(closedMatch.matchId).toBe('70000000-0000-4000-8000-000000000001');
+    expect(closedMatch.isClosed).toBe(true);
 
     // Two-sided buffer integration tests:
     // 1. Match scheduled on Friday of Round 1 (2050-01-14T18:00:00Z)
@@ -241,8 +239,8 @@ test('PostgresRoflUploadRepository complete lifecycle and constraints', async (t
       new Date('2050-01-17T12:00:00Z')
     );
     assert.ok(mondayAfterMatch);
-    assert.equal(mondayAfterMatch.matchId, '70000000-0000-4000-8000-000000000001');
-    assert.equal(mondayAfterMatch.isClosed, true);
+    expect(mondayAfterMatch.matchId).toBe('70000000-0000-4000-8000-000000000001');
+    expect(mondayAfterMatch.isClosed).toBe(true);
 
     // 2. Match scheduled on Friday of Round 2 (2050-01-21T18:00:00Z)
     // Replay played on Sunday before (2050-01-16T20:00:00Z) resolves Match 2
@@ -257,8 +255,8 @@ test('PostgresRoflUploadRepository complete lifecycle and constraints', async (t
       new Date('2050-01-16T20:00:00Z')
     );
     assert.ok(sundayBeforeMatch);
-    assert.equal(sundayBeforeMatch.matchId, '70000000-0000-4000-8000-000000000002');
-    assert.equal(sundayBeforeMatch.isClosed, true);
+    expect(sundayBeforeMatch.matchId).toBe('70000000-0000-4000-8000-000000000002');
+    expect(sundayBeforeMatch.isClosed).toBe(true);
 
     // Restore Match 1 and Match 2 to baseline values
     await db
@@ -269,139 +267,138 @@ test('PostgresRoflUploadRepository complete lifecycle and constraints', async (t
       .update(schema.matches)
       .set({ scheduledAt: new Date('2050-01-17T18:00:00Z'), status: 'scheduled' })
       .where(eq(schema.matches.id, '70000000-0000-4000-8000-000000000002'));
-  });
+  }
 
-  await t.test(
-    'executeBatchInsert skips duplicate external_game_id and enforces unanimous membership',
-    async () => {
-      const allPlayers = await repo.findPlayersByRiotIds([
-        ...Array.from({ length: 20 }, (_, i) => ({
-          gameName: `Jugador Demo ${i + 1}`,
-          riotTag: 'DEMO'
-        })),
-        { gameName: 'Secondary Demo', riotTag: 'ALT' }
-      ]);
-      const playerLookupMap = new Map<string, PlayerLookupResult>();
-      for (const p of allPlayers) {
-        playerLookupMap.set(`${p.gameName.toLowerCase()}#${p.riotTag.toLowerCase()}`, p);
-      }
-      const teamMap = await repo.findTeamMembershipsForDiscordUsers(
-        allPlayers.map((p) => p.discordUserId)
-      );
-
-      // 1. Unanimous validation failure: participant from team 2 mixed into team 1
-      const invalidParticipants: ParsedParticipantData[] = [
-        createParticipant('Jugador Demo 1', 'DEMO', 'blue', 'Garen', 'top'),
-        createParticipant('Jugador Demo 2', 'DEMO', 'blue', 'Vi', 'jungle'),
-        createParticipant('Jugador Demo 3', 'DEMO', 'blue', 'Ahri', 'mid'),
-        createParticipant('Jugador Demo 4', 'DEMO', 'blue', 'Jinx', 'adc'),
-        // Player 6 belongs to Cuervos (team 2), NOT Lobos (team 1)
-        createParticipant('Jugador Demo 6', 'DEMO', 'blue', 'Lulu', 'support'),
-        createParticipant('Jugador Demo 7', 'DEMO', 'red', 'Ornn', 'top'),
-        createParticipant('Jugador Demo 8', 'DEMO', 'red', 'LeeSin', 'jungle'),
-        createParticipant('Jugador Demo 9', 'DEMO', 'red', 'Syndra', 'mid'),
-        createParticipant('Jugador Demo 10', 'DEMO', 'red', 'Ashe', 'adc'),
-        createParticipant('Jugador Demo 11', 'DEMO', 'red', 'Braum', 'support')
-      ];
-
-      const invalidGame: ParsedGameData = {
-        fileName: 'invalid_team.rofl',
-        externalGameId: 'EXT-INVALID-001',
-        durationSeconds: 1600,
-        winnerSide: 'blue',
-        participants: invalidParticipants
-      };
-
-      await assert.rejects(
-        repo.executeBatchInsert([invalidGame], playerLookupMap, teamMap),
-        (err: Error) =>
-          /unanimous/i.test(err.message) &&
-          /Roster breakdown:/i.test(err.message) &&
-          /Jugador Demo 6#DEMO/.test(err.message)
-      );
-
-      // 2. Batch with 1 duplicate game ('DEMO-GAME-001') and 2 valid new games for Match 2 (best_of: 3)
-      const validBlueParticipants: ParsedParticipantData[] = [
-        createParticipant('Secondary Demo', 'ALT', 'blue', 'Garen', 'top'),
-        createParticipant('Jugador Demo 2', 'DEMO', 'blue', 'Vi', 'jungle'),
-        createParticipant('Jugador Demo 3', 'DEMO', 'blue', 'Ahri', 'mid'),
-        createParticipant('Jugador Demo 4', 'DEMO', 'blue', 'Jinx', 'adc'),
-        createParticipant('Jugador Demo 5', 'DEMO', 'blue', 'Lulu', 'support')
-      ];
-      const validRedParticipants: ParsedParticipantData[] = [
-        createParticipant('Jugador Demo 6', 'DEMO', 'red', 'Ornn', 'top'),
-        createParticipant('Jugador Demo 7', 'DEMO', 'red', 'LeeSin', 'jungle'),
-        createParticipant('Jugador Demo 8', 'DEMO', 'red', 'Syndra', 'mid'),
-        createParticipant('Jugador Demo 9', 'DEMO', 'red', 'Ashe', 'adc'),
-        createParticipant('Jugador Demo 10', 'DEMO', 'red', 'Braum', 'support')
-      ];
-
-      const duplicateGame: ParsedGameData = {
-        fileName: 'game_duplicate.rofl',
-        externalGameId: 'DEMO-GAME-001', // already exists in demo.sql
-        durationSeconds: 1800,
-        winnerSide: 'blue',
-        participants: [...validBlueParticipants, ...validRedParticipants]
-      };
-
-      const game1: ParsedGameData = {
-        fileName: 'game_match2_g1.rofl',
-        externalGameId: 'EXT-M2-G1',
-        durationSeconds: 1950,
-        winnerSide: 'blue', // blue is team 1 (Lobos)
-        participants: [...validBlueParticipants, ...validRedParticipants]
-      };
-
-      const game2: ParsedGameData = {
-        fileName: 'game_match2_g2.rofl',
-        externalGameId: 'EXT-M2-G2',
-        durationSeconds: 2100,
-        winnerSide: 'blue', // blue is team 1 (Lobos) -> 2 wins, clinches best_of 3
-        participants: [...validBlueParticipants, ...validRedParticipants]
-      };
-
-      // Execute batch insert: duplicate should be skipped, game1 and game2 inserted atomically
-      await repo.executeBatchInsert([duplicateGame, game1, game2], playerLookupMap, teamMap);
-
-      // Verify match_games count: original demo had 1, now should have 3
-      const gamesInDb = await db.select().from(schema.matchGames);
-      assert.equal(gamesInDb.length, 3);
-
-      // Verify player info, stats, runes, build tables have 10 rows per game (demo had 10, now 30)
-      const infos = await db.select().from(schema.playerGameInfo);
-      assert.equal(infos.length, 30);
-      const main = allPlayers.find((player) => player.gameName === 'Jugador Demo 1');
-      assert.ok(main);
-      assert.equal(infos.filter((info) => info.playerId === secondary.id).length, 0);
-      assert.equal(infos.filter((info) => info.playerId === main.playerId).length, 3);
-      const stats = await db.select().from(schema.playerGameStats);
-      assert.equal(stats.length, 30);
-      const runes = await db.select().from(schema.playerGameRunes);
-      assert.equal(runes.length, 30);
-      const builds = await db.select().from(schema.playerGameBuild);
-      assert.equal(builds.length, 30);
-
-      // Verify Match 2 scores and completed status
-      const [match2] = await db
-        .select()
-        .from(schema.matches)
-        .where(eq(schema.matches.id, '70000000-0000-4000-8000-000000000002'));
-      assert.ok(match2);
-      // In demo.sql: team1_id is Cuervos (team 2), team2_id is Lobos (team 1)
-      // Blue winner was Lobos (team 1) -> so team2Score should be 2, team1Score should be 0
-      assert.equal(match2.team2Score, 2);
-      assert.equal(match2.team1Score, 0);
-      assert.equal(match2.status, 'completed');
-      assert.equal(match2.winnerTeamId, '30000000-0000-4000-8000-000000000001');
-      assert.ok(match2.finishedAt);
+  // executeBatchInsert skips duplicate external_game_id and enforces unanimous membership
+  {
+    const allPlayers = await repo.findPlayersByRiotIds([
+      ...Array.from({ length: 20 }, (_, i) => ({
+        gameName: `Jugador Demo ${i + 1}`,
+        riotTag: 'DEMO'
+      })),
+      { gameName: 'Secondary Demo', riotTag: 'ALT' }
+    ]);
+    const playerLookupMap = new Map<string, PlayerLookupResult>();
+    for (const p of allPlayers) {
+      playerLookupMap.set(`${p.gameName.toLowerCase()}#${p.riotTag.toLowerCase()}`, p);
     }
-  );
+    const teamMap = await repo.findTeamMembershipsForDiscordUsers(
+      allPlayers.map((p) => p.discordUserId)
+    );
+
+    // 1. Unanimous validation failure: participant from team 2 mixed into team 1
+    const invalidParticipants: ParsedParticipantData[] = [
+      createParticipant('Jugador Demo 1', 'DEMO', 'blue', 'Garen', 'top'),
+      createParticipant('Jugador Demo 2', 'DEMO', 'blue', 'Vi', 'jungle'),
+      createParticipant('Jugador Demo 3', 'DEMO', 'blue', 'Ahri', 'mid'),
+      createParticipant('Jugador Demo 4', 'DEMO', 'blue', 'Jinx', 'adc'),
+      // Player 6 belongs to Cuervos (team 2), NOT Lobos (team 1)
+      createParticipant('Jugador Demo 6', 'DEMO', 'blue', 'Lulu', 'support'),
+      createParticipant('Jugador Demo 7', 'DEMO', 'red', 'Ornn', 'top'),
+      createParticipant('Jugador Demo 8', 'DEMO', 'red', 'LeeSin', 'jungle'),
+      createParticipant('Jugador Demo 9', 'DEMO', 'red', 'Syndra', 'mid'),
+      createParticipant('Jugador Demo 10', 'DEMO', 'red', 'Ashe', 'adc'),
+      createParticipant('Jugador Demo 11', 'DEMO', 'red', 'Braum', 'support')
+    ];
+
+    const invalidGame: ParsedGameData = {
+      fileName: 'invalid_team.rofl',
+      externalGameId: 'EXT-INVALID-001',
+      durationSeconds: 1600,
+      winnerSide: 'blue',
+      participants: invalidParticipants
+    };
+
+    await expect(
+      repo.executeBatchInsert([invalidGame], playerLookupMap, teamMap)
+    ).rejects.toSatisfy(
+      (err: Error) =>
+        /unanimous/i.test(err.message) &&
+        /Roster breakdown:/i.test(err.message) &&
+        /Jugador Demo 6#DEMO/.test(err.message)
+    );
+
+    // 2. Batch with 1 duplicate game ('DEMO-GAME-001') and 2 valid new games for Match 2 (best_of: 3)
+    const validBlueParticipants: ParsedParticipantData[] = [
+      createParticipant('Secondary Demo', 'ALT', 'blue', 'Garen', 'top'),
+      createParticipant('Jugador Demo 2', 'DEMO', 'blue', 'Vi', 'jungle'),
+      createParticipant('Jugador Demo 3', 'DEMO', 'blue', 'Ahri', 'mid'),
+      createParticipant('Jugador Demo 4', 'DEMO', 'blue', 'Jinx', 'adc'),
+      createParticipant('Jugador Demo 5', 'DEMO', 'blue', 'Lulu', 'support')
+    ];
+    const validRedParticipants: ParsedParticipantData[] = [
+      createParticipant('Jugador Demo 6', 'DEMO', 'red', 'Ornn', 'top'),
+      createParticipant('Jugador Demo 7', 'DEMO', 'red', 'LeeSin', 'jungle'),
+      createParticipant('Jugador Demo 8', 'DEMO', 'red', 'Syndra', 'mid'),
+      createParticipant('Jugador Demo 9', 'DEMO', 'red', 'Ashe', 'adc'),
+      createParticipant('Jugador Demo 10', 'DEMO', 'red', 'Braum', 'support')
+    ];
+
+    const duplicateGame: ParsedGameData = {
+      fileName: 'game_duplicate.rofl',
+      externalGameId: 'DEMO-GAME-001', // already exists in demo.sql
+      durationSeconds: 1800,
+      winnerSide: 'blue',
+      participants: [...validBlueParticipants, ...validRedParticipants]
+    };
+
+    const game1: ParsedGameData = {
+      fileName: 'game_match2_g1.rofl',
+      externalGameId: 'EXT-M2-G1',
+      durationSeconds: 1950,
+      winnerSide: 'blue', // blue is team 1 (Lobos)
+      participants: [...validBlueParticipants, ...validRedParticipants]
+    };
+
+    const game2: ParsedGameData = {
+      fileName: 'game_match2_g2.rofl',
+      externalGameId: 'EXT-M2-G2',
+      durationSeconds: 2100,
+      winnerSide: 'blue', // blue is team 1 (Lobos) -> 2 wins, clinches best_of 3
+      participants: [...validBlueParticipants, ...validRedParticipants]
+    };
+
+    // Execute batch insert: duplicate should be skipped, game1 and game2 inserted atomically
+    await repo.executeBatchInsert([duplicateGame, game1, game2], playerLookupMap, teamMap);
+
+    // Verify match_games count: original demo had 1, now should have 3
+    const gamesInDb = await db.select().from(schema.matchGames);
+    expect(gamesInDb.length).toBe(3);
+
+    // Verify player info, stats, runes, build tables have 10 rows per game (demo had 10, now 30)
+    const infos = await db.select().from(schema.playerGameInfo);
+    expect(infos.length).toBe(30);
+    const main = allPlayers.find((player) => player.gameName === 'Jugador Demo 1');
+    assert.ok(main);
+    expect(infos.filter((info) => info.playerId === secondary.id).length).toBe(0);
+    expect(infos.filter((info) => info.playerId === main.playerId).length).toBe(3);
+    const stats = await db.select().from(schema.playerGameStats);
+    expect(stats.length).toBe(30);
+    const runes = await db.select().from(schema.playerGameRunes);
+    expect(runes.length).toBe(30);
+    const builds = await db.select().from(schema.playerGameBuild);
+    expect(builds.length).toBe(30);
+
+    // Verify Match 2 scores and completed status
+    const [match2] = await db
+      .select()
+      .from(schema.matches)
+      .where(eq(schema.matches.id, '70000000-0000-4000-8000-000000000002'));
+    assert.ok(match2);
+    // In demo.sql: team1_id is Cuervos (team 2), team2_id is Lobos (team 1)
+    // Blue winner was Lobos (team 1) -> so team2Score should be 2, team1Score should be 0
+    expect(match2.team2Score).toBe(2);
+    expect(match2.team1Score).toBe(0);
+    expect(match2.status).toBe('completed');
+    expect(match2.winnerTeamId).toBe('30000000-0000-4000-8000-000000000001');
+    expect(match2.finishedAt).toBeTruthy();
+  }
 });
 
 for (const individually of [true, false]) {
   test(`ROFL maps are ordered across ${individually ? 'individual uploads' : 'a batch'}`, async (t) => {
     const client = new PGlite();
-    t.after(() => client.close());
+    t.onTestFinished(() => client.close());
     const db = drizzle(client, { schema });
     await migrate(db, {
       migrationsFolder: fileURLToPath(new URL('../../packages/database/drizzle', import.meta.url))
@@ -445,43 +442,34 @@ for (const individually of [true, false]) {
         await repo.executeBatchInsert([game], lookup, teams);
         const rows = await read();
         const original = rows.find((row) => row.externalGameId === 'EUW1-10');
-        if (originalId) assert.equal(original?.id, originalId);
+        if (originalId) expect(original?.id).toBe(originalId);
         else originalId = original?.id;
-        assert.deepEqual(
-          rows.map((row) => row.gameNumber),
-          rows.map((_, index) => index + 1)
-        );
+        expect(rows.map((row) => row.gameNumber)).toStrictEqual(rows.map((_, index) => index + 1));
       }
     } else await repo.executeBatchInsert(games, lookup, teams);
     const ordered = await read();
-    assert.deepEqual(
-      ordered.map((row) => row.externalGameId),
-      ['EUW1-1', 'EUW1-2', 'EUW1-10']
-    );
-    assert.deepEqual(
-      ordered.map((row) => row.gameNumber),
-      [1, 2, 3]
-    );
+    expect(ordered.map((row) => row.externalGameId)).toStrictEqual(['EUW1-1', 'EUW1-2', 'EUW1-10']);
+    expect(ordered.map((row) => row.gameNumber)).toStrictEqual([1, 2, 3]);
     for (const game of ordered) {
       const info = await db
         .select()
         .from(schema.playerGameInfo)
         .where(eq(schema.playerGameInfo.matchGameId, game.id));
-      assert.equal(info.length, 2);
+      expect(info.length).toBe(2);
     }
     const duplicate = await repo.executeBatchInsert(games, lookup, teams);
-    assert.equal(duplicate.insertedGames, 0);
-    assert.equal(duplicate.skippedDuplicates.length, 3);
-    assert.deepEqual(await read(), ordered);
+    expect(duplicate.insertedGames).toBe(0);
+    expect(duplicate.skippedDuplicates.length).toBe(3);
+    expect(await read()).toStrictEqual(ordered);
     const [match] = await db.select().from(schema.matches).where(eq(schema.matches.id, matchId));
-    assert.equal(match?.team2Score, 3);
-    assert.equal(match?.status, 'completed');
+    expect(match?.team2Score).toBe(3);
+    expect(match?.status).toBe('completed');
   });
 }
 
 test('concurrent ROFL batches sharing a replay report it as a duplicate', async (t) => {
   const client = new PGlite();
-  t.after(() => client.close());
+  t.onTestFinished(() => client.close());
   const db = drizzle(client, { schema });
   await migrate(db, {
     migrationsFolder: fileURLToPath(new URL('../../packages/database/drizzle', import.meta.url))
@@ -519,32 +507,23 @@ test('concurrent ROFL batches sharing a replay report it as a duplicate', async 
     repo.executeBatchInsert([game('EUW1-SHARED'), game('EUW1-B')], lookup, teams)
   ]);
 
-  assert.deepEqual(results.map((result) => result.insertedGames).sort(), [1, 2]);
-  assert.deepEqual(
-    results.flatMap((result) => result.skippedDuplicates),
-    ['EUW1-SHARED']
-  );
+  expect(results.map((result) => result.insertedGames).sort()).toStrictEqual([1, 2]);
+  expect(results.flatMap((result) => result.skippedDuplicates)).toStrictEqual(['EUW1-SHARED']);
   const rows = await db
     .select()
     .from(schema.matchGames)
     .where(eq(schema.matchGames.matchesId, matchId))
     .orderBy(asc(schema.matchGames.gameNumber));
-  assert.deepEqual(
-    rows.map((row) => row.externalGameId),
-    ['EUW1-A', 'EUW1-B', 'EUW1-SHARED']
-  );
-  assert.deepEqual(
-    rows.map((row) => row.gameNumber),
-    [1, 2, 3]
-  );
+  expect(rows.map((row) => row.externalGameId)).toStrictEqual(['EUW1-A', 'EUW1-B', 'EUW1-SHARED']);
+  expect(rows.map((row) => row.gameNumber)).toStrictEqual([1, 2, 3]);
   const [match] = await db.select().from(schema.matches).where(eq(schema.matches.id, matchId));
-  assert.equal(match?.team2Score, 3);
-  assert.equal(match?.status, 'completed');
+  expect(match?.team2Score).toBe(3);
+  expect(match?.status).toBe('completed');
 });
 
 test('a replay committed after the duplicate read is skipped when its match is closed', async (t) => {
   const client = new PGlite();
-  t.after(() => client.close());
+  t.onTestFinished(() => client.close());
   const db = drizzle(client, { schema });
   await migrate(db, {
     migrationsFolder: fileURLToPath(new URL('../../packages/database/drizzle', import.meta.url))
@@ -591,10 +570,10 @@ test('a replay committed after the duplicate read is skipped when its match is c
   const late = new LateCommitRepository(db);
   const result = await late.executeBatchInsert(games.slice(0, 1), lookup, teams);
 
-  assert.deepEqual(result, { insertedGames: 0, skippedDuplicates: ['EUW1-1'] });
+  expect(result).toStrictEqual({ insertedGames: 0, skippedDuplicates: ['EUW1-1'] });
   const rows = await db
     .select()
     .from(schema.matchGames)
     .where(eq(schema.matchGames.matchesId, matchId));
-  assert.equal(rows.length, 2);
+  expect(rows.length).toBe(2);
 });
