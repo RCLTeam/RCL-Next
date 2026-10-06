@@ -1,7 +1,6 @@
-import assert from 'node:assert/strict';
-import { test } from 'node:test';
 import React from 'react';
 import { renderToString } from 'react-dom/server';
+import { expect, test } from 'vitest';
 import { App } from '../../../apps/web/src/App.js';
 import { siteRoutes } from '../../../apps/web/src/site/routes.js';
 
@@ -13,54 +12,54 @@ test('Team detail direct links render their own page and keep Teams selected', (
     '/equipos/30000000-0000-4000-8000-000000000001/'
   ]) {
     const html = renderToString(React.createElement(App, { initialPath: path }));
-    assert.match(html, /id="equipo"/);
-    assert.match(html, /Cargando equipo/);
-    assert.doesNotMatch(html, /404 — Not Found/);
-    assert.ok(
+    expect(html).toMatch(/id="equipo"/);
+    expect(html).toMatch(/Cargando equipo/);
+    expect(html).not.toMatch(/404 — Not Found/);
+    expect(
       (html.match(/<a\b[^>]*>/g) ?? []).some(
         (tag) => tag.includes('href="/equipos"') && tag.includes('aria-current="page"')
       )
-    );
+    ).toBeTruthy();
   }
 });
 
 test('App blocks replay upload until the session has been verified', () => {
   const html = renderToString(React.createElement(App, { initialPath: '/admin/rofl/upload' }));
-  assert.match(html, /Comprobando acceso/);
-  assert.doesNotMatch(html, /Dropzone for ROFL and ZIP files/i);
+  expect(html).toMatch(/Comprobando acceso/);
+  expect(html).not.toMatch(/Dropzone for ROFL and ZIP files/i);
 });
 
 test('App renders 404 view on unknown route', () => {
   const html = renderToString(React.createElement(App, { initialPath: '/unknown/route' }));
-  assert.match(html, /404 — Not Found/i);
+  expect(html).toMatch(/404 — Not Found/i);
 });
 
 test('Home links to public pages without exposing administration', () => {
   const html = renderToString(React.createElement(App, { initialPath: '/' }));
   for (const route of siteRoutes) {
-    assert.match(html, new RegExp(`href="${route.path}"`));
+    expect(html).toMatch(new RegExp(`href="${route.path}"`));
   }
-  assert.doesNotMatch(html, /href="\/admin"/);
-  assert.match(html, /Cuenta de Discord/);
-  assert.match(html, /LA CORONA/);
-  assert.doesNotMatch(html, /Dropzone for ROFL and ZIP files/);
+  expect(html).not.toMatch(/href="\/admin"/);
+  expect(html).toMatch(/Cuenta de Discord/);
+  expect(html).toMatch(/LA CORONA/);
+  expect(html).not.toMatch(/Dropzone for ROFL and ZIP files/);
 });
 
 test('Each public route renders only its own page, including direct links and trailing slashes', () => {
   for (const route of siteRoutes) {
     for (const path of new Set([route.path, `${route.path.replace(/\/$/, '')}/`])) {
       const html = renderToString(React.createElement(App, { initialPath: path }));
-      assert.match(html, new RegExp(`id="${route.id}"`));
-      assert.equal((html.match(/<h1[ >]/g) ?? []).length, 1);
-      assert.ok(
+      expect(html).toMatch(new RegExp(`id="${route.id}"`));
+      expect((html.match(/<h1[ >]/g) ?? []).length).toBe(1);
+      expect(
         (html.match(/<a\b[^>]*>/g) ?? []).some(
           (tag) => tag.includes(`href="${route.path}"`) && tag.includes('aria-current="page"')
         )
-      );
+      ).toBeTruthy();
       for (const other of siteRoutes.filter((item) => item.id !== route.id)) {
-        assert.doesNotMatch(html, new RegExp(`id="${other.id}"`));
+        expect(html).not.toMatch(new RegExp(`id="${other.id}"`));
       }
-      assert.doesNotMatch(html, /404 — Not Found/);
+      expect(html).not.toMatch(/404 — Not Found/);
     }
   }
 });
@@ -76,12 +75,12 @@ test('Both admin URLs and their trailing slash aliases are guarded and absent fr
   ]) {
     const html = renderToString(React.createElement(App, { initialPath: path }));
     const navigation = html.match(/<nav\b[^>]*id="site-navigation"[^>]*>([\s\S]*?)<\/nav>/)?.[1];
-    assert.ok(navigation);
-    assert.doesNotMatch(navigation, /href="\/admin"/);
-    assert.match(html, /id="admin"/);
-    assert.match(html, /Comprobando acceso/);
-    assert.doesNotMatch(html, /Dropzone for ROFL and ZIP files/);
-    assert.equal((html.match(/<h1[ >]/g) ?? []).length, 1);
-    assert.doesNotMatch(html, /404 — Not Found/);
+    expect(navigation).toBeTruthy();
+    expect(navigation).not.toMatch(/href="\/admin"/);
+    expect(html).toMatch(/id="admin"/);
+    expect(html).toMatch(/Comprobando acceso/);
+    expect(html).not.toMatch(/Dropzone for ROFL and ZIP files/);
+    expect((html.match(/<h1[ >]/g) ?? []).length).toBe(1);
+    expect(html).not.toMatch(/404 — Not Found/);
   }
 });

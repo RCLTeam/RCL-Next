@@ -16,10 +16,9 @@ El monorepo cuenta con **77 archivos de pruebas** que ejecutan **897 pruebas**, 
 
 El arnés de pruebas del monorepo integra las siguientes herramientas especializadas:
 
-1. **Vitest v3 (`vitest: ^3.0.7`):** Ejecutor principal para TypeScript y JavaScript, configurado en `vitest.config.ts` con el proveedor de cobertura `v8` (`@vitest/coverage-v8: ^3.0.7`) y entorno base `node` (`vitest.config.ts:17`).
+1. **Vitest v3 (`vitest: ^3.0.7`):** Ejecutor principal para TypeScript y JavaScript, configurado en `vitest.config.ts` con el proveedor de cobertura `v8` (`@vitest/coverage-v8: ^3.0.7`) y entorno base `node` (`vitest.config.ts:16`).
 2. **PGlite (`@electric-sql/pglite: ^0.3.14`):** Instancia embebida de PostgreSQL compilada a WebAssembly/C que se ejecuta en memoria dentro del propio proceso de Node.js, eliminando la necesidad de daemons externos de base de datos o contenedores Docker durante las pruebas de integración.
-3. **Shim de Compatibilidad `node:test` (`tests/support/node-test-shim.ts`):** Adaptador que traduce las primitivas de prueba nativas de Node.js (`test`, `t.test`, `t.after`) a la semántica de Vitest (`TaskContext`), permitiendo ejecutar suites nativas sin reescritura de código.
-4. **Python `unittest`:** Entorno estándar de pruebas unitarias para el motor de parsing binario `apps/parser/roflParser.py`, ejecutado sin dependencias externas mediante `python3 -m unittest`.
+3. **Python `unittest`:** Entorno estándar de pruebas unitarias para el motor de parsing binario `apps/parser/roflParser.py`, ejecutado sin dependencias externas mediante `python3 -m unittest`.
 
 ---
 

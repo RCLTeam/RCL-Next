@@ -43,5 +43,5 @@ La pirámide de pruebas de RCL-Next se estructura en cinco niveles escalonados (
 ## 4. Garantías Arquitectónicas
 
 1. **Cero Dependencia de Daemons Externos:** La suite de pruebas no requiere contenedores Docker activos ni servicios de base de datos instalados en el sistema anfitrión. PGlite ejecuta el motor de PostgreSQL compilado a WebAssembly/C dentro del proceso de Node.js.
-2. **Determinismo y Paralelismo Acotado:** Para evitar contención de CPU y agotamiento de memoria durante la inicialización concurrente de múltiples instancias de PGlite, `vitest.config.ts:19-20` impone un límite estricto de **4 trabajadores concurrentes** (`maxWorkers: 4`) y un tiempo límite de **30 segundos** (`testTimeout: 30_000`).
+2. **Determinismo y Paralelismo Acotado:** Para evitar contención de CPU y agotamiento de memoria durante la inicialización concurrente de múltiples instancias de PGlite, `vitest.config.ts:18-19` impone un límite estricto de **4 trabajadores concurrentes** (`maxWorkers: 4`) y un tiempo límite de **30 segundos** (`testTimeout: 30_000`).
 3. **Reproducibilidad en CI/CD:** El comando unificado `pnpm check` garantiza la verificación secuencial de tipado (`pnpm typecheck`), análisis estático (`biome check .`) y ejecución de pruebas (`vitest run`), certificando la ausencia de regresiones en una sola orden de terminal.

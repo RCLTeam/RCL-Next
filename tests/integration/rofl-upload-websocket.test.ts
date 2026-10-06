@@ -1,14 +1,13 @@
-import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import http from 'node:http';
 import path from 'node:path';
-import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { PGlite } from '@electric-sql/pglite';
 import type { AuthUser, WsServerEvent } from '@rcl/contracts';
 import { eq } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/pglite';
 import { migrate } from 'drizzle-orm/pglite/migrator';
+import { assert, expect, test } from 'vitest';
 import { WebSocket } from 'ws';
 import { createApp } from '../../apps/api/src/app.js';
 import type { AuthService } from '../../apps/api/src/modules/auth/auth.service.js';
@@ -144,7 +143,7 @@ test('roflUploadGateway receives binary file chunks and notifies progress with m
   };
   const wss = attachRoflUploadGateway(server, mockRepo, unauthenticatedTestOptions);
 
-  t.after(async () => {
+  t.onTestFinished(async () => {
     wss.close();
     await new Promise<void>((resolve) => server.close(() => resolve()));
   });
@@ -155,7 +154,7 @@ test('roflUploadGateway receives binary file chunks and notifies progress with m
   const port = address.port;
 
   const ws = new WebSocket(`ws://127.0.0.1:${port}/ws/rofl-upload`, { origin: FRONTEND_ORIGIN });
-  t.after(() => {
+  t.onTestFinished(() => {
     try {
       ws.terminate();
     } catch {
@@ -188,12 +187,12 @@ test('roflUploadGateway receives binary file chunks and notifies progress with m
 
   await completionPromise;
 
-  assert.ok(messages.some((m) => m.type === 'started' && m.filename === 'sample.rofl'));
-  assert.ok(messages.some((m) => m.type === 'stage'));
-  assert.ok(messages.some((m) => m.type === 'progress'));
+  expect(messages.some((m) => m.type === 'started' && m.filename === 'sample.rofl')).toBeTruthy();
+  expect(messages.some((m) => m.type === 'stage')).toBeTruthy();
+  expect(messages.some((m) => m.type === 'progress')).toBeTruthy();
   const successMsg = messages.find((m) => m.type === 'success');
   assert.ok(successMsg && successMsg.type === 'success');
-  assert.equal(successMsg.summary.processedGames, 1);
+  expect(successMsg.summary.processedGames).toBe(1);
 });
 
 test('roflUploadGateway validates input errors and rejects invalid sequences', async (t) => {
@@ -205,7 +204,7 @@ test('roflUploadGateway validates input errors and rejects invalid sequences', a
   const server = http.createServer(app);
   const wss = attachRoflUploadGateway(server, stubRoflUploadRepo, unauthenticatedTestOptions);
 
-  t.after(async () => {
+  t.onTestFinished(async () => {
     wss.close();
     await new Promise<void>((resolve) => server.close(() => resolve()));
   });
@@ -224,8 +223,8 @@ test('roflUploadGateway validates input errors and rejects invalid sequences', a
     });
     ws.send(Buffer.from('UNEXPECTED_BINARY'));
     const err = await errorPromise;
-    assert.equal(err.type, 'error');
-    assert.match(err.message, /before upload was started/i);
+    assert.ok(err.type === 'error');
+    expect(err.message).toMatch(/before upload was started/i);
     ws.terminate();
   }
 
@@ -238,8 +237,8 @@ test('roflUploadGateway validates input errors and rejects invalid sequences', a
     });
     ws.send(JSON.stringify({ type: 'start', filename: 'malicious.exe' }));
     const err = await errorPromise;
-    assert.equal(err.type, 'error');
-    assert.match(err.message, /Unsupported file type/i);
+    assert.ok(err.type === 'error');
+    expect(err.message).toMatch(/Unsupported file type/i);
     ws.terminate();
   }
 
@@ -252,8 +251,8 @@ test('roflUploadGateway validates input errors and rejects invalid sequences', a
     });
     ws.send('NOT_VALID_JSON{[');
     const err = await errorPromise;
-    assert.equal(err.type, 'error');
-    assert.match(err.message, /Invalid JSON/i);
+    assert.ok(err.type === 'error');
+    expect(err.message).toMatch(/Invalid JSON/i);
     ws.terminate();
   }
 
@@ -266,8 +265,8 @@ test('roflUploadGateway validates input errors and rejects invalid sequences', a
     });
     ws.send(JSON.stringify({ type: 'finish' }));
     const err = await errorPromise;
-    assert.equal(err.type, 'error');
-    assert.match(err.message, /No upload in progress/i);
+    assert.ok(err.type === 'error');
+    expect(err.message).toMatch(/No upload in progress/i);
     ws.terminate();
   }
 });
@@ -281,7 +280,7 @@ test('roflUploadGateway handles abrupt socket disconnect cleanly', async (t) => 
   const server = http.createServer(app);
   const wss = attachRoflUploadGateway(server, stubRoflUploadRepo, unauthenticatedTestOptions);
 
-  t.after(async () => {
+  t.onTestFinished(async () => {
     wss.close();
     await new Promise<void>((resolve) => server.close(() => resolve()));
   });
@@ -302,12 +301,12 @@ test('roflUploadGateway handles abrupt socket disconnect cleanly', async (t) => 
 
   // Wait a moment to ensure server cleans up without unhandled rejection or error
   await new Promise<void>((resolve) => setTimeout(resolve, 150));
-  assert.ok(true);
+  expect(true).toBeTruthy();
 });
 
 test('roflUploadGateway streams the .rofl fixture and aborts on unregistered summoners', async (t) => {
   const { client, db } = await setupTestDb();
-  t.after(() => client.close());
+  t.onTestFinished(() => client.close());
 
   const app = createApp({
     repository: mockCompetitionRepo,
@@ -318,7 +317,7 @@ test('roflUploadGateway streams the .rofl fixture and aborts on unregistered sum
   const repository = new PostgresRoflUploadRepository(db);
   const wss = attachRoflUploadGateway(server, repository, unauthenticatedTestOptions);
 
-  t.after(async () => {
+  t.onTestFinished(async () => {
     wss.close();
     await new Promise<void>((resolve) => server.close(() => resolve()));
   });
@@ -329,7 +328,7 @@ test('roflUploadGateway streams the .rofl fixture and aborts on unregistered sum
   const port = address.port;
 
   const ws = new WebSocket(`ws://127.0.0.1:${port}/ws/rofl-upload`, { origin: FRONTEND_ORIGIN });
-  t.after(() => {
+  t.onTestFinished(() => {
     try {
       ws.terminate();
     } catch {
@@ -365,20 +364,20 @@ test('roflUploadGateway streams the .rofl fixture and aborts on unregistered sum
 
   await completionPromise;
 
-  assert.ok(messages.some((m) => m.type === 'started'));
-  assert.ok(messages.some((m) => m.type === 'stage' && m.stage === 'decompressing'));
-  assert.ok(messages.some((m) => m.type === 'stage' && m.stage === 'parsing'));
-  assert.ok(messages.some((m) => m.type === 'stage' && m.stage === 'validating'));
+  expect(messages.some((m) => m.type === 'started')).toBeTruthy();
+  expect(messages.some((m) => m.type === 'stage' && m.stage === 'decompressing')).toBeTruthy();
+  expect(messages.some((m) => m.type === 'stage' && m.stage === 'parsing')).toBeTruthy();
+  expect(messages.some((m) => m.type === 'stage' && m.stage === 'validating')).toBeTruthy();
 
   const errorMsg = messages.find((m) => m.type === 'error');
   assert.ok(errorMsg && errorMsg.type === 'error');
-  assert.match(errorMsg.message, /Validation failed/i);
-  assert.match(errorMsg.message, /Anon Azul 1#ANON/i);
+  expect(errorMsg.message).toMatch(/Validation failed/i);
+  expect(errorMsg.message).toMatch(/Anon Azul 1#ANON/i);
 });
 
 test('roflUploadGateway streams .zip batch and completes atomic persistence', async (t) => {
   const { client, db } = await setupTestDb();
-  t.after(() => client.close());
+  t.onTestFinished(() => client.close());
 
   // Register the 10 participants from RCL-FIXTURE-0001.rofl in the database
   const bluePlayers = [
@@ -434,7 +433,7 @@ test('roflUploadGateway streams .zip batch and completes atomic persistence', as
   const repository = new PostgresRoflUploadRepository(db);
   const wss = attachRoflUploadGateway(server, repository, unauthenticatedTestOptions);
 
-  t.after(async () => {
+  t.onTestFinished(async () => {
     wss.close();
     await new Promise<void>((resolve) => server.close(() => resolve()));
   });
@@ -445,7 +444,7 @@ test('roflUploadGateway streams .zip batch and completes atomic persistence', as
   const port = address.port;
 
   const ws = new WebSocket(`ws://127.0.0.1:${port}/ws/rofl-upload`, { origin: FRONTEND_ORIGIN });
-  t.after(() => {
+  t.onTestFinished(() => {
     try {
       ws.terminate();
     } catch {
@@ -489,32 +488,31 @@ test('roflUploadGateway streams .zip batch and completes atomic persistence', as
   await completionPromise;
 
   // Verify full event sequence
-  assert.ok(messages.some((m) => m.type === 'started' && m.filename === 'tournament_batch.zip'));
-  assert.ok(messages.some((m) => m.type === 'stage' && m.stage === 'decompressing'));
-  assert.ok(messages.some((m) => m.type === 'stage' && m.stage === 'parsing'));
-  assert.ok(messages.some((m) => m.type === 'progress'));
-  assert.ok(messages.some((m) => m.type === 'stage' && m.stage === 'validating'));
+  expect(
+    messages.some((m) => m.type === 'started' && m.filename === 'tournament_batch.zip')
+  ).toBeTruthy();
+  expect(messages.some((m) => m.type === 'stage' && m.stage === 'decompressing')).toBeTruthy();
+  expect(messages.some((m) => m.type === 'stage' && m.stage === 'parsing')).toBeTruthy();
+  expect(messages.some((m) => m.type === 'progress')).toBeTruthy();
+  expect(messages.some((m) => m.type === 'stage' && m.stage === 'validating')).toBeTruthy();
 
-  assert.equal(
-    messages.some((m) => m.type === 'anomaly'),
-    false
-  );
+  expect(messages.some((m) => m.type === 'anomaly')).toBe(false);
 
-  assert.ok(messages.some((m) => m.type === 'stage' && m.stage === 'persisting'));
-  assert.ok(messages.some((m) => m.type === 'stage' && m.stage === 'completed'));
+  expect(messages.some((m) => m.type === 'stage' && m.stage === 'persisting')).toBeTruthy();
+  expect(messages.some((m) => m.type === 'stage' && m.stage === 'completed')).toBeTruthy();
 
   const successMsg = messages.find((m) => m.type === 'success');
   assert.ok(successMsg && successMsg.type === 'success');
-  assert.equal(successMsg.summary.processedGames, 1);
-  assert.equal(successMsg.summary.detectedPlayersCount, 10);
-  assert.equal(successMsg.summary.anomalies.length, 0);
+  expect(successMsg.summary.processedGames).toBe(1);
+  expect(successMsg.summary.detectedPlayersCount).toBe(10);
+  expect(successMsg.summary.anomalies.length).toBe(0);
 
   // Verify atomic persistence in database
   const matchGamesRows = await db.select().from(schema.matchGames);
-  assert.equal(matchGamesRows.length, 2); // 1 demo + 1 inserted
+  expect(matchGamesRows.length).toBe(2); // 1 demo + 1 inserted
 
   const playerGameInfoRows = await db.select().from(schema.playerGameInfo);
-  assert.equal(playerGameInfoRows.length, 20); // 10 demo + 10 inserted
+  expect(playerGameInfoRows.length).toBe(20); // 10 demo + 10 inserted
 });
 
 test('roflUploadGateway emits queue event when zip waits in decompression queue', async (t) => {
@@ -526,7 +524,7 @@ test('roflUploadGateway emits queue event when zip waits in decompression queue'
   const server = http.createServer(app);
   const wss = attachRoflUploadGateway(server, stubRoflUploadRepo, unauthenticatedTestOptions);
 
-  t.after(async () => {
+  t.onTestFinished(async () => {
     wss.close();
     await new Promise<void>((resolve) => server.close(() => resolve()));
     decompressionQueue.reset();
@@ -541,7 +539,7 @@ test('roflUploadGateway emits queue event when zip waits in decompression queue'
   const releaseLock = await decompressionQueue.acquire();
 
   const ws = new WebSocket(`ws://127.0.0.1:${port}/ws/rofl-upload`, { origin: FRONTEND_ORIGIN });
-  t.after(() => {
+  t.onTestFinished(() => {
     try {
       ws.terminate();
     } catch {
@@ -567,10 +565,10 @@ test('roflUploadGateway emits queue event when zip waits in decompression queue'
 
   // Wait for queue event
   const queueMsg = await queueEventPromise;
-  assert.equal(queueMsg.type, 'queue');
-  assert.equal(queueMsg.stage, 'queue');
-  assert.equal(queueMsg.position, 2);
-  assert.equal(queueMsg.total, 2);
+  assert.ok(queueMsg.type === 'queue');
+  expect(queueMsg.stage).toBe('queue');
+  expect(queueMsg.position).toBe(2);
+  expect(queueMsg.total).toBe(2);
 
   // Now release lock so queued task can proceed
   releaseLock();
@@ -584,7 +582,7 @@ test('roflUploadGateway rejects handshakes with a foreign or missing Origin befo
     authService: auth.service,
     logIncident: () => {}
   });
-  t.after(async () => {
+  t.onTestFinished(async () => {
     wss.close();
     await new Promise<void>((resolve) => server.close(() => resolve()));
   });
@@ -593,12 +591,12 @@ test('roflUploadGateway rejects handshakes with a foreign or missing Origin befo
   const headers = { cookie: 'rcl_session=valid-session-token' };
 
   const foreign = new WebSocket(url, { origin: 'https://attacker.example', headers });
-  assert.equal(await handshakeStatus(foreign), 403);
+  expect(await handshakeStatus(foreign)).toBe(403);
 
   const missing = new WebSocket(url, { headers });
-  assert.equal(await handshakeStatus(missing), 403);
+  expect(await handshakeStatus(missing)).toBe(403);
 
-  assert.equal(auth.calls(), 0);
+  expect(auth.calls()).toBe(0);
 });
 
 test('roflUploadGateway accepts the frontend Origin with an admin session', async (t) => {
@@ -609,7 +607,7 @@ test('roflUploadGateway accepts the frontend Origin with an admin session', asyn
     authService: auth.service,
     logIncident: () => {}
   });
-  t.after(async () => {
+  t.onTestFinished(async () => {
     wss.close();
     await new Promise<void>((resolve) => server.close(() => resolve()));
   });
@@ -619,15 +617,15 @@ test('roflUploadGateway accepts the frontend Origin with an admin session', asyn
     origin: FRONTEND_ORIGIN,
     headers: { cookie: 'rcl_session=valid-session-token' }
   });
-  t.after(() => ws.terminate());
+  t.onTestFinished(() => ws.terminate());
   const firstMessage = new Promise<WsServerEvent>((resolve) => {
     ws.once('message', (data) => resolve(JSON.parse(data.toString()) as WsServerEvent));
   });
-  assert.equal(await handshakeStatus(ws), 101);
+  expect(await handshakeStatus(ws)).toBe(101);
   ws.send(JSON.stringify({ type: 'start', filename: 'sample.rofl' }));
   const started = await firstMessage;
-  assert.equal(started.type, 'started');
-  assert.equal(auth.calls(), 1);
+  expect(started.type).toBe('started');
+  expect(auth.calls()).toBe(1);
 });
 
 test('roflUploadGateway rejects every connection when no AuthService is configured', async (t) => {
@@ -638,15 +636,15 @@ test('roflUploadGateway rejects every connection when no AuthService is configur
   });
   let connections = 0;
   wss.on('connection', () => connections++);
-  t.after(async () => {
+  t.onTestFinished(async () => {
     wss.close();
     await new Promise<void>((resolve) => server.close(() => resolve()));
   });
   const port = await listen(server);
 
   const ws = new WebSocket(`ws://127.0.0.1:${port}/ws/rofl-upload`, { origin: FRONTEND_ORIGIN });
-  assert.equal(await handshakeStatus(ws), 503);
-  assert.equal(connections, 0);
+  expect(await handshakeStatus(ws)).toBe(503);
+  expect(connections).toBe(0);
 });
 
 test('roflUploadGateway hides unexpected persistence errors behind an incidentId', async (t) => {
@@ -677,14 +675,14 @@ test('roflUploadGateway hides unexpected persistence errors behind an incidentId
       );
     }
   });
-  t.after(async () => {
+  t.onTestFinished(async () => {
     wss.close();
     await new Promise<void>((resolve) => server.close(() => resolve()));
   });
   const port = await listen(server);
 
   const ws = new WebSocket(`ws://127.0.0.1:${port}/ws/rofl-upload`, { origin: FRONTEND_ORIGIN });
-  t.after(() => ws.terminate());
+  t.onTestFinished(() => ws.terminate());
   const errorEvent = new Promise<WsServerEvent>((resolve, reject) => {
     const timer = setTimeout(() => reject(new Error('Timed out waiting for ws events')), 10000);
     ws.on('message', (data) => {
@@ -702,10 +700,10 @@ test('roflUploadGateway hides unexpected persistence errors behind an incidentId
 
   const event = await errorEvent;
   assert.ok(event.type === 'error');
-  assert.doesNotMatch(event.message, /duplicate key|match_games_pkey/);
-  assert.match(event.incidentId ?? '', /^[0-9a-f-]{36}$/);
-  assert.ok(event.message.includes(event.incidentId ?? '<missing>'));
-  assert.equal(logged.length, 1);
-  assert.ok(logged[0]?.startsWith(event.incidentId ?? '<missing>'));
-  assert.ok(logged[0]?.includes(internalMessage));
+  expect(event.message).not.toMatch(/duplicate key|match_games_pkey/);
+  expect(event.incidentId ?? '').toMatch(/^[0-9a-f-]{36}$/);
+  expect(event.message.includes(event.incidentId ?? '<missing>')).toBeTruthy();
+  expect(logged.length).toBe(1);
+  expect(logged[0]?.startsWith(event.incidentId ?? '<missing>')).toBeTruthy();
+  expect(logged[0]?.includes(internalMessage)).toBeTruthy();
 });

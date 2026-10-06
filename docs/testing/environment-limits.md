@@ -17,12 +17,12 @@ Este documento cataloga las restricciones físicas, dependencias de compilación
 Las pruebas de integración en `tests/integration/` no se conectan a un servidor PostgreSQL externo ni utilizan contenedores Docker; en su lugar, utilizan **PGlite** (`@electric-sql/pglite` v0.3.14), que ejecuta el núcleo de PostgreSQL compilado en WebAssembly/C directamente en el proceso de Node.js.
 
 ### 2.1 Techo de Trabajadores Concurrentes (`maxWorkers: 4`)
-- **Configuración:** `vitest.config.ts:19`.
+- **Configuración:** `vitest.config.ts:18`.
 - **Límite:** Máximo de **4 procesos de trabajo concurrentes**.
 - **Justificación de Ingeniería:** Durante el inicio de la suite completa, cada trabajador de Vitest crea una instancia independiente de PGlite y compila/aplica la totalidad de las 21 tablas relacionales y disparadores PL/pgSQL (`packages/database/drizzle/0000_initial_schema.sql`). La inicialización masiva simultánea genera una intensa contención de CPU en la compilación JIT de WebAssembly. Limitar la concurrencia a 4 núcleos mantiene la latencia de inicialización acotada y previene la saturación del planificador de hilos del sistema operativo.
 
 ### 2.2 Tiempo Límite de Ejecución (`testTimeout: 30_000`)
-- **Configuración:** `vitest.config.ts:20`.
+- **Configuración:** `vitest.config.ts:19`.
 - **Límite:** **30.000 milisegundos (30 segundos)** por prueba.
 - **Justificación de Ingeniería:** Aunque las pruebas individuales se ejecutan en decenas de milisegundos, el tiempo acumulado de arranque de la instancia en memoria, la lectura del sistema de archivos, la ejecución de la migración relacional consolidada y la siembra transaccional de demostración (`demo.sql`) puede extenderse en máquinas con alta carga. El umbral de 30 segundos previene falsos positivos por *timeout* sin enmascarar bloqueos indefinidos o deadlocks.
 
@@ -30,11 +30,11 @@ Las pruebas de integración en `tests/integration/` no se conectan a un servidor
 - **Patrón Obligatorio:** En cada bloque de prueba de integración, la instancia debe cerrarse explícitamente al concluir el contexto:
   ```typescript
   const client = new PGlite();
-  t.after(() => client.close());
+  t.onTestFinished(() => client.close());
   const db = drizzle(client, { schema });
   await migrate(db, { migrationsFolder });
   ```
-- **Riesgo Mitigado:** Si el método `client.close()` no se registra en el hook `after`, la memoria asignada al runtime de PostgreSQL/WASM permanece anclada al recolector de basura de V8, provocando un desbordamiento de memoria heap de Node.js (*JavaScript heap out of memory*) al procesar las 25 suites de integración consecutivas.
+- **Riesgo Mitigado:** Si el método `client.close()` no se registra en el hook `onTestFinished`, la memoria asignada al runtime de PostgreSQL/WASM permanece anclada al recolector de basura de V8, provocando un desbordamiento de memoria heap de Node.js (*JavaScript heap out of memory*) al procesar las 25 suites de integración consecutivas.
 
 ### 2.4 Serialización de Transacciones
 - **Restricción:** PGlite tiene una única conexión y ejecuta las transacciones de una en una; las consultas lanzadas fuera de una transacción esperan a que termine la que está abierta.
