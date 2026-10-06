@@ -57,13 +57,6 @@ export function calculateStandings(teams: Team[], matches: Match[]) {
 type TeamDirectoryEntry = Awaited<ReturnType<CompetitionRepository['teamDirectory']>>[number];
 type MatchDirectoryEntry = Awaited<ReturnType<CompetitionRepository['matchDirectory']>>[number];
 
-function teamProfileSlugs(teams: TeamDirectoryEntry[]) {
-  return profileSlugs(
-    teams.map((team) => ({ ...team, context: `${team.seasonName} ${team.divisionName}` })),
-    'equipo'
-  );
-}
-
 function matchProfileSlugs(matches: MatchDirectoryEntry[], teams: Map<string, TeamDirectoryEntry>) {
   return profileSlugs(
     matches.map((match) => {
