@@ -44,7 +44,13 @@ La API de RCL-Next se compone de trece módulos funcionales, cada uno documentad
 
 ---
 
-## 4. Enlaces Cruzados con Otras Áreas
+## 4. Configuración
+
+Las variables de entorno de la API, sus valores por defecto y sus reglas de validación al arrancar están en [config/README.md](config/README.md). La plantilla única es `.env.example`, en la raíz del repositorio.
+
+---
+
+## 5. Enlaces Cruzados con Otras Áreas
 
 - **Base de Datos y Esquema Relacional:** Para consultar las 21 tablas relacionales, 6 tipos enumerados y restricciones de PostgreSQL, ver [docs/database/README.md](../database/README.md).
 - **Frontend y Clientes Web:** Para la integración de estos endpoints con la interfaz React 19, ver [docs/web/README.md](../web/README.md).

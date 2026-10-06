@@ -5,8 +5,9 @@ import { AppError, notFound } from '../../shared/app-error.js';
 
 export class TeamLogosStore {
   constructor(
-    private readonly directory = process.env.TEAM_LOGO_DIR ??
-      fileURLToPath(new URL('../../../../web/public/images/teams_logo/', import.meta.url))
+    private readonly directory = fileURLToPath(
+      new URL('../../../../web/public/images/teams_logo/', import.meta.url)
+    )
   ) {}
 
   path(name: string) {

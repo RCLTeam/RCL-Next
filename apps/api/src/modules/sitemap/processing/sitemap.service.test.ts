@@ -40,16 +40,11 @@ const playerItem = (
 });
 
 describe('SitemapService', () => {
-  let initialEnv: NodeJS.ProcessEnv;
-
   beforeEach(() => {
     vi.useRealTimers();
-    initialEnv = { ...process.env };
-    process.env.FRONTEND_URL = 'https://rebelcrownlegacy.es';
   });
 
   afterEach(() => {
-    process.env = initialEnv;
     vi.useRealTimers();
   });
 
@@ -255,26 +250,29 @@ describe('SitemapService', () => {
       expect(xml).not.toContain('https://rebelcrownlegacy.es');
     });
 
-    it('falls back to FRONTEND_URL environment variable when baseUrl option is omitted', async () => {
-      process.env.FRONTEND_URL = 'https://preview.rebelcrownlegacy.es/';
-      const repo = createMockRepo();
-      const service = new SitemapService(repo);
+    it('falls back to default https://rebelcrownlegacy.es when baseUrl is not configured', async () => {
+      for (const service of [
+        new SitemapService(createMockRepo()),
+        new SitemapService(createMockRepo(), { baseUrl: undefined }),
+        new SitemapService(createMockRepo(), { baseUrl: '  ' })
+      ]) {
+        const xml = await service.getSitemapXml();
 
-      const xml = await service.getSitemapXml();
-
-      expect(xml).toContain('<loc>https://preview.rebelcrownlegacy.es/</loc>');
-      expect(xml).toContain('<loc>https://preview.rebelcrownlegacy.es/clasificacion</loc>');
+        expect(xml).toContain('<loc>https://rebelcrownlegacy.es/</loc>');
+        expect(xml).toContain('<loc>https://rebelcrownlegacy.es/predicciones</loc>');
+      }
     });
 
-    it('falls back to default https://rebelcrownlegacy.es when neither option nor env is set', async () => {
-      Reflect.deleteProperty(process.env, 'FRONTEND_URL');
-      const repo = createMockRepo();
-      const service = new SitemapService(repo);
-
-      const xml = await service.getSitemapXml();
-
-      expect(xml).toContain('<loc>https://rebelcrownlegacy.es/</loc>');
-      expect(xml).toContain('<loc>https://rebelcrownlegacy.es/predicciones</loc>');
+    it('ignores FRONTEND_URL in process.env: the value arrives through baseUrl', async () => {
+      const previous = process.env.FRONTEND_URL;
+      process.env.FRONTEND_URL = 'https://preview.rebelcrownlegacy.es';
+      try {
+        const xml = await new SitemapService(createMockRepo()).getSitemapXml();
+        expect(xml).not.toContain('preview.rebelcrownlegacy.es');
+      } finally {
+        if (previous === undefined) Reflect.deleteProperty(process.env, 'FRONTEND_URL');
+        else process.env.FRONTEND_URL = previous;
+      }
     });
   });
 

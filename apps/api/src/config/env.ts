@@ -35,6 +35,31 @@ const trustProxySchema = z
     return z.NEVER;
   });
 
+const discordSignInKeys = [
+  'DISCORD_CLIENT_ID',
+  'DISCORD_CLIENT_SECRET',
+  'DISCORD_REDIRECT_URI'
+] as const;
+
+/** Empty or unset means "not configured", so the consumer keeps its own default. */
+const optionalString = z
+  .string()
+  .optional()
+  .transform((value) => (value?.trim() ? value : undefined));
+
+function isHttpUrl(value: string): boolean {
+  try {
+    const { protocol } = new URL(value);
+    return protocol === 'http:' || protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Validates the API configuration. Every setting the API reads goes through this schema;
+ * modules receive the parsed values instead of reading `process.env`.
+ */
 export function parseEnvironment(environment: NodeJS.ProcessEnv) {
   const result = z
     .object({
@@ -52,22 +77,20 @@ export function parseEnvironment(environment: NodeJS.ProcessEnv) {
       DISCORD_REDIRECT_URI: z.string().default(''),
       DISCORD_BOT_WS_URL: z.string().default(''),
       DISCORD_BOT_WS_SUPERTOKEN: z.string().default(''),
-      TRUST_PROXY: trustProxySchema
+      TRUST_PROXY: trustProxySchema,
+      // Public site URL used in the sitemap; unset falls back to the production domain.
+      FRONTEND_URL: optionalString.refine((value) => value === undefined || isHttpUrl(value), {
+        message: 'Must be an http:// or https:// URL'
+      }),
+      // Built web app served by the API; unset serves only the API.
+      WEB_DIST_DIR: optionalString,
+      // Team logo directory; unset uses apps/web/public/images/teams_logo.
+      TEAM_LOGO_DIR: z.string().optional(),
+      // Editorial uploads, relative to the API working directory unless absolute.
+      EDITORIAL_IMAGE_DIR: z.string().default('data/editorial-images')
     })
     .superRefine((env, ctx) => {
-      const keys = ['DISCORD_CLIENT_ID', 'DISCORD_CLIENT_SECRET', 'DISCORD_REDIRECT_URI'] as const;
-      if (!keys.some((key) => env[key])) return;
-      for (const key of keys) {
-        if (!env[key].trim())
-          ctx.addIssue({ code: 'custom', path: [key], message: 'Required for Discord sign-in' });
-      }
-      if (!/^\d{17,20}$/.test(env.DISCORD_CLIENT_ID)) {
-        ctx.addIssue({
-          code: 'custom',
-          path: ['DISCORD_CLIENT_ID'],
-          message: 'Invalid Discord client ID'
-        });
-      }
+      // The bridge and the frontend origin do not depend on Discord sign-in: always checked.
       if (env.DISCORD_BOT_WS_URL.trim()) {
         try {
           const wsUrl = new URL(env.DISCORD_BOT_WS_URL);
@@ -86,7 +109,22 @@ export function parseEnvironment(environment: NodeJS.ProcessEnv) {
           });
         }
       }
-      for (const key of ['CORS_ORIGIN', 'DISCORD_REDIRECT_URI'] as const) {
+      const urlKeys: ('CORS_ORIGIN' | 'DISCORD_REDIRECT_URI')[] = ['CORS_ORIGIN'];
+      if (discordSignInKeys.some((key) => env[key])) {
+        for (const key of discordSignInKeys) {
+          if (!env[key].trim())
+            ctx.addIssue({ code: 'custom', path: [key], message: 'Required for Discord sign-in' });
+        }
+        if (!/^\d{17,20}$/.test(env.DISCORD_CLIENT_ID)) {
+          ctx.addIssue({
+            code: 'custom',
+            path: ['DISCORD_CLIENT_ID'],
+            message: 'Invalid Discord client ID'
+          });
+        }
+        urlKeys.push('DISCORD_REDIRECT_URI');
+      }
+      for (const key of urlKeys) {
         try {
           const url = new URL(env[key]);
           const local = ['localhost', '127.0.0.1', '[::1]'].includes(url.hostname);

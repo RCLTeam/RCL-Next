@@ -120,6 +120,26 @@ describe('Sitemap Router Integration (GET /api/sitemap.xml)', () => {
     expect(res.body.error.code).toBe('NOT_FOUND');
   });
 
+  it('builds sitemap URLs from the configured frontend URL, or the production domain when unset', async () => {
+    const appFor = (frontendUrl?: string) =>
+      createApp({
+        repository: {} as CompetitionRepository,
+        checkDatabase: async () => {},
+        corsOrigin: 'http://localhost:5173',
+        sitemapRepository: createMockRepository(),
+        frontendUrl
+      });
+
+    const configured = await request(appFor('https://preview.example.com/')).get(
+      '/api/sitemap.xml'
+    );
+    expect(configured.text).toContain('<loc>https://preview.example.com/clasificacion</loc>');
+    expect(configured.text).not.toContain('rebelcrownlegacy.es');
+
+    const fallback = await request(appFor()).get('/api/sitemap.xml');
+    expect(fallback.text).toContain('<loc>https://rebelcrownlegacy.es/clasificacion</loc>');
+  });
+
   const appWith = (options: { sitemapService?: SitemapService; webDirectory?: string } = {}) =>
     createApp({
       repository: {} as CompetitionRepository,

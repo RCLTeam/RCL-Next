@@ -10,6 +10,7 @@ import { PostgresCrudOperationsRepository } from './modules/crud-operations/post
 import { NativePostgresBackupTools } from './modules/database-transfer/postgres-backup-tools.js';
 import { PostgresDatabaseTransferRepository } from './modules/database-transfer/postgres-database-transfer.repository.js';
 import { DiscordBridgeClient } from './modules/discord-bridge/discord-bridge.client.js';
+import { EditorialImageStore } from './modules/home-content/editorial-image.store.js';
 import { HomeContentService } from './modules/home-content/home-content.service.js';
 import { PostgresHomeContentRepository } from './modules/home-content/postgres-home-content.repository.js';
 import { PostgresMemberRolesRepository } from './modules/member-roles/postgres-member-roles.repository.js';
@@ -73,8 +74,10 @@ const suggestionsService = new SuggestionsService({
 });
 
 const app = createApp({
-  webDirectory: process.env.WEB_DIST_DIR,
-  teamLogoDirectory: process.env.TEAM_LOGO_DIR,
+  webDirectory: env.WEB_DIST_DIR,
+  teamLogoDirectory: env.TEAM_LOGO_DIR,
+  editorialImageDirectory: env.EDITORIAL_IMAGE_DIR,
+  frontendUrl: env.FRONTEND_URL,
   predictionsRepository: new PredictionsRepository(connection.db),
   homeContentRepository: new PostgresHomeContentRepository(connection.db),
   databaseTransferRepository: new PostgresDatabaseTransferRepository(
@@ -110,7 +113,10 @@ const roflUploadGateway = attachRoflUploadGateway(server, roflUploadRepo, {
   frontendOrigin: env.CORS_ORIGIN,
   secureCookies
 });
-const homeContent = new HomeContentService(new PostgresHomeContentRepository(connection.db));
+const homeContent = new HomeContentService(
+  new PostgresHomeContentRepository(connection.db),
+  new EditorialImageStore(env.EDITORIAL_IMAGE_DIR)
+);
 let imageCleanup: Promise<void> | undefined;
 function cleanupImages() {
   if (imageCleanup) return;

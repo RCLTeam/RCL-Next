@@ -44,20 +44,21 @@ La persistencia del módulo `apps/api/src/modules/team-logos/` opera mediante un
 
 ## 2. Configuración y Resolución Jerárquica de Directorios
 
-La clase `TeamLogosStore` (`apps/api/src/modules/team-logos/team-logos.store.ts:6-90`) gestiona el ciclo de vida de los archivos en disco. Su constructor resuelve la ruta base mediante la siguiente precedencia (`team-logos.store.ts:7-10`):
+La clase `TeamLogosStore` (`apps/api/src/modules/team-logos/team-logos.store.ts:6-90`) gestiona el ciclo de vida de los archivos en disco. Su constructor resuelve la ruta base mediante la siguiente precedencia (`team-logos.store.ts:7-11`):
 
 ```typescript
-// apps/api/src/modules/team-logos/team-logos.store.ts:7-10
+// apps/api/src/modules/team-logos/team-logos.store.ts:7-11
 constructor(
-  private readonly directory = process.env.TEAM_LOGO_DIR ??
-    fileURLToPath(new URL('../../../../web/public/images/teams_logo/', import.meta.url))
+  private readonly directory = fileURLToPath(
+    new URL('../../../../web/public/images/teams_logo/', import.meta.url)
+  )
 ) {}
 ```
 
-1. **Inyección en Servidor (`server.ts:72`):** `createApp` recibe `teamLogoDirectory: process.env.TEAM_LOGO_DIR`. Si está definida la variable de entorno, se utiliza dicha ruta absoluta o relativa en el sistema.
-2. **Definición en Entorno (`.env.example:26-27`):**
+1. **Inyección en Servidor (`server.ts:75`):** `createApp` recibe `teamLogoDirectory: env.TEAM_LOGO_DIR`, ya validada por `parseEnvironment`. Si está definida la variable de entorno, se utiliza dicha ruta absoluta o relativa en el sistema; el almacén no lee `process.env`.
+2. **Definición en Entorno (`.env.example:23-24`):**
    ```bash
-   # TEAM_LOGO_DIR=/path/to/custom/logos
+   # TEAM_LOGO_DIR=/persistent/team-logos
    ```
 3. **Ruta por Defecto en Desarrollo:** Si no se define `TEAM_LOGO_DIR`, el almacén calcula la ruta física hacia `apps/web/public/images/teams_logo/` usando `import.meta.url`. Esto permite que durante el desarrollo en local los archivos subidos estén inmediatamente accesibles tanto por la API como por el servidor de desarrollo de Vite.
 

@@ -10,13 +10,15 @@ El enrutador del mapa del sitio XML se construye con la función factoría `site
 
 ### 1.1 Registro en el Pipeline Express
 
-`createApp` construye el servicio justo después de `pageMetadataRouter`, para que la invalidación se registre antes que los enrutadores de administración (`apps/api/src/app.ts:72-83`):
+`createApp` construye el servicio justo después de `pageMetadataRouter`, para que la invalidación se registre antes que los enrutadores de administración (`apps/api/src/app.ts:73-87`). Con `sitemapRepository`, el servicio recibe como `baseUrl` la opción `frontendUrl`, que `server.ts` rellena con `FRONTEND_URL`:
 
 ```typescript
-// apps/api/src/app.ts:72-83
+// apps/api/src/app.ts:73-87
 const sitemapService =
   options.sitemapService ??
-  (options.sitemapRepository ? new SitemapService(options.sitemapRepository) : undefined);
+  (options.sitemapRepository
+    ? new SitemapService(options.sitemapRepository, { baseUrl: options.frontendUrl })
+    : undefined);
 // Admin modules that change teams, players or articles refresh the sitemap on success.
 if (sitemapService) {
   for (const path of [
@@ -28,10 +30,10 @@ if (sitemapService) {
 }
 ```
 
-El enrutador se monta sin prefijo antes de `webPageRouter`, de modo que `/sitemap.xml` no cae en la página HTML de la web cuando `WEB_DIST_DIR` está configurado (`apps/api/src/app.ts:187`):
+El enrutador se monta sin prefijo antes de `webPageRouter`, de modo que `/sitemap.xml` no cae en la página HTML de la web cuando `WEB_DIST_DIR` está configurado (`apps/api/src/app.ts:186`):
 
 ```typescript
-// apps/api/src/app.ts:187
+// apps/api/src/app.ts:186
 if (sitemapService) app.use(sitemapRouter(sitemapService));
 ```
 

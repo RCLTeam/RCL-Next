@@ -8,7 +8,8 @@ import { buildSitemapXml, formatSitemapDate } from './sitemap-builder.js';
 export const DEFAULT_SITEMAP_CACHE_TTL_MS = 60 * 60 * 1000; // 3,600,000 ms (1 hour)
 
 export interface SitemapServiceOptions {
-  baseUrl?: string;
+  /** Public site URL (`FRONTEND_URL`); empty or unset uses the production domain. */
+  baseUrl?: string | undefined;
   cacheTtlMs?: number;
 }
 
@@ -58,10 +59,7 @@ export class SitemapService {
    * Resolves the canonical base URL without trailing slashes.
    */
   private getBaseUrl(): string {
-    const envUrl = process.env.FRONTEND_URL;
-    const candidate =
-      this.options?.baseUrl ?? (envUrl && envUrl !== 'undefined' ? envUrl : undefined);
-    const raw = candidate?.trim() || 'https://rebelcrownlegacy.es';
+    const raw = this.options?.baseUrl?.trim() || 'https://rebelcrownlegacy.es';
     return raw.replace(/\/+$/, '');
   }
 
