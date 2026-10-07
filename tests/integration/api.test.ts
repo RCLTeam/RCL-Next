@@ -1,6 +1,5 @@
-import assert from 'node:assert/strict';
-import { test } from 'node:test';
 import request from 'supertest';
+import { expect, test } from 'vitest';
 import { vi } from 'vitest';
 import { createApp } from '../../apps/api/src/app.js';
 import type {
@@ -50,6 +49,7 @@ function repository(): CompetitionRepository {
     matchDirectory: async () => [],
     match: async () => undefined,
     matchGames: async () => [],
+    matchGamesByMatch: async () => new Map(),
     championPicks: async () => [],
     teamDirectory: async () => [],
     teamDetail: async () => undefined,
@@ -109,9 +109,9 @@ test('public avatar route serves images through the full app without Discord coo
       .expect(200)
       .expect('Content-Type', 'image/png')
       .expect('Cache-Control', 'public, max-age=3600');
-    assert.deepEqual(result.body, Buffer.from([137, 80, 78, 71]));
-    assert.equal(result.headers['set-cookie'], undefined);
-    assert.equal(fetchImage.mock.calls.length, 1);
+    expect(result.body).toStrictEqual(Buffer.from([137, 80, 78, 71]));
+    expect(result.headers['set-cookie']).toBe(undefined);
+    expect(fetchImage.mock.calls.length).toBe(1);
   } finally {
     vi.unstubAllGlobals();
   }
@@ -127,12 +127,12 @@ test('readiness reports database outages as 503', async () => {
   });
   await request(offline).get('/health/live').expect(200);
   const result = await request(offline).get('/health/ready').expect(503);
-  assert.equal(result.body.error.code, 'DATABASE_UNAVAILABLE');
-  assert.ok(!result.text.includes('secret'));
+  expect(result.body.error.code).toBe('DATABASE_UNAVAILABLE');
+  expect(!result.text.includes('secret')).toBeTruthy();
 });
 test('public season and division endpoints', async () => {
   const result = await request(app).get('/api/v1/seasons').expect(200);
-  assert.equal(result.body.data[0].id, seasonId);
+  expect(result.body.data[0].id).toBe(seasonId);
   await request(app).get(`/api/v1/seasons/${seasonId}/divisions`).expect(200);
   await request(app).get(`/api/v1/divisions/${divisionId}/teams`).expect(200);
 });
@@ -140,18 +140,18 @@ test('validation, missing resources and unsupported routes use stable errors', a
   await request(app).get('/api/v1/divisions/not-a-uuid/teams').expect(422);
   await request(app).get(`/api/v1/divisions/${homeId}/teams`).expect(404);
   const disabledAdmin = await request(app).get('/api/v1/crud-operations/matches').expect(503);
-  assert.equal(disabledAdmin.body.error.code, 'CRUD_OPERATIONS_NOT_CONFIGURED');
+  expect(disabledAdmin.body.error.code).toBe('CRUD_OPERATIONS_NOT_CONFIGURED');
   await request(app).get(`/api/v1/divisions/${divisionId}/calendar?roundId=99`).expect(404);
   const unexpectedRes = await request(app)
     .get(`/api/v1/divisions/${divisionId}/calendar?unexpected=1`)
     .expect(422);
-  assert.equal(unexpectedRes.body.error.code, 'VALIDATION_ERROR');
-  assert.ok(
+  expect(unexpectedRes.body.error.code).toBe('VALIDATION_ERROR');
+  expect(
     unexpectedRes.body.error.details.formErrors.includes(
       "Unrecognized key(s) in object: 'unexpected'"
     )
-  );
-  assert.deepEqual(unexpectedRes.body.error.details.fieldErrors, {});
+  ).toBeTruthy();
+  expect(unexpectedRes.body.error.details.fieldErrors).toStrictEqual({});
 });
 test('malformed JSON and unexpected failures do not leak internals', async () => {
   await request(app).post('/unknown').set('content-type', 'application/json').send('{').expect(400);
@@ -166,16 +166,16 @@ test('malformed JSON and unexpected failures do not leak internals', async () =>
     checkDatabase: async () => {}
   });
   const result = await request(failing).get('/api/v1/seasons').expect(500);
-  assert.ok(!result.text.includes('secret'));
+  expect(!result.text.includes('secret')).toBeTruthy();
 });
 test('regular standings exclude playoffs and unfinished matches', async () => {
   const rows = await new CompetitionService(repository()).standings(divisionId);
-  assert.equal(rows[0]?.team.id, homeId);
-  assert.equal(rows[0]?.wins, 1);
-  assert.equal(rows[0]?.played, 1);
-  assert.equal(rows[1]?.losses, 1);
+  expect(rows[0]?.team.id).toBe(homeId);
+  expect(rows[0]?.wins).toBe(1);
+  expect(rows[0]?.played).toBe(1);
+  expect(rows[1]?.losses).toBe(1);
   const playoffs = await new CompetitionService(repository()).standings(divisionId, 'playoffs');
-  assert.equal(playoffs[0]?.team.id, awayId);
+  expect(playoffs[0]?.team.id).toBe(awayId);
 });
 
 test('regular BO3 standings award the score difference for all four results', async () => {
@@ -200,12 +200,12 @@ test('regular BO3 standings award the score difference for all four results', as
     const rows = await new CompetitionService(source).standings(divisionId);
     const home = rows.find((row) => row.team.id === homeId);
     const away = rows.find((row) => row.team.id === awayId);
-    assert.equal(home?.mapDifference, difference);
-    assert.equal(away?.mapDifference, -difference);
-    assert.equal(home?.played, 1);
-    assert.equal(away?.played, 1);
-    assert.equal(home?.wins, Number(homeScore === 2));
-    assert.equal(home?.losses, Number(awayScore === 2));
+    expect(home?.mapDifference).toBe(difference);
+    expect(away?.mapDifference).toBe(-difference);
+    expect(home?.played).toBe(1);
+    expect(away?.played).toBe(1);
+    expect(home?.wins).toBe(Number(homeScore === 2));
+    expect(home?.losses).toBe(Number(awayScore === 2));
   }
 });
 test('standings prioritize series wins over accumulated map difference', async () => {
@@ -223,12 +223,12 @@ test('standings prioritize series wins over accumulated map difference', async (
     }))
   ];
   const rows = await new CompetitionService(source).standings(divisionId);
-  assert.equal(rows[0]?.team.id, awayId);
-  assert.equal(rows[0]?.mapDifference, -1);
-  assert.equal(rows[0]?.wins, 3);
-  assert.equal(rows[0]?.played, 5);
-  assert.equal(rows[1]?.mapDifference, 1);
-  assert.equal(rows[1]?.wins, 2);
+  expect(rows[0]?.team.id).toBe(awayId);
+  expect(rows[0]?.mapDifference).toBe(-1);
+  expect(rows[0]?.wins).toBe(3);
+  expect(rows[0]?.played).toBe(5);
+  expect(rows[1]?.mapDifference).toBe(1);
+  expect(rows[1]?.wins).toBe(2);
 });
 
 test('standings break equal series wins by map difference before team name', async () => {
@@ -238,26 +238,25 @@ test('standings break equal series wins by map difference before team name', asy
     { ...match, id: 'series-2', bestOf: 3, homeScore: 0, awayScore: 2, winnerTeamId: awayId }
   ];
   const rows = await new CompetitionService(source).standings(divisionId);
-  assert.deepEqual(
+  expect(
     rows.map(({ team, position, wins, mapDifference }) => ({
       id: team.id,
       position,
       wins,
       mapDifference
-    })),
-    [
-      { id: awayId, position: 1, wins: 1, mapDifference: 1 },
-      { id: homeId, position: 2, wins: 1, mapDifference: -1 }
-    ]
-  );
+    }))
+  ).toStrictEqual([
+    { id: awayId, position: 1, wins: 1, mapDifference: 1 },
+    { id: homeId, position: 2, wins: 1, mapDifference: -1 }
+  ]);
 });
 
 test('calendar filters by round and expands teams', async () => {
   const result = await request(app)
     .get(`/api/v1/divisions/${divisionId}/calendar?roundId=${roundId}`)
     .expect(200);
-  assert.equal(result.body.data.length, 2);
-  assert.equal(result.body.data[0].homeTeam.name, 'A');
+  expect(result.body.data.length).toBe(2);
+  expect(result.body.data[0].homeTeam.name).toBe('A');
 });
 
 test('roster statistics count distinct champions in completed team games', async () => {
@@ -286,31 +285,35 @@ test('roster statistics count distinct champions in completed team games', async
     ]
   });
   source.matches = async () => [match];
-  source.matchGames = async () =>
-    ['Ahri', 'Ahri', 'Orianna'].map((champion, index) => ({
-      id: `game-${index}`,
-      gameNumber: index + 1,
-      blueTeamId: homeId,
-      redTeamId: awayId,
-      winnerTeamId: homeId,
-      durationSeconds: 1800,
-      participants: [
-        {
-          id: `participant-${index}`,
-          playerId: homeId,
-          gameName: 'Jugador',
-          riotTag: 'EUW',
-          teamId: homeId,
-          side: 'blue',
-          champion,
-          position: 'mid',
-          build: null,
-          stats: null,
-          runes: null
-        }
-      ]
-    }));
+  const games: Awaited<ReturnType<CompetitionRepository['matchGames']>> = [
+    'Ahri',
+    'Ahri',
+    'Orianna'
+  ].map((champion, index) => ({
+    id: `game-${index}`,
+    gameNumber: index + 1,
+    blueTeamId: homeId,
+    redTeamId: awayId,
+    winnerTeamId: homeId,
+    durationSeconds: 1800,
+    participants: [
+      {
+        id: `participant-${index}`,
+        playerId: homeId,
+        gameName: 'Jugador',
+        riotTag: 'EUW',
+        teamId: homeId,
+        side: 'blue',
+        champion,
+        position: 'mid',
+        build: null,
+        stats: null,
+        runes: null
+      }
+    ]
+  }));
+  source.matchGamesByMatch = async (ids) => new Map(ids.map((id) => [id, games]));
   const detail = await new CompetitionService(source).teamDetail(homeId);
-  assert.equal(detail.members[0]?.rosterStats?.games, 3);
-  assert.equal(detail.members[0]?.rosterStats?.champions, 2);
+  expect(detail.members[0]?.rosterStats?.games).toBe(3);
+  expect(detail.members[0]?.rosterStats?.champions).toBe(2);
 });

@@ -31,7 +31,7 @@ export interface AuthUser {
 
 ### 2.1 Configuración de Transporte (`AuthOptions`)
 
-Definido en `apps/api/src/modules/auth/auth.router.ts:6-10`:
+Definido en `apps/api/src/modules/auth/auth.router.ts:7-11`:
 ```typescript
 export interface AuthOptions {
   service: AuthService;

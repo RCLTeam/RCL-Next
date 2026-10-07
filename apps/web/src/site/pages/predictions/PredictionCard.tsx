@@ -4,6 +4,7 @@ import { TeamBadge } from '../../../features/competition/components/TeamBadge.js
 import { isActiveTeam } from '../../../features/competition/team-visibility.js';
 import type { Match } from '../../../features/competition/types/competition.types.js';
 import { Select } from '../../../shared/components/Selector/Selector.js';
+import { LEAGUE_TIME_LABEL, formatLeagueDate } from '../../../shared/league-time.js';
 export function PredictionCard({
   match,
   summary,
@@ -34,6 +35,9 @@ export function PredictionCard({
         : ''
     );
   }, [pick?.selectedTeamId, pick?.homeScore, pick?.awayScore]);
+  const scheduledAt = match.scheduledAt
+    ? formatLeagueDate(match.scheduledAt, { weekday: 'short', hour: '2-digit', minute: '2-digit' })
+    : null;
   const eligible = isActiveTeam(match.homeTeam) && isActiveTeam(match.awayTeam);
   const wins = Math.floor(match.bestOf / 2) + 1;
   const home = team === match.homeTeam?.id;
@@ -69,6 +73,17 @@ export function PredictionCard({
         ) : (
           <p className="prediction-notice">Sin votos para esta serie.</p>
         )
+      ) : summary.closed ? (
+        <div className="prediction-community">
+          <div className="prediction-gauge" aria-hidden="true">
+            <span style={{ width: '50%' }} />
+          </div>
+          <div className="prediction-percent" aria-hidden="true">
+            <span>??</span>
+            <span>??</span>
+          </div>
+          <small>Los porcentajes se revelan al finalizar el partido.</small>
+        </div>
       ) : (
         <p className="prediction-notice">Los porcentajes se revelan al finalizar el partido.</p>
       )}
@@ -141,14 +156,13 @@ export function PredictionCard({
       )}
       <div className="prediction-meta">
         <span>
-          {match.scheduledAt
-            ? new Intl.DateTimeFormat('es-ES', {
-                timeZone: 'Europe/Madrid',
-                weekday: 'short',
-                hour: '2-digit',
-                minute: '2-digit'
-              }).format(new Date(match.scheduledAt))
-            : 'Fecha por confirmar'}{' '}
+          {scheduledAt ? (
+            <time dateTime={match.scheduledAt ?? undefined} title={LEAGUE_TIME_LABEL}>
+              {scheduledAt}
+            </time>
+          ) : (
+            'Fecha por confirmar'
+          )}{' '}
           · {match.round?.name ?? 'Jornada'} · BO{match.bestOf}
         </span>
         <span className={pick ? 'prediction-saved' : ''}>

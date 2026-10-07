@@ -1,11 +1,10 @@
-import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { PGlite } from '@electric-sql/pglite';
 import { eq } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/pglite';
 import { migrate } from 'drizzle-orm/pglite/migrator';
+import { assert, expect, test } from 'vitest';
 import * as schema from '../../packages/database/src/schema.js';
 
 const extraStats = [
@@ -59,13 +58,13 @@ function number(source: unknown, path: string): number {
 }
 function string(source: unknown, path: string): string {
   const value = field(source, path);
-  assert.equal(typeof value, 'string', path);
+  expect(typeof value, path).toBe('string');
   return String(value);
 }
 
 test('all ten ROFL JSON participants fit the normalized schema without losing metrics', async (t) => {
   const client = new PGlite();
-  t.after(() => client.close());
+  t.onTestFinished(() => client.close());
   const db = drizzle(client, { schema });
   await migrate(db, {
     migrationsFolder: fileURLToPath(new URL('../../packages/database/drizzle', import.meta.url))
@@ -77,13 +76,13 @@ test('all ten ROFL JSON participants fit the normalized schema without losing me
   });
   const document: unknown = JSON.parse(
     await readFile(
-      new URL('../../apps/parser/result/EUW1-7982902321_estadisticas.json', import.meta.url),
+      new URL('../../apps/parser/result/RCL-FIXTURE-0001_estadisticas.json', import.meta.url),
       'utf8'
     )
   );
   const participants = field(document, 'jugadores');
   assert.ok(Array.isArray(participants));
-  assert.equal(participants.length, 10);
+  expect(participants.length).toBe(10);
 
   for (let index = 0; index < participants.length; index++) {
     const participant: unknown = participants[index];
@@ -118,7 +117,7 @@ test('all ten ROFL JSON participants fit the normalized schema without losing me
     const slotMap = new Map(
       slots.map((slot: unknown) => [number(slot, 'slot'), number(slot, 'id')])
     );
-    assert.equal(slotMap.size, 7);
+    expect(slotMap.size).toBe(7);
     const build = {
       ...Object.fromEntries(
         Array.from({ length: 6 }, (_, slot) => [`item${slot}`, slotMap.get(slot)])
@@ -155,27 +154,26 @@ test('all ten ROFL JSON participants fit the normalized schema without losing me
       const [stored] = await db.select().from(table).where(eq(table.id, id));
       assert.ok(stored);
       const values = new Map(Object.entries(stored));
-      for (const [key, value] of Object.entries(expected))
-        assert.equal(values.get(key), value, key);
+      for (const [key, value] of Object.entries(expected)) expect(values.get(key), key).toBe(value);
     }
     const [player] = await db
       .select()
       .from(schema.players)
       .where(eq(schema.players.id, `40000000-0000-4000-8000-${suffix}`));
-    assert.equal(player?.puuid, string(participant, 'puuid'));
+    expect(player?.puuid).toBe(string(participant, 'puuid'));
     const [info] = await db
       .select()
       .from(schema.playerGameInfo)
       .where(eq(schema.playerGameInfo.id, id));
-    assert.equal(info?.position, string(participant, 'posicion'));
+    expect(info?.position).toBe(string(participant, 'posicion'));
   }
 
-  await t.test('all added statistics reject negatives', async () => {
-    for (const [key] of extraStats) {
-      await assert.rejects(db.update(schema.playerGameStats).set({ [key]: -1 }));
-    }
-  });
-  await t.test('absent metrics stay NULL while explicit zero is retained', async () => {
+  // all added statistics reject negatives
+  for (const [key] of extraStats) {
+    await expect(db.update(schema.playerGameStats).set({ [key]: -1 })).rejects.toThrow();
+  }
+  // absent metrics stay NULL while explicit zero is retained
+  {
     const id = 'a0000000-0000-4000-8000-000000000001';
     await db
       .update(schema.playerGameStats)
@@ -185,7 +183,7 @@ test('all ten ROFL JSON participants fit the normalized schema without losing me
       .select()
       .from(schema.playerGameStats)
       .where(eq(schema.playerGameStats.id, id));
-    assert.equal(row?.goldEarned, null);
-    assert.equal(row?.pentaKills, 0);
-  });
+    expect(row?.goldEarned).toBe(null);
+    expect(row?.pentaKills).toBe(0);
+  }
 });

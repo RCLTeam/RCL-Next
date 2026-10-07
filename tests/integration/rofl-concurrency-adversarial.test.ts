@@ -1,11 +1,10 @@
-import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { PGlite } from '@electric-sql/pglite';
 import { eq } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/pglite';
 import { migrate } from 'drizzle-orm/pglite/migrator';
+import { assert, expect, test } from 'vitest';
 import { PostgresRoflUploadRepository } from '../../apps/api/src/modules/rofl-upload/persistence/postgres-rofl-upload.repository.js';
 import type {
   ParsedGameData,
@@ -98,7 +97,7 @@ function createParticipant(
 
 test('Match series concurrency locking updates match scores and games without race conditions', async (t) => {
   const client = new PGlite();
-  t.after(() => client.close());
+  t.onTestFinished(() => client.close());
 
   // Track queries executed within each transaction to verify lock ordering
   const txQueryLog: string[][] = [];
@@ -198,26 +197,32 @@ test('Match series concurrency locking updates match scores and games without ra
 
   const [res1, res2] = await Promise.all([insertPromise1, insertPromise2]);
 
-  assert.equal(res1.insertedGames, 1);
-  assert.equal(res2.insertedGames, 1);
+  expect(res1.insertedGames).toBe(1);
+  expect(res2.insertedGames).toBe(1);
 
-  // Validate query ordering within transactions: row lock on matches MUST precede match_games query
-  assert.equal(txQueryLog.length, 2, 'Expected 2 transactions for the 2 batch insert operations');
+  // Validate query ordering within transactions: row lock on matches MUST precede the game number read
+  expect(txQueryLog.length, 'Expected 2 transactions for the 2 batch insert operations').toBe(2);
   for (const queries of txQueryLog) {
     const lockMatchIndex = queries.findIndex(
       (q) => /from "matches"/i.test(q) && /for update/i.test(q)
     );
-    const queryMatchGamesIndex = queries.findIndex((q) => /from "match_games"/i.test(q));
+    // The duplicate check by external_game_id may run earlier; the game numbers are read per match.
+    const queryMatchGamesIndex = queries.findIndex(
+      (q) => /from "match_games"/i.test(q) && /"matches_id"/i.test(q)
+    );
 
-    assert.ok(
+    expect(
       lockMatchIndex !== -1,
       'Transaction must execute SELECT ... FROM matches ... FOR UPDATE'
-    );
-    assert.ok(queryMatchGamesIndex !== -1, 'Transaction must execute SELECT ... FROM match_games');
-    assert.ok(
+    ).toBeTruthy();
+    expect(
+      queryMatchGamesIndex !== -1,
+      'Transaction must execute SELECT ... FROM match_games'
+    ).toBeTruthy();
+    expect(
       lockMatchIndex < queryMatchGamesIndex,
       `Pessimistic lock on matches (idx ${lockMatchIndex}) must precede match_games query (idx ${queryMatchGamesIndex})`
-    );
+    ).toBeTruthy();
   }
 
   // Query updated match from database
@@ -227,11 +232,11 @@ test('Match series concurrency locking updates match scores and games without ra
     .where(eq(schema.matches.id, match2Id));
 
   assert.ok(updatedMatch);
-  assert.equal(updatedMatch.status, 'completed');
+  expect(updatedMatch.status).toBe('completed');
   // In Match 2: team1 is Cuervos (0 wins), team2 is Lobos (2 wins)
-  assert.equal(updatedMatch.team1Score, 0);
-  assert.equal(updatedMatch.team2Score, 2);
-  assert.equal(updatedMatch.winnerTeamId, team2LobosId);
+  expect(updatedMatch.team1Score).toBe(0);
+  expect(updatedMatch.team2Score).toBe(2);
+  expect(updatedMatch.winnerTeamId).toBe(team2LobosId);
 
   // Verify match_games has exactly 2 games with distinct sequential numbers 1 and 2
   const insertedGamesInDb = await db
@@ -239,14 +244,14 @@ test('Match series concurrency locking updates match scores and games without ra
     .from(schema.matchGames)
     .where(eq(schema.matchGames.matchesId, match2Id));
 
-  assert.equal(insertedGamesInDb.length, 2);
+  expect(insertedGamesInDb.length).toBe(2);
   const gameNumbers = insertedGamesInDb.map((g) => g.gameNumber).sort((a, b) => a - b);
-  assert.deepEqual(gameNumbers, [1, 2]);
+  expect(gameNumbers).toStrictEqual([1, 2]);
 });
 
 test('Rejects uploads when match is already completed after acquiring lock', async (t) => {
   const client = new PGlite();
-  t.after(() => client.close());
+  t.onTestFinished(() => client.close());
   const db = drizzle(client, { schema });
   const migrationsFolder = fileURLToPath(
     new URL('../../packages/database/drizzle', import.meta.url)
@@ -307,14 +312,14 @@ test('Rejects uploads when match is already completed after acquiring lock', asy
     participants: [...validBlueParticipants, ...validRedParticipants]
   };
 
-  await assert.rejects(repo.executeBatchInsert([game], playerLookupMap, teamMap), (err: Error) =>
-    /completed\/closed/i.test(err.message)
+  await expect(repo.executeBatchInsert([game], playerLookupMap, teamMap)).rejects.toSatisfy(
+    (err: Error) => /completed\/closed/i.test(err.message)
   );
 });
 
 test('Directly demonstrates unique constraint violation when game numbers are resolved without row locking', async (t) => {
   const client = new PGlite();
-  t.after(() => client.close());
+  t.onTestFinished(() => client.close());
   const db = drizzle(client, { schema });
   const migrationsFolder = fileURLToPath(
     new URL('../../packages/database/drizzle', import.meta.url)
@@ -344,8 +349,8 @@ test('Directly demonstrates unique constraint violation when game numbers are re
   const nextNum2 =
     (existingGames2.length === 0 ? 0 : Math.max(...existingGames2.map((g) => g.gameNumber))) + 1;
 
-  assert.equal(nextNum1, 1);
-  assert.equal(nextNum2, 1);
+  expect(nextNum1).toBe(1);
+  expect(nextNum2).toBe(1);
 
   // First insert succeeds with gameNumber 1
   await db.insert(schema.matchGames).values({
@@ -359,7 +364,7 @@ test('Directly demonstrates unique constraint violation when game numbers are re
   });
 
   // Second insert with duplicate gameNumber fails with unique constraint violation
-  await assert.rejects(
+  await expect(
     db.insert(schema.matchGames).values({
       id: crypto.randomUUID(),
       matchesId: matchId,
@@ -368,15 +373,14 @@ test('Directly demonstrates unique constraint violation when game numbers are re
       redTeamId: '30000000-0000-4000-8000-000000000002',
       winnerTeamId: '30000000-0000-4000-8000-000000000001',
       durationSeconds: 1600
-    }),
-    (err: unknown) => {
-      const errorObj = err as { message?: string; cause?: { message?: string } };
-      return (
-        /unique constraint/i.test(errorObj.message ?? '') ||
-        /unique constraint/i.test(errorObj.cause?.message ?? '') ||
-        /duplicate key/i.test(errorObj.message ?? '') ||
-        /duplicate key/i.test(errorObj.cause?.message ?? '')
-      );
-    }
-  );
+    })
+  ).rejects.toSatisfy((err: unknown) => {
+    const errorObj = err as { message?: string; cause?: { message?: string } };
+    return (
+      /unique constraint/i.test(errorObj.message ?? '') ||
+      /unique constraint/i.test(errorObj.cause?.message ?? '') ||
+      /duplicate key/i.test(errorObj.message ?? '') ||
+      /duplicate key/i.test(errorObj.cause?.message ?? '')
+    );
+  });
 });

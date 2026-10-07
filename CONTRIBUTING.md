@@ -44,7 +44,7 @@ Separa los cambios de layout frontend de extracciones de contratos, cambios de c
 
 - Las pruebas de una función, componente o módulo se colocan junto al código, con el sufijo `.test.ts` o `.test.tsx`.
 - `tests/integration/` contiene recorridos HTTP/WebSocket y pruebas con PGlite que conectan varias capas o aplicaciones.
-- `tests/support/` contiene utilidades de infraestructura de pruebas, como el adaptador de `node:test` a Vitest.
+- Todas las pruebas TypeScript usan la API de Vitest (`test`/`it`, `expect`); la limpieza por prueba se registra con `onTestFinished`.
 - Las pruebas Python permanecen en `apps/parser/tests/`.
 
 Vitest descubre pruebas en `apps/`, `packages/` y `tests/`. TypeScript también comprueba las pruebas colocadas junto al código, pero la compilación de la API usa `tsconfig.build.json` para excluirlas de producción.

@@ -1,7 +1,9 @@
+import { LEAGUE_TIME_ZONE } from '@rcl/contracts';
+
 // Calendar weeks use league time, including DST.
 export function leagueWeek(date: Date) {
   const parts = new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'Europe/Madrid',
+    timeZone: LEAGUE_TIME_ZONE,
     year: 'numeric',
     month: '2-digit',
     day: '2-digit'

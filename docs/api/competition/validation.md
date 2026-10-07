@@ -84,13 +84,13 @@ Más allá de la validación sintáctica de Zod, la capa de servicio (`competiti
 
 | Condición de Falla | Ubicación en Código | Excepción Emitida | Código HTTP |
 |---|---|---|:---:|
-| Partido no encontrado en base de datos | `competition.service.ts:75, 87` | `notFound('Match')` | **404** |
-| Partido en estado distinto a `'completed'` o `'forfeit'` | `competition.service.ts:77-78` | `notFound('Match')` | **404** |
-| Jugador o slug de jugador no encontrado | `competition.service.ts:132, 134` | `notFound('Player')` | **404** |
-| Equipo o slug de equipo no encontrado | `competition.service.ts:150, 152` | `notFound('Team')` | **404** |
-| Temporada no encontrada | `competition.service.ts:188` | `notFound('Season')` | **404** |
-| División no encontrada en la base de datos | `competition.service.ts:124, 192` | `notFound('Division')` | **404** |
-| `roundId` numérico no pertenece a la división indicada | `competition.service.ts:210` | `notFound('Round')` | **404** |
+| Partido no encontrado en base de datos | `competition.service.ts:107, 119` | `notFound('Match')` | **404** |
+| Partido en estado distinto a `'completed'` o `'forfeit'` | `competition.service.ts:109-110` | `notFound('Match')` | **404** |
+| Jugador o slug de jugador no encontrado | `competition.service.ts:185, 187` | `notFound('Player')` | **404** |
+| Equipo o slug de equipo no encontrado | `competition.service.ts:207, 209` | `notFound('Team')` | **404** |
+| Temporada no encontrada | `competition.service.ts:261` | `notFound('Season')` | **404** |
+| División no encontrada en la base de datos | `competition.service.ts:175, 265` | `notFound('Division')` | **404** |
+| `roundId` numérico no pertenece a la división indicada | `competition.service.ts:283` | `notFound('Round')` | **404** |
 
 ---
 

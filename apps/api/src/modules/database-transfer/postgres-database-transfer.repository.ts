@@ -11,7 +11,7 @@ import {
 import { AppError } from '../../shared/app-error.js';
 import type { DatabaseTransferRepository } from './database-transfer.repository.js';
 import { MAX_DATABASE_BACKUP_BYTES } from './database-transfer.service.js';
-import type { PostgresBackupTools } from './postgres-backup-tools.js';
+import { EXCLUDED_DATA_TABLES, type PostgresBackupTools } from './postgres-backup-tools.js';
 import { parseCopyBackup } from './postgres-copy-backup.js';
 
 type Database = PgDatabase<PgQueryResultHKT, typeof schema>;
@@ -36,10 +36,20 @@ function parseBackup(source: string) {
     })
   );
   expected['drizzle.__drizzle_migrations'] = ['id', 'hash', 'created_at'];
-  const parsed = parseCopyBackup(source, expected);
+  const excluded: readonly string[] = EXCLUDED_DATA_TABLES;
+  const parsed = parseCopyBackup(
+    source,
+    expected,
+    excluded.map((name) => `public.${name}`)
+  );
   const content: BackupTables = {};
   for (const table of tables) {
     const config = getTableConfig(table);
+    // Older dumps may still carry these rows; they are revoked after restore, so skip them.
+    if (excluded.includes(config.name)) {
+      content[config.name] = [];
+      continue;
+    }
     content[config.name] = (parsed[`public.${config.name}`] ?? []).map((row) => {
       const converted: BackupRow = { ...row };
       for (const column of config.columns)
@@ -201,6 +211,13 @@ export class PostgresDatabaseTransferRepository implements DatabaseTransferRepos
     await actor(this.db, actorId, false);
     const backup = await this.tools.exportDump();
     await actor(this.db, actorId, false);
+    // The dump holds personal data of every member, so each delivered file is audited.
+    await this.db.insert(schema.auditLogs).values({
+      actorDiscordUserId: actorId,
+      action: 'database-transfer.export',
+      entityType: 'database',
+      after: { fileHash: digest(backup), bytes: backup.length }
+    });
     return backup;
   }
   private async prepare(

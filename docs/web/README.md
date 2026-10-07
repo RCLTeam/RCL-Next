@@ -6,9 +6,9 @@
 
 ## 1. Resumen Ejecutivo
 
-La aplicación cliente de RCL-Next (`apps/web`) constituye el portal web interactivo para aficionados, jugadores y administradores de la liga. Está construida sobre **React 19**, el empaquetador de ultra alta velocidad **Vite**, **TailwindCSS** para diseño reactivo y **TypeScript** estricto en todo su árbol de componentes.
+La aplicación cliente de RCL-Next (`apps/web`) constituye el portal web interactivo para aficionados, jugadores y administradores de la liga. Está construida sobre **React 19**, el empaquetador **Vite** y **TypeScript** estricto en todo su árbol de componentes. Los estilos son CSS propio, sin framework de utilidades: cada componente o página mantiene su hoja junto a su código (por ejemplo `features/competition/components/match-card.css` o `site/pages/home/home.css`) y los estilos compartidos están en `apps/web/src/shared/styles/`. La organización se describe en [CONTRIBUTING.md](../../CONTRIBUTING.md).
 
-La arquitectura del frontend sigue con rigor el **Golden Standard Modular** del monorepo (`reference/rofl-upload-architecture.md`), fundamentado en el patrón de **Diseño Orientado a Características (*Feature-Driven Architecture*)** y **Ganchos Desacoplados (*Headless Hooks*)**. Cada funcionalidad en `apps/web/src/features/` aísla por completo la capa de presentación visual de los efectos secundarios de red, sincronización y estado.
+La arquitectura del frontend sigue el **Golden Standard Modular** del monorepo, fundamentado en el patrón de **Diseño Orientado a Características (*Feature-Driven Architecture*)** y **Ganchos Desacoplados (*Headless Hooks*)**. Cada funcionalidad en `apps/web/src/features/` aísla por completo la capa de presentación visual de los efectos secundarios de red, sincronización y estado.
 
 ---
 
@@ -24,7 +24,7 @@ La arquitectura del frontend sigue con rigor el **Golden Standard Modular** del 
 
 ## 3. Catálogo de Características Web
 
-La aplicación web se estructura en diez características de dominio principales, cada una documentada en su propia subcarpeta atómica:
+`apps/web/src/features/` contiene once características. Diez tienen su propia subcarpeta de documentación, listadas a continuación; `discord-bridge` (cliente `bridge-api.ts` y hook `useBridgeHealth`, que consulta la salud del puente con Discord) no tiene subcarpeta propia y su contrapartida de API está en [docs/api/discord-bridge](../api/discord-bridge/README.md). Los metadatos de página de la web (`PageHead` y el plugin de Vite) se describen en [page-metadata.md](page-metadata.md).
 
 | Característica | Enlace | Resumen Funcional |
 |---|---|---|
@@ -44,7 +44,7 @@ La aplicación web se estructura en diez características de dominio principales
 Más allá de las carpetas específicas por funcionalidad en `apps/web/src/features/`, la plataforma provee un sistema de componentes compartidos (`apps/web/src/shared/`) y tokens de maquetación y movimiento (`apps/web/src/site/layout/`) consumidos transversalmente por toda la interfaz.
 
 ### 4.1 Selector Accesible Global (`Selector.tsx`)
-- **Cita:** `apps/web/src/shared/components/Selector/Selector.tsx:1-249`
+- **Cita:** `apps/web/src/shared/components/Selector/Selector.tsx:1-248`
 - **Responsabilidad:** Proporciona un control de selección avanzado que combina la semántica nativa del navegador con una experiencia de búsqueda instantánea y accesibilidad WAI-ARIA.
 - **Retención del Control Nativo:** Conserva el control `<select>` nativo para soporte de formularios, validación HTML5, referencias (`ref`) y eventos `change`, garantizando compatibilidad total con librerías y componentes estándar.
 - **Despliegue Flotante con HTML Popover API:** Despliega un menú emergente flotante mediante `<dialog popover="auto">` aprovechando la HTML Popover API nativa (`popup.showPopover()`, `popup.hidePopover()`), evitando dependencias pesadas de posicionamiento externo.
@@ -62,15 +62,22 @@ Más allá de las carpetas específicas por funcionalidad en `apps/web/src/featu
 
 ### 4.2 Tokens de Navegación y Movimiento (`apps/web/src/site/layout/`)
 - **Navegación Dinámica (`site-navigation.css`):**
-  - **Cita:** `apps/web/src/site/layout/site-navigation.css:1-109`
+  - **Cita:** `apps/web/src/site/layout/site-navigation.css:1-108`
   - Enlaces de navegación con animación de subrayado mediante pseudo-elemento `::after` (`scaleX(0)` a `scaleX(1)` con curva `cubic-bezier(0.22, 1, 0.36, 1)` y duración de 320ms).
   - Soporte de accesibilidad para `:focus-visible` y página activa con `aria-current="page"`.
   - Elevación sutil en estado hover en dispositivos con cursor preciso (`@media (hover: hover) and (pointer: fine)`) mediante `translateY(-2px)` y sombra difuminada semántica (`text-shadow: 0 0 16px`).
 - **Tokens de Movimiento y Transiciones (`site-motion.css`):**
-  - **Cita:** `apps/web/src/site/layout/site-motion.css:1-33`
+  - **Cita:** `apps/web/src/site/layout/site-motion.css:1-32`
   - Aislado estrictamente bajo `@media (prefers-reduced-motion: no-preference)` para respetar la accesibilidad y preferencias del usuario frente a animaciones continuas.
   - **Entrada de Vistas:** Anima la entrada de páginas en el contenedor principal (`#main-content`) con `@keyframes page-enter` (`translate: 0 8px` a `0 0`, `opacity: 0` a `1`, 360ms con `cubic-bezier(0.22, 1, 0.36, 1)`).
   - **Selección Activa:** Transición fluida en la barra de navegación con `@keyframes navigation-select` (`opacity: 0.4` y `scaleX(0.3)` a `opacity: 1` y `scaleX(1)`, 360ms).
+
+### 4.3 Fechas y horas de la liga (`league-time.ts`)
+- **Cita:** `apps/web/src/shared/league-time.ts:1-22`
+- **Responsabilidad:** `formatLeagueDate(value, options)` formatea un instante en `es-ES` con la zona horaria de la liga (`LEAGUE_TIME_ZONE = 'Europe/Madrid'`, exportada por `@rcl/contracts` y compartida con el plazo de votación de la API). Devuelve `null` si la fecha no es válida y reutiliza un `Intl.DateTimeFormat` por combinación de opciones.
+- **Consumidores:** `MatchCard` (calendario y partido destacado de la portada), `PredictionCard` y `ArticleView`. El mismo partido muestra la misma fecha y hora en todas las vistas, sea cual sea la zona horaria del navegador.
+- **Indicación de zona:** `LEAGUE_TIME_LABEL` (*"Hora peninsular española"*) se usa como `title` del `<time>` de las horas de partido.
+- **Excepción:** la semana de `PredictionsPage` se formatea en `UTC` porque representa un día sin hora (`YYYY-MM-DD`), no un instante.
 
 ---
 

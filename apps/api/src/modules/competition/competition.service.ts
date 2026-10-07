@@ -3,7 +3,12 @@ import { notFound } from '../../shared/app-error.js';
 import { calculateChampionStats } from './champion-stats.js';
 import type { CompetitionRepository, Match, Team } from './competition.repository.js';
 import { matchMvpPlayerId } from './player-statistics.js';
-import { profileSlugs, resolveProfileId } from './profile-slugs.js';
+import {
+  playerProfileSlugs,
+  profileSlugs,
+  resolveProfileId,
+  teamProfileSlugs
+} from './profile-slugs.js';
 
 export function calculateStandings(teams: Team[], matches: Match[]) {
   const totals = new Map(
@@ -49,6 +54,42 @@ export function calculateStandings(teams: Team[], matches: Match[]) {
     .map((row, index) => ({ position: index + 1, ...row }));
 }
 
+type TeamDirectoryEntry = Awaited<ReturnType<CompetitionRepository['teamDirectory']>>[number];
+type MatchDirectoryEntry = Awaited<ReturnType<CompetitionRepository['matchDirectory']>>[number];
+
+function matchProfileSlugs(matches: MatchDirectoryEntry[], teams: Map<string, TeamDirectoryEntry>) {
+  return profileSlugs(
+    matches.map((match) => {
+      const home = teams.get(match.homeTeamId);
+      return {
+        id: match.id,
+        name: `${home?.name ?? 'Equipo'} vs ${teams.get(match.awayTeamId)?.name ?? 'Equipo'}`,
+        context: `${home?.seasonName ?? ''} ${home?.divisionName ?? ''} jornada ${match.roundId ?? ''}`
+      };
+    }),
+    'partido'
+  );
+}
+
+// Lightweight projections for page metadata: they resolve the same references as the detail
+// endpoints with a fixed number of queries.
+export interface TeamSummaryRecord {
+  name: string;
+  seasonName: string;
+  divisionName: string;
+}
+export interface PlayerSummaryRecord {
+  gameName: string;
+  riotTag: string | null;
+}
+export interface MatchSummaryRecord {
+  homeTeam: { name: string };
+  awayTeam: { name: string };
+  homeScore: number;
+  awayScore: number;
+  divisionName: string;
+}
+
 export class CompetitionService {
   constructor(private readonly repository: CompetitionRepository) {}
   private async matchSlugs() {
@@ -56,18 +97,7 @@ export class CompetitionService {
       this.repository.matchDirectory(),
       this.repository.teamDirectory()
     ]);
-    const index = new Map(teams.map((team) => [team.id, team]));
-    return profileSlugs(
-      matches.map((match) => {
-        const home = index.get(match.homeTeamId);
-        return {
-          id: match.id,
-          name: `${home?.name ?? 'Equipo'} vs ${index.get(match.awayTeamId)?.name ?? 'Equipo'}`,
-          context: `${home?.seasonName ?? ''} ${home?.divisionName ?? ''} jornada ${match.roundId ?? ''}`
-        };
-      }),
-      'partido'
-    );
+    return matchProfileSlugs(matches, new Map(teams.map((team) => [team.id, team])));
   }
   async matchDetail(reference: string): Promise<MatchDetail> {
     const slugs = await this.matchSlugs();
@@ -102,22 +132,35 @@ export class CompetitionService {
       games
     };
   }
+  async matchSummary(reference: string): Promise<MatchSummaryRecord> {
+    const [matches, directory] = await Promise.all([
+      this.repository.matchDirectory(),
+      this.repository.teamDirectory()
+    ]);
+    const teams = new Map(directory.map((team) => [team.id, team]));
+    const id = resolveProfileId(reference, matchProfileSlugs(matches, teams));
+    if (!id) throw notFound('Match');
+    const match = await this.repository.match(id);
+    if (!match || (match.status !== 'completed' && match.status !== 'forfeit'))
+      throw notFound('Match');
+    const division = await this.repository.division(match.divisionId);
+    const homeTeam = teams.get(match.homeTeamId);
+    const awayTeam = teams.get(match.awayTeamId);
+    if (!homeTeam || !awayTeam || !division) throw notFound('Match');
+    return {
+      homeTeam: { name: homeTeam.name },
+      awayTeam: { name: awayTeam.name },
+      homeScore: match.homeScore,
+      awayScore: match.awayScore,
+      divisionName: division.name
+    };
+  }
   private async teamSlugs() {
-    const teams = await this.repository.teamDirectory();
-    return profileSlugs(
-      teams.map((team) => ({ ...team, context: `${team.seasonName} ${team.divisionName}` })),
-      'equipo'
-    );
+    return teamProfileSlugs(await this.repository.teamDirectory());
   }
   private async playerDirectory() {
     const players = await this.repository.players();
-    const slugs = profileSlugs(
-      players.map((player) => ({
-        id: player.id,
-        name: `${player.gameName} ${player.riotTag ?? ''}`
-      })),
-      'jugador'
-    );
+    const slugs = playerProfileSlugs(players);
     return { players, slugs };
   }
   async players(divisionId?: string) {
@@ -160,7 +203,8 @@ export class CompetitionService {
       (match) =>
         match.status === 'completed' && (match.homeTeamId === id || match.awayTeamId === id)
     );
-    const series = await Promise.all(matches.map((match) => this.repository.matchGames(match.id)));
+    const gamesByMatch = await this.repository.matchGamesByMatch(matches.map((match) => match.id));
+    const series = matches.map((match) => gamesByMatch.get(match.id) ?? []);
     const mvps = series.map((games) => matchMvpPlayerId(games));
     const appearances = series
       .flat()
@@ -186,6 +230,21 @@ export class CompetitionService {
         playerSlug: member.playerId ? playerSlugs.get(member.playerId) : undefined
       }))
     };
+  }
+  async teamSummary(reference: string): Promise<TeamSummaryRecord> {
+    const directory = await this.repository.teamDirectory();
+    // UUID references may arrive in any letter case, as PostgreSQL accepts them.
+    const id = resolveProfileId(reference, teamProfileSlugs(directory))?.toLowerCase();
+    const team = directory.find((entry) => entry.id.toLowerCase() === id);
+    if (!team) throw notFound('Team');
+    return { name: team.name, seasonName: team.seasonName, divisionName: team.divisionName };
+  }
+  async playerSummary(reference: string): Promise<PlayerSummaryRecord> {
+    const { players, slugs } = await this.playerDirectory();
+    const id = resolveProfileId(reference, slugs)?.toLowerCase();
+    const player = players.find((entry) => entry.id.toLowerCase() === id);
+    if (!player) throw notFound('Player');
+    return { gameName: player.gameName, riotTag: player.riotTag };
   }
   seasons() {
     return this.repository.seasons();

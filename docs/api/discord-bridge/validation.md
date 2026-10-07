@@ -57,5 +57,8 @@ Discriminados en `checkHealth()` y consumidos por el router:
 - **`authentication_failed` (`healthy: false`):** El socket se abrió físicamente, pero el servidor remoto cerró la conexión tras el envío del frame `LOGIN`, o no devolvió `LOGIN_SUCCESS` antes del tiempo límite de 5 segundos. Sugiere que el `DISCORD_BRIDGE_SUPERTOKEN` es inválido o no coincide con el configurado en el bot.
 
 ### 4.3 Errores de Conexión y Transporte
-- **`connectTimeout`:** Arrojado si el socket de trabajo no completa el handshake inicial antes de 10 segundos (`connectTimeoutMs = 10000`).
-- **`ECONNRESET` / Cierre Inesperado:** Si el socket se desconecta mientras un elemento aguardaba confirmación en Fase 1, `handleSocketDisconnect(err)` rechaza la promesa pendiente (`discord-bridge.client.ts:624-630`) para evitar que el emisor quede suspendido en espera indefinida.
+- **`BridgeNotConfiguredError`:** `send()` con `wsUrl` vacío. No se abre ningún socket.
+- **`BridgeQueueFullError`:** `send()` con `maxQueueSize` elementos ya en cola. La trama no se encola.
+- **`BridgeUnavailableError`:** La conexión con el bot no se pudo establecer. Se rechaza con ella cada elemento de la cola; el error original queda en `cause` (`discord-bridge.client.ts:58-82`).
+- **`connectTimeout`:** Arrojado si el socket de trabajo no completa el handshake inicial antes de 10 segundos (`connectTimeoutMs = 10000`); se entrega a los emisores envuelto en `BridgeUnavailableError`.
+- **`ECONNRESET` / Cierre Inesperado:** Si el socket se desconecta mientras un elemento aguardaba confirmación en Fase 1, `handleSocketDisconnect(err)` rechaza la promesa pendiente (`discord-bridge.client.ts:738-744`) para evitar que el emisor quede suspendido en espera indefinida.

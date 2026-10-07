@@ -2,49 +2,21 @@ import type { AuthUser, CreateSuggestionResponse } from '@rcl/contracts';
 import { type NextFunction, type Request, type Response, Router } from 'express';
 import { AppError, notFound } from '../../shared/app-error.js';
 import type { AuthOptions } from '../auth/auth.router.js';
+import { readSessionCookie } from '../auth/session-cookie.js';
 import type { SuggestionsService } from './suggestions.service.js';
 
 export interface SuggestionsRouterOptions {
-  suggestionsService?: SuggestionsService | undefined;
-  service?: SuggestionsService | undefined;
+  suggestionsService: SuggestionsService;
+  /** Only origin allowed to submit; defaults to `auth.frontendOrigin`. */
   frontendOrigin?: string | undefined;
   auth?: AuthOptions | undefined;
 }
 
-function extractSessionCookie(req: Request, secureCookies: boolean): string | undefined {
-  const name = secureCookies ? '__Host-rcl_session' : 'rcl_session';
-  const entries = (req.headers.cookie ?? '').split(';').map((part) => part.trim());
-  const matches = entries.filter((part) => part.startsWith(`${name}=`));
-  return matches.length === 1 ? matches[0]?.slice(name.length + 1) : undefined;
-}
-
-export function createSuggestionsRouter(
-  optionsOrService: SuggestionsRouterOptions | SuggestionsService,
-  maybeAuthOptions?: AuthOptions
-): Router {
+export function createSuggestionsRouter(options: SuggestionsRouterOptions): Router {
   const router = Router();
-
-  let service: SuggestionsService;
-  let frontendOrigin: string | undefined;
-  let authOptions: AuthOptions | undefined;
-
-  if (
-    'getStatus' in optionsOrService &&
-    ('submit' in optionsOrService || 'submitSuggestion' in optionsOrService)
-  ) {
-    service = optionsOrService as SuggestionsService;
-    authOptions = maybeAuthOptions;
-    frontendOrigin = maybeAuthOptions?.frontendOrigin;
-  } else {
-    const opts = optionsOrService as SuggestionsRouterOptions;
-    const resolvedService = opts.suggestionsService ?? opts.service;
-    if (!resolvedService) {
-      throw new Error('SuggestionsRouter requires suggestionsService or service option');
-    }
-    service = resolvedService;
-    authOptions = opts.auth;
-    frontendOrigin = opts.frontendOrigin ?? opts.auth?.frontendOrigin;
-  }
+  const service = options.suggestionsService;
+  const authOptions = options.auth;
+  const frontendOrigin = options.frontendOrigin ?? authOptions?.frontendOrigin;
 
   // Ensure Cache-Control: no-store on all suggestions endpoints
   router.use((_req: Request, res: Response, next: NextFunction) => {
@@ -81,7 +53,7 @@ export function createSuggestionsRouter(
         res.locals.user ?? (req as unknown as { user?: AuthUser }).user ?? undefined;
 
       if (!user && authOptions?.service) {
-        const token = extractSessionCookie(req, authOptions.secureCookies);
+        const token = readSessionCookie(req.headers.cookie, authOptions.secureCookies);
         if (token) {
           try {
             user = (await authOptions.service.currentUser(token)) ?? undefined;
@@ -97,7 +69,9 @@ export function createSuggestionsRouter(
           suggestion: trimmed,
           isAnonymous
         },
-        user
+        user,
+        // req.ip honours the application's `trust proxy` setting (TRUST_PROXY).
+        { clientIp: req.ip }
       );
 
       res.status(202).json({
@@ -105,6 +79,13 @@ export function createSuggestionsRouter(
         status: result.status
       });
     } catch (err) {
+      if (err instanceof AppError && err.code === 'RATE_LIMITED') {
+        const retryAfter = (err.details as { retryAfterSeconds?: unknown } | undefined)
+          ?.retryAfterSeconds;
+        if (typeof retryAfter === 'number') {
+          res.set('Retry-After', String(retryAfter));
+        }
+      }
       next(err);
     }
   });
@@ -130,5 +111,3 @@ export function createSuggestionsRouter(
 
   return router;
 }
-
-export const suggestionsRouter = createSuggestionsRouter;

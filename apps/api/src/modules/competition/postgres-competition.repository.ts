@@ -1,3 +1,4 @@
+import type { MatchMap } from '@rcl/contracts';
 import {
   discordUsers,
   divisions,
@@ -54,16 +55,23 @@ export class PostgresCompetitionRepository implements CompetitionRepository {
       .from(matches);
   }
   async match(id: string) {
-    const [row] = await this.db
-      .select({ divisionId: matches.idSeasonDivision })
+    const [match] = await this.db
+      .select(this.matchSelection)
       .from(matches)
       .where(eq(matches.id, id))
       .limit(1);
-    return row ? (await this.matches(row.divisionId)).find((match) => match.id === id) : undefined;
+    return match;
   }
   async matchGames(id: string) {
+    return (await this.matchGamesByMatch([id])).get(id) ?? [];
+  }
+  // Load several series with two queries so callers do not issue one lookup per match.
+  async matchGamesByMatch(ids: string[]) {
+    const uniqueIds = [...new Set(ids)];
+    if (!uniqueIds.length) return new Map<string, MatchMap[]>();
     const games = await this.db
       .select({
+        matchId: matchGames.matchesId,
         id: matchGames.id,
         gameNumber: matchGames.gameNumber,
         blueTeamId: matchGames.blueTeamId,
@@ -72,7 +80,7 @@ export class PostgresCompetitionRepository implements CompetitionRepository {
         durationSeconds: matchGames.durationSeconds
       })
       .from(matchGames)
-      .where(eq(matchGames.matchesId, id))
+      .where(inArray(matchGames.matchesId, uniqueIds))
       .orderBy(asc(matchGames.gameNumber));
     const {
       id: statsId,
@@ -122,14 +130,18 @@ export class PostgresCompetitionRepository implements CompetitionRepository {
       .leftJoin(playerGameStats, eq(playerGameStats.id, playerGameInfo.id))
       .leftJoin(playerGameBuild, eq(playerGameBuild.id, playerGameInfo.id))
       .leftJoin(playerGameRunes, eq(playerGameRunes.id, playerGameInfo.id))
-      .where(eq(matchGames.matchesId, id))
+      .where(inArray(matchGames.matchesId, uniqueIds))
       .orderBy(asc(playerGameInfo.id));
-    return games.map((game) => ({
-      ...game,
-      participants: participants
-        .filter((player) => player.matchGameId === game.id)
-        .map(({ matchGameId, ...player }) => player)
-    }));
+    const participantsByGame = new Map<string, MatchMap['participants']>();
+    for (const { matchGameId, ...player } of participants) {
+      const entries = participantsByGame.get(matchGameId) ?? [];
+      entries.push(player);
+      participantsByGame.set(matchGameId, entries);
+    }
+    const series = new Map<string, MatchMap[]>(uniqueIds.map((id) => [id, []]));
+    for (const { matchId, ...game } of games)
+      series.get(matchId)?.push({ ...game, participants: participantsByGame.get(game.id) ?? [] });
+    return series;
   }
   teamDirectory() {
     return this.db
@@ -452,24 +464,25 @@ export class PostgresCompetitionRepository implements CompetitionRepository {
       .where(eq(rounds.idSeasonDivision, divisionId))
       .orderBy(asc(rounds.id));
   }
+  private matchSelection = {
+    id: matches.id,
+    divisionId: matches.idSeasonDivision,
+    roundId: sql<string | null>`${matches.idRound}::text`,
+    homeTeamId: matches.team1Id,
+    awayTeamId: matches.team2Id,
+    homeScore: matches.team1Score,
+    awayScore: matches.team2Score,
+    winnerTeamId: matches.winnerTeamId,
+    status: matches.status,
+    bestOf: matches.bestOf,
+    scheduledAt: matches.scheduledAt,
+    finishedAt: matches.finishedAt,
+    streamUrl: matches.streamUrl,
+    streamUrlLive: matches.streamUrlLive
+  };
   matches(divisionId: string) {
     return this.db
-      .select({
-        id: matches.id,
-        divisionId: matches.idSeasonDivision,
-        roundId: sql<string | null>`${matches.idRound}::text`,
-        homeTeamId: matches.team1Id,
-        awayTeamId: matches.team2Id,
-        homeScore: matches.team1Score,
-        awayScore: matches.team2Score,
-        winnerTeamId: matches.winnerTeamId,
-        status: matches.status,
-        bestOf: matches.bestOf,
-        scheduledAt: matches.scheduledAt,
-        finishedAt: matches.finishedAt,
-        streamUrl: matches.streamUrl,
-        streamUrlLive: matches.streamUrlLive
-      })
+      .select(this.matchSelection)
       .from(matches)
       .where(eq(matches.idSeasonDivision, divisionId))
       .orderBy(asc(matches.scheduledAt), asc(matches.id));

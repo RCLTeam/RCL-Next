@@ -38,7 +38,7 @@ El sistema de roles de acceso a la plataforma está modelado en PostgreSQL media
    - **Restricción:** No puede modificar roles de usuarios ni degradar a otros miembros.
 3. **`owner` (Propietario del Sistema):**
    - Máximo nivel de autorización en RCL-Next.
-   - Satisface todas las comprobaciones de `admin` implícitamente (`auth.router.ts:25-26`).
+   - Satisface todas las comprobaciones de `admin` implícitamente (`auth.router.ts:18-19`).
    - Autoridad exclusiva para ejecutar mutaciones de rol (`PATCH /api/v1/member-roles/:discordId`).
    - Autoridad exclusiva para restaurar e importar copias de seguridad de la base de datos (`database-transfer`).
 

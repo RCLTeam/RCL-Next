@@ -1,39 +1,52 @@
+import { pageMetadata } from '@rcl/contracts';
+import { playerProfileSlugs, teamProfileSlugs } from '../../competition/profile-slugs.js';
 import type { SitemapRepository } from '../persistence/sitemap.repository.js';
 import type { SitemapChangeFrequency, SitemapUrlEntry } from '../types/sitemap.types.js';
 import { buildSitemapXml, formatSitemapDate } from './sitemap-builder.js';
 
-export const DEFAULT_SITEMAP_CACHE_TTL_MS = 12 * 60 * 60 * 1000; // 43,200,000 ms (12 hours)
+// Admin writes invalidate the cache; the TTL only bounds changes made outside the API.
+export const DEFAULT_SITEMAP_CACHE_TTL_MS = 60 * 60 * 1000; // 3,600,000 ms (1 hour)
 
 export interface SitemapServiceOptions {
-  baseUrl?: string;
+  /** Public site URL (`FRONTEND_URL`); empty or unset uses the production domain. */
+  baseUrl?: string | undefined;
   cacheTtlMs?: number;
 }
 
-interface StaticRouteDefinition {
-  path: string;
+interface StaticRouteSettings {
   priority: number;
   changefreq: SitemapChangeFrequency;
 }
 
-const STATIC_ROUTES: readonly StaticRouteDefinition[] = [
-  { path: '/', priority: 1.0, changefreq: 'daily' },
-  { path: '/calendario', priority: 0.9, changefreq: 'daily' },
-  { path: '/clasificacion', priority: 0.9, changefreq: 'daily' },
-  { path: '/predicciones', priority: 0.8, changefreq: 'weekly' },
-  { path: '/equipos', priority: 0.8, changefreq: 'weekly' },
-  { path: '/jugadores', priority: 0.8, changefreq: 'weekly' },
-  { path: '/ligas', priority: 0.7, changefreq: 'weekly' },
-  { path: '/playoffs', priority: 0.7, changefreq: 'weekly' },
-  { path: '/champions', priority: 0.6, changefreq: 'weekly' },
-  { path: '/fantasy', priority: 0.6, changefreq: 'weekly' },
-  { path: '/crystal-ball', priority: 0.6, changefreq: 'weekly' }
-] as const;
+const DEFAULT_STATIC_ROUTE_SETTINGS: StaticRouteSettings = { priority: 0.5, changefreq: 'weekly' };
+
+const STATIC_ROUTE_SETTINGS: Readonly<Record<string, StaticRouteSettings>> = {
+  '/': { priority: 1.0, changefreq: 'daily' },
+  '/calendario': { priority: 0.9, changefreq: 'daily' },
+  '/clasificacion': { priority: 0.9, changefreq: 'daily' },
+  '/predicciones': { priority: 0.8, changefreq: 'weekly' },
+  '/equipos': { priority: 0.8, changefreq: 'weekly' },
+  '/jugadores': { priority: 0.8, changefreq: 'weekly' },
+  '/ligas': { priority: 0.7, changefreq: 'weekly' },
+  '/playoffs': { priority: 0.7, changefreq: 'weekly' },
+  '/campeones': { priority: 0.6, changefreq: 'weekly' },
+  '/bola-cristal': { priority: 0.6, changefreq: 'weekly' }
+};
+
+/**
+ * Public static pages, taken from the shared page metadata so the sitemap cannot announce a
+ * path the web does not serve. The admin area is excluded.
+ */
+export const SITEMAP_STATIC_PATHS: readonly string[] = Object.keys(pageMetadata).filter(
+  (path) => path !== '/admin' && !path.startsWith('/admin/')
+);
 
 export class SitemapService {
   private readonly cacheTtlMs: number;
   private cachedXml: string | null = null;
   private cachedAt: number | null = null;
   private inFlightPromise: Promise<string> | null = null;
+  private generation = 0;
 
   constructor(
     private readonly repository: SitemapRepository,
@@ -46,10 +59,7 @@ export class SitemapService {
    * Resolves the canonical base URL without trailing slashes.
    */
   private getBaseUrl(): string {
-    const envUrl = process.env.FRONTEND_URL;
-    const candidate =
-      this.options?.baseUrl ?? (envUrl && envUrl !== 'undefined' ? envUrl : undefined);
-    const raw = candidate?.trim() || 'https://rebelcrownlegacy.es';
+    const raw = this.options?.baseUrl?.trim() || 'https://rebelcrownlegacy.es';
     return raw.replace(/\/+$/, '');
   }
 
@@ -71,22 +81,29 @@ export class SitemapService {
       return this.inFlightPromise;
     }
 
-    this.inFlightPromise = this.generateXml();
+    const generation = this.generation;
+    const promise = this.generateXml();
+    this.inFlightPromise = promise;
 
     try {
-      const xml = await this.inFlightPromise;
-      this.cachedXml = xml;
-      this.cachedAt = Date.now();
+      const xml = await promise;
+      // A generation started before invalidateCache() may hold stale data: never cache it.
+      if (generation === this.generation) {
+        this.cachedXml = xml;
+        this.cachedAt = Date.now();
+      }
       return xml;
     } finally {
-      this.inFlightPromise = null;
+      if (this.inFlightPromise === promise) this.inFlightPromise = null;
     }
   }
 
   /**
    * Clears in-memory cache forcing subsequent calls to query the database.
+   * Called after successful admin writes (see sitemap-invalidation.ts).
    */
   invalidateCache(): void {
+    this.generation++;
     this.cachedXml = null;
     this.cachedAt = null;
     this.inFlightPromise = null;
@@ -106,18 +123,26 @@ export class SitemapService {
     const urls: SitemapUrlEntry[] = [];
 
     // Static platform routes
-    for (const route of STATIC_ROUTES) {
+    for (const path of SITEMAP_STATIC_PATHS) {
+      const settings = STATIC_ROUTE_SETTINGS[path] ?? DEFAULT_STATIC_ROUTE_SETTINGS;
       urls.push({
-        loc: `${baseUrl}${route.path}`,
-        changefreq: route.changefreq,
-        priority: route.priority
+        loc: `${baseUrl}${path}`,
+        changefreq: settings.changefreq,
+        priority: settings.priority
       });
     }
 
-    // Dynamic teams
+    // Same slugs and fallback as the web links (`slug ?? id`, URI-encoded).
+    const teamSlugs = teamProfileSlugs(teams);
+    const playerSlugs = playerProfileSlugs(players);
+    const profilePath = (slugs: Map<string, string>, id: string) =>
+      encodeURIComponent(slugs.get(id) ?? id);
+
+    // Dynamic teams (inactive teams only take part in slug disambiguation)
     for (const team of teams) {
+      if (!team.isActive) continue;
       urls.push({
-        loc: `${baseUrl}/equipos/${team.id}`,
+        loc: `${baseUrl}/equipos/${profilePath(teamSlugs, team.id)}`,
         lastmod: formatSitemapDate(team.updatedAt),
         changefreq: 'weekly',
         priority: 0.7
@@ -127,7 +152,7 @@ export class SitemapService {
     // Dynamic players
     for (const player of players) {
       urls.push({
-        loc: `${baseUrl}/jugadores/${player.id}`,
+        loc: `${baseUrl}/jugadores/${profilePath(playerSlugs, player.id)}`,
         lastmod: formatSitemapDate(player.updatedAt),
         changefreq: 'weekly',
         priority: 0.6

@@ -50,6 +50,8 @@ describe('loadEnvironment', () => {
     process.env.DATABASE_URL = 'postgres://user:pass@localhost:5432/testdb';
     process.env.PORT = '4000';
     process.env.NODE_ENV = 'production';
+    // Production rejects the default http://localhost origin, with or without Discord sign-in.
+    process.env.CORS_ORIGIN = 'https://rcl.example.com';
 
     const config = loadEnvironment();
 

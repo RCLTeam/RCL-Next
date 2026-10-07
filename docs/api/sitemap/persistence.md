@@ -6,7 +6,7 @@
 
 ## 1. Visión General de la Capa de Persistencia
 
-La capa de persistencia del módulo sitemap reside en `apps/api/src/modules/sitemap/persistence/`. Su responsabilidad exclusiva es suministrar los identificadores únicos y las marcas de tiempo de última actualización de las entidades dinámicas del dominio mediante consultas optimizadas de solo lectura.
+La capa de persistencia del módulo sitemap reside en `apps/api/src/modules/sitemap/persistence/`. Su responsabilidad exclusiva es suministrar, mediante consultas de solo lectura, los identificadores, los campos necesarios para calcular los slugs públicos y las marcas de tiempo de última actualización de las entidades dinámicas del dominio.
 
 Siguiendo el principio de inversión de dependencias, la lógica de negocio depende únicamente de la interfaz abstracta `SitemapRepository` (`sitemap.repository.ts`), desacoplada de la implementación concreta `PostgresSitemapRepository` (`postgres-sitemap.repository.ts`), la cual interactúa con PostgreSQL a través de **Drizzle ORM**.
 
@@ -31,7 +31,7 @@ export interface SitemapRepository {
 }
 ```
 
-Cada método resuelve a una colección fuertemente tipada que encapsula únicamente el identificador UUID (`id`) y el objeto temporal (`updatedAt: Date`).
+Cada método resuelve a una colección tipada con el identificador UUID (`id`), la fecha `updatedAt: Date` y, para equipos y jugadores, los campos de los que depende su slug (ver [contracts.md](contracts.md#23-modelos-ligeros-de-persistencia)).
 
 ---
 
@@ -51,24 +51,32 @@ export class PostgresSitemapRepository implements SitemapRepository {
 
 ### 3.1 Consulta de Equipos (`getTeams`)
 
-Recupera únicamente las escuadras marcadas como activas en la competición:
+Recupera el directorio completo de equipos con su temporada y división, la misma proyección que `PostgresCompetitionRepository.teamDirectory()`:
 
 ```typescript
-// apps/api/src/modules/sitemap/persistence/postgres-sitemap.repository.ts:17-34
+// apps/api/src/modules/sitemap/persistence/postgres-sitemap.repository.ts:17-42
 async getTeams(): Promise<SitemapTeamItem[]> {
   const rows = await this.db
     .select({
       id: teams.id,
+      name: teams.name,
+      seasonName: seasonsDivisions.seasonName,
+      divisionName: seasonsDivisions.divisionName,
+      isActive: teams.isActive,
       updatedAt: teams.updatedAt,
       createdAt: teams.createdAt
     })
     .from(teams)
-    .where(eq(teams.isActive, true));
+    .innerJoin(seasonsDivisions, eq(teams.seasonDivisionId, seasonsDivisions.id));
 
   return rows.map((row) => {
     const date = row.updatedAt ?? row.createdAt;
     return {
       id: row.id,
+      name: row.name,
+      seasonName: row.seasonName,
+      divisionName: row.divisionName,
+      isActive: row.isActive,
       updatedAt: date instanceof Date ? date : new Date(date)
     };
   });
@@ -76,20 +84,22 @@ async getTeams(): Promise<SitemapTeamItem[]> {
 ```
 
 #### Decisiones de Diseño:
-- **Filtro de Estado Activo:** La cláusula `where(eq(teams.isActive, true))` excluye equipos dados de baja o en estado inactivo, previniendo la indexación de páginas vacías o sin plantilla.
-- **Proyección Mínima:** Solo se seleccionan `id`, `updatedAt` y `createdAt`. Se descartan columnas pesadas como `logoUrl`, `bio` o claves foráneas relacionales.
-- **Respaldo de Fecha:** Si la columna `updatedAt` resultara nula (por ejemplo, en inserciones directas sin marca de modificación), se utiliza `createdAt` como fecha alternativa de respaldo antes de normalizarla a un objeto `Date`.
+- **Directorio completo, publicación filtrada:** `profileSlugs` desambigua los nombres repetidos sobre todo el directorio, también con equipos inactivos. Para obtener exactamente los slugs de la API, la consulta no filtra por `isActive`; es `SitemapService` quien publica solo los activos.
+- **`innerJoin` con `seasons_divisions`:** Aporta `seasonName` y `divisionName`, que forman el contexto de desambiguación (`temporada división`). `teams.season_division_id` es `NOT NULL` con clave foránea, así que el join no descarta equipos.
+- **Respaldo de Fecha:** Si `updatedAt` resultara nula, se utiliza `createdAt` antes de normalizarla a un objeto `Date`.
 
 ### 3.2 Consulta de Jugadores (`getPlayers`)
 
-Extrae todos los jugadores registrados en el ecosistema de la liga:
+Extrae todos los jugadores registrados, con los campos que forman su slug:
 
 ```typescript
-// apps/api/src/modules/sitemap/persistence/postgres-sitemap.repository.ts:36-52
+// apps/api/src/modules/sitemap/persistence/postgres-sitemap.repository.ts:44-64
 async getPlayers(): Promise<SitemapPlayerItem[]> {
   const rows = await this.db
     .select({
       id: players.id,
+      gameName: players.gameName,
+      riotTag: players.riotTag,
       updatedAt: players.updatedAt,
       createdAt: players.createdAt
     })
@@ -99,6 +109,8 @@ async getPlayers(): Promise<SitemapPlayerItem[]> {
     const date = row.updatedAt ?? row.createdAt;
     return {
       id: row.id,
+      gameName: row.gameName,
+      riotTag: row.riotTag,
       updatedAt: date instanceof Date ? date : new Date(date)
     };
   });
@@ -106,15 +118,16 @@ async getPlayers(): Promise<SitemapPlayerItem[]> {
 ```
 
 #### Decisiones de Diseño:
-- **Protección de Privacidad:** La consulta proyecta exclusivamente `id` y marcas temporales, garantizando que identificadores sensibles como `puuid`, `discordUserId` o estadísticas internas jamás se carguen en memoria para este flujo.
-- **Normalización Temporal:** Aplica el mismo mecanismo de coalescencia `updatedAt ?? createdAt` garantizando un objeto `Date` válido para el formateador ISO.
+- **Campos del slug:** `gameName` y `riotTag` son los mismos que usa `CompetitionService` para el slug del jugador (`gameName riotTag`).
+- **Protección de Privacidad:** No se cargan identificadores sensibles como `puuid` o `discordUserId`.
+- **Normalización Temporal:** Aplica la misma coalescencia `updatedAt ?? createdAt`.
 
 ### 3.3 Consulta de Artículos Editoriales (`getArticles`)
 
 Recupera las noticias y reportajes que han sido efectivamente publicados:
 
 ```typescript
-// apps/api/src/modules/sitemap/persistence/postgres-sitemap.repository.ts:54-67
+// apps/api/src/modules/sitemap/persistence/postgres-sitemap.repository.ts:66-79
 async getArticles(): Promise<SitemapArticleItem[]> {
   const rows = await this.db
     .select({
@@ -139,8 +152,8 @@ async getArticles(): Promise<SitemapArticleItem[]> {
 
 ## 4. Eficiencia de I/O y Concurrencia de Consultas
 
-1. **Ejecución Paralela con `Promise.all`:** En el servicio orquestador (`sitemap.service.ts:99-103`), las llamadas a `getTeams()`, `getPlayers()` y `getArticles()` se despachan en paralelo. La latencia total del acceso a datos corresponde al tiempo de la consulta más lenta, en lugar de acumular la suma secuencial de las tres.
+1. **Ejecución Paralela con `Promise.all`:** En el servicio orquestador (`sitemap.service.ts:118-122`), las llamadas a `getTeams()`, `getPlayers()` y `getArticles()` se despachan en paralelo. La latencia total del acceso a datos corresponde al tiempo de la consulta más lenta, en lugar de acumular la suma secuencial de las tres.
 2. **Uso de Índices de Base de Datos:**
    - La tabla `editorial_articles` cuenta con el índice compuesto `editorial_home_idx` sobre `(published, show_on_home, home_order)` (`schema.ts:687`), lo que permite a PostgreSQL resolver rápidamente el filtro `published = true`.
-   - Las consultas a `teams` y `players` operan sobre claves primarias `id` indexadas por defecto como índices B-tree únicos.
-3. **Frecuencia Reducida por Capa de Caché:** Gracias al TTL de 12 horas y la deduplicación de peticiones concurrentes, la tasa de ejecución de estas consultas sobre PostgreSQL es despreciable (máximo 2 veces por día por réplica del backend en condiciones operativas normales).
+   - La consulta de `teams` recorre la tabla completa y la une con `seasons_divisions` por su clave primaria; `players` se lee completa. Ambas tablas tienen el tamaño de una liga (decenas o cientos de filas).
+3. **Frecuencia Reducida por Capa de Caché:** Con la deduplicación de peticiones concurrentes, las consultas se ejecutan como mucho una vez por hora (TTL de respaldo) más una vez tras cada escritura de administración correcta, y solo cuando alguien pide el sitemap.

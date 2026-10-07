@@ -7,10 +7,12 @@ import path from 'node:path';
 import type { BatchUploadSummary, WsClientMessage, WsServerEvent } from '@rcl/contracts';
 import { type RawData, WebSocket, WebSocketServer } from 'ws';
 import type { AuthService } from '../../auth/auth.service.js';
+import { readSessionCookie } from '../../auth/session-cookie.js';
 import type { RoflUploadRepository } from '../persistence/rofl-upload.repository.js';
 import { executePythonParser } from '../processing/execute-python-parser.js';
 import { cleanupTempDir, processBatchFiles } from '../processing/process-batch-files.js';
 import { transformParserJson } from '../processing/transform-parser-json.js';
+import { RoflUploadDomainError } from '../types/rofl-upload.errors.js';
 import type { ParsedGameData, PlayerLookupResult } from '../types/rofl-upload.types.js';
 import { detectMultiAccountAnomalies } from '../validation/detect-multi-account-anomalies.js';
 import { validateParticipantCache } from '../validation/validate-participant-cache.js';
@@ -21,23 +23,33 @@ export interface RoflUploadGatewayOptions {
   pythonExecutable?: string | undefined;
   concurrency?: number | undefined;
   authService?: AuthService | undefined;
-  sessionCookieName?: string | undefined;
+  /**
+   * Same value as the HTTP API (`AuthOptions.secureCookies`): with it only `__Host-rcl_session` is
+   * read, without it only `rcl_session`. A duplicated session cookie is always rejected.
+   */
+  secureCookies?: boolean | undefined;
+  /**
+   * Only origin allowed to open the socket (the frontend, `CORS_ORIGIN`). It is compared with the
+   * handshake `Origin` header by strict equality, like `requireTrustedOrigin` does for HTTP
+   * mutations. Without it every handshake is rejected.
+   */
+  frontendOrigin?: string | undefined;
+  /**
+   * Test-only escape hatch: accept connections without a session when no `authService` is given.
+   * The server never sets it; without `authService` and without this flag every handshake is
+   * rejected with 503.
+   */
+  allowUnauthenticated?: boolean | undefined;
+  /** Records the detail of an unexpected failure. Defaults to `console.error`. */
+  logIncident?: ((incidentId: string, context: string, error: unknown) => void) | undefined;
 }
 
-function extractSessionToken(
-  cookieHeader: string | undefined,
-  cookieName = 'rcl_session'
-): string | null {
-  if (!cookieHeader) return null;
-  const cookies = cookieHeader.split(';');
-  for (const cookie of cookies) {
-    const [rawKey, ...rest] = cookie.trim().split('=');
-    const key = rawKey?.trim();
-    if (key === cookieName || key === `__Host-${cookieName}`) {
-      return rest.join('=').trim() || null;
-    }
-  }
-  return null;
+export const UNEXPECTED_UPLOAD_ERROR_MESSAGE =
+  'Unexpected server error while processing the upload. Contact an administrator with the incident ID';
+
+function defaultLogIncident(incidentId: string, context: string, error: unknown): void {
+  const detail = error instanceof Error ? (error.stack ?? error.message) : String(error);
+  console.error(`[INCIDENT ${incidentId}] Type: ROFL_UPLOAD_${context} | Message: ${detail}`);
 }
 
 export function attachRoflUploadGateway(
@@ -46,7 +58,26 @@ export function attachRoflUploadGateway(
   options?: RoflUploadGatewayOptions
 ): WebSocketServer {
   const wsPath = options?.path ?? '/ws/rofl-upload';
-  const wss = new WebSocketServer({ server, path: wsPath });
+  const allowUnauthenticated = options?.allowUnauthenticated === true;
+  const authService = options?.authService;
+  const frontendOrigin = options?.frontendOrigin;
+  const logIncident = options?.logIncident ?? defaultLogIncident;
+  const wss = new WebSocketServer({
+    server,
+    path: wsPath,
+    // Runs before the upgrade is accepted, so rejected handshakes never reach authorize().
+    verifyClient: (info, callback) => {
+      if (!authService && !allowUnauthenticated) {
+        callback(false, 503, 'Authentication is not configured');
+        return;
+      }
+      if (!frontendOrigin || info.req.headers.origin !== frontendOrigin) {
+        callback(false, 403, 'Request origin is not allowed');
+        return;
+      }
+      callback(true);
+    }
+  });
 
   const originalClose = wss.close.bind(wss);
   wss.close = (cb?: (err?: Error) => void): void => {
@@ -61,14 +92,18 @@ export function attachRoflUploadGateway(
   };
 
   wss.on('connection', async (ws: WebSocket, req: http.IncomingMessage) => {
-    const sessionToken = extractSessionToken(req.headers.cookie, options?.sessionCookieName);
+    const sessionToken = readSessionCookie(req.headers.cookie, options?.secureCookies === true);
     async function authorize(): Promise<boolean> {
-      if (!options?.authService) return true;
+      if (!authService) {
+        if (allowUnauthenticated) return true;
+        ws.close(4001, 'Unauthorized: Authentication is not configured');
+        return false;
+      }
       if (!sessionToken) {
         ws.close(4001, 'Unauthorized: Missing session cookie');
         return false;
       }
-      const user = await options.authService.currentUser(sessionToken).catch(() => null);
+      const user = await authService.currentUser(sessionToken).catch(() => null);
       if (!user) {
         ws.close(4001, 'Unauthorized: Invalid or expired session');
         return false;
@@ -93,6 +128,17 @@ export function attachRoflUploadGateway(
       if (ws.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify(message));
       }
+    }
+
+    /** Logs the detail server-side and sends the client only a generic message with its id. */
+    function sendIncident(context: string, error: unknown): void {
+      const incidentId = crypto.randomUUID();
+      logIncident(incidentId, context, error);
+      safeSend({
+        type: 'error',
+        message: `${UNEXPECTED_UPLOAD_ERROR_MESSAGE} (${incidentId}).`,
+        incidentId
+      });
     }
 
     async function cleanupResources(): Promise<void> {
@@ -190,14 +236,13 @@ export function attachRoflUploadGateway(
           const targetPath = path.join(sessionDir, safeFileName);
           fileWriteStream = fsSync.createWriteStream(targetPath);
           fileWriteStream.on('error', (err) => {
-            safeSend({ type: 'error', message: `Disk write error: ${err.message}` });
+            sendIncident('DISK_WRITE', err);
           });
           receivedBytes = 0;
           state = 'uploading';
           safeSend({ type: 'started', filename: safeFileName });
         } catch (err) {
-          const message = err instanceof Error ? err.message : String(err);
-          safeSend({ type: 'error', message: `Failed to initialize upload directory: ${message}` });
+          sendIncident('INIT_UPLOAD_DIR', err);
           await cleanupResources();
         }
         return;
@@ -220,8 +265,7 @@ export function attachRoflUploadGateway(
             fileWriteStream.end();
           });
         } catch (err) {
-          const message = err instanceof Error ? err.message : String(err);
-          safeSend({ type: 'error', message: `Failed to flush file stream: ${message}` });
+          sendIncident('FLUSH_FILE', err);
           await cleanupResources();
           state = 'idle';
           return;
@@ -331,7 +375,7 @@ export function attachRoflUploadGateway(
               if (!lookup) continue;
               const teamId = teamMap.get(lookup.discordUserId);
               if (!teamId) {
-                throw new Error(
+                throw new RoflUploadDomainError(
                   `Roster violation: Player ${p.gameName}#${p.riotTag} is not registered in any team roster (forfeit / illegal roster).`
                 );
               }
@@ -369,8 +413,12 @@ export function attachRoflUploadGateway(
 
           safeSend({ type: 'success', summary });
         } catch (err: unknown) {
-          const message = err instanceof Error ? err.message : String(err);
-          safeSend({ type: 'error', message });
+          if (err instanceof RoflUploadDomainError) {
+            safeSend({ type: 'error', message: err.message });
+          } else if (!abortController.signal.aborted) {
+            // Parser, filesystem and database failures: keep their detail out of the client.
+            sendIncident('PROCESSING', err);
+          }
         } finally {
           state = 'idle';
           await cleanupResources();

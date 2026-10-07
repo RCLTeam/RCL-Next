@@ -6,14 +6,12 @@ export interface BridgeHealthChecker {
   checkHealth(): Promise<BridgeHealthResponse>;
 }
 
-export type DiscordBridgeRouterInput =
-  | { bridgeClient: Pick<DiscordBridgeClient, 'checkHealth'> | BridgeHealthChecker }
-  | Pick<DiscordBridgeClient, 'checkHealth'>
-  | BridgeHealthChecker;
+export interface DiscordBridgeRouterOptions {
+  bridgeClient: Pick<DiscordBridgeClient, 'checkHealth'> | BridgeHealthChecker;
+}
 
-export function createDiscordBridgeRouter(optionsOrClient: DiscordBridgeRouterInput): Router {
-  const bridgeClient =
-    'bridgeClient' in optionsOrClient ? optionsOrClient.bridgeClient : optionsOrClient;
+export function createDiscordBridgeRouter(options: DiscordBridgeRouterOptions): Router {
+  const { bridgeClient } = options;
   const router = Router();
 
   router.use((_req: Request, res: Response, next: NextFunction) => {
@@ -40,5 +38,3 @@ export function createDiscordBridgeRouter(optionsOrClient: DiscordBridgeRouterIn
 
   return router;
 }
-
-export const discordBridgeRouter = createDiscordBridgeRouter;

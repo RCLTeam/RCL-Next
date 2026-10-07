@@ -46,7 +46,7 @@ interface AuthSession {
 
 ## 3. Propiedades del Componente Presentacional (`AuthControlsViewProps`)
 
-Definida en `apps/web/src/features/auth/components/AuthControls.tsx:7-13`:
+Definida en `apps/web/src/features/auth/components/AuthControls.tsx:9-15`:
 
 ```typescript
 interface AuthControlsViewProps {

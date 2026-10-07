@@ -3,12 +3,14 @@ import express from 'express';
 import request from 'supertest';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { WebSocket } from 'ws';
-import { BridgeRateLimitTimeoutError, DiscordBridgeClient } from './discord-bridge.client.js';
 import {
-  type BridgeHealthChecker,
-  createDiscordBridgeRouter,
-  discordBridgeRouter
-} from './discord-bridge.router.js';
+  BridgeNotConfiguredError,
+  BridgeQueueFullError,
+  BridgeRateLimitTimeoutError,
+  BridgeUnavailableError,
+  DiscordBridgeClient
+} from './discord-bridge.client.js';
+import { type BridgeHealthChecker, createDiscordBridgeRouter } from './discord-bridge.router.js';
 
 interface MockSentFrame {
   type: string;
@@ -254,6 +256,50 @@ describe('DiscordBridgeClient', () => {
         details:
           'Enviar el login, no recibir respuesta y cerrarse el websocket por parte del servidor, revisen el super token en env'
       });
+    });
+    it('shares a single probe between concurrent health checks', async () => {
+      const client = createClient();
+      const probes = Promise.all([
+        client.checkHealth(),
+        client.checkHealth(),
+        client.checkHealth()
+      ]);
+
+      expect(mockSockets).toHaveLength(1);
+      const ws = getSocket(0);
+      ws.triggerOpen();
+      const login = ws.parseSentFrame(0);
+      ws.triggerMessage({ type: 'LOGIN_SUCCESS', data: { id: login.data.id } });
+
+      for (const result of await probes) {
+        expect(result.healthy).toBe(true);
+      }
+      expect(mockSockets).toHaveLength(1);
+    });
+
+    it('reuses the probe result until healthCacheMs elapses', async () => {
+      const client = new DiscordBridgeClient({
+        wsUrl: 'ws://127.0.0.1:8765/ws/bridge',
+        supertoken: 'secret-token-123',
+        healthCacheMs: 5000,
+        wsFactory: () => {
+          const ws = new MockWebSocket();
+          mockSockets.push(ws);
+          return ws as unknown as WebSocket;
+        }
+      });
+      activeClients.push(client);
+
+      const first = client.checkHealth();
+      getSocket(0).triggerError(new Error('connect ECONNREFUSED'));
+      expect((await first).healthy).toBe(false);
+
+      expect((await client.checkHealth()).healthy).toBe(false);
+      expect(mockSockets).toHaveLength(1);
+
+      await vi.advanceTimersByTimeAsync(5001);
+      void client.checkHealth();
+      expect(mockSockets).toHaveLength(2);
     });
   });
 
@@ -635,7 +681,146 @@ describe('DiscordBridgeClient', () => {
     });
   });
 
-  describe('discordBridgeRouter HTTP endpoints', () => {
+  describe('Connection failures do not escape as unhandled rejections', () => {
+    let unhandled: unknown[];
+    const onUnhandled = (reason: unknown) => {
+      unhandled.push(reason);
+    };
+
+    beforeEach(() => {
+      unhandled = [];
+      process.on('unhandledRejection', onUnhandled);
+    });
+
+    afterEach(() => {
+      process.removeListener('unhandledRejection', onUnhandled);
+    });
+
+    const flushRejections = async () => {
+      vi.useRealTimers();
+      await new Promise<void>((resolve) => setTimeout(resolve, 10));
+      vi.useFakeTimers();
+    };
+
+    it('rejects pending frames with BridgeUnavailableError when the socket cannot be created', async () => {
+      const client = new DiscordBridgeClient({
+        wsUrl: 'ws://127.0.0.1:1/ws/bridge',
+        supertoken: 'secret-token-123',
+        wsFactory: () => {
+          throw new Error('getaddrinfo ENOTFOUND bridge.internal:8765');
+        }
+      });
+      activeClients.push(client);
+
+      const result = client.send({ type: 'TEST_FRAME', data: { id: 'factory-fail' } });
+
+      await expect(result).rejects.toBeInstanceOf(BridgeUnavailableError);
+      await expect(result).rejects.not.toThrowError(/ENOTFOUND|8765/);
+      await flushRejections();
+      expect(unhandled).toEqual([]);
+    });
+
+    it('rejects every queued frame when the socket errors before LOGIN_SUCCESS', async () => {
+      const client = createClient();
+      const first = client.send({ type: 'TEST_FRAME', data: { id: 'err-1' } });
+      const second = client.send({ type: 'TEST_FRAME', data: { id: 'err-2' } });
+      const assertions = Promise.all([
+        expect(first).rejects.toBeInstanceOf(BridgeUnavailableError),
+        expect(second).rejects.toBeInstanceOf(BridgeUnavailableError)
+      ]);
+
+      getSocket(0).triggerError(new Error('connect ECONNREFUSED 127.0.0.1:8765'));
+
+      await assertions;
+      await flushRejections();
+      expect(unhandled).toEqual([]);
+      expect(client.pendingCount()).toBe(0);
+    });
+
+    it('rejects queued frames when the socket closes before authentication', async () => {
+      const client = createClient();
+      const pending = client.send({ type: 'TEST_FRAME', data: { id: 'close-1' } });
+      const assertion = expect(pending).rejects.toBeInstanceOf(BridgeUnavailableError);
+
+      const ws = getSocket(0);
+      ws.triggerOpen();
+      ws.close(4001, 'Invalid supertoken');
+
+      await assertion;
+      await flushRejections();
+      expect(unhandled).toEqual([]);
+    });
+
+    it('rejects queued frames on connect timeout and tolerates late socket errors', async () => {
+      const client = createClient();
+      const pending = client.send({ type: 'TEST_FRAME', data: { id: 'timeout-1' } });
+      const assertion = expect(pending).rejects.toBeInstanceOf(BridgeUnavailableError);
+
+      await vi.advanceTimersByTimeAsync(10 * 1000);
+      await assertion;
+
+      // The abandoned socket may still report its failure later on.
+      expect(() => getSocket(0).emit('error', new Error('late ECONNRESET'))).not.toThrow();
+      await flushRejections();
+      expect(unhandled).toEqual([]);
+    });
+
+    it('delivers new frames once the bot becomes reachable again', async () => {
+      const client = createClient();
+      const failed = client.send({ type: 'TEST_FRAME', data: { id: 'down-1' } });
+      const assertion = expect(failed).rejects.toBeInstanceOf(BridgeUnavailableError);
+      getSocket(0).triggerError(new Error('connect ECONNREFUSED'));
+      await assertion;
+
+      const delivered = client.send({ type: 'TEST_FRAME', data: { id: 'up-1' } });
+      const ws = getSocket(1);
+      ws.triggerOpen();
+      const login = ws.parseSentFrame(0);
+      ws.triggerMessage({ type: 'LOGIN_SUCCESS', data: { id: login.data.id } });
+      ws.triggerMessage({ type: 'QUEUED', data: { id: 'up-1' } });
+
+      await expect(delivered).resolves.toBeUndefined();
+    });
+  });
+
+  describe('Configuration and queue capacity', () => {
+    it('reports an empty wsUrl as not configured and rejects without opening sockets', async () => {
+      const client = createClient({ wsUrl: '' });
+
+      expect(client.isConfigured()).toBe(false);
+      await expect(
+        client.send({ type: 'TEST_FRAME', data: { id: 'no-url' } })
+      ).rejects.toBeInstanceOf(BridgeNotConfiguredError);
+      expect(mockSockets).toHaveLength(0);
+    });
+
+    it('rejects frames immediately once maxQueueSize pending frames are queued', async () => {
+      const client = new DiscordBridgeClient({
+        wsUrl: 'ws://127.0.0.1:8765/ws/bridge',
+        supertoken: 'secret-token-123',
+        maxQueueSize: 2,
+        wsFactory: () => {
+          const ws = new MockWebSocket();
+          mockSockets.push(ws);
+          return ws as unknown as WebSocket;
+        }
+      });
+      activeClients.push(client);
+
+      const first = client.send({ type: 'TEST_FRAME', data: { id: 'q-1' } });
+      const second = client.send({ type: 'TEST_FRAME', data: { id: 'q-2' } });
+      void first.catch(() => undefined);
+      void second.catch(() => undefined);
+
+      expect(client.hasCapacity()).toBe(false);
+      await expect(client.send({ type: 'TEST_FRAME', data: { id: 'q-3' } })).rejects.toBeInstanceOf(
+        BridgeQueueFullError
+      );
+      expect(client.pendingCount()).toBe(2);
+    });
+  });
+
+  describe('createDiscordBridgeRouter HTTP endpoints', () => {
     it('returns 200 OK with connected health response and Cache-Control: no-store', async () => {
       const app = express();
       const mockChecker: BridgeHealthChecker = {
@@ -668,7 +853,7 @@ describe('DiscordBridgeClient', () => {
             'El websocket no pudo iniciarse, comprobar variables env para asegurar la url correcta'
         })
       };
-      app.use('/api/v1/bridge', discordBridgeRouter(mockChecker));
+      app.use('/api/v1/bridge', createDiscordBridgeRouter({ bridgeClient: mockChecker }));
 
       const res = await request(app).get('/api/v1/bridge/health');
       expect(res.status).toBe(503);

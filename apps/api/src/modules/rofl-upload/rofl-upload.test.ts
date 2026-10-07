@@ -1,8 +1,7 @@
-import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import { test } from 'node:test';
+import { assert, expect, test } from 'vitest';
 import type { RoflUploadRepository } from './persistence/rofl-upload.repository.js';
 import {
   MAX_PARSER_CONCURRENCY,
@@ -107,11 +106,10 @@ test('validateParticipantCache throws error when players are missing in database
     participants: [createDummyParticipant('Faker', 'KR1')]
   };
 
-  await assert.rejects(
-    async () => validateParticipantCache([fakeGame], fakeRepo),
+  await expect(async () => validateParticipantCache([fakeGame], fakeRepo)).rejects.toSatisfy(
     (err: Error) => {
-      assert.match(err.message, /Faker#KR1/);
-      assert.match(err.message, /not registered/i);
+      expect(err.message).toMatch(/Faker#KR1/);
+      expect(err.message).toMatch(/not registered/i);
       return true;
     }
   );
@@ -151,10 +149,10 @@ test('validateParticipantCache succeeds and populates cache when all summoners e
   };
 
   const cache = await validateParticipantCache([fakeGame], fakeRepo);
-  assert.equal(cache.size, 2);
-  assert.ok(cache.has('caps#euw'));
-  assert.ok(cache.has('jankos#euw'));
-  assert.equal(cache.get('caps#euw')?.discordUsername, 'user_0');
+  expect(cache.size).toBe(2);
+  expect(cache.has('caps#euw')).toBeTruthy();
+  expect(cache.has('jankos#euw')).toBeTruthy();
+  expect(cache.get('caps#euw')?.discordUsername).toBe('user_0');
 });
 
 test('detectMultiAccountAnomalies identifies multiple accounts by same Discord user', () => {
@@ -193,14 +191,14 @@ test('detectMultiAccountAnomalies identifies multiple accounts by same Discord u
   };
 
   const anomalies = detectMultiAccountAnomalies([fakeGame], playerCache);
-  assert.equal(anomalies.length, 1);
-  assert.equal(anomalies[0]?.discordUserId, 'u1');
-  assert.equal(anomalies[0]?.discordUsername, 'User1');
-  assert.equal(anomalies[0]?.accounts.length, 2);
-  assert.equal(anomalies[0]?.accounts[0]?.account, 'Main#EUW');
-  assert.equal(anomalies[0]?.accounts[0]?.champion, 'Ahri');
-  assert.equal(anomalies[0]?.accounts[1]?.account, 'Smurf#EUW');
-  assert.equal(anomalies[0]?.accounts[1]?.champion, 'Garen');
+  expect(anomalies.length).toBe(1);
+  expect(anomalies[0]?.discordUserId).toBe('u1');
+  expect(anomalies[0]?.discordUsername).toBe('User1');
+  expect(anomalies[0]?.accounts.length).toBe(2);
+  expect(anomalies[0]?.accounts[0]?.account).toBe('Main#EUW');
+  expect(anomalies[0]?.accounts[0]?.champion).toBe('Ahri');
+  expect(anomalies[0]?.accounts[1]?.account).toBe('Smurf#EUW');
+  expect(anomalies[0]?.accounts[1]?.champion).toBe('Garen');
 });
 
 test('detectMultiAccountAnomalies returns empty array when all players have distinct Discord IDs', () => {
@@ -239,7 +237,7 @@ test('detectMultiAccountAnomalies returns empty array when all players have dist
   };
 
   const anomalies = detectMultiAccountAnomalies([fakeGame], playerCache);
-  assert.equal(anomalies.length, 0);
+  expect(anomalies.length).toBe(0);
 });
 
 test('transformParserJson maps raw parser JSON into strongly typed ParsedGameData', () => {
@@ -333,32 +331,32 @@ test('transformParserJson maps raw parser JSON into strongly typed ParsedGameDat
   };
 
   const parsed = transformSingleParserJson(sampleRawJson, 'EUW1-123456789_estadisticas.json');
-  assert.equal(parsed.fileName, 'EUW1-123456789.rofl');
-  assert.equal(parsed.externalGameId, 'EUW1-123456789');
-  assert.equal(parsed.durationSeconds, 1800);
-  assert.equal(parsed.winnerSide, 'blue');
-  assert.equal(parsed.participants.length, 1);
+  expect(parsed.fileName).toBe('EUW1-123456789.rofl');
+  expect(parsed.externalGameId).toBe('EUW1-123456789');
+  expect(parsed.durationSeconds).toBe(1800);
+  expect(parsed.winnerSide).toBe('blue');
+  expect(parsed.participants.length).toBe(1);
 
   const p = parsed.participants[0];
   assert.ok(p);
-  assert.equal(p.gameName, 'Showmaker');
-  assert.equal(p.riotTag, 'DK');
-  assert.equal(p.side, 'blue');
-  assert.equal(p.champion, 'Syndra');
-  assert.equal(p.position, 'MID');
-  assert.equal(p.kills, 8);
-  assert.equal(p.deaths, 2);
-  assert.equal(p.assists, 10);
-  assert.equal(p.cs, 260);
-  assert.equal(p.damageToChampions, 24500);
-  assert.equal(p.visionScore, 35);
-  assert.equal(p.runes.primaryKeystoneId, 8112);
-  assert.equal(p.build.item0, 6655);
-  assert.equal(p.build.trinket, 3364);
-  assert.equal(p.build.summonerSpell1Id, 4);
-  assert.equal(p.build.summonerSpell2Id, 14);
-  assert.equal(p.extraStats.doubleKills, 2);
-  assert.equal(p.extraStats.goldEarned, 15400);
+  expect(p.gameName).toBe('Showmaker');
+  expect(p.riotTag).toBe('DK');
+  expect(p.side).toBe('blue');
+  expect(p.champion).toBe('Syndra');
+  expect(p.position).toBe('MID');
+  expect(p.kills).toBe(8);
+  expect(p.deaths).toBe(2);
+  expect(p.assists).toBe(10);
+  expect(p.cs).toBe(260);
+  expect(p.damageToChampions).toBe(24500);
+  expect(p.visionScore).toBe(35);
+  expect(p.runes.primaryKeystoneId).toBe(8112);
+  expect(p.build.item0).toBe(6655);
+  expect(p.build.trinket).toBe(3364);
+  expect(p.build.summonerSpell1Id).toBe(4);
+  expect(p.build.summonerSpell2Id).toBe(14);
+  expect(p.extraStats.doubleKills).toBe(2);
+  expect(p.extraStats.goldEarned).toBe(15400);
 });
 
 test('sortGamesChronologically orders games sequence properly', () => {
@@ -388,35 +386,34 @@ test('sortGamesChronologically orders games sequence properly', () => {
   };
 
   const sorted = sortGamesChronologically([g3, g1, g2]);
-  assert.equal(sorted[0]?.fileName, 'match_game_1.rofl');
-  assert.equal(sorted[1]?.fileName, 'match_game_2.rofl');
-  assert.equal(sorted[2]?.fileName, 'match_game_10.rofl');
+  expect(sorted[0]?.fileName).toBe('match_game_1.rofl');
+  expect(sorted[1]?.fileName).toBe('match_game_2.rofl');
+  expect(sorted[2]?.fileName).toBe('match_game_10.rofl');
 });
 
 test('validateParserFileCounts strictly enforces N_json == N_rofl', () => {
-  assert.doesNotThrow(() => validateParserFileCounts(3, 3));
-  assert.throws(
-    () => validateParserFileCounts(3, 2),
+  expect(() => validateParserFileCounts(3, 3)).not.toThrow();
+  expect(() => validateParserFileCounts(3, 2)).toThrow(
     /Parser output count mismatch: expected 3 JSON files, but got 2/
   );
   const expectedCap = Math.max(1, (os.availableParallelism?.() ?? os.cpus().length) - 1);
-  assert.equal(MAX_PARSER_CONCURRENCY, expectedCap);
-  assert.ok(MAX_PARSER_CONCURRENCY >= 1);
+  expect(MAX_PARSER_CONCURRENCY).toBe(expectedCap);
+  expect(MAX_PARSER_CONCURRENCY >= 1).toBeTruthy();
 });
 
 test('zip-slip protection rejects path traversal', () => {
   const baseDir = '/tmp/safe-dir';
-  assert.throws(() => validateZipSlip(baseDir, '../../etc/passwd'), /Zip slip security violation/);
-  assert.throws(() => validateZipSlip(baseDir, '../escape.rofl'), /Zip slip security violation/);
-  assert.doesNotThrow(() => {
+  expect(() => validateZipSlip(baseDir, '../../etc/passwd')).toThrow(/Zip slip security violation/);
+  expect(() => validateZipSlip(baseDir, '../escape.rofl')).toThrow(/Zip slip security violation/);
+  expect(() => {
     const valid = validateZipSlip(baseDir, 'replays/game1.rofl');
-    assert.equal(valid, path.resolve(baseDir, 'replays/game1.rofl'));
-  });
+    expect(valid).toBe(path.resolve(baseDir, 'replays/game1.rofl'));
+  }).not.toThrow();
 });
 
 test('processBatchFiles handles single .rofl file and bypasses queue', async (t) => {
   const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'rofl-test-'));
-  t.after(async () => {
+  t.onTestFinished(async () => {
     await cleanupTempDir(tempDir);
   });
 
@@ -432,22 +429,22 @@ test('processBatchFiles handles single .rofl file and bypasses queue', async (t)
     }
   });
 
-  t.after(async () => {
+  t.onTestFinished(async () => {
     await cleanupTempDir(result.tempDir);
   });
 
   // Single rofl bypasses queue
-  assert.equal(queueCalled, false);
+  expect(queueCalled).toBe(false);
   const roflFilePath = result.roflFilePaths[0];
   assert.ok(roflFilePath);
-  assert.ok(roflFilePath.endsWith('single_match.rofl'));
+  expect(roflFilePath.endsWith('single_match.rofl')).toBeTruthy();
   const content = await fs.readFile(roflFilePath, 'utf8');
-  assert.equal(content, 'RIOT_SAMPLE_BYTES');
+  expect(content).toBe('RIOT_SAMPLE_BYTES');
 });
 
 test('processBatchFiles unpacks zip and respects zip-slip protection', async (t) => {
   const tempTestDir = await fs.mkdtemp(path.join(os.tmpdir(), 'zip-test-'));
-  t.after(async () => {
+  t.onTestFinished(async () => {
     await cleanupTempDir(tempTestDir);
   });
 
@@ -470,27 +467,25 @@ test('processBatchFiles unpacks zip and respects zip-slip protection', async (t)
     }
   });
 
-  t.after(async () => {
+  t.onTestFinished(async () => {
     await cleanupTempDir(validResult.tempDir);
   });
 
-  assert.equal(queuePosition, 1);
-  assert.equal(queueTotal, 1);
-  assert.equal(validResult.roflFilePaths.length, 2);
+  expect(queuePosition).toBe(1);
+  expect(queueTotal).toBe(1);
+  expect(validResult.roflFilePaths.length).toBe(2);
 
   // 2. Zip with malicious zip-slip traversal entry
   const maliciousZipPath = path.join(tempTestDir, 'malicious.zip');
   const maliciousZipBuffer = createZipArchive([{ name: '../../../evil.rofl', content: 'EVIL' }]);
   await fs.writeFile(maliciousZipPath, maliciousZipBuffer);
 
-  await assert.rejects(
-    async () =>
-      processBatchFiles({
-        sourceFilePath: maliciousZipPath,
-        originalFileName: 'malicious.zip'
-      }),
-    /Zip slip security violation/
-  );
+  await expect(async () =>
+    processBatchFiles({
+      sourceFilePath: maliciousZipPath,
+      originalFileName: 'malicious.zip'
+    })
+  ).rejects.toThrow(/Zip slip security violation/);
 });
 
 test('DecompressionQueue enforces concurrency 1 and FIFO ordering', async () => {
@@ -511,33 +506,33 @@ test('DecompressionQueue enforces concurrency 1 and FIFO ordering', async () => 
     events.push(`task3-pos-${pos}-tot-${total}`);
   });
 
-  assert.equal(decompressionQueue.getQueueLength(), 2);
-  assert.ok(events.includes('task1-pos-1-tot-1'));
-  assert.ok(events.includes('task2-pos-2-tot-2'));
-  assert.ok(events.includes('task3-pos-3-tot-3'));
+  expect(decompressionQueue.getQueueLength()).toBe(2);
+  expect(events.includes('task1-pos-1-tot-1')).toBeTruthy();
+  expect(events.includes('task2-pos-2-tot-2')).toBeTruthy();
+  expect(events.includes('task3-pos-3-tot-3')).toBeTruthy();
 
   // Release task 1 -> task 2 runs
   task1Release();
   const task2Release = await task2Promise;
-  assert.ok(events.includes('task2-pos-1-tot-2'));
+  expect(events.includes('task2-pos-1-tot-2')).toBeTruthy();
 
   // Release task 2 -> task 3 runs
   task2Release();
   const task3Release = await task3Promise;
-  assert.ok(events.includes('task3-pos-1-tot-1'));
+  expect(events.includes('task3-pos-1-tot-1')).toBeTruthy();
 
   task3Release();
-  assert.equal(decompressionQueue.isBusy(), false);
-  assert.equal(decompressionQueue.getQueueLength(), 0);
+  expect(decompressionQueue.isBusy()).toBe(false);
+  expect(decompressionQueue.getQueueLength()).toBe(0);
 });
 
-test('executePythonParser processes real ROFL file and emits progress', async (t) => {
+test('executePythonParser processes the ROFL fixture and emits progress', async (t) => {
   const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'parser-exec-test-'));
-  t.after(async () => {
+  t.onTestFinished(async () => {
     await cleanupTempDir(tempDir);
   });
 
-  const fixtureRofl = path.resolve('apps/parser/data/EUW1-7982902321.rofl');
+  const fixtureRofl = path.resolve('apps/parser/data/RCL-FIXTURE-0001.rofl');
   const progressCalls: Array<{ count: number; total: number; file: string }> = [];
 
   const result = await executePythonParser({
@@ -548,39 +543,37 @@ test('executePythonParser processes real ROFL file and emits progress', async (t
     }
   });
 
-  assert.equal(result.jsonFilePaths.length, 1);
-  assert.equal(progressCalls.length, 1);
-  assert.equal(progressCalls[0]?.count, 1);
-  assert.equal(progressCalls[0]?.total, 1);
+  expect(result.jsonFilePaths.length).toBe(1);
+  expect(progressCalls.length).toBe(1);
+  expect(progressCalls[0]?.count).toBe(1);
+  expect(progressCalls[0]?.total).toBe(1);
 
   const transformedGames = await transformParserJson(result.jsonFilePaths);
-  assert.equal(transformedGames.length, 1);
+  expect(transformedGames.length).toBe(1);
   const game = transformedGames[0];
   assert.ok(game);
-  assert.equal(game.fileName, 'EUW1-7982902321.rofl');
-  assert.equal(game.externalGameId, 'EUW1-7982902321');
-  assert.equal(game.participants.length, 10);
-  assert.equal(game.participants.filter((p) => p.side === 'blue').length, 5);
-  assert.equal(game.participants.filter((p) => p.side === 'red').length, 5);
+  expect(game.fileName).toBe('RCL-FIXTURE-0001.rofl');
+  expect(game.externalGameId).toBe('RCL-FIXTURE-0001');
+  expect(game.participants.length).toBe(10);
+  expect(game.participants.filter((p) => p.side === 'blue').length).toBe(5);
+  expect(game.participants.filter((p) => p.side === 'red').length).toBe(5);
 });
 
 test('executePythonParser throws error when ROFL file is missing', async () => {
-  await assert.rejects(
-    async () =>
-      executePythonParser({
-        roflFilePaths: ['/nonexistent/path/missing.rofl']
-      }),
-    /Failed to parse ROFL file/
-  );
+  await expect(async () =>
+    executePythonParser({
+      roflFilePaths: ['/nonexistent/path/missing.rofl']
+    })
+  ).rejects.toThrow(/Failed to parse ROFL file/);
 });
 
 test('executePythonParser skips files with invalid magic header (code 11) and emits warning', async (t) => {
   const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'parser-resilience-test-'));
-  t.after(async () => {
+  t.onTestFinished(async () => {
     await cleanupTempDir(tempDir);
   });
 
-  const fixtureRofl = path.resolve('apps/parser/data/EUW1-7982902321.rofl');
+  const fixtureRofl = path.resolve('apps/parser/data/RCL-FIXTURE-0001.rofl');
   const fakeRofl = path.join(tempDir, 'fake_invalid_magic.rofl');
   await fs.writeFile(fakeRofl, 'NOT_RIOT_MAGIC_HEADER_SAMPLE');
 
@@ -593,20 +586,19 @@ test('executePythonParser skips files with invalid magic header (code 11) and em
     }
   });
 
-  assert.equal(result.jsonFilePaths.length, 1);
-  assert.equal(result.validRoflCount, 1);
-  assert.equal(result.skippedFiles.length, 1);
-  assert.equal(result.skippedFiles[0], fakeRofl);
-  assert.equal(warnings.length, 1);
-  assert.match(
-    warnings[0] ?? '',
+  expect(result.jsonFilePaths.length).toBe(1);
+  expect(result.validRoflCount).toBe(1);
+  expect(result.skippedFiles.length).toBe(1);
+  expect(result.skippedFiles[0]).toBe(fakeRofl);
+  expect(warnings.length).toBe(1);
+  expect(warnings[0] ?? '').toMatch(
     /El archivo 'fake_invalid_magic\.rofl' no tiene la cabecera ROFL válida y ha sido omitido/
   );
 });
 
 test('executePythonParser cleanly aborts when 0 valid ROFL files remain in batch', async (t) => {
   const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'parser-zero-valid-test-'));
-  t.after(async () => {
+  t.onTestFinished(async () => {
     await cleanupTempDir(tempDir);
   });
 
@@ -616,29 +608,27 @@ test('executePythonParser cleanly aborts when 0 valid ROFL files remain in batch
   await fs.writeFile(fakeRofl2, 'NOT_RIOT_2');
 
   const warnings: string[] = [];
-  await assert.rejects(
-    async () =>
-      executePythonParser({
-        roflFilePaths: [fakeRofl1, fakeRofl2],
-        outputDir: tempDir,
-        onWarning: (msg) => {
-          warnings.push(msg);
-        }
-      }),
-    /No valid ROFL files found in batch/
-  );
+  await expect(async () =>
+    executePythonParser({
+      roflFilePaths: [fakeRofl1, fakeRofl2],
+      outputDir: tempDir,
+      onWarning: (msg) => {
+        warnings.push(msg);
+      }
+    })
+  ).rejects.toThrow(/No valid ROFL files found in batch/);
 
-  assert.equal(warnings.length, 2);
-  assert.ok(
+  expect(warnings.length).toBe(2);
+  expect(
     warnings.some((w) =>
       /El archivo 'fake1\.rofl' no tiene la cabecera ROFL válida y ha sido omitido/.test(w)
     ),
     'Expected warning for fake1.rofl'
-  );
-  assert.ok(
+  ).toBeTruthy();
+  expect(
     warnings.some((w) =>
       /El archivo 'fake2\.rofl' no tiene la cabecera ROFL válida y ha sido omitido/.test(w)
     ),
     'Expected warning for fake2.rofl'
-  );
+  ).toBeTruthy();
 });

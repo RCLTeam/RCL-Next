@@ -28,6 +28,7 @@ import type { PredictionsRepository } from './modules/predictions/predictions.re
 import { predictionsRouter } from './modules/predictions/predictions.router.js';
 import type { SitemapRepository } from './modules/sitemap/persistence/sitemap.repository.js';
 import { SitemapService } from './modules/sitemap/processing/sitemap.service.js';
+import { invalidateSitemapOnWrite } from './modules/sitemap/sitemap-invalidation.js';
 import { sitemapRouter } from './modules/sitemap/sitemap.router.js';
 import { IncidentLogger } from './modules/suggestions/incident-logger.js';
 import { SuggestionStore } from './modules/suggestions/suggestion.store.js';
@@ -48,8 +49,9 @@ export function createApp(options: {
   memberRolesRepository?: MemberRolesRepository;
   databaseTransferRepository?: DatabaseTransferRepository;
   homeContentRepository?: HomeContentRepository;
-  editorialImageDirectory?: string;
+  editorialImageDirectory?: string | undefined;
   teamLogoDirectory?: string | undefined;
+  frontendUrl?: string | undefined;
   bridgeClient?: DiscordBridgeClient;
   suggestionsService?: SuggestionsService;
   suggestionStore?: SuggestionStore;
@@ -60,7 +62,7 @@ export function createApp(options: {
   const app = express();
   app.disable('x-powered-by');
   app.use(helmet());
-  app.use(cors({ origin: options.corsOrigin, credentials: true }));
+  app.use(cors({ origin: options.corsOrigin, credentials: true, exposedHeaders: ['Retry-After'] }));
   const metadata = new PageMetadataService(
     new CompetitionService(options.repository),
     options.homeContentRepository
@@ -68,6 +70,20 @@ export function createApp(options: {
       : undefined
   );
   app.use(pageMetadataRouter(metadata));
+  const sitemapService =
+    options.sitemapService ??
+    (options.sitemapRepository
+      ? new SitemapService(options.sitemapRepository, { baseUrl: options.frontendUrl })
+      : undefined);
+  // Admin modules that change teams, players or articles refresh the sitemap on success.
+  if (sitemapService) {
+    for (const path of [
+      '/api/v1/database-transfer',
+      '/api/v1/crud-operations',
+      '/api/v1/home-content'
+    ])
+      app.use(path, invalidateSitemapOnWrite(sitemapService));
+  }
   if (options.auth && options.databaseTransferRepository) {
     app.use(
       '/api/v1/database-transfer',
@@ -148,11 +164,7 @@ export function createApp(options: {
     });
   }
   const bridgeClient =
-    options.bridgeClient ??
-    new DiscordBridgeClient({
-      wsUrl: process.env.DISCORD_BOT_WS_URL ?? '',
-      supertoken: process.env.DISCORD_BOT_WS_SUPERTOKEN ?? ''
-    });
+    options.bridgeClient ?? new DiscordBridgeClient({ wsUrl: '', supertoken: '' });
   const incidentLogger = options.incidentLogger ?? new IncidentLogger();
   const suggestionStore = options.suggestionStore ?? new SuggestionStore();
   const suggestionsService =
@@ -162,7 +174,7 @@ export function createApp(options: {
       bridgeClient,
       logger: incidentLogger
     });
-  app.use('/api/v1/bridge', createDiscordBridgeRouter(bridgeClient));
+  app.use('/api/v1/bridge', createDiscordBridgeRouter({ bridgeClient }));
   app.use(
     '/api/v1/suggestions',
     createSuggestionsRouter({
@@ -171,12 +183,7 @@ export function createApp(options: {
       auth: options.auth
     })
   );
-  const sitemapService =
-    options.sitemapService ??
-    (options.sitemapRepository ? new SitemapService(options.sitemapRepository) : undefined);
-  if (sitemapService) {
-    app.use('/api/sitemap.xml', sitemapRouter(sitemapService));
-  }
+  if (sitemapService) app.use(sitemapRouter(sitemapService));
   app.get('/health/live', (_req, res) => {
     res.json({ data: { status: 'ok' } });
   });

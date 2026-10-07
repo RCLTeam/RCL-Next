@@ -194,17 +194,17 @@ Comportamiento verificado en la suite unitaria `tests/unit/team-logos.test.ts:4-
 
 ## 7. Contratos de Enrutamiento Administrativo
 
-En `apps/web/src/site/routes.tsx:147-155`, el catálogo de rutas administrativas incluye la definición formal del panel:
+En `apps/web/src/site/routes.tsx:139-147`, el catálogo de rutas administrativas incluye la definición formal del panel:
 
 ```typescript
-// apps/web/src/site/routes.tsx:153
+// apps/web/src/site/routes.tsx:145
 { path: '/admin/team-logos', title: 'Team Logos' }
 ```
 
-Al resolverse mediante `resolveSiteRoute(path)` (`apps/web/src/site/routes.tsx:162-189`):
+Al resolverse mediante `resolveSiteRoute(path)` (`apps/web/src/site/routes.tsx:154-181`):
 - `id`: `'admin'`
-- `title`: `'Team Logos · Admin'` (`apps/web/src/site/routes.tsx:183`)
+- `title`: `'Team Logos · Admin'` (`apps/web/src/site/routes.tsx:175`)
 - `navigationPath`: `'/admin'`
 - `competition`: `false`
 - `parameter`: `''`
-- `render`: `({ wsUrl }) => <AdminPage path="/admin/team-logos" wsUrl={wsUrl} />` (`apps/web/src/site/routes.tsx:187`)
+- `render`: `({ wsUrl }) => <AdminPage path="/admin/team-logos" wsUrl={wsUrl} />` (`apps/web/src/site/routes.tsx:179`)

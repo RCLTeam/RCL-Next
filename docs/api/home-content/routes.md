@@ -103,7 +103,7 @@ Todas las rutas bajo `/admin` requieren una sesión autenticada válida (`requir
 
 ### Autorización y Restricción de Roles Administrativos
 - **Delimitación de Roles**: Podría presumirse la existencia de roles intermedios de redactor, cronista o `editor` que permitan publicar artículos sin privilegios de administración global.
-- **Código vivo**: En `packages/database/src/schema.ts:24`, el enumerado `app_role` está compuesto exclusivamente por `'viewer'`, `'admin'` y `'owner'`. En `auth.router.ts:25`, la verificación `requireAuth(auth, 'admin')` autoriza únicamente cuando `['admin', 'owner'].includes(user.role)`. **No existe ningún rol `editor` en todo el sistema.**
+- **Código vivo**: En `packages/database/src/schema.ts:24`, el enumerado `app_role` está compuesto exclusivamente por `'viewer'`, `'admin'` y `'owner'`. En `auth.router.ts:18`, la verificación `requireAuth(auth, 'admin')` autoriza únicamente cuando `['admin', 'owner'].includes(user.role)`. **No existe ningún rol `editor` en todo el sistema.**
 
 ### 4.1 `GET /api/v1/home-content/admin/articles`
 - **Propósito**: Lista la totalidad de artículos registrados en el sistema para el panel de administración, incluyendo borradores y artículos con `showOnHome: false`.

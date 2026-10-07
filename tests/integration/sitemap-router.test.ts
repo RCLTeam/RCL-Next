@@ -1,3 +1,6 @@
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import request from 'supertest';
 import { describe, expect, it, vi } from 'vitest';
 import { createApp } from '../../apps/api/src/app.js';
@@ -7,16 +10,24 @@ import { SitemapService } from '../../apps/api/src/modules/sitemap/processing/si
 
 function createMockRepository(): SitemapRepository {
   return {
-    getTeams: vi
-      .fn()
-      .mockResolvedValue([
-        { id: '10000000-0000-4000-8000-000000000001', updatedAt: new Date('2026-09-01T10:00:00Z') }
-      ]),
-    getPlayers: vi
-      .fn()
-      .mockResolvedValue([
-        { id: '20000000-0000-4000-8000-000000000001', updatedAt: new Date('2026-09-05T12:00:00Z') }
-      ]),
+    getTeams: vi.fn().mockResolvedValue([
+      {
+        id: '10000000-0000-4000-8000-000000000001',
+        name: 'Lobos DEMO',
+        seasonName: 'Temporada 1',
+        divisionName: 'Premier',
+        isActive: true,
+        updatedAt: new Date('2026-09-01T10:00:00Z')
+      }
+    ]),
+    getPlayers: vi.fn().mockResolvedValue([
+      {
+        id: '20000000-0000-4000-8000-000000000001',
+        gameName: 'Jugador Demo',
+        riotTag: 'EUW',
+        updatedAt: new Date('2026-09-05T12:00:00Z')
+      }
+    ]),
     getArticles: vi
       .fn()
       .mockResolvedValue([
@@ -43,8 +54,7 @@ describe('Sitemap Router Integration (GET /api/sitemap.xml)', () => {
 
     expect(res.status).toBe(200);
     expect(res.headers['content-type']).toMatch(/application\/xml/);
-    expect(res.headers['cache-control']).toContain('max-age=3600');
-    expect(res.headers['cache-control']).toContain('s-maxage=43200');
+    expect(res.headers['cache-control']).toBe('public, max-age=300');
 
     expect(res.text).toContain('<?xml version="1.0" encoding="UTF-8"?>');
     expect(res.text).toContain('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">');
@@ -55,12 +65,8 @@ describe('Sitemap Router Integration (GET /api/sitemap.xml)', () => {
     expect(res.text).toContain('<loc>https://rebelcrownlegacy.es/clasificacion</loc>');
 
     // Dynamic URLs
-    expect(res.text).toContain(
-      '<loc>https://rebelcrownlegacy.es/equipos/10000000-0000-4000-8000-000000000001</loc>'
-    );
-    expect(res.text).toContain(
-      '<loc>https://rebelcrownlegacy.es/jugadores/20000000-0000-4000-8000-000000000001</loc>'
-    );
+    expect(res.text).toContain('<loc>https://rebelcrownlegacy.es/equipos/lobos-demo</loc>');
+    expect(res.text).toContain('<loc>https://rebelcrownlegacy.es/jugadores/jugador-demo-euw</loc>');
     expect(res.text).toContain(
       '<loc>https://rebelcrownlegacy.es/editorial/30000000-0000-4000-8000-000000000001</loc>'
     );
@@ -80,7 +86,7 @@ describe('Sitemap Router Integration (GET /api/sitemap.xml)', () => {
 
     expect(res.status).toBe(200);
     expect(res.headers['content-type']).toMatch(/application\/xml/);
-    expect(res.headers['cache-control']).toContain('max-age=3600');
+    expect(res.headers['cache-control']).toBe('public, max-age=300');
     expect(res.text).toContain('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">');
   });
 
@@ -112,5 +118,68 @@ describe('Sitemap Router Integration (GET /api/sitemap.xml)', () => {
     const res = await request(app).get('/api/sitemap.xml');
     expect(res.status).toBe(404);
     expect(res.body.error.code).toBe('NOT_FOUND');
+  });
+
+  it('builds sitemap URLs from the configured frontend URL, or the production domain when unset', async () => {
+    const appFor = (frontendUrl?: string) =>
+      createApp({
+        repository: {} as CompetitionRepository,
+        checkDatabase: async () => {},
+        corsOrigin: 'http://localhost:5173',
+        sitemapRepository: createMockRepository(),
+        frontendUrl
+      });
+
+    const configured = await request(appFor('https://preview.example.com/')).get(
+      '/api/sitemap.xml'
+    );
+    expect(configured.text).toContain('<loc>https://preview.example.com/clasificacion</loc>');
+    expect(configured.text).not.toContain('rebelcrownlegacy.es');
+
+    const fallback = await request(appFor()).get('/api/sitemap.xml');
+    expect(fallback.text).toContain('<loc>https://rebelcrownlegacy.es/clasificacion</loc>');
+  });
+
+  const appWith = (options: { sitemapService?: SitemapService; webDirectory?: string } = {}) =>
+    createApp({
+      repository: {} as CompetitionRepository,
+      checkDatabase: async () => {},
+      corsOrigin: 'http://localhost:5173',
+      sitemapService:
+        options.sitemapService ??
+        new SitemapService(createMockRepository(), { baseUrl: 'https://rebelcrownlegacy.es' }),
+      ...(options.webDirectory ? { webDirectory: options.webDirectory } : {})
+    });
+
+  it('does not expose the nested /api/sitemap.xml/sitemap.xml path', async () => {
+    const res = await request(appWith()).get('/api/sitemap.xml/sitemap.xml');
+    expect(res.status).toBe(404);
+    expect(res.body.error.code).toBe('NOT_FOUND');
+  });
+
+  it('serves the same document at the root /sitemap.xml path', async () => {
+    const app = appWith();
+    const root = await request(app).get('/sitemap.xml').expect(200);
+    const api = await request(app).get('/api/sitemap.xml').expect(200);
+    expect(root.headers['content-type']).toMatch(/application\/xml/);
+    expect(root.text).toBe(api.text);
+  });
+
+  it('answers /sitemap.xml with XML even when the web build is served and the client accepts HTML', async () => {
+    const builtWeb = mkdtempSync(join(tmpdir(), 'rcl-sitemap-web-'));
+    try {
+      writeFileSync(
+        join(builtWeb, 'index.html'),
+        '<html><head><!-- page-metadata:start --><!-- page-metadata:end --></head></html>'
+      );
+      const res = await request(appWith({ webDirectory: builtWeb }))
+        .get('/sitemap.xml')
+        .set('Accept', 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8')
+        .expect(200);
+      expect(res.headers['content-type']).toMatch(/application\/xml/);
+      expect(res.text).toContain('<urlset');
+    } finally {
+      rmSync(builtWeb, { recursive: true, force: true });
+    }
   });
 });

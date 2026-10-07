@@ -205,6 +205,7 @@ describe('Dual Track Opaque-Box E2E Testing Suite', () => {
 
     // 2. Initialize real RCL-Next Express Application with Decoupled Bridge Client
     bridgeClient = new DiscordBridgeClient({
+      healthCacheMs: 0,
       wsUrl: bridgeWsUrl,
       supertoken: mockSupertoken,
       maxRetryDurationMs: 2000,
@@ -217,6 +218,7 @@ describe('Dual Track Opaque-Box E2E Testing Suite', () => {
     suggestionStore = new SuggestionStore();
     incidentLogger = new IncidentLogger();
     suggestionsService = new SuggestionsService({
+      rateLimiter: false,
       store: suggestionStore,
       bridgeClient,
       logger: incidentLogger
@@ -642,8 +644,8 @@ describe('Dual Track Opaque-Box E2E Testing Suite', () => {
       expect(mockSupertoken.length).toBeGreaterThanOrEqual(16);
       recordTest('tier1', true);
     });
-    it('T1-F07-03: apps/api/.env.example documents environment variables with placeholders', () => {
-      const envExamplePath = path.resolve(currentDir, '../../apps/api/.env.example');
+    it('T1-F07-03: .env.example documents environment variables with placeholders', () => {
+      const envExamplePath = path.resolve(currentDir, '../../.env.example');
       expect(fs.existsSync(envExamplePath)).toBe(true);
       const envText = fs.readFileSync(envExamplePath, 'utf-8');
       expect(envText).toContain('DISCORD_BOT_WS_URL=');
@@ -895,6 +897,7 @@ describe('Dual Track Opaque-Box E2E Testing Suite', () => {
     });
     it('T1-F11-03: Suggestion retry exceeding cumulative max duration triggers terminal failure', async () => {
       const fastClient = new DiscordBridgeClient({
+        healthCacheMs: 0,
         wsUrl: bridgeWsUrl,
         supertoken: mockSupertoken,
         maxRetryDurationMs: 60,
@@ -902,6 +905,7 @@ describe('Dual Track Opaque-Box E2E Testing Suite', () => {
       });
       const timeoutStore = new SuggestionStore();
       const timeoutService = new SuggestionsService({
+        rateLimiter: false,
         store: timeoutStore,
         bridgeClient: fastClient,
         logger: incidentLogger
@@ -922,6 +926,7 @@ describe('Dual Track Opaque-Box E2E Testing Suite', () => {
     });
     it('T1-F11-04: Terminal timeout generates unique UUIDv4 incidentId', async () => {
       const fastClient = new DiscordBridgeClient({
+        healthCacheMs: 0,
         wsUrl: bridgeWsUrl,
         supertoken: mockSupertoken,
         maxRetryDurationMs: 60,
@@ -929,6 +934,7 @@ describe('Dual Track Opaque-Box E2E Testing Suite', () => {
       });
       const timeoutStore = new SuggestionStore();
       const timeoutService = new SuggestionsService({
+        rateLimiter: false,
         store: timeoutStore,
         bridgeClient: fastClient,
         logger: incidentLogger
@@ -961,6 +967,7 @@ describe('Dual Track Opaque-Box E2E Testing Suite', () => {
         return origLog(type, message, incidentId);
       };
       const fastClient = new DiscordBridgeClient({
+        healthCacheMs: 0,
         wsUrl: bridgeWsUrl,
         supertoken: mockSupertoken,
         maxRetryDurationMs: 60,
@@ -968,6 +975,7 @@ describe('Dual Track Opaque-Box E2E Testing Suite', () => {
       });
       const timeoutStore = new SuggestionStore();
       const timeoutService = new SuggestionsService({
+        rateLimiter: false,
         store: timeoutStore,
         bridgeClient: fastClient,
         logger: customLogger
@@ -1078,6 +1086,7 @@ describe('Dual Track Opaque-Box E2E Testing Suite', () => {
     });
     it('T1-F14-02: GET /api/v1/bridge/health returns HTTP 503 when probe reports unreachable', async () => {
       const offlineClient = new DiscordBridgeClient({
+        healthCacheMs: 0,
         wsUrl: 'ws://127.0.0.1:19999',
         supertoken: 'bad',
         healthProbeTimeoutMs: 100
@@ -1476,7 +1485,7 @@ describe('Dual Track Opaque-Box E2E Testing Suite', () => {
       recordTest('tier1', true);
     });
 
-    it('T1-F21-04: Route returns incidentId and error fields when status is failed', () => {
+    it('T1-F21-04: Route returns incidentId but not the internal error text when status is failed', () => {
       suggestionStore.set({
         id: 'failed-item-f21',
         status: 'failed',
@@ -1488,7 +1497,7 @@ describe('Dual Track Opaque-Box E2E Testing Suite', () => {
       });
       const st = suggestionsService.getStatus('failed-item-f21');
       expect(st?.incidentId).toBe('inc-999');
-      expect(st?.error).toBe('Failed to post');
+      expect(st?.error).toBeUndefined();
       recordTest('tier1', true);
     });
 
@@ -2231,6 +2240,7 @@ describe('Dual Track Opaque-Box E2E Testing Suite', () => {
     // F07: API Environment Configuration
     it('T2-F07-01: Non-ws protocol in DISCORD_BOT_WS_URL triggers configuration error or probe rejection', async () => {
       const badClient = new DiscordBridgeClient({
+        healthCacheMs: 0,
         wsUrl: 'http://localhost:8765',
         supertoken: 'tok'
       });
@@ -2247,6 +2257,7 @@ describe('Dual Track Opaque-Box E2E Testing Suite', () => {
 
     it('T2-F07-03: Empty string supertoken triggers probe authentication_failed or unreachable', async () => {
       const badClient = new DiscordBridgeClient({
+        healthCacheMs: 0,
         wsUrl: bridgeWsUrl,
         supertoken: '',
         healthProbeTimeoutMs: 100
@@ -2295,6 +2306,7 @@ describe('Dual Track Opaque-Box E2E Testing Suite', () => {
     });
     it('T2-F08-05: Calling .close() while connecting cleanly terminates without dangling listeners', async () => {
       const tempClient = new DiscordBridgeClient({
+        healthCacheMs: 0,
         wsUrl: bridgeWsUrl,
         supertoken: mockSupertoken
       });
@@ -2335,6 +2347,7 @@ describe('Dual Track Opaque-Box E2E Testing Suite', () => {
     });
     it('T2-F09-04: Clean client shutdown drains pending queue items with rejection', async () => {
       const tempClient = new DiscordBridgeClient({
+        healthCacheMs: 0,
         wsUrl: bridgeWsUrl,
         supertoken: mockSupertoken
       });
@@ -2469,6 +2482,7 @@ describe('Dual Track Opaque-Box E2E Testing Suite', () => {
     // F12: BridgeClient Ephemeral Health Probe
     it('T2-F12-01: Connection refused (bot offline) fails probe fast returning unreachable', async () => {
       const offClient = new DiscordBridgeClient({
+        healthCacheMs: 0,
         wsUrl: 'ws://127.0.0.1:19998',
         supertoken: 'tok',
         healthProbeTimeoutMs: 100
@@ -3371,6 +3385,7 @@ describe('Dual Track Opaque-Box E2E Testing Suite', () => {
     });
     it('T3-COMB-03 (F10+F11): Multiple successive rate limits totaling max duration trigger terminal timeout with incidentId', async () => {
       const fastClient = new DiscordBridgeClient({
+        healthCacheMs: 0,
         wsUrl: bridgeWsUrl,
         supertoken: mockSupertoken,
         maxRetryDurationMs: 60,
@@ -3378,6 +3393,7 @@ describe('Dual Track Opaque-Box E2E Testing Suite', () => {
       });
       const timeoutStore = new SuggestionStore();
       const timeoutService = new SuggestionsService({
+        rateLimiter: false,
         store: timeoutStore,
         bridgeClient: fastClient,
         logger: incidentLogger
@@ -3630,6 +3646,7 @@ describe('Dual Track Opaque-Box E2E Testing Suite', () => {
 
     it('T3-COMB-25 (F07+F08): Invalid WebSocket host URL causes connection error handled cleanly without process crash', async () => {
       const badHostClient = new DiscordBridgeClient({
+        healthCacheMs: 0,
         wsUrl: 'ws://127.0.0.1:29999',
         supertoken: 'tok',
         healthProbeTimeoutMs: 50

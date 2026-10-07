@@ -85,4 +85,4 @@ export interface SuggestionStatusResponse {
 - **`status`**: Estado actual en la máquina de estados.
 - **`nextRetryInSeconds`**: (Opcional) Tiempo restante estimado en segundos antes del siguiente intento de retransmisión. Presente únicamente cuando `status === 'retrying'`.
 - **`incidentId`**: (Opcional) Identificador UUID del incidente forense emitido a `stderr`. Presente únicamente cuando `status === 'failed'`.
-- **`error`**: (Opcional) Mensaje descriptivo del motivo del fallo para diagnóstico o visualización. Presente únicamente cuando `status === 'failed'`.
+- **`error`**: (Opcional en el contrato) La API no lo rellena: el motivo técnico de un fallo solo se registra en el log del servidor junto al `incidentId`, para no exponer hosts, puertos, códigos de socket ni mensajes del bot en una ruta pública. La web muestra un mensaje genérico y el `incidentId`.

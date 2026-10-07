@@ -40,11 +40,6 @@ export const pageMetadata: Record<string, PageMetadata> = {
     description:
       'Consulta las selecciones y victorias de cada campeón en los mapas de Rebel Crown Legacy.'
   },
-  '/fantasy': {
-    title: 'Fantasy',
-    description:
-      'Construye tu quinteto Fantasy y sigue el rendimiento de tus jugadores favoritos de Rebel Crown Legacy.'
-  },
   '/predicciones': {
     title: 'Predicciones',
     description:

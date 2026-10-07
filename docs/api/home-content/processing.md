@@ -54,7 +54,7 @@ const values = {
 El almacenamiento de recursos gráficos se implementa en `EditorialImageStore` (`editorial-image.store.ts:1-42`). Su diseño garantiza inmunidad absoluta frente a inyecciones de código, secuencias de escape de directorio y archivos con extensiones engañosas.
 
 ### 3.1 Directorio y Prevención de Path Traversal
-- Las imágenes se persisten en la ruta configurada en la variable de entorno `EDITORIAL_IMAGE_DIR`, con valor por defecto `'data/editorial-images'` (`editorial-image.store.ts:7`).
+- Las imágenes se persisten en la ruta configurada en la variable de entorno `EDITORIAL_IMAGE_DIR`, con valor por defecto `'data/editorial-images'` (`apps/api/src/config/env.ts:90`, `editorial-image.store.ts:8`). `server.ts` entrega ese valor al almacén; el módulo no lee `process.env`.
 - La función de resolución de ruta en disco (`path(name: string)`, líneas 11-14) evalúa el nombre contra la expresión regular:
   ```typescript
   if (!/^[a-f0-9-]{36}\.(png|jpg|webp)$/.test(name)) throw notFound('Image');

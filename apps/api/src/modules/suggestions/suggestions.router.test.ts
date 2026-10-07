@@ -1,14 +1,18 @@
+import { EventEmitter } from 'node:events';
 import express from 'express';
 import request from 'supertest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { errorHandler } from '../../shared/http.js';
 import type { AuthService } from '../auth/auth.service.js';
+import type { DiscordBridgeClient } from '../discord-bridge/discord-bridge.client.js';
+import { IncidentLogger } from './incident-logger.js';
+import { SuggestionRateLimiter } from './suggestion-rate-limiter.js';
+import { SuggestionStore } from './suggestion.store.js';
 import { createSuggestionsRouter } from './suggestions.router.js';
-import type { SuggestionsService } from './suggestions.service.js';
+import { SuggestionsService } from './suggestions.service.js';
 
 interface MockSuggestionsService {
   submit: ReturnType<typeof vi.fn>;
-  submitSuggestion: ReturnType<typeof vi.fn>;
   getStatus: ReturnType<typeof vi.fn>;
 }
 
@@ -20,7 +24,6 @@ describe('suggestions.router', () => {
   beforeEach(() => {
     mockService = {
       submit: vi.fn(),
-      submitSuggestion: vi.fn(),
       getStatus: vi.fn()
     };
 
@@ -154,7 +157,8 @@ describe('suggestions.router', () => {
       expect(mockAuthService.currentUser).toHaveBeenCalledWith('valid-token');
       expect(mockService.submit).toHaveBeenCalledWith(
         { suggestion: 'Sugerencia de usuario autenticado', isAnonymous: false },
-        expect.objectContaining({ discordId: '987654321' })
+        expect.objectContaining({ discordId: '987654321' }),
+        expect.objectContaining({ clientIp: expect.any(String) })
       );
     });
 
@@ -193,8 +197,64 @@ describe('suggestions.router', () => {
       expect(res.status).toBe(202);
       expect(mockService.submit).toHaveBeenCalledWith(
         { suggestion: 'Sugerencia con token caducado', isAnonymous: false },
-        undefined
+        undefined,
+        expect.objectContaining({ clientIp: expect.any(String) })
       );
+    });
+  });
+
+  describe('session cookie selection', () => {
+    function appWithAuth(secureCookies: boolean, currentUser: ReturnType<typeof vi.fn>) {
+      const authApp = express();
+      authApp.use(express.json());
+      authApp.use(
+        '/api/v1/suggestions',
+        createSuggestionsRouter({
+          suggestionsService: mockService as unknown as SuggestionsService,
+          frontendOrigin: trustedOrigin,
+          auth: {
+            service: { currentUser } as unknown as AuthService,
+            secureCookies,
+            frontendOrigin: trustedOrigin
+          }
+        })
+      );
+      authApp.use(errorHandler);
+      return authApp;
+    }
+
+    it.each([
+      [false, 'rcl_session=token-a', 'token-a'],
+      [false, 'theme=dark; rcl_session=token-a; lang=es', 'token-a'],
+      [false, '__Host-rcl_session=token-a', undefined],
+      [false, 'rcl_session=token-a; rcl_session=token-b', undefined],
+      [true, '__Host-rcl_session=token-a', 'token-a'],
+      [true, 'rcl_session=token-a', undefined],
+      [true, '__Host-rcl_session=token-a; __Host-rcl_session=token-b', undefined]
+    ])('secureCookies=%s with Cookie "%s" reads token %s', async (secure, cookie, expected) => {
+      const currentUser = vi.fn().mockResolvedValue({
+        discordId: '987654321',
+        username: 'AuthGamer',
+        globalName: null,
+        avatarHash: null,
+        role: 'viewer'
+      });
+      mockService.submit.mockResolvedValueOnce({ id: 'uuid-cookie', status: 'queued' });
+
+      const res = await request(appWithAuth(secure, currentUser))
+        .post('/api/v1/suggestions')
+        .set('Origin', trustedOrigin)
+        .set('Cookie', cookie)
+        .send({ suggestion: 'Sugerencia para probar la cookie', isAnonymous: false });
+
+      expect(res.status).toBe(202);
+      if (expected) {
+        expect(currentUser).toHaveBeenCalledWith(expected);
+        expect(mockService.submit.mock.calls[0]?.[1]).toMatchObject({ discordId: '987654321' });
+      } else {
+        expect(currentUser).not.toHaveBeenCalled();
+        expect(mockService.submit.mock.calls[0]?.[1]).toBeUndefined();
+      }
     });
   });
 
@@ -244,5 +304,87 @@ describe('suggestions.router', () => {
         error: 'Discord unreachable'
       });
     });
+  });
+});
+
+describe('suggestions.router with SuggestionsService (limits)', () => {
+  const trustedOrigin = 'http://localhost:5173';
+
+  class FakeBridge extends EventEmitter {
+    public send = vi.fn().mockResolvedValue(undefined);
+    public isConfigured = vi.fn().mockReturnValue(true);
+    public hasCapacity = vi.fn().mockReturnValue(true);
+  }
+
+  function buildApp(options: { store?: SuggestionStore; rateLimiter?: SuggestionRateLimiter }) {
+    const bridge = new FakeBridge();
+    const store = options.store ?? new SuggestionStore({ enablePeriodicCleanup: false });
+    const service = new SuggestionsService({
+      bridgeClient: bridge as unknown as DiscordBridgeClient,
+      store,
+      logger: new IncidentLogger(() => {}),
+      rateLimiter: options.rateLimiter
+    });
+    const app = express();
+    app.use(express.json());
+    app.use(
+      '/api/v1/suggestions',
+      createSuggestionsRouter({ suggestionsService: service, frontendOrigin: trustedOrigin })
+    );
+    app.use(errorHandler);
+    return { app, bridge, store };
+  }
+
+  const post = (app: express.Express, suggestion: string) =>
+    request(app).post('/api/v1/suggestions').set('Origin', trustedOrigin).send({ suggestion });
+
+  it('responds 429 with Retry-After once the same IP exceeds the anonymous limit', async () => {
+    const { app, bridge } = buildApp({
+      rateLimiter: new SuggestionRateLimiter({ anonymous: { limit: 3, windowMs: 10 * 60 * 1000 } })
+    });
+
+    for (let i = 0; i < 3; i++) {
+      expect((await post(app, `Sugerencia anónima número ${i}`)).status).toBe(202);
+    }
+    const limited = await post(app, 'Sugerencia anónima de más');
+
+    expect(limited.status).toBe(429);
+    expect(limited.body.error.code).toBe('RATE_LIMITED');
+    expect(Number(limited.headers['retry-after'])).toBeGreaterThan(0);
+    expect(Number(limited.headers['retry-after'])).toBeLessThanOrEqual(600);
+    expect(bridge.send).toHaveBeenCalledTimes(3);
+  });
+
+  it('applies the default limiter when none is configured', async () => {
+    const { app } = buildApp({});
+    const statuses: number[] = [];
+    for (let i = 0; i < 4; i++) {
+      statuses.push((await post(app, `Sugerencia por defecto ${i}`)).status);
+    }
+    expect(statuses).toEqual([202, 202, 202, 429]);
+  });
+
+  it('responds 503 and keeps the store size when the store is full', async () => {
+    const store = new SuggestionStore({ maxRecords: 1, enablePeriodicCleanup: false });
+    const { app, bridge } = buildApp({ store });
+
+    expect((await post(app, 'Primera sugerencia aceptada')).status).toBe(202);
+    const full = await post(app, 'Segunda sugerencia rechazada');
+
+    expect(full.status).toBe(503);
+    expect(full.body.error.code).toBe('SUGGESTIONS_UNAVAILABLE');
+    expect(store.size()).toBe(1);
+    expect(bridge.send).toHaveBeenCalledTimes(1);
+  });
+
+  it('responds 503 SUGGESTIONS_NOT_CONFIGURED when the bridge has no URL', async () => {
+    const { app, bridge, store } = buildApp({});
+    bridge.isConfigured.mockReturnValue(false);
+
+    const res = await post(app, 'Sugerencia sin puente configurado');
+
+    expect(res.status).toBe(503);
+    expect(res.body.error.code).toBe('SUGGESTIONS_NOT_CONFIGURED');
+    expect(store.size()).toBe(0);
   });
 });

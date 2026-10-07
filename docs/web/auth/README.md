@@ -9,7 +9,7 @@
 El módulo `apps/web/src/features/auth/` implementa la arquitectura de cliente para la gestión del estado de sesión, autenticación federada con Discord y control de acceso visual en RCL-Next. Proporciona componentes de interfaz de usuario altamente desacoplados, contextos de difusión reactiva de identidad y barreras perimetrales de renderizado para rutas de administración.
 
 El diseño sigue estrictamente el **Golden Standard Modular** del repositorio:
-1. **Componentes Puramente Presentacionales (*Dumb UI*):** Componentes como `AuthControlsView` (`AuthControls.tsx:15-92`) operan estrictamente como funciones puras de interfaz sin ningún efecto secundario. Contienen **estrictamente cero llamadas a red** (`fetch`, `WebSocket` o APIs de red). Reciben el estado y *callbacks* exclusivamente vía *props*.
+1. **Componentes Puramente Presentacionales (*Dumb UI*):** Componentes como `AuthControlsView` (`AuthControls.tsx:54-117`) operan estrictamente como funciones puras de interfaz sin ningún efecto secundario. Contienen **estrictamente cero llamadas a red** (`fetch`, `WebSocket` o APIs de red). Reciben el estado y *callbacks* exclusivamente vía *props*.
 2. **Centralización y Ciclo de Vida en `AuthProvider`:** Todo el estado de sesión, sincronización con `/api/v1/auth/me` y mecanismos de cierre de sesión residen en `AuthProvider.tsx:33-81`.
 3. **Cancelación Automática con `AbortController`:** Las consultas de sesión pendientes se cancelan inmediatamente mediante `controller.abort()` si el componente se desmonta o si el usuario solicita un reintento manual (`AuthProvider.tsx:41, 51`).
 4. **Protección Perimetral Declarativa (`RequireAdmin`):** Barrera visual (`RequireAdmin.tsx:5-34`) que intercepta el renderizado de vistas sensibles, presentando estados accesibles de comprobación, solicitud de login o denegación de acceso sin duplicar lógica en cada página.
@@ -31,5 +31,5 @@ El diseño sigue estrictamente el **Golden Standard Modular** del repositorio:
 ## 3. Garantías de Separación de Responsabilidades
 
 - **Cero Red en Componentes Visuales:** `AuthControlsView` no importa `fetch`, `auth-api.ts` ni librerías de red; solo renderiza markup HTML según el estado recibido.
-- **Avatares desde el mismo origen:** `AuthControlsView` usa el [proxy de avatares](../../api/auth/avatars.md), que conserva PNG/GIF sin reenviar cookies de Discord. Cuando no hay hash se muestran las iniciales; no existe sustitución automática por iniciales ante un error de descarga.
+- **Avatares desde el mismo origen:** `AuthControlsView` usa el [proxy de avatares](../../api/auth/avatars.md), que conserva PNG/GIF sin reenviar cookies de Discord. Cuando no hay hash, o la descarga del avatar falla, se muestran las iniciales ([detalle](components.md#14-avatar-de-la-cuenta-accountavatarview-y-accountavatar)).
 - **Resiliencia ante Fallos de Red:** Si `/api/v1/auth/me` devuelve error o la red falla, la UI transiciona al estado discriminado `'error'` permitiendo al usuario reintentar sin recargar la página completa.

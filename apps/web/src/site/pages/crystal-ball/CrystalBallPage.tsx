@@ -17,7 +17,7 @@ export function CrystalBallPage() {
   return (
     <PageLayout
       id="bola-cristal"
-      number="10"
+      number="09"
       title="Bola de cristal"
       subtitle="Antes de que empiece"
       description="Pronósticos de temporada completa: campeones, MVP y sorpresas. El desenlace llega al final del split."

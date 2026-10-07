@@ -1,6 +1,9 @@
-import assert from 'node:assert/strict';
-import { test } from 'node:test';
 import type { BatchUploadSummary, MultiAccountAnomaly } from '@rcl/contracts';
+import { expect, test } from 'vitest';
+import {
+  MISSING_WS_URL_MESSAGE,
+  resolveRoflUploadWsUrl
+} from '../../apps/web/src/features/rofl-upload/hooks/useRoflUploadWs.js';
 import {
   initialUploadState,
   uploadReducer
@@ -11,10 +14,10 @@ test('uploadReducer starts upload and transitions to uploading stage', () => {
     type: 'start',
     filename: 'match_batch.zip'
   });
-  assert.equal(state.status, 'uploading');
-  assert.equal(state.stage, 'uploading');
-  assert.equal(state.fileName, 'match_batch.zip');
-  assert.ok(state.terminalLogs.some((l) => l.includes('match_batch.zip')));
+  expect(state.status).toBe('uploading');
+  expect(state.stage).toBe('uploading');
+  expect(state.fileName).toBe('match_batch.zip');
+  expect(state.terminalLogs.some((l) => l.includes('match_batch.zip'))).toBeTruthy();
 });
 
 test('uploadReducer transitions to queue stage with position and total', () => {
@@ -23,11 +26,11 @@ test('uploadReducer transitions to queue stage with position and total', () => {
     position: 2,
     total: 3
   });
-  assert.equal(state.status, 'queue');
-  assert.equal(state.stage, 'queue');
-  assert.equal(state.queuePosition, 2);
-  assert.equal(state.queueTotal, 3);
-  assert.ok(state.terminalLogs.some((l) => l.includes('Position 2 of 3')));
+  expect(state.status).toBe('queue');
+  expect(state.stage).toBe('queue');
+  expect(state.queuePosition).toBe(2);
+  expect(state.queueTotal).toBe(3);
+  expect(state.terminalLogs.some((l) => l.includes('Position 2 of 3'))).toBeTruthy();
 });
 
 test('uploadReducer updates processing stage and clears queue metrics', () => {
@@ -40,16 +43,16 @@ test('uploadReducer updates processing stage and clears queue metrics', () => {
     type: 'stage',
     stage: 'decompressing'
   });
-  assert.equal(decompressingState.status, 'decompressing');
-  assert.equal(decompressingState.stage, 'decompressing');
-  assert.equal(decompressingState.queuePosition, null);
-  assert.equal(decompressingState.queueTotal, null);
+  expect(decompressingState.status).toBe('decompressing');
+  expect(decompressingState.stage).toBe('decompressing');
+  expect(decompressingState.queuePosition).toBe(null);
+  expect(decompressingState.queueTotal).toBe(null);
 
   const parsingState = uploadReducer(decompressingState, {
     type: 'stage',
     stage: 'parsing'
   });
-  assert.equal(parsingState.stage, 'parsing');
+  expect(parsingState.stage).toBe('parsing');
 });
 
 test('uploadReducer updates progress and logs message', () => {
@@ -58,8 +61,8 @@ test('uploadReducer updates progress and logs message', () => {
     percent: 45,
     message: 'Parsed 3/10 replay files'
   });
-  assert.equal(state.progress, 45);
-  assert.ok(state.terminalLogs.some((l) => l.includes('Parsed 3/10 replay files')));
+  expect(state.progress).toBe(45);
+  expect(state.terminalLogs.some((l) => l.includes('Parsed 3/10 replay files'))).toBeTruthy();
 });
 
 test('uploadReducer records multi-account anomalies', () => {
@@ -76,10 +79,10 @@ test('uploadReducer records multi-account anomalies', () => {
     type: 'anomaly',
     anomaly
   });
-  assert.equal(state.anomalies.length, 1);
-  assert.equal(state.anomalies[0]?.discordUserId, 'discord_user_99');
-  assert.equal(state.anomalies[0]?.accounts.length, 2);
-  assert.ok(state.terminalLogs.some((l) => l.includes('RCL_ProGamer')));
+  expect(state.anomalies.length).toBe(1);
+  expect(state.anomalies[0]?.discordUserId).toBe('discord_user_99');
+  expect(state.anomalies[0]?.accounts.length).toBe(2);
+  expect(state.terminalLogs.some((l) => l.includes('RCL_ProGamer'))).toBeTruthy();
 });
 
 test('uploadReducer stores missing players on error', () => {
@@ -87,11 +90,11 @@ test('uploadReducer stores missing players on error', () => {
     type: 'error',
     message: 'The following players are not registered in the database: Faker#KR1, Deft#KR2'
   });
-  assert.equal(state.status, 'error');
-  assert.equal(state.stage, 'error');
-  assert.match(state.errorMessage ?? '', /Faker#KR1/);
-  assert.deepEqual(state.missingPlayers, ['Faker#KR1', 'Deft#KR2']);
-  assert.ok(state.terminalLogs.some((l) => l.includes('[ERROR]')));
+  expect(state.status).toBe('error');
+  expect(state.stage).toBe('error');
+  expect(state.errorMessage ?? '').toMatch(/Faker#KR1/);
+  expect(state.missingPlayers).toStrictEqual(['Faker#KR1', 'Deft#KR2']);
+  expect(state.terminalLogs.some((l) => l.includes('[ERROR]'))).toBeTruthy();
 });
 
 test('uploadReducer handles generic errors without missing players', () => {
@@ -99,10 +102,10 @@ test('uploadReducer handles generic errors without missing players', () => {
     type: 'error',
     message: 'Disk write error: out of space'
   });
-  assert.equal(state.status, 'error');
-  assert.equal(state.stage, 'error');
-  assert.equal(state.errorMessage, 'Disk write error: out of space');
-  assert.deepEqual(state.missingPlayers, []);
+  expect(state.status).toBe('error');
+  expect(state.stage).toBe('error');
+  expect(state.errorMessage).toBe('Disk write error: out of space');
+  expect(state.missingPlayers).toStrictEqual([]);
 });
 
 test('uploadReducer handles socket disconnect cleanly', () => {
@@ -112,10 +115,10 @@ test('uploadReducer handles socket disconnect cleanly', () => {
       type: 'connection_lost'
     }
   );
-  assert.equal(state.status, 'error');
-  assert.equal(state.stage, 'error');
-  assert.match(state.errorMessage ?? '', /desconexión|interrumpida|connection/i);
-  assert.ok(state.terminalLogs.some((l) => l.includes('interrumpida')));
+  expect(state.status).toBe('error');
+  expect(state.stage).toBe('error');
+  expect(state.errorMessage ?? '').toMatch(/desconexión|interrumpida|connection/i);
+  expect(state.terminalLogs.some((l) => l.includes('interrumpida'))).toBeTruthy();
 });
 
 test('uploadReducer records batch success with summary', () => {
@@ -130,12 +133,12 @@ test('uploadReducer records batch success with summary', () => {
     type: 'success',
     summary
   });
-  assert.equal(state.status, 'completed');
-  assert.equal(state.stage, 'completed');
-  assert.equal(state.progress, 100);
-  assert.equal(state.summary?.processedGames, 5);
-  assert.deepEqual(state.summary?.skippedDuplicates, ['EUW1-11111']);
-  assert.ok(state.terminalLogs.some((l) => l.includes('[SUCCESS]')));
+  expect(state.status).toBe('completed');
+  expect(state.stage).toBe('completed');
+  expect(state.progress).toBe(100);
+  expect(state.summary?.processedGames).toBe(5);
+  expect(state.summary?.skippedDuplicates).toStrictEqual(['EUW1-11111']);
+  expect(state.terminalLogs.some((l) => l.includes('[SUCCESS]'))).toBeTruthy();
 });
 
 test('uploadReducer handles batch logs and reset', () => {
@@ -143,18 +146,18 @@ test('uploadReducer handles batch logs and reset', () => {
     type: 'batch_logs',
     logs: ['Log message 1', 'Log message 2']
   });
-  assert.equal(loggedState.terminalLogs.length, 2);
+  expect(loggedState.terminalLogs.length).toBe(2);
 
   const singleLoggedState = uploadReducer(loggedState, {
     type: 'log',
     message: 'Log message 3'
   });
-  assert.equal(singleLoggedState.terminalLogs.length, 3);
+  expect(singleLoggedState.terminalLogs.length).toBe(3);
 
   const resetState = uploadReducer(singleLoggedState, {
     type: 'reset'
   });
-  assert.deepEqual(resetState, initialUploadState);
+  expect(resetState).toStrictEqual(initialUploadState);
 });
 
 test('uploadReducer handles specific connection_lost messages for 4001 and 4003', () => {
@@ -163,23 +166,27 @@ test('uploadReducer handles specific connection_lost messages for 4001 and 4003'
     code: 4001,
     reason: 'Unauthorized'
   });
-  assert.equal(state4001.status, 'error');
-  assert.ok(
+  expect(state4001.status).toBe('error');
+  expect(
     state4001.errorMessage?.includes('sesión') || state4001.errorMessage?.includes('inicia sesión')
-  );
-  assert.ok(state4001.terminalLogs.some((l) => l.includes('4001') && l.includes('Unauthorized')));
+  ).toBeTruthy();
+  expect(
+    state4001.terminalLogs.some((l) => l.includes('4001') && l.includes('Unauthorized'))
+  ).toBeTruthy();
 
   const state4003 = uploadReducer(initialUploadState, {
     type: 'connection_lost',
     code: 4003,
     reason: 'Forbidden'
   });
-  assert.equal(state4003.status, 'error');
-  assert.ok(
+  expect(state4003.status).toBe('error');
+  expect(
     state4003.errorMessage?.includes('administrador') ||
       state4003.errorMessage?.includes('permisos')
-  );
-  assert.ok(state4003.terminalLogs.some((l) => l.includes('4003') && l.includes('Forbidden')));
+  ).toBeTruthy();
+  expect(
+    state4003.terminalLogs.some((l) => l.includes('4003') && l.includes('Forbidden'))
+  ).toBeTruthy();
 });
 
 test('uploadReducer handles specific connection_lost message for 1009 and default codes', () => {
@@ -188,25 +195,25 @@ test('uploadReducer handles specific connection_lost message for 1009 and defaul
     code: 1009,
     reason: 'Message too big'
   });
-  assert.equal(state1009.status, 'error');
-  assert.equal(state1009.errorMessage, 'El archivo supera el tamaño máximo permitido (50MB).');
-  assert.ok(
+  expect(state1009.status).toBe('error');
+  expect(state1009.errorMessage).toBe('El archivo supera el tamaño máximo permitido (50MB).');
+  expect(
     state1009.terminalLogs.some(
       (l) => l.includes('code: 1009') && l.includes('El archivo supera el tamaño máximo permitido')
     )
-  );
+  ).toBeTruthy();
 
   const stateDefault = uploadReducer(initialUploadState, {
     type: 'connection_lost',
     code: 1006
   });
-  assert.equal(stateDefault.status, 'error');
-  assert.equal(stateDefault.errorMessage, 'Conexión cerrada inesperadamente con el servidor.');
-  assert.ok(
+  expect(stateDefault.status).toBe('error');
+  expect(stateDefault.errorMessage).toBe('Conexión cerrada inesperadamente con el servidor.');
+  expect(
     stateDefault.terminalLogs.some(
       (l) => l.includes('code: 1006') && l.includes('Conexión cerrada inesperadamente')
     )
-  );
+  ).toBeTruthy();
 });
 
 test('uploadReducer handles upload timeout error', () => {
@@ -214,9 +221,35 @@ test('uploadReducer handles upload timeout error', () => {
     type: 'error',
     message: 'Upload backpressure timeout: network stalled for over 15 seconds'
   });
-  assert.equal(state.status, 'error');
-  assert.equal(
-    state.errorMessage,
+  expect(state.status).toBe('error');
+  expect(state.errorMessage).toBe(
     'Upload backpressure timeout: network stalled for over 15 seconds'
   );
+});
+
+test('resolveRoflUploadWsUrl derives the gateway URL from the page location', () => {
+  expect(resolveRoflUploadWsUrl(undefined, { protocol: 'http:', host: 'localhost:5173' })).toBe(
+    'ws://localhost:5173/ws/rofl-upload'
+  );
+  expect(resolveRoflUploadWsUrl(undefined, { protocol: 'https:', host: 'rcl.example' })).toBe(
+    'wss://rcl.example/ws/rofl-upload'
+  );
+  expect(
+    resolveRoflUploadWsUrl('ws://gateway.test/ws/rofl-upload', { protocol: 'https:', host: 'x' })
+  ).toBe('ws://gateway.test/ws/rofl-upload');
+});
+
+test('resolveRoflUploadWsUrl returns null without wsUrl nor window.location', () => {
+  expect(resolveRoflUploadWsUrl(undefined, undefined)).toBe(null);
+  expect(resolveRoflUploadWsUrl(undefined, { protocol: 'http:' })).toBe(null);
+  expect(resolveRoflUploadWsUrl('', { protocol: 'http:', host: '' })).toBe(null);
+});
+
+test('uploadReducer exposes the missing WebSocket URL error', () => {
+  const state = uploadReducer(initialUploadState, {
+    type: 'error',
+    message: MISSING_WS_URL_MESSAGE
+  });
+  expect(state.status).toBe('error');
+  expect(state.errorMessage).toBe(MISSING_WS_URL_MESSAGE);
 });

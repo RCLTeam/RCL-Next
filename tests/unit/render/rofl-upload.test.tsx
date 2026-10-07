@@ -1,20 +1,23 @@
-import assert from 'node:assert/strict';
-import { test } from 'node:test';
 import React from 'react';
 import { renderToString } from 'react-dom/server';
+import { expect, test } from 'vitest';
 import { AnomalyAlerts } from '../../../apps/web/src/features/rofl-upload/components/AnomalyAlerts.js';
 import { BatchSummaryCard } from '../../../apps/web/src/features/rofl-upload/components/BatchSummaryCard.js';
 import { MissingPlayersAlert } from '../../../apps/web/src/features/rofl-upload/components/MissingPlayersAlert.js';
 import { RoflDropzone } from '../../../apps/web/src/features/rofl-upload/components/RoflDropzone.js';
 import { RoflUploadPanel } from '../../../apps/web/src/features/rofl-upload/components/RoflUploadPanel.js';
 import { UploadStepper } from '../../../apps/web/src/features/rofl-upload/components/UploadStepper.js';
+import {
+  type UseRoflUploadWsReturn,
+  useRoflUploadWs
+} from '../../../apps/web/src/features/rofl-upload/hooks/useRoflUploadWs.js';
 
 test('RoflDropzone renders accessible drop target and format badges', () => {
   const html = renderToString(React.createElement(RoflDropzone, { onFileSelected: () => {} }));
-  assert.match(html, /Dropzone for ROFL and ZIP files/i);
-  assert.match(html, /\.ROFL \(Single Replay\)/i);
-  assert.match(html, /\.ZIP \(Batch Archive\)/i);
-  assert.match(html, /Select or drop League of Legends replays/i);
+  expect(html).toMatch(/Dropzone for ROFL and ZIP files/i);
+  expect(html).toMatch(/\.ROFL \(Single Replay\)/i);
+  expect(html).toMatch(/\.ZIP \(Batch Archive\)/i);
+  expect(html).toMatch(/Select or drop League of Legends replays/i);
 });
 
 test('UploadStepper renders queue state and live terminal logs', () => {
@@ -28,11 +31,11 @@ test('UploadStepper renders queue state and live terminal logs', () => {
       fileName: 'replays_week_1.zip'
     })
   );
-  assert.match(html, /replays_week_1\.zip/i);
-  assert.match(html, /Decompression Queue Active/i);
-  assert.match(html, /Position 2 of 4/i);
-  assert.match(html, /Live Ingestion Console/i);
-  assert.match(html, /In decompression queue/i);
+  expect(html).toMatch(/replays_week_1\.zip/i);
+  expect(html).toMatch(/Decompression Queue Active/i);
+  expect(html).toMatch(/Position 2 of 4/i);
+  expect(html).toMatch(/Live Ingestion Console/i);
+  expect(html).toMatch(/In decompression queue/i);
 });
 
 test('MissingPlayersAlert renders unregistered player list and warnings', () => {
@@ -42,9 +45,9 @@ test('MissingPlayersAlert renders unregistered player list and warnings', () => 
       errorMessage: 'Validation failed: The following summoners are not registered'
     })
   );
-  assert.match(html, /Validation Aborted: Unregistered Players Detected/i);
-  assert.match(html, /Faker#T1/i);
-  assert.match(html, /Chovy#GEN/i);
+  expect(html).toMatch(/Validation Aborted: Unregistered Players Detected/i);
+  expect(html).toMatch(/Faker#T1/i);
+  expect(html).toMatch(/Chovy#GEN/i);
 });
 
 test('AnomalyAlerts renders multi-account warning cards', () => {
@@ -63,11 +66,11 @@ test('AnomalyAlerts renders multi-account warning cards', () => {
       ]
     })
   );
-  assert.match(html, /Multi-Account Detection Warnings/i);
-  assert.match(html, /EUW1-100\.rofl/i);
-  assert.match(html, /GamerOne/i);
-  assert.match(html, /Main#EUW/i);
-  assert.match(html, /Ahri/i);
+  expect(html).toMatch(/Multi-Account Detection Warnings/i);
+  expect(html).toMatch(/EUW1-100\.rofl/i);
+  expect(html).toMatch(/GamerOne/i);
+  expect(html).toMatch(/Main#EUW/i);
+  expect(html).toMatch(/Ahri/i);
 });
 
 test('BatchSummaryCard renders processed statistics and skipped duplicates', () => {
@@ -83,15 +86,42 @@ test('BatchSummaryCard renders processed statistics and skipped duplicates', () 
       onReset: () => {}
     })
   );
-  assert.match(html, /Batch Ingestion Complete/i);
-  assert.match(html, />4</);
-  assert.match(html, /MATCH-DUP-99/i);
-  assert.match(html, /Upload Another Batch/i);
+  expect(html).toMatch(/Batch Ingestion Complete/i);
+  expect(html).toMatch(/>4</);
+  expect(html).toMatch(/MATCH-DUP-99/i);
+  expect(html).toMatch(/Upload Another Batch/i);
 });
 
 test('RoflUploadPanel renders complete initial console with dropzone', () => {
   const html = renderToString(React.createElement(RoflUploadPanel));
-  assert.match(html, /ROFL Upload/i);
-  assert.match(html, /Espacio de trabajo para la ingesta administrativa/i);
-  assert.match(html, /Dropzone for ROFL and ZIP files/i);
+  expect(html).toMatch(/ROFL Upload/i);
+  expect(html).toMatch(/Espacio de trabajo para la ingesta administrativa/i);
+  expect(html).toMatch(/Dropzone for ROFL and ZIP files/i);
+});
+
+test('useRoflUploadWs does not open a WebSocket without wsUrl nor window.location', async () => {
+  expect((globalThis as { window?: unknown }).window).toBe(undefined);
+  const openedUrls: string[] = [];
+  const originalWebSocket = globalThis.WebSocket;
+  class RecordingWebSocket {
+    binaryType = 'blob';
+    constructor(url: string) {
+      openedUrls.push(url);
+    }
+    close(): void {}
+  }
+  globalThis.WebSocket = RecordingWebSocket as unknown as typeof WebSocket;
+  try {
+    let hook: UseRoflUploadWsReturn | undefined;
+    function Probe() {
+      hook = useRoflUploadWs();
+      return null;
+    }
+    renderToString(React.createElement(Probe));
+    expect(hook).toBeTruthy();
+    await hook.uploadFile(new File(['replay'], 'match.rofl'));
+    expect(openedUrls).toStrictEqual([]);
+  } finally {
+    globalThis.WebSocket = originalWebSocket;
+  }
 });

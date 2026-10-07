@@ -34,6 +34,7 @@ export interface PredictionSummary {
 export interface PredictorStanding {
   userId: string;
   name: string;
+  avatarHash: string | null;
   position: number;
   correct: number;
   total: number;
@@ -88,9 +89,10 @@ Entrada individual en la tabla de clasificación de la temporada:
 |---|---|:---:|---|
 | `userId` | `string` | Sí | Identificador Discord del usuario (`discord_users.discordId`). |
 | `name` | `string` | Sí | Nombre global de Discord (`globalName`) o nombre de usuario (`username`). |
+| `avatarHash` | `string \| null` | Sí | Hash del avatar de Discord, sin extensión; puede llevar el prefijo `a_` para avatares animados. `null` si el usuario no tiene avatar. Se combina con `userId` para solicitar la imagen al proxy `/api/v1/discord-avatars/:discordId/:hash`. |
 | `position` | `number` | Sí | Posición secuencial en la tabla (1-indexed). |
 | `correct` | `number` | Sí | Número total de enfrentamientos en los que acertó el equipo ganador. |
-| `total` | `number` | Sí | Número total de partidos pronosticados por el usuario. |
+| `total` | `number` | Sí | Número de partidos pronosticados por el usuario en la temporada que ya están finalizados (`completed` o `forfeit`) y tienen ganador asignado. |
 | `points` | `number` | Sí | Puntuación total acumulada según el baremo oficial (3/1/0 puntos). |
 
 #### Criterio de Ordenación del Ranking (`predictions.repository.ts`, método `overview`):
@@ -144,6 +146,7 @@ Estructura global entregada por el endpoint público `GET /api/v1/predictions/di
       {
         "userId": "123456789012345678",
         "name": "Knekro",
+        "avatarHash": "0123456789abcdef0123456789abcdef",
         "position": 1,
         "correct": 14,
         "total": 16,
@@ -154,7 +157,7 @@ Estructura global entregada por el endpoint público `GET /api/v1/predictions/di
 }
 ```
 
-#### Respuesta (HTTP 200 - Tras Cierre de Votaciones):
+#### Respuesta (HTTP 200 - Tras Finalizar el Partido):
 ```json
 {
   "data": {
@@ -175,6 +178,7 @@ Estructura global entregada por el endpoint público `GET /api/v1/predictions/di
       {
         "userId": "123456789012345678",
         "name": "Knekro",
+        "avatarHash": "0123456789abcdef0123456789abcdef",
         "position": 1,
         "correct": 14,
         "total": 16,

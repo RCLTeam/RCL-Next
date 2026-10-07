@@ -6,7 +6,7 @@
 
 ## 1. Visión General
 
-La persistencia de datos del motor de competición reside en la clase `PostgresCompetitionRepository` (`apps/api/src/modules/competition/postgres-competition.repository.ts:1-477`), implementando la interfaz abstracta `CompetitionRepository`. 
+La persistencia de datos del motor de competición reside en la clase `PostgresCompetitionRepository` (`apps/api/src/modules/competition/postgres-competition.repository.ts:1-490`), implementando la interfaz abstracta `CompetitionRepository`. 
 
 El repositorio interactúa con la base de datos PostgreSQL mediante **Drizzle ORM**, consumiendo el esquema canónico definido en `packages/database/src/schema.ts`. No ejecuta consultas SQL crudas en cadenas abiertas; emplea constructores tipados (`select`, `innerJoin`, `leftJoin`, `where`, `orderBy`) asegurando tipado estricto en tiempo de compilación.
 
@@ -37,7 +37,7 @@ seasons (name PK)
 
 En cumplimiento de los estándares de seguridad de datos y privacidad de los participantes de RCL, el repositorio implementa una política estricta de exclusión de datos sensibles antes de proyectar cualquier registro al servicio:
 
-### 3.1 Purga de Metadatos de Partida (`postgres-competition.repository.ts:77-94`)
+### 3.1 Purga de Metadatos de Partida (`postgres-competition.repository.ts:85-102`)
 Al consultar las estadísticas detalladas de los jugadores en un mapa (`matchGames`), se realiza una desestructuración intencionada para eliminar identificadores primarios y marcas de tiempo del sistema:
 ```typescript
 const { id: statsId, createdAt: statsCreated, updatedAt: statsUpdated, ...stats } = getTableColumns(playerGameStats);
@@ -46,7 +46,7 @@ const { id: runesId, createdAt: runesCreated, updatedAt: runesUpdated, ...runes 
 ```
 Esto garantiza que los objetos `stats`, `build` y `runes` transmitidos al cliente contengan únicamente métricas del juego (KDA, daño, objetos, runas) y ninguna columna técnica de infraestructura.
 
-### 3.2 Purga de Identificadores Sensibles del Jugador (`postgres-competition.repository.ts:145-152`)
+### 3.2 Purga de Identificadores Sensibles del Jugador (`postgres-competition.repository.ts:157-164`)
 La proyección base de jugadores selecciona exclusivamente:
 ```typescript
 private playerSelection = {
@@ -65,12 +65,12 @@ private playerSelection = {
 ## 4. Consultas Técnicas Destacadas
 
 ### 4.1 Resolución de Plantillas con Cuentas Principales (`teamDetail`)
-**Archivo**: `postgres-competition.repository.ts:353-378`
+**Archivo**: `postgres-competition.repository.ts:365-390`
 
 Un jugador en Discord puede tener múltiples cuentas de League of Legends vinculadas en el sistema. Al consultar el detalle de la plantilla de un equipo (`teamDetail`), se requiere mostrar una sola ficha por persona física, priorizando su cuenta principal de juego:
 
 ```typescript
-// apps/api/src/modules/competition/postgres-competition.repository.ts:357-376
+// apps/api/src/modules/competition/postgres-competition.repository.ts:369-388
 const members = await this.db
   .selectDistinctOn([teamMemberships.discordUserId], {
     id: teamMemberships.discordUserId,
@@ -96,12 +96,12 @@ const members = await this.db
 - **Inclusión de Personal Técnico (*Staff / Coach*)**: Mediante el `leftJoin` con `players`, aquellos integrantes de cuerpo técnico que no posean una cuenta de juego vinculada (o cuya cuenta principal no esté marcada) conservan su registro en la plantilla, mostrando su nombre de usuario de Discord (`coalesce(discordUsers.globalName, discordUsers.username)`).
 
 ### 4.2 Consulta de Detalle de Jugador y Cuentas Vinculadas (`playerDetail`)
-**Archivo**: `postgres-competition.repository.ts:295-340`
+**Archivo**: `postgres-competition.repository.ts:307-352`
 
 Al consultar el perfil detallado de un jugador (`playerDetail`), el repositorio recupera la información pública del jugador y resuelve dinámicamente el conjunto de cuentas secundarias asociadas a la misma identidad física:
 
 ```typescript
-// apps/api/src/modules/competition/postgres-competition.repository.ts:295-309
+// apps/api/src/modules/competition/postgres-competition.repository.ts:307-321
 const linkedAccounts = discordUserId
   ? (
       await this.db
@@ -127,7 +127,7 @@ const linkedAccounts = discordUserId
 - **Historial de Equipos (`memberships`)**: En la misma consulta (`líneas 310-335`), se recupera el historial de participaciones del jugador en equipos a través de todas las temporadas registradas, ordenado cronológicamente por `sql`${seasons.startsOn} DESC NULLS LAST``, `asc(seasons.name)`, `asc(teams.name)` y `asc(teams.id)`.
 
 ### 4.3 Determinación Dinámica de la Jornada Activa
-**Archivo**: `postgres-competition.repository.ts:226-241`
+**Archivo**: `postgres-competition.repository.ts:238-253`
 
 Para designar al jugador destacado (*Featured MVP*) de la división, el repositorio resuelve cuál es la jornada más representativa en curso sin requerir campos de estado manuales:
 1. Obtiene todas las jornadas de la división (`rounds`).
@@ -136,7 +136,7 @@ Para designar al jugador destacado (*Featured MVP*) de la división, el reposito
 4. La primera jornada resultante se utiliza para computar el MVP destacado de la semana.
 
 ### 4.4 Consulta de Picks de Campeones
-**Archivo**: `postgres-competition.repository.ts:27-45`
+**Archivo**: `postgres-competition.repository.ts:28-46`
 
 Para evitar que partidas preliminares o partidos cancelados alteren las estadísticas públicas de campeones:
 ```typescript
@@ -163,7 +163,7 @@ championPicks(divisionId: string) {
 Únicamente se leen filas donde el partido está finalizado (`'completed'` o `'forfeit'`) y el mapa tiene un ganador registrado (`winnerTeamId IS NOT NULL`).
 
 ### 4.5 Proyección de Jornadas y Manejo de `lockAt`
-**Archivo**: `postgres-competition.repository.ts:440-454`
+**Archivo**: `postgres-competition.repository.ts:452-466`
 
 ```typescript
 rounds(divisionId: string) {
@@ -186,12 +186,12 @@ rounds(divisionId: string) {
 - **Conversión de Claves**: El identificador de jornada en la base de datos es un `smallint`, pero los contratos de la API lo exponen como cadena de texto; por tanto, se castea explícitamente mediante `${rounds.id}::text`.
 
 ### 4.6 Proyección de Equipos y Partidos en División
-**Archivo**: `postgres-competition.repository.ts:424-476`
+**Archivo**: `postgres-competition.repository.ts:436-489`
 
 Al consultar los equipos y enfrentamientos de una división (`teams` y `matches`), el repositorio aplica proyecciones tipadas para garantizar la seguridad numérica en tiempo de ejecución y la coherencia de estados de retransmisión:
 
 ```typescript
-// apps/api/src/modules/competition/postgres-competition.repository.ts:424-439
+// apps/api/src/modules/competition/postgres-competition.repository.ts:436-451
 teams(divisionId: string) {
   return this.db
     .select({
@@ -211,25 +211,26 @@ teams(divisionId: string) {
 ```
 
 ```typescript
-// apps/api/src/modules/competition/postgres-competition.repository.ts:455-476
+// apps/api/src/modules/competition/postgres-competition.repository.ts:467-489
+private matchSelection = {
+  id: matches.id,
+  divisionId: matches.idSeasonDivision,
+  roundId: sql<string | null>`${matches.idRound}::text`,
+  homeTeamId: matches.team1Id,
+  awayTeamId: matches.team2Id,
+  homeScore: matches.team1Score,
+  awayScore: matches.team2Score,
+  winnerTeamId: matches.winnerTeamId,
+  status: matches.status,
+  bestOf: matches.bestOf,
+  scheduledAt: matches.scheduledAt,
+  finishedAt: matches.finishedAt,
+  streamUrl: matches.streamUrl,
+  streamUrlLive: matches.streamUrlLive
+};
 matches(divisionId: string) {
   return this.db
-    .select({
-      id: matches.id,
-      divisionId: matches.idSeasonDivision,
-      roundId: sql<string | null>`${matches.idRound}::text`,
-      homeTeamId: matches.team1Id,
-      awayTeamId: matches.team2Id,
-      homeScore: matches.team1Score,
-      awayScore: matches.team2Score,
-      winnerTeamId: matches.winnerTeamId,
-      status: matches.status,
-      bestOf: matches.bestOf,
-      scheduledAt: matches.scheduledAt,
-      finishedAt: matches.finishedAt,
-      streamUrl: matches.streamUrl,
-      streamUrlLive: matches.streamUrlLive
-    })
+    .select(this.matchSelection)
     .from(matches)
     .where(eq(matches.idSeasonDivision, divisionId))
     .orderBy(asc(matches.scheduledAt), asc(matches.id));
@@ -244,3 +245,11 @@ matches(divisionId: string) {
   - La consulta proyecta conjuntamente `streamUrl: matches.streamUrl` y `streamUrlLive: matches.streamUrlLive`.
   - Esta distinción permite al frontend diferenciar entre un enlace a retransmisión diferida o archivo histórico (VOD) y una emisión en directo activa en plataformas de streaming (Twitch/YouTube), actualizando los indicadores visuales en tarjetas de partido.
 
+### 4.7 Partido por Identificador y Mapas de Varias Series
+**Archivo**: `postgres-competition.repository.ts:57-145`
+
+- **`match(id)`** consulta `matches` filtrando por `matches.id` con `LIMIT 1` y la misma proyección `matchSelection` que `matches(divisionId)`, sin cargar el resto de partidos de la división.
+- **`matchGamesByMatch(ids)`** devuelve un `Map<matchId, MatchMap[]>` con dos consultas, sea cual sea el número de series: una sobre `match_games` y otra sobre `player_game_info` (con estadísticas, build y runas), ambas filtradas con `inArray(matchGames.matchesId, ids)` y apoyadas en el índice `match_games_matches_id_idx`. Los mapas conservan el orden por `gameNumber` y los participantes el orden por `player_game_info.id`. Las series sin mapas aparecen con una lista vacía y una lista de identificadores vacía no consulta la base de datos.
+- **`matchGames(id)`** delega en `matchGamesByMatch([id])`, por lo que el detalle de partido y el de equipo comparten la misma proyección y la misma purga de columnas técnicas (sección 3.1).
+
+`CompetitionService.teamDetail()` usa `matchGamesByMatch()` para calcular `rosterStats` de todos los partidos completados del equipo con una sola llamada, en lugar de una llamada por partido.

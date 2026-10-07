@@ -265,7 +265,7 @@
 
 .rcl-site .predictor-row {
   display: grid;
-  grid-template-columns: 24px minmax(0, 1fr) auto;
+  grid-template-columns: 24px 44px minmax(0, 1fr) auto;
   gap: 12px;
   align-items: center;
   padding: 18px 12px;
@@ -273,6 +273,33 @@
 
 .rcl-site .predictor-row:nth-child(odd) {
   background: var(--panel);
+}
+
+.rcl-site .predictor-avatar {
+  display: grid;
+  place-items: center;
+  box-sizing: border-box;
+  width: 44px;
+  height: 44px;
+  padding: 3px;
+  border: 1px solid var(--purple);
+  border-radius: 50%;
+  background: var(--panel);
+  color: var(--purple);
+  font: 700 12px var(--mono);
+}
+
+.rcl-site .predictor-avatar img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.rcl-site .predictor-row.is-you .predictor-avatar {
+  border-color: var(--lime);
+  color: var(--lime);
 }
 
 .rcl-site .predictor-row.is-you {
@@ -314,7 +341,7 @@
 
 @media (min-width: 600px) {
   .rcl-site .predictor-row {
-    grid-template-columns: 40px minmax(0, 1fr) auto;
+    grid-template-columns: 40px 44px minmax(0, 1fr) auto;
     padding: 20px 24px;
     gap: 20px;
   }

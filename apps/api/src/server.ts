@@ -10,6 +10,7 @@ import { PostgresCrudOperationsRepository } from './modules/crud-operations/post
 import { NativePostgresBackupTools } from './modules/database-transfer/postgres-backup-tools.js';
 import { PostgresDatabaseTransferRepository } from './modules/database-transfer/postgres-database-transfer.repository.js';
 import { DiscordBridgeClient } from './modules/discord-bridge/discord-bridge.client.js';
+import { EditorialImageStore } from './modules/home-content/editorial-image.store.js';
 import { HomeContentService } from './modules/home-content/home-content.service.js';
 import { PostgresHomeContentRepository } from './modules/home-content/postgres-home-content.repository.js';
 import { PostgresMemberRolesRepository } from './modules/member-roles/postgres-member-roles.repository.js';
@@ -56,6 +57,9 @@ const authService = env.DISCORD_CLIENT_ID
       })
     )
   : undefined;
+// Session cookies carry `Secure` and the `__Host-` prefix when the OAuth callback is served over
+// HTTPS. Only computed with Discord login configured: otherwise DISCORD_REDIRECT_URI may be empty.
+const secureCookies = authService ? new URL(env.DISCORD_REDIRECT_URI).protocol === 'https:' : false;
 
 const bridgeClient = new DiscordBridgeClient({
   wsUrl: env.DISCORD_BOT_WS_URL,
@@ -70,8 +74,10 @@ const suggestionsService = new SuggestionsService({
 });
 
 const app = createApp({
-  webDirectory: process.env.WEB_DIST_DIR,
-  teamLogoDirectory: process.env.TEAM_LOGO_DIR,
+  webDirectory: env.WEB_DIST_DIR,
+  teamLogoDirectory: env.TEAM_LOGO_DIR,
+  editorialImageDirectory: env.EDITORIAL_IMAGE_DIR,
+  frontendUrl: env.FRONTEND_URL,
   predictionsRepository: new PredictionsRepository(connection.db),
   homeContentRepository: new PostgresHomeContentRepository(connection.db),
   databaseTransferRepository: new PostgresDatabaseTransferRepository(
@@ -92,16 +98,25 @@ const app = createApp({
     ? {
         auth: {
           service: authService,
-          secureCookies: new URL(env.DISCORD_REDIRECT_URI).protocol === 'https:',
+          secureCookies,
           frontendOrigin: env.CORS_ORIGIN
         }
       }
     : {})
 });
+// Lets req.ip resolve the client address behind a reverse proxy (suggestions rate limit).
+app.set('trust proxy', env.TRUST_PROXY);
 const server = http.createServer(app);
 const roflUploadRepo = new PostgresRoflUploadRepository(connection.db);
-const roflUploadGateway = attachRoflUploadGateway(server, roflUploadRepo, { authService });
-const homeContent = new HomeContentService(new PostgresHomeContentRepository(connection.db));
+const roflUploadGateway = attachRoflUploadGateway(server, roflUploadRepo, {
+  authService,
+  frontendOrigin: env.CORS_ORIGIN,
+  secureCookies
+});
+const homeContent = new HomeContentService(
+  new PostgresHomeContentRepository(connection.db),
+  new EditorialImageStore(env.EDITORIAL_IMAGE_DIR)
+);
 let imageCleanup: Promise<void> | undefined;
 function cleanupImages() {
   if (imageCleanup) return;

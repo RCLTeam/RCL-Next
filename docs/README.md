@@ -36,6 +36,8 @@ docs/
 │   └── mapping.md                               # Normalización a 5 tablas y derivación de cuentas secundarias
 ├── api/                                         # Backend y servicios HTTP/WebSocket (Vertical Slices)
 │   ├── README.md                                # Índice del backend Express, middlewares y arquitectura
+│   ├── config/                                  # Variables de entorno y validación al arrancar (parseEnvironment)
+│   │   └── README.md                            # Tabla de variables, valores por defecto y reglas de URL
 │   ├── rofl-upload/                             # Rebanada: Subida y streaming WebSocket de repeticiones
 │   │   ├── README.md                            # Resumen funcional de la ingesta de archivos .rofl y .zip
 │   │   ├── routes.md                            # Gateway WS /ws/rofl-upload y control de backpressure
@@ -68,9 +70,10 @@ docs/
 │   │   ├── README.md                            # Resumen del flujo de autorización e identidad
 │   │   ├── routes.md                            # /api/v1/auth/discord/login, callback, me y logout
 │   │   ├── processing.md                        # Intercambio de code por access_token y sanitización
-│   │   ├── persistence.md                       # Tabla auth_sessions y cookies HTTP-only firmadas
-│   │   ├── validation.md                        # Verificación de firmas criptográficas de estado
-│   │   └── contracts.md                         # Contratos de usuario autenticado y roles de sistema
+│   │   ├── persistence.md                       # Tablas auth_sessions y oauth_states (hash SHA-256 de tokens opacos)
+│   │   ├── validation.md                        # Formato de tokens opacos y códigos de Discord, origen confiable y errores
+│   │   ├── contracts.md                         # Contratos de usuario autenticado y roles de sistema
+│   │   └── avatars.md                           # Proxy de avatares de Discord: contrato, caché y despliegue
 │   ├── member-roles/                            # Rebanada: Control de acceso basado en roles (RBAC)
 │   │   ├── README.md                            # Resumen de permisos (viewer, admin, owner)
 │   │   ├── routes.md                            # Endpoints administrativos de auditoría y asignación
@@ -86,10 +89,10 @@ docs/
 │   │   ├── validation.md                        # Esquemas de campos editables y comprobaciones previas
 │   │   └── contracts.md                         # Definición de entidades administrables y metadatos
 │   ├── database-transfer/                       # Rebanada: Exportación e importación de volcados
-│   │   ├── README.md                            # Resumen de transferencias PostgreSQL vía comandos COPY
+│   │   ├── README.md                            # Resumen de la copia con pg_dump y la restauración de datos COPY
 │   │   ├── routes.md                            # Endpoints de generación y subida de archivos .dump
-│   │   ├── processing.md                        # Ordenación topológica de tablas y compresión gzip
-│   │   ├── persistence.md                       # Restauración con vaciado en orden inverso de claves
+│   │   ├── processing.md                        # Exclusión mutua, procesos pg_dump/pg_restore y parser de bloques COPY
+│   │   ├── persistence.md                       # Restauración con TRUNCATE e inserción en orden topológico de claves
 │   │   ├── validation.md                        # Comprobación de cabecera mágica y verificación SHA-256
 │   │   └── contracts.md                         # Esquemas de configuración de volcado y respuesta
 │   ├── home-content/                            # Rebanada: Contenido editorial y equipo de la semana
@@ -99,6 +102,10 @@ docs/
 │   │   ├── persistence.md                       # Tablas editorial_articles y home_weekly_teams
 │   │   ├── validation.md                        # Restricciones de 5 roles únicos en quinteto ideal
 │   │   └── contracts.md                         # DTOs de artículos y composición del equipo ideal
+│   ├── page-metadata/                           # Rebanada: Metadatos de página para vistas previas de enlaces
+│   │   ├── README.md                            # Resumen del endpoint JSON y del HTML inicial con metadatos
+│   │   ├── routes.md                            # GET /api/v1/page-metadata y webPageRouter
+│   │   └── processing.md                        # Consultas ligeras de fichas y caché con TTL y single-flight
 │   ├── predictions/                             # Rebanada: Quinielas y predicciones comunitarias
 │   │   ├── README.md                            # Resumen de pronósticos con límite horario Europe/Madrid
 │   │   ├── routes.md                            # Endpoints de votación, consulta de resultados y rankings
@@ -106,13 +113,20 @@ docs/
 │   │   ├── persistence.md                       # Tabla predictions, bloqueo de inactivos y agregación de aciertos
 │   │   ├── validation.md                        # Bloqueo temporal automático antes del primer mapa
 │   │   └── contracts.md                         # Tipos de papeleta de predicción y tabla de líderes
+│   ├── sitemap/                                 # Rebanada: Mapa del sitio XML dinámico
+│   │   ├── README.md                            # Resumen del módulo, caché e invalidación
+│   │   ├── routes.md                            # GET /sitemap.xml y /api/sitemap.xml, proxy inverso y robots.txt
+│   │   ├── processing.md                        # Servicio con caché single-flight, rutas indexadas y XML
+│   │   ├── persistence.md                       # Consultas de equipos, jugadores y artículos publicados
+│   │   └── contracts.md                         # Tipos de entradas, opciones del servicio y slugs compartidos
 │   └── team-logos/                              # Rebanada: Almacenamiento y catálogo de escudos de equipos
 │       ├── README.md                            # Resumen funcional de gestión y servicio de imágenes
 │       ├── routes.md                            # Endpoints REST de subida, borrado, catálogo y servicio público
 │       ├── persistence.md                       # Almacén TeamLogosStore, escrituras atómicas wx y bytes mágicos
 │       └── contracts.md                         # DTOs TeamLogoEntry, contratos de transporte y catálogo de errores
 ├── web/                                         # Frontend React 19 (Feature-Driven & Headless Hooks)
-│   ├── README.md                                # Índice del cliente web, TailwindCSS y principios UI
+│   ├── README.md                                # Índice del cliente web, CSS propio por componente y principios UI
+│   ├── page-metadata.md                         # PageHead, plugin de Vite y metadatos para compartir enlaces
 │   ├── rofl-upload/                             # Feature: Interfaz de subida interactiva de repeticiones
 │   │   ├── README.md                            # Resumen visual y funcional del panel de subida
 │   │   ├── components.md                        # Dropzone, barras de progreso y visor de incidencias
@@ -152,7 +166,7 @@ docs/
 │   ├── database-transfer/                       # Feature: Centro de control de copias de seguridad
 │   │   ├── README.md                            # Resumen del panel de exportación/importación
 │   │   ├── components.md                        # Controles de volcado, zona de carga y alertas
-│   │   ├── hooks.md                             # Hook para streaming de descarga y seguimiento
+│   │   ├── hooks.md                             # Estado del panel, cancelación y descarga del volcado como Blob
 │   │   ├── pages.md                             # Vista /admin/database-transfer
 │   │   └── types.md                             # Tipos de respuesta de estado y metadatos
 │   ├── home-content/                            # Feature: Portal editorial y equipo destacado
@@ -175,12 +189,13 @@ docs/
     ├── README.md                                # Estrategia general, niveles de prueba y PGlite
     ├── strategy.md                              # Filosofía de pruebas deterministas y pirámide de testing
     ├── environment-limits.md                    # Restricciones de runtime, maxWorkers: 4 y timeouts
-    └── suites/                                  # Catálogo detallado de los 77 archivos de prueba
-        ├── README.md                            # Censo general de suites (897 pruebas, 0 fantasma)
-        ├── api.md                               # 15 suites de apps/api (128 pruebas unitarias)
-        ├── web.md                               # 21 suites de apps/web (127 pruebas de componentes)
-        ├── parser.md                            # 1 suite de apps/parser (11 pruebas de bajo nivel)
-        └── integration.md                       # 25 suites en tests/integration/ (529 pruebas) y tests/unit/ (102 pruebas)
+    ├── discord-avatars.md                       # Pruebas y verificación del proxy de avatares
+    └── suites/                                  # Censo por archivo con fecha de medición
+        ├── README.md                            # Totales por área y cómo volver a medirlos
+        ├── api.md                               # Suites co-ubicadas en apps/api y packages/contracts
+        ├── web.md                               # Suites co-ubicadas en apps/web
+        ├── parser.md                            # Suite de Python de apps/parser
+        └── integration.md                       # Suites de tests/integration/ y tests/unit/
 ```
 
 ---
@@ -213,9 +228,10 @@ Ingesta de archivos binarios de repetición de League of Legends mediante lectur
 
 ### 3.3 Servicios de Backend API (`docs/api/`)
 
-Plataforma de servicios HTTP y WebSocket construida con Node.js 22 y Express, organizada en 11 rebanadas verticales (*Vertical Slices*):
+Plataforma de servicios HTTP y WebSocket construida con Node.js 22 y Express, organizada en 13 módulos o rebanadas verticales (*Vertical Slices*) bajo `apps/api/src/modules/`, más la configuración del entorno:
 
 - [docs/api/README.md](api/README.md): Índice del backend y principios de diseño modular.
+- **Configuración:** [config/README.md](api/config/README.md): variables de entorno, valores por defecto y validación de `parseEnvironment`.
 - **Subida ROFL:** [rofl-upload/README.md](api/rofl-upload/README.md) | [routes.md](api/rofl-upload/routes.md) | [processing.md](api/rofl-upload/processing.md) | [persistence.md](api/rofl-upload/persistence.md) | [validation.md](api/rofl-upload/validation.md) | [contracts.md](api/rofl-upload/contracts.md)
 - **Puente Discord:** [discord-bridge/README.md](api/discord-bridge/README.md) | [routes.md](api/discord-bridge/routes.md) | [processing.md](api/discord-bridge/processing.md) | [persistence.md](api/discord-bridge/persistence.md) | [validation.md](api/discord-bridge/validation.md) | [contracts.md](api/discord-bridge/contracts.md)
 - **Sugerencias:** [suggestions/README.md](api/suggestions/README.md) | [routes.md](api/suggestions/routes.md) | [processing.md](api/suggestions/processing.md) | [persistence.md](api/suggestions/persistence.md) | [validation.md](api/suggestions/validation.md) | [contracts.md](api/suggestions/contracts.md)
@@ -226,8 +242,10 @@ Plataforma de servicios HTTP y WebSocket construida con Node.js 22 y Express, or
 - **Operaciones CRUD:** [crud-operations/README.md](api/crud-operations/README.md) | [routes.md](api/crud-operations/routes.md) | [processing.md](api/crud-operations/processing.md) | [persistence.md](api/crud-operations/persistence.md) | [validation.md](api/crud-operations/validation.md) | [contracts.md](api/crud-operations/contracts.md)
 - **Transferencia de BD:** [database-transfer/README.md](api/database-transfer/README.md) | [routes.md](api/database-transfer/routes.md) | [processing.md](api/database-transfer/processing.md) | [persistence.md](api/database-transfer/persistence.md) | [validation.md](api/database-transfer/validation.md) | [contracts.md](api/database-transfer/contracts.md)
 - **Contenido Editorial:** [home-content/README.md](api/home-content/README.md) | [routes.md](api/home-content/routes.md) | [processing.md](api/home-content/processing.md) | [persistence.md](api/home-content/persistence.md) | [validation.md](api/home-content/validation.md) | [contracts.md](api/home-content/contracts.md)
+- **Metadatos de Página:** [page-metadata/README.md](api/page-metadata/README.md) | [routes.md](api/page-metadata/routes.md) | [processing.md](api/page-metadata/processing.md)
 - **Predicciones:** [predictions/README.md](api/predictions/README.md) | [routes.md](api/predictions/routes.md) | [processing.md](api/predictions/processing.md) | [persistence.md](api/predictions/persistence.md) | [validation.md](api/predictions/validation.md) | [contracts.md](api/predictions/contracts.md)
 - **Logos de Equipos:** [team-logos/README.md](api/team-logos/README.md) | [routes.md](api/team-logos/routes.md) | [persistence.md](api/team-logos/persistence.md) | [contracts.md](api/team-logos/contracts.md)
+- **Sitemap XML:** [sitemap/README.md](api/sitemap/README.md) | [routes.md](api/sitemap/routes.md) | [processing.md](api/sitemap/processing.md) | [persistence.md](api/sitemap/persistence.md) | [contracts.md](api/sitemap/contracts.md)
 
 ### 3.4 Interfaz y Aplicación Web (`docs/web/`)
 
@@ -244,17 +262,19 @@ Cliente web interactivo en React 19 y Vite (`apps/web`), basado en componentes d
 - **Contenido Editorial:** [home-content/README.md](web/home-content/README.md) | [components.md](web/home-content/components.md) | [hooks.md](web/home-content/hooks.md) | [pages.md](web/home-content/pages.md) | [types.md](web/home-content/types.md)
 - **Predicciones:** [predictions/README.md](web/predictions/README.md) | [components.md](web/predictions/components.md) | [hooks.md](web/predictions/hooks.md) | [pages.md](web/predictions/pages.md) | [types.md](web/predictions/types.md)
 - **Logos de Equipos:** [team-logos/README.md](web/team-logos/README.md) | [components.md](web/team-logos/components.md) | [types.md](web/team-logos/types.md)
+- **Metadatos de Página:** [page-metadata.md](web/page-metadata.md): `PageHead`, plugin de Vite y HTML inicial servido por la API.
 
 ### 3.5 Infraestructura y Catálogo de Pruebas (`docs/testing/`)
 
-Aseguramiento de la calidad sin dependencias externas, sustentado en PostgreSQL embebido (PGlite), Vitest y Python unittest:
+Aseguramiento de la calidad sin dependencias externas, sustentado en PostgreSQL embebido (PGlite), Vitest y Python unittest. Los totales actuales los imprime cada ejecutor (`pnpm test` y `python3 -m unittest discover apps/parser/tests`):
 
 - [docs/testing/README.md](testing/README.md): Visión general de testing y 5 niveles de pirámide de pruebas.
 - [docs/testing/strategy.md](testing/strategy.md): Metodología de ejecución determinista y comandos unificados.
 - [docs/testing/environment-limits.md](testing/environment-limits.md): Límites de concurrencia (`maxWorkers: 4`), timeouts y memoria.
-- [docs/testing/suites/README.md](testing/suites/README.md): Índice y censo maestro de las 77 suites de prueba (897 pruebas, 0 fallos).
-- [docs/testing/suites/api.md](testing/suites/api.md): 15 suites de pruebas unitarias del backend API.
-- [docs/testing/suites/web.md](testing/suites/web.md): 21 suites de pruebas unitarias y de interfaz web.
-- [docs/testing/suites/parser.md](testing/suites/parser.md): 1 suite de pruebas unitarias del extractor ROFL en Python.
-- [docs/testing/suites/integration.md](testing/suites/integration.md): 25 suites de integración relacional y 15 de renderizado en aislamiento.
+- [docs/testing/discord-avatars.md](testing/discord-avatars.md): Pruebas y verificación del proxy de avatares de Discord.
+- [docs/testing/suites/README.md](testing/suites/README.md): Índice y censo por archivo, con la fecha de la medición y los comandos para repetirla.
+- [docs/testing/suites/api.md](testing/suites/api.md): Suites co-ubicadas del backend API y de `packages/contracts`.
+- [docs/testing/suites/web.md](testing/suites/web.md): Suites co-ubicadas del frontend web.
+- [docs/testing/suites/parser.md](testing/suites/parser.md): Suite de pruebas unitarias del extractor ROFL en Python.
+- [docs/testing/suites/integration.md](testing/suites/integration.md): Suites de integración relacional (`tests/integration/`) y de `tests/unit/`.
 

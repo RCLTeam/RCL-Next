@@ -15,6 +15,8 @@ import { SuggestionsService } from './suggestions.service.js';
 class MockDiscordBridgeClient extends EventEmitter {
   public checkHealth = vi.fn();
   public send = vi.fn().mockResolvedValue(undefined);
+  public isConfigured = vi.fn().mockReturnValue(true);
+  public hasCapacity = vi.fn().mockReturnValue(true);
 }
 
 describe('Suggestions Integration (Full App Pipeline)', () => {
@@ -30,6 +32,7 @@ describe('Suggestions Integration (Full App Pipeline)', () => {
     suggestionStore = new SuggestionStore();
     incidentLogger = new IncidentLogger();
     suggestionsService = new SuggestionsService({
+      rateLimiter: false,
       store: suggestionStore,
       bridgeClient: mockBridgeClient as unknown as DiscordBridgeClient,
       logger: incidentLogger
@@ -79,6 +82,13 @@ describe('Suggestions Integration (Full App Pipeline)', () => {
       expect(res.status).toBe(503);
       expect(res.body.healthy).toBe(false);
       expect(res.body.status).toBe('unreachable');
+    });
+  });
+
+  describe('CORS', () => {
+    it('exposes Retry-After to the frontend origin', async () => {
+      const res = await request(app).get('/api/v1/bridge/health').set('Origin', corsOrigin);
+      expect(res.headers['access-control-expose-headers']).toContain('Retry-After');
     });
   });
 

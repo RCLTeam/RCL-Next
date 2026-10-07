@@ -1,4 +1,4 @@
-import { editorialArticles, players, teams } from '@rcl/database';
+import { editorialArticles, players, seasonsDivisions, teams } from '@rcl/database';
 import type * as schema from '@rcl/database/schema';
 import { eq } from 'drizzle-orm';
 import type { PgDatabase, PgQueryResultHKT } from 'drizzle-orm/pg-core';
@@ -18,16 +18,24 @@ export class PostgresSitemapRepository implements SitemapRepository {
     const rows = await this.db
       .select({
         id: teams.id,
+        name: teams.name,
+        seasonName: seasonsDivisions.seasonName,
+        divisionName: seasonsDivisions.divisionName,
+        isActive: teams.isActive,
         updatedAt: teams.updatedAt,
         createdAt: teams.createdAt
       })
       .from(teams)
-      .where(eq(teams.isActive, true));
+      .innerJoin(seasonsDivisions, eq(teams.seasonDivisionId, seasonsDivisions.id));
 
     return rows.map((row) => {
       const date = row.updatedAt ?? row.createdAt;
       return {
         id: row.id,
+        name: row.name,
+        seasonName: row.seasonName,
+        divisionName: row.divisionName,
+        isActive: row.isActive,
         updatedAt: date instanceof Date ? date : new Date(date)
       };
     });
@@ -37,6 +45,8 @@ export class PostgresSitemapRepository implements SitemapRepository {
     const rows = await this.db
       .select({
         id: players.id,
+        gameName: players.gameName,
+        riotTag: players.riotTag,
         updatedAt: players.updatedAt,
         createdAt: players.createdAt
       })
@@ -46,6 +56,8 @@ export class PostgresSitemapRepository implements SitemapRepository {
       const date = row.updatedAt ?? row.createdAt;
       return {
         id: row.id,
+        gameName: row.gameName,
+        riotTag: row.riotTag,
         updatedAt: date instanceof Date ? date : new Date(date)
       };
     });

@@ -1,9 +1,19 @@
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { expect, test } from 'vitest';
+import { afterAll, beforeAll, expect, test } from 'vitest';
 import type { Match } from '../../../features/competition/types/competition.types.js';
 import { PredictionCard } from './PredictionCard.js';
 import { PredictorRankingPanel } from './PredictorRankingPanel.js';
+
+const processTimeZone = process.env.TZ;
+// Render as a visitor outside the league's time zone.
+beforeAll(() => {
+  process.env.TZ = 'America/New_York';
+});
+afterAll(() => {
+  if (processTimeZone === undefined) Reflect.deleteProperty(process.env, 'TZ');
+  else process.env.TZ = processTimeZone;
+});
 
 const match: Match = {
   id: 'm',
@@ -68,6 +78,7 @@ test('ranking shows the top five and the current user outside them', () => {
   const ranking = Array.from({ length: 8 }, (_, i) => ({
     userId: `${i}`,
     name: `Predictor ${i}`,
+    avatarHash: null,
     position: i + 1,
     points: 30 - i,
     correct: 10 - i,
@@ -76,9 +87,76 @@ test('ranking shows the top five and the current user outside them', () => {
   const html = renderToStaticMarkup(
     <PredictorRankingPanel ranking={ranking} userId="7" season="2026" />
   );
-  expect(html).toContain('tú, Predictor 7');
+  expect(html).toContain('Predictor 7');
+  expect(html).not.toContain('tú,');
   expect(html).not.toContain('Predictor 5');
   expect(html).toContain('3 de 10 aciertos');
+  const rows = html.match(/<li\b[^>]*>[\s\S]*?<\/li>/g) ?? [];
+  expect(rows).toHaveLength(6);
+  const highlightedRows = rows.filter((row) => row.includes('class="predictor-row is-you"'));
+  expect(highlightedRows).toHaveLength(1);
+  expect(highlightedRows[0]).toContain(
+    '<strong>Predictor 7<span class="sr-only"> (tú)</span></strong>'
+  );
+  // Only the user's row carries the text marker; the others rely on nothing hidden.
+  expect(rows.filter((row) => row.includes('class="sr-only"'))).toHaveLength(1);
+});
+
+test('the user row is identified by text, not only by its highlight colour', () => {
+  const ranking = [
+    { userId: '1', name: 'Uno', avatarHash: null, position: 1, points: 9, correct: 3, total: 3 },
+    { userId: '2', name: 'Dos', avatarHash: null, position: 2, points: 6, correct: 2, total: 3 }
+  ];
+  const own = renderToStaticMarkup(<PredictorRankingPanel ranking={ranking} userId="2" />);
+  const ownRow = own.match(/<li class="predictor-row is-you">[\s\S]*?<\/li>/)?.[0] ?? '';
+  expect(ownRow).toContain('<span class="sr-only"> (tú)</span>');
+  const visitor = renderToStaticMarkup(<PredictorRankingPanel ranking={ranking} />);
+  expect(visitor).not.toContain('is-you');
+  expect(visitor).not.toContain('(tú)');
+});
+
+test.each(['0123456789abcdef0123456789abcdef', 'a_0123456789abcdef0123456789abcdef'])(
+  'ranking loads avatar %s through the same-origin proxy',
+  (avatarHash) => {
+    const html = renderToStaticMarkup(
+      <PredictorRankingPanel
+        ranking={[
+          {
+            userId: '123456789012345678',
+            name: 'Jugador',
+            avatarHash,
+            position: 1,
+            points: 30,
+            correct: 10,
+            total: 10
+          }
+        ]}
+      />
+    );
+    expect(html).toContain('<img');
+    expect(html).toContain(`src="/api/v1/discord-avatars/123456789012345678/${avatarHash}"`);
+    expect(html).not.toContain('cdn.discordapp.com');
+  }
+);
+
+test('ranking shows initials without requesting an image when the avatar is missing', () => {
+  const html = renderToStaticMarkup(
+    <PredictorRankingPanel
+      ranking={[
+        {
+          userId: '123456789012345678',
+          name: 'Jugador',
+          avatarHash: null,
+          position: 1,
+          points: 30,
+          correct: 10,
+          total: 10
+        }
+      ]}
+    />
+  );
+  expect(html).toContain('<span class="predictor-avatar" aria-hidden="true">JU</span>');
+  expect(html).not.toContain('<img');
 });
 
 test('closed voting keeps community data hidden until completion, including zero-vote results', () => {
@@ -96,5 +174,39 @@ test('closed voting keeps community data hidden until completion, including zero
       votes === null
     );
     expect(html.includes('Sin votos para esta serie.')).toBe(votes === 0);
+    expect(html.includes('width:50%')).toBe(votes === null);
+    expect(html.match(/>\?\?<\/span>/g) ?? []).toHaveLength(votes === null ? 2 : 0);
   }
+});
+
+test('the hidden-percentage placeholder only announces the explanatory note', () => {
+  const html = renderToStaticMarkup(
+    <PredictionCard
+      match={match}
+      summary={{ matchId: 'm', open: false, closed: true, votes: null, homePercent: null }}
+      authenticated
+      save={async () => {}}
+    />
+  );
+  expect(html).toContain(
+    '<div class="prediction-percent" aria-hidden="true"><span>??</span><span>??</span></div>'
+  );
+  // aria-label is not allowed on an element without a role (generic div or span).
+  expect(html).not.toMatch(/<(div|span)\b(?![^>]*\brole=)[^>]*\baria-label=/);
+  expect(html).toContain('<small>Los porcentajes se revelan al finalizar el partido.</small>');
+});
+
+test('shows the match day and time in Madrid time, not the browser time zone', () => {
+  const summary = { matchId: 'm', open: true, closed: false, homePercent: null, votes: null };
+  // 22:30 UTC on Sunday 4 October is 00:30 on Monday in Madrid and 18:30 on Sunday in New York.
+  const html = renderToStaticMarkup(
+    <PredictionCard
+      match={{ ...match, scheduledAt: '2026-10-04T22:30:00Z' }}
+      summary={summary}
+      authenticated
+      save={async () => {}}
+    />
+  );
+  expect(html).toContain('lun, 00:30');
+  expect(html).not.toContain('18:30');
 });
