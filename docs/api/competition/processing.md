@@ -7,8 +7,8 @@
 ## 1. Visión General
 
 El archivo `apps/api/src/modules/competition/` concentra la lógica algorítmica y matemática de las competiciones de League of Legends en RCL-Next. Sus responsabilidades se dividen en cinco motores y especificaciones independientes y puras:
-1. **Motor de Clasificación y Desempates de Liga (`competition.service.ts:8-50`)**: Cómputo de la tabla de posiciones en series al mejor de 3 (BO3).
-2. **Motor de Puntuación Multidimensional de MVP (`player-statistics.ts:81-191`)**: Evaluación del rendimiento individual continuo por rol y selección del mejor jugador.
+1. **Motor de Clasificación y Desempates de Liga (`competition.service.ts:18-60`)**: Cómputo de la tabla de posiciones en series al mejor de 3 (BO3).
+2. **Motor de Puntuación Multidimensional de MVP (`player-statistics.ts:81-226`)**: Evaluación del rendimiento individual continuo por rol y selección del mejor jugador.
 3. **Motor de Estadísticas Agregadas de Campeones (`champion-stats.ts:1-32`)**: Consolidación de selecciones, mapas disputados, victorias y porcentajes de presencia.
 4. **Generador Determinista de Slugs y Evasión de Colisiones (`profile-slugs.ts:1-60`)**: Normalización semántica de URLs para partidos, equipos y jugadores.
 5. **Especificación de Visibilidad de Equipos y Sentinels de Roles (`team-visibility.ts:1-16`)**: Determinación del estado de los equipos mediante rangos numéricos de roles de Discord para su inclusión en clasificación, cuadrícula, calendario y pronósticos.
@@ -18,15 +18,23 @@ El archivo `apps/api/src/modules/competition/` concentra la lógica algorítmica
 ## 2. Motor de Clasificación de Liga y Reglas de Desempate
 
 ### 2.1 Algoritmo de Acumulación (`calculateStandings`)
-La función pura `calculateStandings(teams, matches)` (`competition.service.ts:8-50`) procesa los resultados de los partidos disputados en la fase indicada (por defecto `'regular'`):
+La función pura `calculateStandings(teams, matches)` (`competition.service.ts:18-60`) procesa los resultados de los partidos disputados en la fase indicada (por defecto `'regular'`):
 
 ```typescript
-// apps/api/src/modules/competition/competition.service.ts:8-50
+// apps/api/src/modules/competition/competition.service.ts:18-60
 export function calculateStandings(teams: Team[], matches: Match[]) {
   const totals = new Map(
     teams.map((team) => [
       team.id,
-      { team, played: 0, wins: 0, losses: 0, mapsWon: 0, mapsLost: 0, mapDifference: 0 }
+      {
+        team,
+        played: 0,
+        wins: 0,
+        losses: 0,
+        mapsWon: 0,
+        mapsLost: 0,
+        mapDifference: 0
+      }
     ])
   );
   for (const match of matches) {
@@ -46,6 +54,7 @@ export function calculateStandings(teams: Team[], matches: Match[]) {
       team.mapDifference = team.mapsWon - team.mapsLost;
     }
   }
+  // Rank by series wins, then map difference, fewer losses and team name.
   return [...totals.values()]
     .sort(
       (a, b) =>
@@ -59,7 +68,7 @@ export function calculateStandings(teams: Team[], matches: Match[]) {
 ```
 
 ### 2.2 Cascada Estricta de 4 Niveles de Ordenación
-El orden de los equipos en la tabla de clasificación responde a la siguiente evaluación jerárquica (`competition.service.ts:43-48`):
+El orden de los equipos en la tabla de clasificación responde a la siguiente evaluación jerárquica (`competition.service.ts:52-58`):
 
 1. **Nivel 1 — Victorias de Serie (`b.wins - a.wins`):**
    - Número total de series completas ganadas.
@@ -71,7 +80,7 @@ El orden de los equipos en la tabla de clasificación responde a la siguiente ev
    - Ordenación lexicográfica por nombre de equipo bajo el locale español (`'es'`).
 
 ### 2.3 Reglas de Desempate y Ausencia de Head-to-Head
-- **Ausencia de Enfrentamiento Directo:** El sistema **no implementa desempate por enfrentamiento directo (*Head-to-Head*)**. Si dos equipos empatan en diferencia de mapas, victorias y derrotas, su posición relativa no se decide por el resultado del partido entre ellos, sino por el orden alfabético de sus nombres (`competition.service.ts:48`).
+- **Ausencia de Enfrentamiento Directo:** El sistema **no implementa desempate por enfrentamiento directo (*Head-to-Head*)**. Si dos equipos empatan en diferencia de mapas, victorias y derrotas, su posición relativa no se decide por el resultado del partido entre ellos, sino por el orden alfabético de sus nombres (`competition.service.ts:57`).
 - **Ausencia de Mini-liga:** El sistema **no implementa desempate por mini-liga olímpica** para empates triples o cuádruples.
 - **Ausencia de Rachas:** El sistema **no realiza seguimiento ni expone rachas de victorias/derrotas (*streaks*)**. El tipo de contrato `Standing` carece de dicho atributo.
 
@@ -210,32 +219,73 @@ $$\text{Puntuación Final} = \frac{\lfloor 107.01 \cdot 10 + 0.5 \rfloor}{10} = 
   Esto evita divisiones por cero o propagación de valores `NaN` / `null` en partidas disputadas antes de incorporar métricas económicas completas, preservando la coherencia en las ponderaciones de la matriz dimensional.
 - **Redondeo Final Determinista:** Tras acumular las 9 dimensiones ponderadas, la puntuación se redondea a un único decimal con precisión determinista mediante `Math.round(finalScore * 10) / 10` (`player-statistics.ts:171`).
 
-### 3.6 Selección del MVP de Serie y Criterios de Desempate (`player-statistics.ts:174-191`)
-Para seleccionar el MVP definitivo de un enfrentamiento o serie (`matchMvps`), se agrupan los registros de todos los mapas por `matchId` y por jugador individual (`playerId`), evaluando a todos los candidatos mediante una cascada determinista de tres niveles (`player-statistics.ts:186-189`):
+### 3.6 Selección del MVP de Serie y Unificación de Cálculo (`player-statistics.ts:174-226`)
+Para seleccionar el MVP definitivo de un enfrentamiento o serie, el dominio expone dos funciones complementarias que comparten exactamente el mismo algoritmo y criterios de desempate:
 
-1. **Nivel 1 — Mayor Puntuación Acumulada (`b.score - a.score`):** Prioriza al jugador con la puntuación MVP más alta en la serie.
-2. **Nivel 2 — Mayor Cantidad de Mapas Ganados (`b.wins - a.wins`):** En caso de empate en puntuación, prioriza al candidato que haya obtenido más victorias de mapa dentro de la serie.
-3. **Nivel 3 — Desempate Determinista Alfanumérico (`a.playerId.localeCompare(b.playerId)`):** Si persiste el empate en puntuación y victorias, se desempata por orden lexicográfico ascendente del identificador de jugador (`playerId`), garantizando un resultado determinista sin aleatoriedad.
+1. **`matchMvps(rows: PlayerGameRow[])` (`player-statistics.ts:174-191`):**
+   - Agrupa los registros de todos los mapas por `matchId` y por jugador individual (`playerId`).
+   - Evalúa a todos los candidatos mediante una cascada determinista de tres niveles (`player-statistics.ts:186-189`):
+     - **Nivel 1 — Mayor Puntuación Acumulada (`b.score - a.score`):** Prioriza al jugador con la puntuación MVP más alta en la serie (`score: mvpScore(playerGames, games)`).
+     - **Nivel 2 — Mayor Cantidad de Mapas Ganados (`b.wins - a.wins`):** En caso de empate en puntuación, prioriza al candidato que haya obtenido más victorias de mapa dentro de la serie.
+     - **Nivel 3 — Desempate Determinista Alfanumérico (`a.playerId.localeCompare(b.playerId)`):** Si persiste el empate en puntuación y victorias, se desempata por orden lexicográfico ascendente del identificador de jugador (`playerId`), garantizando un resultado determinista sin aleatoriedad.
+   - El candidato posicionado en primer lugar tras la ordenación (`candidates.slice(0, 1)`) se designa formalmente como MVP de la serie.
 
-El candidato posicionado en primer lugar tras la ordenación (`candidates.slice(0, 1)`) se designa formalmente como MVP de la serie (`mvpPlayerId`, referenciado por `competition.service.ts:133`).
+2. **`matchMvpPlayerId(games: MatchMap[])` (`player-statistics.ts:193-226`):**
+   - Mapea las estructuras anidadas `MatchMap[]` y sus participantes (`player.stats`) a filas uniformes `PlayerGameRow[]`.
+   - Incluye de forma estricta y obligatoria el valor de `goldEarned: player.stats.goldEarned` (`línea 217`), evitando omisiones o fallbacks involuntarios a DPM/CSPM.
+   - Delega directamente la resolución en `matchMvps(rows)[0]?.playerId ?? null` (`línea 225`).
+   - Se utiliza en el listado de partidos de la división (`competition.service.ts:136`) y en la auditoría de MVPs de equipo (`competition.service.ts:256`).
+
+Esta unificación garantiza que el galardón de MVP sea matemáticamente idéntico tanto si se consulta desde la perspectiva de la serie individual como desde la agregación de jugadores de la división o temporada, resolviendo casos sensibles de desempate dimensional donde el oro acumulado resulta determinante (por ejemplo, el escenario verificado en tests donde Buzel con 108.7 supera a Sm0kY con 107.1).
+
+### 3.7 Resolución de Estadísticas de Temporada y MVPs en Traspasos de Jugadores (`competition.service.ts:179-241`)
+Cuando un usuario consulta el perfil de un jugador (`playerDetail(reference)`), el servicio procesa su historial deportivo en el contexto completo de la temporada activa (`competition.service.ts:187-229`):
+
+- **Historial Completo de Temporada (`playerSeasonGames`):** En lugar de restringir la consulta a una sola división, el servicio solicita `repository.playerSeasonGames(id, activeTeam.seasonName)` (`líneas 188-191`), recuperando todos los mapas disputados por el jugador durante la temporada actual y la totalidad de los mapas de las series en las que participó (`allMatchGames`).
+- **Resolución del Equipo y Rol Activo:** El equipo activo se determina a partir de `player.teams[0]`, el cual se ordena por última actualización en la persistencia (`desc(teamMemberships.updatedAt)` en `postgres-competition.repository.ts:434`), situando el equipo más reciente o vigente en primer lugar.
+- **Acumulación de Rendimiento y Galardones:**
+  - Las métricas consolidadas (`aggregatePlayerStats(playerGames, allMatchGames)`, `línea 207`) abarcan todas las partidas del jugador en la temporada, manteniendo el historial acumulado aunque haya cambiado de equipo o división.
+  - Los galardones de MVP (`mvpMatchIds`, `líneas 193-196`) se calculan sobre `allMatchGames` mediante `matchMvps(allMatchGames)` y se filtran por `award.playerId === id`, preservando los MVPs obtenidos en equipos anteriores durante la misma temporada.
+  - El campeón destacado se computa sobre la totalidad de partidas disputadas mediante `mostPlayedChampion(playerGames)` (`línea 206`).
+- **Estado sin Partidas Disputadas en la Temporada:** Si el jugador no ha disputado aún ningún mapa en toda la temporada (por ejemplo, jugadores recién fichados o suplentes que aún no han debutado, representados por `playerGames.length === 0`), se mantiene la metadata del equipo activo con `champion: null`, `stats: null` y `mvpMatchIds: []` (`líneas 212-228`). Cabe enfatizar que esta condición no sobreviene por un traspaso de equipo o división, ya que las transferencias preservan íntegramente las partidas disputadas y estadísticas acumuladas en la temporada.
+
+### 3.8 Filtrado de MVPs de Plantilla en Detalle de Equipo (`competition.service.ts:242-288`)
+En el endpoint de detalle de equipo (`teamDetail(reference)`), las estadísticas individuales de cada integrante de la plantilla (`rosterStats.mvps`, `competition.service.ts:276-278`) reflejan exclusivamente los galardones obtenidos mientras el jugador defendía los colores de ese equipo:
+
+```typescript
+// apps/api/src/modules/competition/competition.service.ts:254-263
+const mvps = series
+  .map((games) => {
+    const mvpId = matchMvpPlayerId(games);
+    if (!mvpId) return null;
+    const playedForThisTeam = games.some((game) =>
+      game.participants.some((player) => player.playerId === mvpId && player.teamId === id)
+    );
+    return playedForThisTeam ? mvpId : null;
+  })
+  .filter((playerId): playerId is string => playerId !== null);
+```
+
+- **Verificación de Pertenencia en la Serie:** Por cada serie concluida disputada por el equipo, se calcula el MVP de la serie mediante `matchMvpPlayerId(games)`. A continuación, se valida que dicho jugador haya participado en la serie con el `teamId` del equipo consultado (`player.playerId === mvpId && player.teamId === id`).
+- **Prevención de Contaminación de MVPs por Traspasos o Rivales:** Si el MVP de la serie fue otorgado a un jugador del equipo adversario, o a un jugador que posteriormente fue transferido a este equipo pero que ganó el galardón jugando para otro conjunto, dicho MVP se descarta (`null`) y no se contabiliza en el casillero `rosterStats.mvps` de la plantilla de este equipo.
 
 ---
 
 ## 4. Normalización de Posiciones y Desempate de Campeón Destacado
 
 ### 4.1 Normalización de Roles (`player-statistics.ts:25-32`)
-Para garantizar consistencia con los datos provenientes de la Riot API o de hojas de cálculo, las posiciones se unifican mediante la función `normalizePosition`:
+Para garantizar consistencia con los datos provenientes de la Riot API o de hojas de cálculo, las posiciones se unifican mediante la función `playerRole`:
 - `'middle'` $\to$ `'mid'`
 - `'bottom'` o `'bot'` $\to$ `'adc'`
 - `'utility'` o `'sup'` $\to$ `'support'`
 - `'jg'` o `'jungla'` $\to$ `'jungle'`
 - Otras cadenas se convierten a minúsculas o se evalúan como `null`.
 
-### 4.2 Desempate Cronológico de Campeón Destacado (*Splash Art*)
-Para seleccionar el campeón más representativo de un jugador en la temporada (`player-statistics.ts:255-268`):
-- Se contabilizan las partidas disputadas con cada campeón.
-- La evaluación se realiza mediante `count >= mostGames`.
-- Dado que las partidas se consultan ordenadas cronológicamente por `asc(matches.finishedAt)` (`postgres-competition.repository.ts:223`), en caso de empate en número de partidas, el campeón utilizado más recientemente sobrescribe la selección, garantizando un resultado determinista sin aleatoriedad.
+### 4.2 Desempate Cronológico de Campeón Destacado (*Splash Art*) (`player-statistics.ts:234-250`)
+Para seleccionar el campeón más representativo de un jugador en la temporada, la función pura exportada `mostPlayedChampion(games: PlayerGameRow[])` (`player-statistics.ts:234-250`) procesa el historial de partidas:
+- Se contabilizan las partidas disputadas con cada campeón mediante un mapa de frecuencias `Map<string, number>`.
+- La evaluación de máximo se realiza mediante la condición `count >= mostGames` (`línea 244`).
+- Dado que las partidas se consultan ordenadas cronológicamente en orden ascendente por `asc(matches.finishedAt), asc(matchGames.gameNumber)` (tanto en `players` en `postgres-competition.repository.ts:224-225` como en `playerSeasonGames` en `postgres-competition.repository.ts:379-380`), en caso de empate en número de partidas, el campeón utilizado más recientemente sobrescribe la selección previa, garantizando un resultado determinista sin aleatoriedad.
 
 ---
 
