@@ -160,6 +160,9 @@ test('HTTP -> controller -> service -> real repository -> embedded PostgreSQL', 
   expect(playerDetail.body.data.teams[0].role).toBe('top');
   expect(playerDetail.body.data.teams[0].isCaptain).toBe(true);
   expect(playerDetail.body.data.teams[0].divisionName).toBe('Premier DEMO');
+  expect(playerDetail.body.data.competition.team.name).toBe('Lobos DEMO');
+  expect(playerDetail.body.data.competition.stats.games).toBe(1);
+  expect(playerDetail.body.data.competition.role).toBe('top');
   expect('puuid' in playerDetail.body.data).toBe(false);
   expect('discordUserId' in playerDetail.body.data).toBe(false);
   expect(playerDetail.body.data.linkedAccounts.length).toBe(1);

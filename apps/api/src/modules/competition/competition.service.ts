@@ -2,7 +2,12 @@ import type { MatchDetail, PlayerDetail, TeamDetail } from '@rcl/contracts';
 import { notFound } from '../../shared/app-error.js';
 import { calculateChampionStats } from './champion-stats.js';
 import type { CompetitionRepository, Match, Team } from './competition.repository.js';
-import { matchMvpPlayerId } from './player-statistics.js';
+import {
+  aggregatePlayerStats,
+  matchMvpPlayerId,
+  matchMvps,
+  mostPlayedChampion
+} from './player-statistics.js';
 import {
   playerProfileSlugs,
   profileSlugs,
@@ -177,10 +182,51 @@ export class CompetitionService {
     if (!id) throw notFound('Player');
     const player = await this.repository.playerDetail(id);
     if (!player) throw notFound('Player');
-    const divisionId = player.teams[0]?.divisionId;
-    const competition = divisionId
-      ? (await this.repository.players(divisionId)).find((entry) => entry.id === id)?.competition
-      : player.competition;
+    const activeTeam = player.teams[0];
+    let competition: PlayerDetail['competition'] = player.competition;
+    if (activeTeam?.seasonName) {
+      const { playerGames, allMatchGames } = await this.repository.playerSeasonGames(
+        id,
+        activeTeam.seasonName
+      );
+      if (playerGames.length > 0) {
+        const awards = matchMvps(allMatchGames);
+        const mvpMatchIds = awards
+          .filter((award) => award.playerId === id)
+          .map((award) => award.matchId);
+        competition = {
+          role: activeTeam.role,
+          team: {
+            id: activeTeam.id,
+            name: activeTeam.name,
+            shortName: activeTeam.shortName,
+            logoUrl: activeTeam.logoUrl,
+            color: activeTeam.color ?? null
+          },
+          champion: mostPlayedChampion(playerGames),
+          stats: aggregatePlayerStats(playerGames, allMatchGames),
+          mvpMatchIds,
+          featured: null,
+          isCaptain: activeTeam.isCaptain ?? false
+        };
+      } else {
+        competition = {
+          role: activeTeam.role,
+          team: {
+            id: activeTeam.id,
+            name: activeTeam.name,
+            shortName: activeTeam.shortName,
+            logoUrl: activeTeam.logoUrl,
+            color: activeTeam.color ?? null
+          },
+          champion: null,
+          stats: null,
+          mvpMatchIds: [],
+          featured: null,
+          isCaptain: activeTeam.isCaptain ?? false
+        };
+      }
+    }
     const teamSlugs = await this.teamSlugs();
     return {
       ...player,
@@ -205,7 +251,16 @@ export class CompetitionService {
     );
     const gamesByMatch = await this.repository.matchGamesByMatch(matches.map((match) => match.id));
     const series = matches.map((match) => gamesByMatch.get(match.id) ?? []);
-    const mvps = series.map((games) => matchMvpPlayerId(games));
+    const mvps = series
+      .map((games) => {
+        const mvpId = matchMvpPlayerId(games);
+        if (!mvpId) return null;
+        const playedForThisTeam = games.some((game) =>
+          game.participants.some((player) => player.playerId === mvpId && player.teamId === id)
+        );
+        return playedForThisTeam ? mvpId : null;
+      })
+      .filter((playerId): playerId is string => playerId !== null);
     const appearances = series
       .flat()
       .filter((game) => game.winnerTeamId)
