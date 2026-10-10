@@ -215,3 +215,60 @@ export interface ChampionStats {
   winRate: number;    // Porcentaje de victorias (0-100)
 }
 ```
+
+### 3.5 Fila de Partida Individual de Jugador (`PlayerGameRow`)
+**Ubicación**: `apps/api/src/modules/competition/player-statistics.ts:3-23`
+
+Estructura atómica que representa el rendimiento de un jugador en un mapa individual, consumida por el repositorio PostgreSQL y los algoritmos de agregación estadística y valoración MVP:
+
+```typescript
+export interface PlayerGameRow {
+  playerId: string;
+  gameId: string;
+  matchId: string;
+  divisionId: string;
+  roundId: number | null;
+  teamId: string;
+  team: TeamSummary;
+  position: string | null;
+  champion: string;
+  durationSeconds: number | null;
+  winnerTeamId: string | null;
+  kills: number;
+  deaths: number;
+  assists: number;
+  cs: number;
+  damageToChampions: number;
+  goldEarned: number | null;
+  visionScore: number | null;
+  damageMitigated: number | null;
+}
+```
+
+- **Obligatoriedad de `goldEarned` (`number | null`)**: A diferencia de versiones preliminares donde el campo era opcional (`goldEarned?: number | null`), la propiedad es estrictamente obligatoria. Esto evita omisiones accidentales en consultas SQL/ORM (`players` y `playerSeasonGames`) y garantiza la disponibilidad de datos para el cálculo de eficiencia económica de daño (`DPG`) y oro por minuto (`GPM`) en el algoritmo de MVP.
+
+---
+
+## 4. Contratos de Persistencia (`CompetitionRepository`)
+**Ubicación**: `apps/api/src/modules/competition/competition.repository.ts:60-86`
+
+La interfaz `CompetitionRepository` define las operaciones requeridas por la capa de servicio para consultar la base de datos relacional. Para dar soporte a la agregación de estadísticas y premios MVP en traspasos entre equipos o divisiones, define el método `playerSeasonGames`:
+
+```typescript
+// apps/api/src/modules/competition/competition.repository.ts:70-76
+playerSeasonGames(
+  playerId: string,
+  seasonName: string
+): Promise<{
+  playerGames: PlayerGameRow[];
+  allMatchGames: PlayerGameRow[];
+}>;
+```
+
+- **`playerId` (`string`)**: UUID del jugador a consultar.
+- **`seasonName` (`string`)**: Nombre canónico de la temporada deportiva (ej. `"Temporada 1"`).
+- **Retorno (`Promise<{ playerGames: PlayerGameRow[]; allMatchGames: PlayerGameRow[] }>`):**
+  - `playerGames`: Colección de todas las partidas disputadas por el jugador a lo largo de la temporada completa (independientemente del equipo o división en que las haya jugado), ordenadas cronológicamente (`asc(matches.finishedAt)`).
+  - `allMatchGames`: Registros de todos los participantes en las series en las que intervino el jugador, requeridos para computar el contexto relativo de MVP de cada enfrentamiento mediante `matchMvps(allMatchGames)`.
+
+

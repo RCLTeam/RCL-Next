@@ -17,7 +17,7 @@ export interface PlayerGameRow {
   assists: number;
   cs: number;
   damageToChampions: number;
-  goldEarned?: number | null;
+  goldEarned: number | null;
   visionScore: number | null;
   damageMitigated: number | null;
 }
@@ -231,6 +231,24 @@ export interface CurrentRound {
   name: string;
 }
 
+export function mostPlayedChampion(games: PlayerGameRow[]): string | null {
+  const championCounts = new Map<string, number>();
+  for (const game of games) {
+    championCounts.set(game.champion, (championCounts.get(game.champion) ?? 0) + 1);
+  }
+  // The entries arrive chronologically; the most recently selected champion breaks the tie in the event of a deadlock
+  let champion: string | null = null;
+  let mostGames = 0;
+  for (const game of games) {
+    const count = championCounts.get(game.champion) ?? 0;
+    if (count >= mostGames) {
+      champion = game.champion;
+      mostGames = count;
+    }
+  }
+  return champion;
+}
+
 export function enrichPlayers(
   players: Player[],
   rows: PlayerGameRow[],
@@ -252,20 +270,7 @@ export function enrichPlayers(
   return players.map((player) => {
     const games = byPlayer.get(player.id) ?? [];
     const latest = games.at(-1);
-    const championCounts = new Map<string, number>();
-    for (const game of games) {
-      championCounts.set(game.champion, (championCounts.get(game.champion) ?? 0) + 1);
-    }
-    // The entries arrive chronologically; the most recently selected champion breaks the tie in the event of a deadlock
-    let champion: string | null = null;
-    let mostGames = 0;
-    for (const game of games) {
-      const count = championCounts.get(game.champion) ?? 0;
-      if (count >= mostGames) {
-        champion = game.champion;
-        mostGames = count;
-      }
-    }
+    const champion = mostPlayedChampion(games);
     const round =
       featured?.playerId === player.id
         ? rounds.find(
