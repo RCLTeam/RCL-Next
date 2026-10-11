@@ -29,6 +29,7 @@ const fixtureRoflPath = path.resolve('apps/parser/data/RCL-FIXTURE-0001.rofl');
 
 const mockCompetitionRepo: CompetitionRepository = {
   players: async () => [],
+  playerSeasonGames: async () => ({ playerGames: [], allMatchGames: [] }),
   playerDetail: async () => undefined,
   matchDirectory: async () => [],
   match: async () => undefined,

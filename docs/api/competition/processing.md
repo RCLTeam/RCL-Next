@@ -7,8 +7,8 @@
 ## 1. Visión General
 
 El archivo `apps/api/src/modules/competition/` concentra la lógica algorítmica y matemática de las competiciones de League of Legends en RCL-Next. Sus responsabilidades se dividen en cinco motores y especificaciones independientes y puras:
-1. **Motor de Clasificación y Desempates de Liga (`competition.service.ts:8-50`)**: Cómputo de la tabla de posiciones en series al mejor de 3 (BO3).
-2. **Motor de Puntuación Multidimensional de MVP (`player-statistics.ts:81-191`)**: Evaluación del rendimiento individual continuo por rol y selección del mejor jugador.
+1. **Motor de Clasificación y Desempates de Liga (`competition.service.ts:18-60`)**: Cómputo de la tabla de posiciones en series al mejor de 3 (BO3).
+2. **Motor de Puntuación Multidimensional de MVP (`player-statistics.ts:45-226`)**: Evaluación del rendimiento individual continuo por rol y selección del mejor jugador.
 3. **Motor de Estadísticas Agregadas de Campeones (`champion-stats.ts:1-32`)**: Consolidación de selecciones, mapas disputados, victorias y porcentajes de presencia.
 4. **Generador Determinista de Slugs y Evasión de Colisiones (`profile-slugs.ts:1-60`)**: Normalización semántica de URLs para partidos, equipos y jugadores.
 5. **Especificación de Visibilidad de Equipos y Sentinels de Roles (`team-visibility.ts:1-16`)**: Determinación del estado de los equipos mediante rangos numéricos de roles de Discord para su inclusión en clasificación, cuadrícula, calendario y pronósticos.
@@ -18,15 +18,23 @@ El archivo `apps/api/src/modules/competition/` concentra la lógica algorítmica
 ## 2. Motor de Clasificación de Liga y Reglas de Desempate
 
 ### 2.1 Algoritmo de Acumulación (`calculateStandings`)
-La función pura `calculateStandings(teams, matches)` (`competition.service.ts:8-50`) procesa los resultados de los partidos disputados en la fase indicada (por defecto `'regular'`):
+La función pura `calculateStandings(teams, matches)` (`competition.service.ts:18-60`) procesa los resultados de los partidos disputados en la fase indicada (por defecto `'regular'`):
 
 ```typescript
-// apps/api/src/modules/competition/competition.service.ts:8-50
+// apps/api/src/modules/competition/competition.service.ts:18-60
 export function calculateStandings(teams: Team[], matches: Match[]) {
   const totals = new Map(
     teams.map((team) => [
       team.id,
-      { team, played: 0, wins: 0, losses: 0, mapsWon: 0, mapsLost: 0, mapDifference: 0 }
+      {
+        team,
+        played: 0,
+        wins: 0,
+        losses: 0,
+        mapsWon: 0,
+        mapsLost: 0,
+        mapDifference: 0
+      }
     ])
   );
   for (const match of matches) {
@@ -46,6 +54,7 @@ export function calculateStandings(teams: Team[], matches: Match[]) {
       team.mapDifference = team.mapsWon - team.mapsLost;
     }
   }
+  // Rank by series wins, then map difference, fewer losses and team name.
   return [...totals.values()]
     .sort(
       (a, b) =>
@@ -59,7 +68,7 @@ export function calculateStandings(teams: Team[], matches: Match[]) {
 ```
 
 ### 2.2 Cascada Estricta de 4 Niveles de Ordenación
-El orden de los equipos en la tabla de clasificación responde a la siguiente evaluación jerárquica (`competition.service.ts:43-48`):
+El orden de los equipos en la tabla de clasificación responde a la siguiente evaluación jerárquica (`competition.service.ts:52-58`):
 
 1. **Nivel 1 — Victorias de Serie (`b.wins - a.wins`):**
    - Número total de series completas ganadas.
@@ -71,7 +80,7 @@ El orden de los equipos en la tabla de clasificación responde a la siguiente ev
    - Ordenación lexicográfica por nombre de equipo bajo el locale español (`'es'`).
 
 ### 2.3 Reglas de Desempate y Ausencia de Head-to-Head
-- **Ausencia de Enfrentamiento Directo:** El sistema **no implementa desempate por enfrentamiento directo (*Head-to-Head*)**. Si dos equipos empatan en diferencia de mapas, victorias y derrotas, su posición relativa no se decide por el resultado del partido entre ellos, sino por el orden alfabético de sus nombres (`competition.service.ts:48`).
+- **Ausencia de Enfrentamiento Directo:** El sistema **no implementa desempate por enfrentamiento directo (*Head-to-Head*)**. Si dos equipos empatan en diferencia de mapas, victorias y derrotas, su posición relativa no se decide por el resultado del partido entre ellos, sino por el orden alfabético de sus nombres (`competition.service.ts:57`).
 - **Ausencia de Mini-liga:** El sistema **no implementa desempate por mini-liga olímpica** para empates triples o cuádruples.
 - **Ausencia de Rachas:** El sistema **no realiza seguimiento ni expone rachas de victorias/derrotas (*streaks*)**. El tipo de contrato `Standing` carece de dicho atributo.
 
@@ -79,7 +88,81 @@ El orden de los equipos en la tabla de clasificación responde a la siguiente ev
 
 ## 3. Algoritmo Multidimensional de Puntuación MVP
 
-El motor de rendimiento individual (`apps/api/src/modules/competition/player-statistics.ts:81-191`) calcula la puntuación global de cada jugador por cada serie completada.
+El motor de rendimiento individual (`apps/api/src/modules/competition/player-statistics.ts:45-226`) calcula la puntuación global de cada jugador por cada serie completada y consolida las métricas base del perfil.
+
+### 3.0 Métricas Base de Agregación de Estadísticas de Jugador (`aggregatePlayerStats`)
+La función pura `aggregatePlayerStats(rows: PlayerGameRow[], all: PlayerGameRow[])` (`player-statistics.ts:45-79`) consolida el rendimiento estadístico base de un jugador a lo largo de un conjunto de partidas (mapas disputados en una serie o a lo largo de la temporada completa), retornando el contrato `PlayerStatistics`:
+
+```typescript
+// apps/api/src/modules/competition/player-statistics.ts:45-79
+export function aggregatePlayerStats(
+  rows: PlayerGameRow[],
+  all: PlayerGameRow[]
+): PlayerStatistics {
+  const sum = (key: 'kills' | 'deaths' | 'assists' | 'cs' | 'damageToChampions') =>
+    rows.reduce((total, row) => total + row[key], 0);
+  const timed = rows.filter((row) => row.durationSeconds && row.durationSeconds > 0);
+  const minutes = timed.reduce((total, row) => total + (row.durationSeconds ?? 0) / 60, 0);
+  const rate = (key: 'cs' | 'damageToChampions') =>
+    minutes ? timed.reduce((total, row) => total + row[key], 0) / minutes : null;
+  const average = (key: 'visionScore' | 'damageMitigated') => {
+    const values = rows.flatMap((row) => (row[key] === null ? [] : [row[key]]));
+    return values.length ? values.reduce((a, b) => a + b, 0) / values.length : null;
+  };
+  const teamKills = rows.reduce(
+    (total, row) =>
+      total +
+      all
+        .filter((other) => other.gameId === row.gameId && other.teamId === row.teamId)
+        .reduce((kills, other) => kills + other.kills, 0),
+    0
+  );
+  return {
+    games: rows.length,
+    kda: (sum('kills') + sum('assists')) / Math.max(1, sum('deaths')),
+    csPerMinute: rate('cs'),
+    killParticipation: teamKills ? (100 * (sum('kills') + sum('assists'))) / teamKills : 0,
+    winRate: rows.length
+      ? (100 * rows.filter((row) => row.teamId === row.winnerTeamId).length) / rows.length
+      : 0,
+    damagePerMinute: rate('damageToChampions'),
+    visionScore: average('visionScore'),
+    damageMitigated: average('damageMitigated')
+  };
+}
+```
+
+El motor calcula formalmente 7 métricas agregadas:
+
+1. **KDA (`kda`, `player-statistics.ts:69`):** Ratio de asesinatos y asistencias frente a muertes:
+   $$\text{KDA} = \frac{\sum \text{kills} + \sum \text{assists}}{\max(1, \sum \text{deaths})}$$
+   Si el jugador no registra muertes ($\sum \text{deaths} = 0$), el denominador se trunca a $1$ mediante `Math.max(1, sum('deaths'))`, evitando divisiones por cero o valores indeterminados.
+
+2. **CS por minuto (`csPerMinute`, `player-statistics.ts:53-54, 70`):** Ritmo de súbditos por minuto sobre partidas finalizadas con duración registrada:
+   $$\text{CSPM} = \begin{cases} \frac{\sum_{r \in \text{timed}} r.\text{cs}}{\sum_{r \in \text{timed}} \frac{r.\text{durationSeconds}}{60}} & \text{si } \text{minutes} > 0 \\ \text{null} & \text{si } \text{minutes} = 0 \end{cases}$$
+   Donde $\text{timed} = \{ r \in \text{rows} \mid r.\text{durationSeconds} > 0 \}$. Se calcula estrictamente sobre partidas con `durationSeconds > 0`. Si no se dispone de minutos válidos acumulados (`minutes === 0`), devuelve `null`.
+
+3. **Kill Participation (`killParticipation`, `player-statistics.ts:59-66, 71`):** Porcentaje de bajas totales del equipo en las que el jugador participó:
+   $$\text{KP} = \begin{cases} \frac{100 \cdot (\sum \text{kills} + \sum \text{assists})}{\text{teamKills}} & \text{si } \text{teamKills} > 0 \\ 0 & \text{si } \text{teamKills} = 0 \end{cases}$$
+   Donde $\text{teamKills}$ computa las muertes totales del equipo obtenidas del parámetro `all` en los mismos mapas disputados (`líneas 59-66`). Si el equipo no consiguió ninguna baja (`teamKills === 0`), devuelve `0`.
+
+4. **WinRate (`winRate`, `player-statistics.ts:72-74`):** Porcentaje de mapas ganados respecto al total disputado:
+   $$\text{WinRate} = \begin{cases} \frac{100 \cdot |\{ r \in \text{rows} \mid r.\text{teamId} = r.\text{winnerTeamId} \}|}{|\text{rows}|} & \text{si } |\text{rows}| > 0 \\ 0 & \text{si } |\text{rows}| = 0 \end{cases}$$
+
+5. **DPM (`damagePerMinute`, `player-statistics.ts:53-54, 75`):** Daño total infligido a campeones por minuto de juego:
+   $$\text{DPM} = \begin{cases} \frac{\sum_{r \in \text{timed}} r.\text{damageToChampions}}{\sum_{r \in \text{timed}} \frac{r.\text{durationSeconds}}{60}} & \text{si } \text{minutes} > 0 \\ \text{null} & \text{si } \text{minutes} = 0 \end{cases}$$
+   Calculado de forma homóloga a CSPM sobre las partidas temporizadas (`durationSeconds > 0`), devolviendo `null` si `minutes === 0`.
+
+6. **Puntuación media de visión por partida (`visionScore`, `player-statistics.ts:55-58, 76`):** Promedio aritmético sobre partidas válidas con registro de visión:
+   $$\overline{\text{Vision}} = \begin{cases} \frac{\sum_{r \in \text{rows}, r.\text{visionScore} \ne \text{null}} r.\text{visionScore}}{|\{ r \in \text{rows} \mid r.\text{visionScore} \ne \text{null} \}|} & \text{si existen registros no nulos} \\ \text{null} & \text{en caso contrario} \end{cases}$$
+
+7. **Daño mitigado medio por partida (`damageMitigated`, `player-statistics.ts:55-58, 77`):** Promedio aritmético sobre partidas válidas con registro de mitigación defensiva:
+   $$\overline{\text{Mitigation}} = \begin{cases} \frac{\sum_{r \in \text{rows}, r.\text{damageMitigated} \ne \text{null}} r.\text{damageMitigated}}{|\{ r \in \text{rows} \mid r.\text{damageMitigated} \ne \text{null} \}|} & \text{si existen registros no nulos} \\ \text{null} & \text{en caso contrario} \end{cases}$$
+
+#### Distinción Arquitectónica: Agregación de Perfil vs. Calibración de MVP
+Existe una distinción conceptual deliberada entre ambas funciones:
+- **`aggregatePlayerStats` (Perfil General del Jugador):** Computa la visión y el daño mitigado como **promedios aritméticos directos por partida** (`average('visionScore')` y `average('damageMitigated')` en `líneas 55-58, 76-77`). Esto proporciona métricas representativas del impacto medio absoluto de un jugador por mapa en la interfaz de perfil.
+- **`mvpScore` (Calibración de Rendimiento):** Computa la visión y la mitigación **por minuto** (`vspm` y `mitigationPm` en `player-statistics.ts:135-137`, dividiendo la suma entre `minutes`). Esto permite contrastar el rendimiento con granularidad temporal frente a las constantes `vspm` y `mitigationPm` de cada rol táctico en `ROLE_REFERENCES`, desacoplando la puntuación de la duración de la partida.
 
 ### 3.1 Tablas de Referencia por Rol (`ROLE_REFERENCES` y `DEFAULT_REF`)
 Las métricas individuales de cada jugador se evalúan frente a valores estándar de referencia calibrados específicamente para su rol táctico (`player-statistics.ts:90-105`). Si la posición del jugador no está definida o no coincide con los roles estándar, se aplican automáticamente los valores de corte de `DEFAULT_REF`:
@@ -153,6 +236,79 @@ La puntuación bruta acumulada suma directamente las 9 dimensiones:
 
 $$\text{Score}_{\text{MVP}} = S_{\text{KDA}} + S_{\text{KP}} + S_{\text{DPM}} + S_{\text{DPG}} + S_{\text{Vision}} + S_{\text{CS}} + S_{\text{Mitigation}} + S_{\text{GPM}} + S_{\text{WinRate}}$$
 
+### 3.3.1 Desglose Algebraico Explícito por Rol Táctico (Top, Jungle, Mid, ADC, Support, Default)
+
+Al sustituir los vectores de parámetros específicos de `ROLE_REFERENCES` y `DEFAULT_REF` (`player-statistics.ts:90-105`) en la expresión general consolidada, se obtienen las ecuaciones algebraicas expandidas para cada una de las 6 posiciones tácticas:
+
+1. **Score TOP ($R_{\text{dpm}}=650$, $R_{\text{dpg}}=1600$, $R_{\text{vspm}}=1.0$, $R_{\text{cspm}}=7.5$, $R_{\text{mitigationPm}}=1100$, $R_{\text{gpm}}=380$):**
+   $$\begin{aligned}
+   \text{Score}_{\text{TOP}} = \; & 20 \cdot \text{scale}(\text{KDA}, 4.5) + 18 \cdot \text{scale}(\text{KP}, 65) \\
+   & + 14 \cdot \text{scale}(\text{DPM}, 650) + 10 \cdot \text{scale}(\text{DPG}, 1600) \\
+   & + 10 \cdot \text{scale}(\text{VSPM}, 1.0) + 7 \cdot \text{scale}(\text{CSPM}, 7.5) \\
+   & + 6 \cdot \text{scale}(\text{Mitigation}_{\text{pm}}, 1100) + 5 \cdot \text{scale}(\text{GPM}, 380) \\
+   & + 10 \cdot \left(\frac{\text{WinRate}}{100}\right)
+   \end{aligned}$$
+
+2. **Score JUNGLE ($R_{\text{dpm}}=500$, $R_{\text{dpg}}=1350$, $R_{\text{vspm}}=1.5$, $R_{\text{cspm}}=5.8$, $R_{\text{mitigationPm}}=950$, $R_{\text{gpm}}=360$):**
+   $$\begin{aligned}
+   \text{Score}_{\text{JUNGLE}} = \; & 20 \cdot \text{scale}(\text{KDA}, 4.5) + 18 \cdot \text{scale}(\text{KP}, 65) \\
+   & + 14 \cdot \text{scale}(\text{DPM}, 500) + 10 \cdot \text{scale}(\text{DPG}, 1350) \\
+   & + 10 \cdot \text{scale}(\text{VSPM}, 1.5) + 7 \cdot \text{scale}(\text{CSPM}, 5.8) \\
+   & + 6 \cdot \text{scale}(\text{Mitigation}_{\text{pm}}, 950) + 5 \cdot \text{scale}(\text{GPM}, 360) \\
+   & + 10 \cdot \left(\frac{\text{WinRate}}{100}\right)
+   \end{aligned}$$
+
+3. **Score MID ($R_{\text{dpm}}=750$, $R_{\text{dpg}}=1750$, $R_{\text{vspm}}=1.1$, $R_{\text{cspm}}=8.0$, $R_{\text{mitigationPm}}=650$, $R_{\text{gpm}}=420$):**
+   $$\begin{aligned}
+   \text{Score}_{\text{MID}} = \; & 20 \cdot \text{scale}(\text{KDA}, 4.5) + 18 \cdot \text{scale}(\text{KP}, 65) \\
+   & + 14 \cdot \text{scale}(\text{DPM}, 750) + 10 \cdot \text{scale}(\text{DPG}, 1750) \\
+   & + 10 \cdot \text{scale}(\text{VSPM}, 1.1) + 7 \cdot \text{scale}(\text{CSPM}, 8.0) \\
+   & + 6 \cdot \text{scale}(\text{Mitigation}_{\text{pm}}, 650) + 5 \cdot \text{scale}(\text{GPM}, 420) \\
+   & + 10 \cdot \left(\frac{\text{WinRate}}{100}\right)
+   \end{aligned}$$
+
+4. **Score ADC ($R_{\text{dpm}}=850$, $R_{\text{dpg}}=1850$, $R_{\text{vspm}}=0.9$, $R_{\text{cspm}}=8.5$, $R_{\text{mitigationPm}}=450$, $R_{\text{gpm}}=450$):**
+   $$\begin{aligned}
+   \text{Score}_{\text{ADC}} = \; & 20 \cdot \text{scale}(\text{KDA}, 4.5) + 18 \cdot \text{scale}(\text{KP}, 65) \\
+   & + 14 \cdot \text{scale}(\text{DPM}, 850) + 10 \cdot \text{scale}(\text{DPG}, 1850) \\
+   & + 10 \cdot \text{scale}(\text{VSPM}, 0.9) + 7 \cdot \text{scale}(\text{CSPM}, 8.5) \\
+   & + 6 \cdot \text{scale}(\text{Mitigation}_{\text{pm}}, 450) + 5 \cdot \text{scale}(\text{GPM}, 450) \\
+   & + 10 \cdot \left(\frac{\text{WinRate}}{100}\right)
+   \end{aligned}$$
+
+5. **Score SUPPORT ($R_{\text{dpm}}=250$, $R_{\text{dpg}}=900$, $R_{\text{vspm}}=2.3$, $R_{\text{cspm}}=1.2$, $R_{\text{mitigationPm}}=650$, $R_{\text{gpm}}=260$):**
+   $$\begin{aligned}
+   \text{Score}_{\text{SUPPORT}} = \; & 20 \cdot \text{scale}(\text{KDA}, 4.5) + 18 \cdot \text{scale}(\text{KP}, 65) \\
+   & + 14 \cdot \text{scale}(\text{DPM}, 250) + 10 \cdot \text{scale}(\text{DPG}, 900) \\
+   & + 10 \cdot \text{scale}(\text{VSPM}, 2.3) + 7 \cdot \text{scale}(\text{CSPM}, 1.2) \\
+   & + 6 \cdot \text{scale}(\text{Mitigation}_{\text{pm}}, 650) + 5 \cdot \text{scale}(\text{GPM}, 260) \\
+   & + 10 \cdot \left(\frac{\text{WinRate}}{100}\right)
+   \end{aligned}$$
+
+6. **Score DEFAULT ($R_{\text{dpm}}=600$, $R_{\text{dpg}}=1500$, $R_{\text{vspm}}=1.2$, $R_{\text{cspm}}=6.5$, $R_{\text{mitigationPm}}=750$, $R_{\text{gpm}}=370$):**
+   $$\begin{aligned}
+   \text{Score}_{\text{DEFAULT}} = \; & 20 \cdot \text{scale}(\text{KDA}, 4.5) + 18 \cdot \text{scale}(\text{KP}, 65) \\
+   & + 14 \cdot \text{scale}(\text{DPM}, 600) + 10 \cdot \text{scale}(\text{DPG}, 1500) \\
+   & + 10 \cdot \text{scale}(\text{VSPM}, 1.2) + 7 \cdot \text{scale}(\text{CSPM}, 6.5) \\
+   & + 6 \cdot \text{scale}(\text{Mitigation}_{\text{pm}}, 750) + 5 \cdot \text{scale}(\text{GPM}, 370) \\
+   & + 10 \cdot \left(\frac{\text{WinRate}}{100}\right)
+   \end{aligned}$$
+
+*Degradación por Ausencia de Registro Económico:* Si en cualquiera de los roles se carece de registro de oro acumulado ($\text{Gold}_{\text{total}} \le 0$), el término de DPG degrada a $10 \cdot \text{scale}(\text{DPM}, R_{\text{dpm}})$ y el término de GPM degrada a $5 \cdot \text{scale}(\text{CSPM}, R_{\text{cspm}})$.
+
+#### Selección Hermética por Rol sin Contaminación Cruzada
+El motor asegura la separación estricta de parámetros entre posiciones mediante el flujo de resolución en `player-statistics.ts:119-120`:
+
+```typescript
+// apps/api/src/modules/competition/player-statistics.ts:119-120
+const role = playerRole(rows[0]?.position ?? null);
+const ref = ROLE_REFERENCES[role ?? ''] ?? DEFAULT_REF;
+```
+
+1. **Resolución Determinista del Rol (`playerRole`):** La posición del jugador en la serie se extrae de la primera fila (`rows[0]?.position`) y se normaliza canónicamente mediante `playerRole(rows[0]?.position ?? null)` (`player-statistics.ts:25-32`). Esto unifica variantes de nomenclatura externa (`'middle'` $\to$ `'mid'`, `'bot'` o `'bottom'` $\to$ `'adc'`, `'utility'` o `'sup'` $\to$ `'support'`, `'jg'` o `'jungla'` $\to$ `'jungle'`).
+2. **Asignación Aislada de Referencias (`ROLE_REFERENCES` y `DEFAULT_REF`):** La constante local `ref` se fija al inicio de la función indexando el diccionario `ROLE_REFERENCES`. Si el rol normalizado es nulo, no está reconocido o corresponde a una demarcación atípica, se selecciona de manera unívoca el vector equilibrado `DEFAULT_REF`.
+3. **Inmutabilidad y Prevención de Contaminación Cruzada:** La referencia `ref` es un objeto inmutable de solo lectura en el ámbito local de `mvpScore`. Todas las dimensiones dependientes de rol ($S_{\text{DPM}}$, $S_{\text{DPG}}$, $S_{\text{Vision}}$, $S_{\text{CS}}$, $S_{\text{Mitigation}}$, $S_{\text{GPM}}$) leen exclusivamente los campos del mismo objeto `ref` (`player-statistics.ts:142-147`). Esto garantiza que cada rol táctico aplique su propia ecuación formal de forma completamente hermética, impidiendo cualquier mezcla, mutación en caliente o contaminación cruzada de coeficientes de corte entre posiciones distintas.
+
 ### 3.4 Ejemplo Práctico de Cálculo Paso a Paso
 A continuación se ilustra la resolución completa para un jugador en la posición **ADC** en una partida de 30 minutos (1.800 segundos), contrastando sus estadísticas contra las referencias `ROLE_REFERENCES.adc` ($R_{\text{cspm}} = 8.5$, $R_{\text{dpm}} = 850$, $R_{\text{gpm}} = 450$, $R_{\text{vspm}} = 0.9$, $R_{\text{mitigationPm}} = 450$, $R_{\text{dpg}} = 1850$):
 
@@ -210,32 +366,73 @@ $$\text{Puntuación Final} = \frac{\lfloor 107.01 \cdot 10 + 0.5 \rfloor}{10} = 
   Esto evita divisiones por cero o propagación de valores `NaN` / `null` en partidas disputadas antes de incorporar métricas económicas completas, preservando la coherencia en las ponderaciones de la matriz dimensional.
 - **Redondeo Final Determinista:** Tras acumular las 9 dimensiones ponderadas, la puntuación se redondea a un único decimal con precisión determinista mediante `Math.round(finalScore * 10) / 10` (`player-statistics.ts:171`).
 
-### 3.6 Selección del MVP de Serie y Criterios de Desempate (`player-statistics.ts:174-191`)
-Para seleccionar el MVP definitivo de un enfrentamiento o serie (`matchMvps`), se agrupan los registros de todos los mapas por `matchId` y por jugador individual (`playerId`), evaluando a todos los candidatos mediante una cascada determinista de tres niveles (`player-statistics.ts:186-189`):
+### 3.6 Selección del MVP de Serie y Unificación de Cálculo (`player-statistics.ts:174-226`)
+Para seleccionar el MVP definitivo de un enfrentamiento o serie, el dominio expone dos funciones complementarias que comparten exactamente el mismo algoritmo y criterios de desempate:
 
-1. **Nivel 1 — Mayor Puntuación Acumulada (`b.score - a.score`):** Prioriza al jugador con la puntuación MVP más alta en la serie.
-2. **Nivel 2 — Mayor Cantidad de Mapas Ganados (`b.wins - a.wins`):** En caso de empate en puntuación, prioriza al candidato que haya obtenido más victorias de mapa dentro de la serie.
-3. **Nivel 3 — Desempate Determinista Alfanumérico (`a.playerId.localeCompare(b.playerId)`):** Si persiste el empate en puntuación y victorias, se desempata por orden lexicográfico ascendente del identificador de jugador (`playerId`), garantizando un resultado determinista sin aleatoriedad.
+1. **`matchMvps(rows: PlayerGameRow[])` (`player-statistics.ts:174-191`):**
+   - Agrupa los registros de todos los mapas por `matchId` y por jugador individual (`playerId`).
+   - Evalúa a todos los candidatos mediante una cascada determinista de tres niveles (`player-statistics.ts:186-189`):
+     - **Nivel 1 — Mayor Puntuación Acumulada (`b.score - a.score`):** Prioriza al jugador con la puntuación MVP más alta en la serie (`score: mvpScore(playerGames, games)`).
+     - **Nivel 2 — Mayor Cantidad de Mapas Ganados (`b.wins - a.wins`):** En caso de empate en puntuación, prioriza al candidato que haya obtenido más victorias de mapa dentro de la serie.
+     - **Nivel 3 — Desempate Determinista Alfanumérico (`a.playerId.localeCompare(b.playerId)`):** Si persiste el empate en puntuación y victorias, se desempata por orden lexicográfico ascendente del identificador de jugador (`playerId`), garantizando un resultado determinista sin aleatoriedad.
+   - El candidato posicionado en primer lugar tras la ordenación (`candidates.slice(0, 1)`) se designa formalmente como MVP de la serie.
 
-El candidato posicionado en primer lugar tras la ordenación (`candidates.slice(0, 1)`) se designa formalmente como MVP de la serie (`mvpPlayerId`, referenciado por `competition.service.ts:133`).
+2. **`matchMvpPlayerId(games: MatchMap[])` (`player-statistics.ts:193-226`):**
+   - Mapea las estructuras anidadas `MatchMap[]` y sus participantes (`player.stats`) a filas uniformes `PlayerGameRow[]`.
+   - Incluye de forma estricta y obligatoria el valor de `goldEarned: player.stats.goldEarned` (`línea 217`), evitando omisiones o fallbacks involuntarios a DPM/CSPM.
+   - Delega directamente la resolución en `matchMvps(rows)[0]?.playerId ?? null` (`línea 225`).
+   - Se utiliza en el listado de partidos de la división (`competition.service.ts:136`) y en la auditoría de MVPs de equipo (`competition.service.ts:256`).
+
+Esta unificación garantiza que el galardón de MVP sea matemáticamente idéntico tanto si se consulta desde la perspectiva de la serie individual como desde la agregación de jugadores de la división o temporada, resolviendo casos sensibles de desempate dimensional donde el oro acumulado resulta determinante (por ejemplo, el escenario verificado en tests donde Buzel con 108.7 supera a Sm0kY con 107.1).
+
+### 3.7 Resolución de Estadísticas de Temporada y MVPs en Traspasos de Jugadores (`competition.service.ts:179-241`)
+Cuando un usuario consulta el perfil de un jugador (`playerDetail(reference)`), el servicio procesa su historial deportivo en el contexto completo de la temporada activa (`competition.service.ts:187-229`):
+
+- **Historial Completo de Temporada (`playerSeasonGames`):** En lugar de restringir la consulta a una sola división, el servicio solicita `repository.playerSeasonGames(id, activeTeam.seasonName)` (`líneas 188-191`), recuperando todos los mapas disputados por el jugador durante la temporada actual y la totalidad de los mapas de las series en las que participó (`allMatchGames`).
+- **Resolución del Equipo y Rol Activo:** El equipo activo se determina a partir de `player.teams[0]`, el cual se ordena por última actualización en la persistencia (`desc(teamMemberships.updatedAt)` en `postgres-competition.repository.ts:434`), situando el equipo más reciente o vigente en primer lugar.
+- **Acumulación de Rendimiento y Galardones:**
+  - Las métricas consolidadas (`aggregatePlayerStats(playerGames, allMatchGames)`, `línea 207`) abarcan todas las partidas del jugador en la temporada, manteniendo el historial acumulado aunque haya cambiado de equipo o división.
+  - Los galardones de MVP (`mvpMatchIds`, `líneas 193-196`) se calculan sobre `allMatchGames` mediante `matchMvps(allMatchGames)` y se filtran por `award.playerId === id`, preservando los MVPs obtenidos en equipos anteriores durante la misma temporada.
+  - El campeón destacado se computa sobre la totalidad de partidas disputadas mediante `mostPlayedChampion(playerGames)` (`línea 206`).
+- **Estado sin Partidas Disputadas en la Temporada:** Si el jugador no ha disputado aún ningún mapa en toda la temporada (por ejemplo, jugadores recién fichados o suplentes que aún no han debutado, representados por `playerGames.length === 0`), se mantiene la metadata del equipo activo con `champion: null`, `stats: null` y `mvpMatchIds: []` (`líneas 212-228`). Cabe enfatizar que esta condición no sobreviene por un traspaso de equipo o división, ya que las transferencias preservan íntegramente las partidas disputadas y estadísticas acumuladas en la temporada.
+
+### 3.8 Filtrado de MVPs de Plantilla en Detalle de Equipo (`competition.service.ts:242-288`)
+En el endpoint de detalle de equipo (`teamDetail(reference)`), las estadísticas individuales de cada integrante de la plantilla (`rosterStats.mvps`, `competition.service.ts:276-278`) reflejan exclusivamente los galardones obtenidos mientras el jugador defendía los colores de ese equipo:
+
+```typescript
+// apps/api/src/modules/competition/competition.service.ts:254-263
+const mvps = series
+  .map((games) => {
+    const mvpId = matchMvpPlayerId(games);
+    if (!mvpId) return null;
+    const playedForThisTeam = games.some((game) =>
+      game.participants.some((player) => player.playerId === mvpId && player.teamId === id)
+    );
+    return playedForThisTeam ? mvpId : null;
+  })
+  .filter((playerId): playerId is string => playerId !== null);
+```
+
+- **Verificación de Pertenencia en la Serie:** Por cada serie concluida disputada por el equipo, se calcula el MVP de la serie mediante `matchMvpPlayerId(games)`. A continuación, se valida que dicho jugador haya participado en la serie con el `teamId` del equipo consultado (`player.playerId === mvpId && player.teamId === id`).
+- **Prevención de Contaminación de MVPs por Traspasos o Rivales:** Si el MVP de la serie fue otorgado a un jugador del equipo adversario, o a un jugador que posteriormente fue transferido a este equipo pero que ganó el galardón jugando para otro conjunto, dicho MVP se descarta (`null`) y no se contabiliza en el casillero `rosterStats.mvps` de la plantilla de este equipo.
 
 ---
 
 ## 4. Normalización de Posiciones y Desempate de Campeón Destacado
 
 ### 4.1 Normalización de Roles (`player-statistics.ts:25-32`)
-Para garantizar consistencia con los datos provenientes de la Riot API o de hojas de cálculo, las posiciones se unifican mediante la función `normalizePosition`:
+Para garantizar consistencia con los datos provenientes de la Riot API o de hojas de cálculo, las posiciones se unifican mediante la función `playerRole`:
 - `'middle'` $\to$ `'mid'`
 - `'bottom'` o `'bot'` $\to$ `'adc'`
 - `'utility'` o `'sup'` $\to$ `'support'`
 - `'jg'` o `'jungla'` $\to$ `'jungle'`
 - Otras cadenas se convierten a minúsculas o se evalúan como `null`.
 
-### 4.2 Desempate Cronológico de Campeón Destacado (*Splash Art*)
-Para seleccionar el campeón más representativo de un jugador en la temporada (`player-statistics.ts:255-268`):
-- Se contabilizan las partidas disputadas con cada campeón.
-- La evaluación se realiza mediante `count >= mostGames`.
-- Dado que las partidas se consultan ordenadas cronológicamente por `asc(matches.finishedAt)` (`postgres-competition.repository.ts:223`), en caso de empate en número de partidas, el campeón utilizado más recientemente sobrescribe la selección, garantizando un resultado determinista sin aleatoriedad.
+### 4.2 Desempate Cronológico de Campeón Destacado (*Splash Art*) (`player-statistics.ts:234-250`)
+Para seleccionar el campeón más representativo de un jugador en la temporada, la función pura exportada `mostPlayedChampion(games: PlayerGameRow[])` (`player-statistics.ts:234-250`) procesa el historial de partidas:
+- Se contabilizan las partidas disputadas con cada campeón mediante un mapa de frecuencias `Map<string, number>`.
+- La evaluación de máximo se realiza mediante la condición `count >= mostGames` (`línea 244`).
+- Dado que las partidas se consultan ordenadas cronológicamente en orden ascendente por `asc(matches.finishedAt), asc(matchGames.gameNumber)` (tanto en `players` en `postgres-competition.repository.ts:224-225` como en `playerSeasonGames` en `postgres-competition.repository.ts:379-380`), en caso de empate en número de partidas, el campeón utilizado más recientemente sobrescribe la selección previa, garantizando un resultado determinista sin aleatoriedad.
 
 ---
 
@@ -243,14 +440,14 @@ Para seleccionar el campeón más representativo de un jugador en la temporada (
 
 La función `calculateChampionStats(picks: ChampionPick[])` (`champion-stats.ts:1-32`) agrega las selecciones de campeones en mapas concluidos:
 
-1. **Filtro de Integridad**: Descarta picks donde `winnerTeamId === null` o el nombre del campeón esté vacío (`líneas 8-10`).
-2. **Conteo Único de Mapas**: Almacena los identificadores de mapa en un `Set<string>` para determinar el número real de mapas únicos disputados en la división (`totalGames = uniqueGames.size`, `líneas 11-19`).
+1. **Filtro de Integridad**: Descarta picks donde `winnerTeamId === null` o el nombre del campeón esté vacío (`línea 5`).
+2. **Conteo Único de Mapas**: Almacena los identificadores de mapa en un `Set<string>` para determinar el número real de mapas únicos disputados en la división (`totalGames = new Set(valid.map((pick) => pick.gameId)).size`, `línea 6`).
 3. **Métricas Computadas**:
-   - `games`: Número de mapas en los que el campeón fue elegido.
-   - `wins`: Mapas donde `pick.teamId === pick.winnerTeamId`.
-   - `losses`: `games - wins`.
-   - `pickRate`: `(games / totalGames) * 100` (`línea 26`).
-   - `winRate`: `(wins / games) * 100` (`línea 27`).
+   - `games`: Número de mapas en los que el campeón fue elegido (`línea 23`).
+   - `wins`: Mapas donde `pick.teamId === pick.winnerTeamId` (`línea 24`).
+   - `losses`: `games - wins` (`línea 25`).
+   - `pickRate`: `(games / totalGames) * 100` (`línea 27`).
+   - `winRate`: `(wins / games) * 100` (`línea 28`).
 4. **Ordenación Final**: Mayor número de mapas jugados (`b.games - a.games`) y desempate alfabético por nombre de campeón (`a.champion.localeCompare(b.champion)`, `línea 30`).
 
 ---
@@ -302,7 +499,7 @@ export function isTeamVisibleInCalendar(team: TeamRole | undefined): boolean {
 Requiere `discordRoleId >= 0n`. Un equipo con un rol numérico mayor o igual a cero se considera un equipo activo participante en la competición:
 - **Inclusión en Clasificación:** Se contabiliza en la tabla de clasificación (`StandingsTable.tsx:3`).
 - **Inclusión en Cuadrícula de Equipos:** Se renderiza en el catálogo de equipos de la división (`TeamGrid.tsx:3`).
-- **Inclusión en Predicciones:** Habilita el pronóstico de sus enfrentamientos tanto en el calendario de votación como en la mutación transaccional (`predictions.repository.ts:29-30, 130`).
+- **Inclusión en Predicciones:** Habilita el pronóstico de sus enfrentamientos tanto en el calendario de votación como en la mutación transaccional (`predictions.repository.ts:50-51, 185-188`).
 
 ### 7.2 Función `isTeamVisibleInCalendar(team)` y Valores Sentinel
 Requiere `discordRoleId >= -10n`. Controla la visibilidad de los partidos en el calendario de la temporada (`MatchList.tsx:3`), distinguiendo los siguientes estados mediante valores centinela numéricos:

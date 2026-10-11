@@ -1,9 +1,10 @@
-import type { Player } from '@rcl/contracts';
+import type { MatchMap, MatchPlayerStats, Player } from '@rcl/contracts';
 import { expect, test } from 'vitest';
 import {
   type PlayerGameRow,
   aggregatePlayerStats,
   enrichPlayers,
+  matchMvpPlayerId,
   matchMvps,
   mvpScore,
   playerRole
@@ -199,4 +200,108 @@ test('calculates gold efficiency metrics correctly in mvpScore and falls back to
   expect(scoreWithoutGold).toBeGreaterThan(0);
   expect(Number.isFinite(scoreWithGold)).toBe(true);
   expect(Number.isFinite(scoreWithoutGold)).toBe(true);
+});
+
+test('MVP score calculation with goldEarned picks higher gold/impact player and unifies with matchMvpPlayerId', () => {
+  const durationSeconds = 1800;
+
+  const buzel = row({
+    playerId: 'Buzel',
+    gameId: 'g1',
+    matchId: 'm1',
+    position: 'mid',
+    champion: 'Viktor',
+    durationSeconds,
+    kills: 10,
+    deaths: 1,
+    assists: 5,
+    cs: 275,
+    damageToChampions: 32000,
+    goldEarned: 14000,
+    visionScore: 35,
+    damageMitigated: 10000
+  });
+
+  const smoky = row({
+    playerId: 'Sm0kY',
+    gameId: 'g1',
+    matchId: 'm1',
+    position: 'adc',
+    champion: 'Jinx',
+    durationSeconds,
+    kills: 10,
+    deaths: 2,
+    assists: 8,
+    cs: 275,
+    damageToChampions: 28350,
+    goldEarned: 14500,
+    visionScore: 30,
+    damageMitigated: 12150
+  });
+
+  const top = row({
+    playerId: 'top',
+    gameId: 'g1',
+    matchId: 'm1',
+    position: 'top',
+    champion: 'Gnar',
+    durationSeconds,
+    kills: 6,
+    deaths: 2,
+    assists: 5,
+    cs: 200,
+    damageToChampions: 15000,
+    goldEarned: 11000,
+    visionScore: 20,
+    damageMitigated: 20000
+  });
+
+  const all = [buzel, smoky, top];
+
+  const buzelScore = mvpScore([buzel], all);
+  const smokyScore = mvpScore([smoky], all);
+
+  expect(buzelScore).toBe(108.7);
+  expect(smokyScore).toBe(107.1);
+  expect(buzelScore).toBeGreaterThan(smokyScore);
+
+  const awards = matchMvps(all);
+  expect(awards).toHaveLength(1);
+  expect(awards[0]?.playerId).toBe('Buzel');
+  expect(awards[0]?.score).toBe(108.7);
+
+  const matchMap: MatchMap = {
+    id: 'g1',
+    gameNumber: 1,
+    blueTeamId: 't1',
+    redTeamId: 't2',
+    winnerTeamId: 't1',
+    durationSeconds,
+    participants: all.map((p) => ({
+      id: `part-${p.playerId}`,
+      playerId: p.playerId,
+      gameName: p.playerId,
+      riotTag: 'EUW',
+      teamId: p.teamId,
+      side: 'blue',
+      champion: p.champion,
+      position: p.position,
+      build: null,
+      runes: null,
+      stats: {
+        kills: p.kills,
+        deaths: p.deaths,
+        assists: p.assists,
+        cs: p.cs,
+        damageToChampions: p.damageToChampions,
+        goldEarned: p.goldEarned,
+        visionScore: p.visionScore,
+        damageMitigated: p.damageMitigated
+      } as unknown as MatchPlayerStats
+    }))
+  };
+
+  const mvpFromMap = matchMvpPlayerId([matchMap]);
+  expect(mvpFromMap).toBe('Buzel');
+  expect(mvpFromMap).toBe(awards[0]?.playerId);
 });
