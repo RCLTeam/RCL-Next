@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { PGlite } from '@electric-sql/pglite';
+import { btree_gist } from '@electric-sql/pglite/contrib/btree_gist';
 import { drizzle } from 'drizzle-orm/pglite';
 import { migrate } from 'drizzle-orm/pglite/migrator';
 import request from 'supertest';
@@ -10,7 +11,7 @@ import { PostgresCompetitionRepository } from '../../apps/api/src/modules/compet
 import * as schema from '../../packages/database/src/schema.js';
 
 test('HTTP -> controller -> service -> real repository -> embedded PostgreSQL', async (t) => {
-  const client = new PGlite();
+  const client = new PGlite({ extensions: { btree_gist } });
   t.onTestFinished(() => client.close());
   const db = drizzle(client, { schema });
   await migrate(db, {
@@ -53,8 +54,18 @@ test('HTTP -> controller -> service -> real repository -> embedded PostgreSQL', 
     { discordId: 'test-staff', username: 'Staff sin cuenta' }
   ]);
   await db.insert(schema.teamMemberships).values([
-    { teamId, discordUserId: 'test-coach', role: 'coach' },
-    { teamId, discordUserId: 'test-staff', role: 'staff' }
+    {
+      teamId,
+      seasonName: 'Temporada DEMO — datos ficticios',
+      discordUserId: 'test-coach',
+      role: 'coach'
+    },
+    {
+      teamId,
+      seasonName: 'Temporada DEMO — datos ficticios',
+      discordUserId: 'test-staff',
+      role: 'staff'
+    }
   ]);
   await db
     .insert(schema.players)
@@ -128,13 +139,17 @@ test('HTTP -> controller -> service -> real repository -> embedded PostgreSQL', 
     .insert(schema.teams)
     .values({
       name: 'Otro equipo',
-      seasonDivisionId: otherSeasonDivision.id
+      seasonDivisionId: otherSeasonDivision.id,
+      seasonName: otherSeasonDivision.seasonName
     })
     .returning();
   assert.ok(otherSeasonTeam);
-  await db
-    .insert(schema.teamMemberships)
-    .values({ teamId: otherSeasonTeam.id, discordUserId: '900000000000000001', role: 'mid' });
+  await db.insert(schema.teamMemberships).values({
+    teamId: otherSeasonTeam.id,
+    seasonName: otherSeasonTeam.seasonName,
+    discordUserId: '900000000000000001',
+    role: 'mid'
+  });
   const otherSeasonPlayers = await request(app)
     .get(`/api/v1/divisions/${otherSeasonDivision.id}/players`)
     .expect(200);
@@ -199,7 +214,11 @@ test('HTTP -> controller -> service -> real repository -> embedded PostgreSQL', 
   await request(app).get('/api/v1/teams/30000000-0000-4000-8000-000000000099').expect(404);
   const [emptyTeam] = await db
     .insert(schema.teams)
-    .values({ name: 'Sin plantilla', seasonDivisionId: divisionId })
+    .values({
+      name: 'Sin plantilla',
+      seasonDivisionId: divisionId,
+      seasonName: 'Temporada DEMO — datos ficticios'
+    })
     .returning();
   const emptyDetail = await request(app).get(`/api/v1/teams/${emptyTeam?.id}`).expect(200);
   expect(emptyDetail.body.data.members).toStrictEqual([]);

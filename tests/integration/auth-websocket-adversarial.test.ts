@@ -3,6 +3,7 @@ import http from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { fileURLToPath } from 'node:url';
 import { PGlite } from '@electric-sql/pglite';
+import { btree_gist } from '@electric-sql/pglite/contrib/btree_gist';
 import { eq } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/pglite';
 import { migrate } from 'drizzle-orm/pglite/migrator';
@@ -38,7 +39,7 @@ describe('Adversarial Security Verification', () => {
   };
 
   beforeAll(async () => {
-    client = new PGlite();
+    client = new PGlite({ extensions: { btree_gist } });
     db = drizzle(client, { schema });
     await migrate(db, {
       migrationsFolder: fileURLToPath(new URL('../../packages/database/drizzle', import.meta.url))

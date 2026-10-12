@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { PGlite } from '@electric-sql/pglite';
+import { btree_gist } from '@electric-sql/pglite/contrib/btree_gist';
 import type { CrudDeletePreview, CrudRecord } from '@rcl/contracts';
 import { eq, sql } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/pglite';
@@ -21,7 +22,7 @@ import { resolveTeamLogo } from '../../apps/web/src/shared/resources/team-logos.
 import * as schema from '../../packages/database/src/schema.js';
 
 describe('admin CRUD with HTTP sessions and PostgreSQL constraints', () => {
-  const client = new PGlite();
+  const client = new PGlite({ extensions: { btree_gist } });
   const logoDirectory = mkdtempSync(join(tmpdir(), 'rcl-crud-logos-'));
   const db = drizzle(client, { schema });
   const origin = 'http://localhost:5173';
@@ -105,8 +106,8 @@ describe('admin CRUD with HTTP sessions and PostgreSQL constraints', () => {
       .insert(schema.seasonsDivisions)
       .values({ id: competitionId, seasonName: 'Base season', divisionName: 'Base division' });
     await db.insert(schema.teams).values([
-      { id: team1, seasonDivisionId: competitionId, name: 'Home' },
-      { id: team2, seasonDivisionId: competitionId, name: 'Away' }
+      { id: team1, seasonName: 'Base season', seasonDivisionId: competitionId, name: 'Home' },
+      { id: team2, seasonName: 'Base season', seasonDivisionId: competitionId, name: 'Away' }
     ]);
     await db.insert(schema.rounds).values({ id: 1, idSeasonDivision: competitionId });
   });
@@ -892,7 +893,11 @@ describe('admin CRUD with HTTP sessions and PostgreSQL constraints', () => {
     const ownerCookie = `rcl_session=${'7'.repeat(64)}`;
     const [protectedTeam] = await db
       .insert(schema.teams)
-      .values({ name: 'Protected reference', seasonDivisionId: competitionId })
+      .values({
+        name: 'Protected reference',
+        seasonDivisionId: competitionId,
+        seasonName: 'Base season'
+      })
       .returning();
     const [match] = await db.select().from(schema.matches);
     if (!protectedTeam || !match) throw new Error('Missing fixtures');
@@ -933,5 +938,149 @@ describe('admin CRUD with HTTP sessions and PostgreSQL constraints', () => {
     expect(
       await db.select().from(schema.teams).where(eq(schema.teams.id, protectedTeam.id))
     ).toHaveLength(1);
+  });
+  it('enforces season-wide competitive membership through HTTP without partial audit writes', async () => {
+    const playerId = '823456789012345678';
+    await db.insert(schema.discordUsers).values({ discordId: playerId, username: 'Season rule' });
+    await create('seasons', { name: 'Roster S1' });
+    await create('seasons', { name: 'Roster S2' });
+    await create('divisions', { name: 'Roster D1' });
+    await create('divisions', { name: 'Roster D2' });
+    const competitions = [];
+    for (const [seasonName, divisionName] of [
+      ['Roster S1', 'Roster D1'],
+      ['Roster S1', 'Roster D2'],
+      ['Roster S2', 'Roster D1']
+    ])
+      competitions.push(await create('competitions', { seasonName, divisionName }));
+    const rosterTeams = [];
+    for (const [index, competition] of competitions.entries()) {
+      rosterTeams.push(
+        await create('teams', { name: `Roster ${index}`, seasonDivisionId: competition.id })
+      );
+    }
+    const [a, b, c] = rosterTeams;
+    if (!a || !b || !c) throw new Error('Missing roster fixtures');
+    const movable = await create('teams', {
+      name: 'Movable roster',
+      seasonDivisionId: a.seasonDivisionId
+    });
+    await send(
+      'put',
+      'teams',
+      updateBody('teams', movable, { seasonDivisionId: String(c.seasonDivisionId) })
+    ).expect(200);
+    expect(
+      (
+        await db
+          .select()
+          .from(schema.teams)
+          .where(eq(schema.teams.id, String(movable.id)))
+      )[0]?.seasonName
+    ).toBe('Roster S2');
+    const missingId = '99999999-9999-4999-8999-999999999999';
+    await send('post', 'teams', {
+      name: 'Missing competition',
+      seasonDivisionId: missingId
+    }).expect(409);
+    await send('post', 'memberships', {
+      teamId: missingId,
+      discordUserId: playerId,
+      role: 'top'
+    }).expect(409);
+    const first = await create('memberships', {
+      teamId: a.id,
+      discordUserId: playerId,
+      role: 'top'
+    });
+    const counts = async () => ({
+      audit: (await db.select().from(schema.auditLogs)).length,
+      history: (await db.select().from(schema.rosterMovements)).length
+    });
+    const before = await counts();
+    for (const role of ['top', 'jungle', 'mid', 'adc', 'support', 'substitute']) {
+      const rejected = await send('post', 'memberships', {
+        teamId: b.id,
+        discordUserId: playerId,
+        role
+      }).expect(409);
+      expect(rejected.body.error).toMatchObject({
+        code: 'DATA_CONFLICT',
+        message:
+          'El jugador ya pertenece a otra plantilla con un rol competitivo en esta temporada.'
+      });
+    }
+    expect(await counts()).toEqual(before);
+    let staff = await create('memberships', {
+      teamId: b.id,
+      discordUserId: playerId,
+      role: 'coach'
+    });
+    for (const role of ['staff', 'partners']) {
+      staff = (
+        await send('put', 'memberships', updateBody('memberships', staff, { role })).expect(200)
+      ).body.data;
+    }
+    const beforeRoleChange = await counts();
+    await send(
+      'put',
+      'memberships',
+      updateBody('memberships', staff, { role: 'substitute' })
+    ).expect(409);
+    expect(await counts()).toEqual(beforeRoleChange);
+    const otherSeason = await create('memberships', {
+      teamId: c.id,
+      discordUserId: playerId,
+      role: 'mid'
+    });
+    expect(
+      (
+        await db
+          .select()
+          .from(schema.teamMemberships)
+          .where(eq(schema.teamMemberships.discordUserId, playerId))
+      )
+        .map((row) => row.seasonName)
+        .sort()
+    ).toEqual(['Roster S1', 'Roster S1', 'Roster S2']);
+    await send('post', 'memberships', {
+      teamId: b.id,
+      discordUserId: playerId,
+      role: 'mid',
+      seasonName: 'Roster S2'
+    }).expect(422);
+    await send('delete', 'memberships', deleteBody('memberships', first)).expect(204);
+    staff = (
+      await send(
+        'put',
+        'memberships',
+        updateBody('memberships', staff, { role: 'substitute' })
+      ).expect(200)
+    ).body.data;
+    await send('delete', 'memberships', deleteBody('memberships', staff)).expect(204);
+    await send('delete', 'memberships', deleteBody('memberships', otherSeason)).expect(204);
+    const beforeConcurrent = await counts();
+    const competing = await Promise.all(
+      [a, b].map((team) =>
+        send('post', 'memberships', {
+          teamId: team.id,
+          discordUserId: playerId,
+          role: 'mid'
+        })
+      )
+    );
+    expect(competing.map((response) => response.status).sort()).toEqual([201, 409]);
+    expect(await counts()).toEqual({
+      audit: beforeConcurrent.audit + 1,
+      history: beforeConcurrent.history + 1
+    });
+    const winner = competing.find((response) => response.status === 201);
+    if (!winner) throw new Error('Missing successful registration');
+    await send('delete', 'memberships', deleteBody('memberships', winner.body.data)).expect(204);
+    // Keep existing shared-fixture assertions independent of this scenario.
+    await db
+      .delete(schema.rosterMovements)
+      .where(eq(schema.rosterMovements.discordUserId, playerId));
+    await db.delete(schema.discordUsers).where(eq(schema.discordUsers.discordId, playerId));
   });
 });

@@ -1,5 +1,6 @@
 import { fileURLToPath } from 'node:url';
 import { PGlite } from '@electric-sql/pglite';
+import { btree_gist } from '@electric-sql/pglite/contrib/btree_gist';
 import {
   divisions,
   editorialArticles,
@@ -218,7 +219,7 @@ describe('PostgresSitemapRepository with mocked DB', () => {
 });
 
 describe('PostgresSitemapRepository with in-memory PGlite database', () => {
-  const client = new PGlite();
+  const client = new PGlite({ extensions: { btree_gist } });
   const db = drizzle(client, { schema });
   let repo: PostgresSitemapRepository;
   let divisionId: string;
@@ -252,11 +253,21 @@ describe('PostgresSitemapRepository with in-memory PGlite database', () => {
   it('getTeams() returns active and inactive teams with their season, division and status', async () => {
     const [activeTeam] = await db
       .insert(teams)
-      .values({ name: 'Active Team Alpha', seasonDivisionId: divisionId, isActive: true })
+      .values({
+        name: 'Active Team Alpha',
+        seasonDivisionId: divisionId,
+        seasonName: 'Sitemap Test Season',
+        isActive: true
+      })
       .returning({ id: teams.id });
     const [inactiveTeam] = await db
       .insert(teams)
-      .values({ name: 'Inactive Team Beta', seasonDivisionId: divisionId, isActive: false })
+      .values({
+        name: 'Inactive Team Beta',
+        seasonDivisionId: divisionId,
+        seasonName: 'Sitemap Test Season',
+        isActive: false
+      })
       .returning({ id: teams.id });
     if (!activeTeam || !inactiveTeam) throw new Error('Team insert failed');
 

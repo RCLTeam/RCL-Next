@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { PGlite } from '@electric-sql/pglite';
+import { btree_gist } from '@electric-sql/pglite/contrib/btree_gist';
 import { drizzle } from 'drizzle-orm/pglite';
 import { migrate } from 'drizzle-orm/pglite/migrator';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -18,7 +19,7 @@ describe('OAuth State Validation Adversarial Tests', () => {
   let service: AuthService;
 
   beforeAll(async () => {
-    client = new PGlite();
+    client = new PGlite({ extensions: { btree_gist } });
     db = drizzle(client, { schema });
     await migrate(db, {
       migrationsFolder: fileURLToPath(new URL('../../packages/database/drizzle', import.meta.url))

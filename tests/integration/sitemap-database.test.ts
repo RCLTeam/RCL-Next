@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { PGlite } from '@electric-sql/pglite';
+import { btree_gist } from '@electric-sql/pglite/contrib/btree_gist';
 import type { CrudRecord } from '@rcl/contracts';
 import { drizzle } from 'drizzle-orm/pglite';
 import { migrate } from 'drizzle-orm/pglite/migrator';
@@ -22,7 +23,7 @@ import { SitemapService } from '../../apps/api/src/modules/sitemap/processing/si
 import * as schema from '../../packages/database/src/schema.js';
 
 describe('sitemap against the competition API and admin writes', () => {
-  const client = new PGlite();
+  const client = new PGlite({ extensions: { btree_gist } });
   const db = drizzle(client, { schema });
   const imageDirectory = mkdtempSync(join(tmpdir(), 'rcl-sitemap-images-'));
   const origin = 'http://localhost:5173';
@@ -99,10 +100,15 @@ describe('sitemap against the competition API and admin writes', () => {
     ]);
     // Same team name in both divisions plus an inactive namesake: slugs need disambiguation.
     await db.insert(schema.teams).values([
-      { seasonDivisionId: divisionA, name: 'Rebels' },
-      { seasonDivisionId: divisionB, name: 'Rebels' },
-      { seasonDivisionId: divisionB, name: 'Águilas Ñandú' },
-      { seasonDivisionId: divisionA, name: 'Águilas Ñandú', isActive: false }
+      { seasonName: 'Temporada 1', seasonDivisionId: divisionA, name: 'Rebels' },
+      { seasonName: 'Temporada 1', seasonDivisionId: divisionB, name: 'Rebels' },
+      { seasonName: 'Temporada 1', seasonDivisionId: divisionB, name: 'Águilas Ñandú' },
+      {
+        seasonName: 'Temporada 1',
+        seasonDivisionId: divisionA,
+        name: 'Águilas Ñandú',
+        isActive: false
+      }
     ]);
     await db
       .insert(schema.players)

@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { PGlite } from '@electric-sql/pglite';
+import { btree_gist } from '@electric-sql/pglite/contrib/btree_gist';
 import { drizzle } from 'drizzle-orm/pglite';
 import { migrate } from 'drizzle-orm/pglite/migrator';
 import request from 'supertest';
@@ -15,7 +16,7 @@ import { PostgresMemberRolesRepository } from '../../apps/api/src/modules/member
 import * as schema from '../../packages/database/src/schema.js';
 
 describe('member role authorization and persistence', () => {
-  const client = new PGlite();
+  const client = new PGlite({ extensions: { btree_gist } });
   const db = drizzle(client, { schema });
   const repository = new PostgresMemberRolesRepository(db);
   const origin = 'http://localhost:5173';

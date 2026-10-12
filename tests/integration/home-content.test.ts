@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { PGlite } from '@electric-sql/pglite';
+import { btree_gist } from '@electric-sql/pglite/contrib/btree_gist';
 import { drizzle } from 'drizzle-orm/pglite';
 import { migrate } from 'drizzle-orm/pglite/migrator';
 import request from 'supertest';
@@ -20,7 +21,7 @@ import * as schema from '../../packages/database/src/schema.js';
 
 describe('home content publication, authorization and persistence', () => {
   const imageDirectory = mkdtempSync(join(tmpdir(), 'rcl-editorial-test-'));
-  const client = new PGlite();
+  const client = new PGlite({ extensions: { btree_gist } });
   const db = drizzle(client, { schema });
   const origin = 'http://localhost:5173';
   const tokens = { admin: 'a'.repeat(64), viewer: 'b'.repeat(64) };
@@ -231,12 +232,12 @@ describe('home content publication, authorization and persistence', () => {
     ] as const) {
       const [away] = await db
         .insert(schema.teams)
-        .values({ name: 'Away', seasonDivisionId: divisionId })
+        .values({ name: 'Away', seasonDivisionId: divisionId, seasonName: 'Season' })
         .returning();
       if (!away) throw new Error('Missing fixture team');
       await db
         .insert(schema.teams)
-        .values({ id: homeId, name: 'Rebels', seasonDivisionId: divisionId });
+        .values({ id: homeId, name: 'Rebels', seasonDivisionId: divisionId, seasonName: 'Season' });
       for (const roundId of [1, 2, 3]) {
         await db.insert(schema.rounds).values({ id: roundId, idSeasonDivision: divisionId });
         if (roundId === 3) continue;
