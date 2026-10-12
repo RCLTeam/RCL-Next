@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { PGlite } from '@electric-sql/pglite';
+import { btree_gist } from '@electric-sql/pglite/contrib/btree_gist';
 import { eq } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/pglite';
 import { migrate } from 'drizzle-orm/pglite/migrator';
@@ -96,7 +97,7 @@ function createParticipant(
 }
 
 test('Match series concurrency locking updates match scores and games without race conditions', async (t) => {
-  const client = new PGlite();
+  const client = new PGlite({ extensions: { btree_gist } });
   t.onTestFinished(() => client.close());
 
   // Track queries executed within each transaction to verify lock ordering
@@ -250,7 +251,7 @@ test('Match series concurrency locking updates match scores and games without ra
 });
 
 test('Rejects uploads when match is already completed after acquiring lock', async (t) => {
-  const client = new PGlite();
+  const client = new PGlite({ extensions: { btree_gist } });
   t.onTestFinished(() => client.close());
   const db = drizzle(client, { schema });
   const migrationsFolder = fileURLToPath(
@@ -318,7 +319,7 @@ test('Rejects uploads when match is already completed after acquiring lock', asy
 });
 
 test('Directly demonstrates unique constraint violation when game numbers are resolved without row locking', async (t) => {
-  const client = new PGlite();
+  const client = new PGlite({ extensions: { btree_gist } });
   t.onTestFinished(() => client.close());
   const db = drizzle(client, { schema });
   const migrationsFolder = fileURLToPath(

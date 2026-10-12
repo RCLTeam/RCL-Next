@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { PGlite } from '@electric-sql/pglite';
+import { btree_gist } from '@electric-sql/pglite/contrib/btree_gist';
 import { asc, eq } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/pglite';
 import { migrate } from 'drizzle-orm/pglite/migrator';
@@ -96,7 +97,7 @@ function createParticipant(
 }
 
 test('PostgresRoflUploadRepository complete lifecycle and constraints', async (t) => {
-  const client = new PGlite();
+  const client = new PGlite({ extensions: { btree_gist } });
   t.onTestFinished(() => client.close());
   const db = drizzle(client, { schema });
   const migrationsFolder = fileURLToPath(
@@ -397,7 +398,7 @@ test('PostgresRoflUploadRepository complete lifecycle and constraints', async (t
 
 for (const individually of [true, false]) {
   test(`ROFL maps are ordered across ${individually ? 'individual uploads' : 'a batch'}`, async (t) => {
-    const client = new PGlite();
+    const client = new PGlite({ extensions: { btree_gist } });
     t.onTestFinished(() => client.close());
     const db = drizzle(client, { schema });
     await migrate(db, {
@@ -468,7 +469,7 @@ for (const individually of [true, false]) {
 }
 
 test('concurrent ROFL batches sharing a replay report it as a duplicate', async (t) => {
-  const client = new PGlite();
+  const client = new PGlite({ extensions: { btree_gist } });
   t.onTestFinished(() => client.close());
   const db = drizzle(client, { schema });
   await migrate(db, {
@@ -522,7 +523,7 @@ test('concurrent ROFL batches sharing a replay report it as a duplicate', async 
 });
 
 test('a replay committed after the duplicate read is skipped when its match is closed', async (t) => {
-  const client = new PGlite();
+  const client = new PGlite({ extensions: { btree_gist } });
   t.onTestFinished(() => client.close());
   const db = drizzle(client, { schema });
   await migrate(db, {

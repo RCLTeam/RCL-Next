@@ -1,11 +1,14 @@
 import { readFile } from 'node:fs/promises';
 import { PGlite } from '@electric-sql/pglite';
+import { btree_gist } from '@electric-sql/pglite/contrib/btree_gist';
+import { drizzle } from 'drizzle-orm/pglite';
+import { migrate } from 'drizzle-orm/pglite/migrator';
 import { expect, test } from 'vitest';
 
 test('showcase is complete, consistent and safe to rerun', async () => {
-  const db = new PGlite();
+  const db = new PGlite({ extensions: { btree_gist } });
   try {
-    await db.exec(await readFile('packages/database/drizzle/0000_initial_schema.sql', 'utf8'));
+    await migrate(drizzle(db), { migrationsFolder: 'packages/database/drizzle' });
     const base = await readFile('packages/database/seed/demo.sql', 'utf8');
     const extra = await readFile('packages/database/seed/showcase.sql', 'utf8');
     await db.transaction(async (tx) => {

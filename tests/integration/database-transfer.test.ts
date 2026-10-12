@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { PGlite } from '@electric-sql/pglite';
+import { btree_gist } from '@electric-sql/pglite/contrib/btree_gist';
 import { eq, is, sql } from 'drizzle-orm';
 import { PgTable, getTableConfig } from 'drizzle-orm/pg-core';
 import { drizzle } from 'drizzle-orm/pglite';
@@ -16,7 +17,7 @@ import { PostgresDatabaseTransferRepository } from '../../apps/api/src/modules/d
 import * as schema from '../../packages/database/src/schema.js';
 
 describe('database transfer permissions and atomic restoration', () => {
-  const client = new PGlite();
+  const client = new PGlite({ extensions: { btree_gist } });
   const db = drizzle(client, { schema });
   const ids = {
     owner: '123456789012345678',

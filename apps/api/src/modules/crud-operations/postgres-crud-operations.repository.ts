@@ -535,6 +535,28 @@ export class PostgresCrudOperationsRepository implements CrudOperationsRepositor
           } else await assertNoDependents(tx, resource.table, before);
         } else await validateRelations(tx, resource, { ...before, ...mutation.values }, before);
         const values: Record<string, CrudValue | Date> = { ...mutation.values };
+        // Derive the season from the selected parent, never from client input.
+        // Hold the parent stable until the write and its audit entry commit.
+        if (mutation.action !== 'delete') {
+          const next = { ...before, ...mutation.values };
+          if (resource.name === 'teams') {
+            const [competition] = await tx
+              .select({ seasonName: schema.seasonsDivisions.seasonName })
+              .from(schema.seasonsDivisions)
+              .where(eq(schema.seasonsDivisions.id, String(next.seasonDivisionId)))
+              .for('share');
+            if (!competition) throw conflict('La competición seleccionada no existe.');
+            values.seasonName = competition.seasonName;
+          } else if (resource.name === 'memberships') {
+            const [team] = await tx
+              .select({ seasonName: teams.seasonName })
+              .from(teams)
+              .where(eq(teams.id, String(next.teamId)))
+              .for('share');
+            if (!team) throw conflict('El equipo seleccionado no existe.');
+            values.seasonName = team.seasonName;
+          }
+        }
         for (const field of resource.fields) {
           if (field.type === 'datetime' && typeof values[field.name] === 'string')
             values[field.name] = new Date(String(values[field.name]));
@@ -573,6 +595,14 @@ export class PostgresCrudOperationsRepository implements CrudOperationsRepositor
       let cause: unknown = error;
       for (let depth = 0; depth < 5 && cause && typeof cause === 'object'; depth++) {
         if ('code' in cause && typeof cause.code === 'string') {
+          if (
+            cause.code === '23P01' &&
+            'constraint' in cause &&
+            cause.constraint === 'one_competitive_team_per_player_and_season'
+          )
+            throw conflict(
+              'El jugador ya pertenece a otra plantilla con un rol competitivo en esta temporada.'
+            );
           if (cause.code === '23505')
             throw conflict('A record with these values already exists. Check the captain too.');
           if (cause.code === '23503')

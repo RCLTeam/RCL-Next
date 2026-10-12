@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { PGlite } from '@electric-sql/pglite';
+import { btree_gist } from '@electric-sql/pglite/contrib/btree_gist';
 import { eq } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/pglite';
 import { migrate } from 'drizzle-orm/pglite/migrator';
@@ -32,7 +33,7 @@ async function seedDatabase(client: PGlite) {
 }
 
 test('predictions persist, hide votes until completion, reject late edits and derive the ranking', async () => {
-  const client = new PGlite();
+  const client = new PGlite({ extensions: { btree_gist } });
   try {
     const { db, repository } = await seedDatabase(client);
     const matchId = '70000000-0000-4000-8000-000000000001';
@@ -158,7 +159,7 @@ test('predictions persist, hide votes until completion, reject late edits and de
 }, 30000);
 
 test('overview lists the selected round, defaults to the current one and follows id_round', async () => {
-  const client = new PGlite();
+  const client = new PGlite({ extensions: { btree_gist } });
   try {
     const { repository } = await seedDatabase(client);
     const first = '70000000-0000-4000-8000-000000000001';
@@ -233,7 +234,7 @@ test('overview lists the selected round, defaults to the current one and follows
 }, 30000);
 
 test('overview aggregates the season ranking and the shown round percentages', async () => {
-  const client = new PGlite();
+  const client = new PGlite({ extensions: { btree_gist } });
   try {
     const { repository } = await seedDatabase(client);
     const team = (suffix: string) => `30000000-0000-4000-8000-00000000000${suffix}`;
@@ -245,12 +246,12 @@ test('overview aggregates the season ranking and the shown round percentages', a
       INSERT INTO seasons (name, starts_on, ends_on) VALUES ('Otra temporada', '2051-01-01', '2051-12-31');
       INSERT INTO seasons_divisions (id, season_name, division_name)
         VALUES ('${otherDivision}', 'Otra temporada', 'Premier DEMO');
-      INSERT INTO teams (id, season_division_id, name, short_name, color, discord_role_id) VALUES
-        ('${t5}', '${division}', 'Retirados', 'RET', '#000000', -10),
-        ('${ta}', '${division}', 'Activos A', 'ACA', '#000000', 8),
-        ('${tb}', '${division}', 'Activos B', 'ACB', '#000000', 9),
-        ('${t6}', '${otherDivision}', 'Otros', 'OTR', '#000000', 6),
-        ('${t7}', '${otherDivision}', 'Otros 2', 'OT2', '#000000', 7);
+      INSERT INTO teams (id, season_division_id, name, short_name, color, discord_role_id, season_name) VALUES
+        ('${t5}', '${division}', 'Retirados', 'RET', '#000000', -10, 'Temporada DEMO — datos ficticios'),
+        ('${ta}', '${division}', 'Activos A', 'ACA', '#000000', 8, 'Temporada DEMO — datos ficticios'),
+        ('${tb}', '${division}', 'Activos B', 'ACB', '#000000', 9, 'Temporada DEMO — datos ficticios'),
+        ('${t6}', '${otherDivision}', 'Otros', 'OTR', '#000000', 6, 'Otra temporada'),
+        ('${t7}', '${otherDivision}', 'Otros 2', 'OT2', '#000000', 7, 'Otra temporada');
       INSERT INTO matches (id, id_season_division, id_round, team1_id, team2_id, best_of, status, scheduled_at) VALUES
         ('${m(4)}', '${division}', 1, '${t1}', '${ta}', 3, 'scheduled', '2026-10-02T18:00:00Z'),
         ('${m(5)}', '${division}', 1, '${t1}', '${tb}', 3, 'scheduled', '2026-10-02T18:00:00Z'),

@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { PGlite } from '@electric-sql/pglite';
+import { btree_gist } from '@electric-sql/pglite/contrib/btree_gist';
 import { eq } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/pglite';
 import { migrate } from 'drizzle-orm/pglite/migrator';
@@ -63,7 +64,7 @@ function string(source: unknown, path: string): string {
 }
 
 test('all ten ROFL JSON participants fit the normalized schema without losing metrics', async (t) => {
-  const client = new PGlite();
+  const client = new PGlite({ extensions: { btree_gist } });
   t.onTestFinished(() => client.close());
   const db = drizzle(client, { schema });
   await migrate(db, {

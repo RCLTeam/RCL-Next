@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { PGlite } from '@electric-sql/pglite';
+import { btree_gist } from '@electric-sql/pglite/contrib/btree_gist';
 import { Table, is, sql } from 'drizzle-orm';
 import { getTableConfig } from 'drizzle-orm/pg-core';
 import { drizzle } from 'drizzle-orm/pglite';
@@ -17,18 +18,18 @@ const teamId = '30000000-0000-4000-8000-000000000001';
 const infoId = 'a0000000-0000-4000-8000-000000000001';
 
 test('PostgreSQL migrations, fixtures and relational constraints', async (t) => {
-  const client = new PGlite();
+  const client = new PGlite({ extensions: { btree_gist } });
   t.onTestFinished(() => client.close());
   const db = drizzle(client, { schema });
   await migrate(db, { migrationsFolder });
 
-  // migrate twice and retain the single consolidated journal entry
+  // Re-running the migrations must not create duplicate journal entries.
   {
     await migrate(db, { migrationsFolder });
     const result = await client.query<{ total: number }>(
       'SELECT count(*)::int AS total FROM drizzle.__drizzle_migrations'
     );
-    expect(result.rows[0]?.total).toBe(1);
+    expect(result.rows[0]?.total).toBe(2);
   }
   // matches schema defines stream_url_live column
   expect(schema.matches.streamUrlLive).toBeTruthy();
@@ -95,7 +96,7 @@ test('PostgreSQL migrations, fixtures and relational constraints', async (t) => 
       `
         SELECT indexname AS name FROM pg_indexes i WHERE schemaname='public' AND tablename=$1
         AND NOT EXISTS (SELECT 1 FROM pg_constraint c WHERE c.conindid=('public.' || i.indexname)::regclass
-          AND c.contype IN ('p','u'))`,
+          AND c.contype IN ('p','u','x'))`,
       [config.name]
     );
     expect(indexes.rows.map((row) => row.name).sort(), `${config.name} indexes`).toStrictEqual(
@@ -136,8 +137,8 @@ test('PostgreSQL migrations, fixtures and relational constraints', async (t) => 
       WHERE team_id='30000000-0000-4000-8000-000000000001' AND is_captain`)
   ).rejects.toThrow();
   await expect(
-    client.exec(`INSERT INTO team_memberships (team_id, discord_user_id, role)
-      SELECT team_id, discord_user_id, role FROM team_memberships LIMIT 1`)
+    client.exec(`INSERT INTO team_memberships (team_id, discord_user_id, role, season_name)
+      SELECT team_id, discord_user_id, role, season_name FROM team_memberships LIMIT 1`)
   ).rejects.toThrow();
   // round numbers are scoped to season/division and predictions use Discord IDs
   {
@@ -249,7 +250,7 @@ test('PostgreSQL migrations, fixtures and relational constraints', async (t) => 
     const tempSeasonDivId = '20000000-0000-4000-8000-000000000001';
     const tempTeamId = '30000000-0000-4000-8000-000000000099';
     await client.query(
-      "INSERT INTO teams (id, season_division_id, name, short_name) VALUES ($1, $2, 'Ephemeral Team', 'EPHT')",
+      "INSERT INTO teams (id, season_division_id, name, short_name, season_name) SELECT $1, id, 'Ephemeral Team', 'EPHT', season_name FROM seasons_divisions WHERE id = $2",
       [tempTeamId, tempSeasonDivId]
     );
     const [teamMov] = await db
