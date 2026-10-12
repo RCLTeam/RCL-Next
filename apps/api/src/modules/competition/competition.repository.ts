@@ -1,4 +1,5 @@
 import type { MatchMap, Player, PlayerDetail, TeamDetail } from '@rcl/contracts';
+import type { PlayerGameRow } from './player-statistics.js';
 export type { Player, PlayerDetail, TeamDetail, TeamMember, PlayerTeam } from '@rcl/contracts';
 export interface Season {
   id: string;
@@ -66,6 +67,13 @@ export interface CompetitionRepository {
     { id: string; name: string; seasonName: string; divisionName: string }[]
   >;
   players(divisionId?: string): Promise<Player[]>;
+  playerSeasonGames(
+    playerId: string,
+    seasonName: string
+  ): Promise<{
+    playerGames: PlayerGameRow[];
+    allMatchGames: PlayerGameRow[];
+  }>;
   playerDetail(id: string): Promise<PlayerDetail | undefined>;
   teamDetail(id: string): Promise<TeamDetail | undefined>;
   seasons(): Promise<Season[]>;

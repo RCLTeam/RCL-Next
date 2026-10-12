@@ -19,7 +19,7 @@ import type * as schema from '@rcl/database/schema';
 import { and, asc, desc, eq, getTableColumns, inArray, isNotNull, sql } from 'drizzle-orm';
 import type { PgDatabase, PgQueryResultHKT } from 'drizzle-orm/pg-core';
 import type { CompetitionRepository } from './competition.repository.js';
-import { enrichPlayers } from './player-statistics.js';
+import { type PlayerGameRow, enrichPlayers } from './player-statistics.js';
 
 // Keep the public DTOs stable: season id is now its name; division id is
 // the seasons_divisions UUID. Round identifiers are scoped to that UUID.
@@ -195,6 +195,7 @@ export class PostgresCompetitionRepository implements CompetitionRepository {
         assists: playerGameStats.assists,
         cs: playerGameStats.cs,
         damageToChampions: playerGameStats.damageToChampions,
+        goldEarned: playerGameStats.goldEarned,
         visionScore: playerGameStats.visionScore,
         damageMitigated: playerGameStats.damageMitigated
       })
@@ -295,6 +296,95 @@ export class PostgresCompetitionRepository implements CompetitionRepository {
         };
       });
   }
+  async playerSeasonGames(
+    playerId: string,
+    seasonName: string
+  ): Promise<{
+    playerGames: PlayerGameRow[];
+    allMatchGames: PlayerGameRow[];
+  }> {
+    const matchIds = (
+      await this.db
+        .selectDistinct({ matchId: matches.id })
+        .from(playerGameInfo)
+        .innerJoin(matchGames, eq(playerGameInfo.matchGameId, matchGames.id))
+        .innerJoin(matches, eq(matchGames.matchesId, matches.id))
+        .innerJoin(seasonsDivisions, eq(seasonsDivisions.id, matches.idSeasonDivision))
+        .where(
+          and(
+            eq(playerGameInfo.playerId, playerId),
+            eq(seasonsDivisions.seasonName, seasonName),
+            eq(matches.status, 'completed'),
+            isNotNull(matchGames.winnerTeamId)
+          )
+        )
+    ).map((row) => row.matchId);
+
+    if (!matchIds.length) {
+      return { playerGames: [], allMatchGames: [] };
+    }
+
+    const allMatchGames = await this.db
+      .select({
+        playerId: playerGameInfo.playerId,
+        gameId: matchGames.id,
+        matchId: matches.id,
+        divisionId: matches.idSeasonDivision,
+        roundId: matches.idRound,
+        teamId: playerGameInfo.teamId,
+        team: {
+          id: teams.id,
+          name: teams.name,
+          shortName: teams.shortName,
+          logoUrl: teams.logoUrl,
+          color: teams.color
+        },
+        position: sql<
+          string | null
+        >`coalesce(${playerGameInfo.position}, ${teamMemberships.role}::text)`,
+        champion: playerGameInfo.champion,
+        durationSeconds: matchGames.durationSeconds,
+        winnerTeamId: matchGames.winnerTeamId,
+        kills: playerGameStats.kills,
+        deaths: playerGameStats.deaths,
+        assists: playerGameStats.assists,
+        cs: playerGameStats.cs,
+        damageToChampions: playerGameStats.damageToChampions,
+        goldEarned: playerGameStats.goldEarned,
+        visionScore: playerGameStats.visionScore,
+        damageMitigated: playerGameStats.damageMitigated
+      })
+      .from(playerGameInfo)
+      .innerJoin(playerGameStats, eq(playerGameStats.id, playerGameInfo.id))
+      .innerJoin(players, eq(players.id, playerGameInfo.playerId))
+      .leftJoin(
+        teamMemberships,
+        and(
+          eq(teamMemberships.discordUserId, players.discordUserId),
+          eq(teamMemberships.teamId, playerGameInfo.teamId)
+        )
+      )
+      .innerJoin(matchGames, eq(matchGames.id, playerGameInfo.matchGameId))
+      .innerJoin(matches, eq(matches.id, matchGames.matchesId))
+      .innerJoin(teams, eq(teams.id, playerGameInfo.teamId))
+      .innerJoin(seasonsDivisions, eq(seasonsDivisions.id, matches.idSeasonDivision))
+      .where(
+        and(
+          inArray(matches.id, matchIds),
+          eq(matches.status, 'completed'),
+          isNotNull(matchGames.winnerTeamId)
+        )
+      )
+      .orderBy(
+        asc(matches.finishedAt),
+        asc(matches.scheduledAt),
+        asc(matches.id),
+        asc(matchGames.gameNumber)
+      );
+
+    const playerGames = allMatchGames.filter((row) => row.playerId === playerId);
+    return { playerGames, allMatchGames };
+  }
   async playerDetail(id: string) {
     const [player] = await this.db
       .select({ ...this.playerSelection, discordUserId: players.discordUserId })
@@ -341,6 +431,7 @@ export class PostgresCompetitionRepository implements CompetitionRepository {
       .where(eq(players.id, id))
       .orderBy(
         sql`${seasons.startsOn} DESC NULLS LAST`,
+        desc(teamMemberships.updatedAt),
         asc(seasons.name),
         asc(teams.name),
         asc(teams.id)

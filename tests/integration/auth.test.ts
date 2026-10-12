@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { PGlite } from '@electric-sql/pglite';
+import { btree_gist } from '@electric-sql/pglite/contrib/btree_gist';
 import { eq } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/pglite';
 import { migrate } from 'drizzle-orm/pglite/migrator';
@@ -34,7 +35,7 @@ function getCookie(response: request.Response, name: string) {
 }
 
 describe('Discord OAuth with real PostgreSQL sessions', () => {
-  const client = new PGlite();
+  const client = new PGlite({ extensions: { btree_gist } });
   const db = drizzle(client, { schema });
   const fetcher = vi.fn<typeof fetch>();
   const repository = new PostgresAuthRepository(db);

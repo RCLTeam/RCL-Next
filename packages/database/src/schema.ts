@@ -151,6 +151,7 @@ export const seasonsDivisions = pgTable(
       foreignColumns: [divisions.name]
     }).onDelete('cascade'),
     unique('seasons_divisions_season_division_key').on(t.seasonName, t.divisionName),
+    unique('seasons_divisions_id_season_name_key').on(t.id, t.seasonName),
     index('seasons_divisions_season_name_idx').on(t.seasonName),
     index('seasons_divisions_division_name_idx').on(t.divisionName)
   ]
@@ -185,6 +186,7 @@ export const teams = pgTable(
   {
     id: uuid('id').primaryKey().defaultRandom(),
     seasonDivisionId: uuid('season_division_id').notNull(),
+    seasonName: varchar('season_name', { length: 120 }).notNull(),
     name: varchar('name', { length: 120 }).notNull(),
     shortName: varchar('short_name', { length: 16 }),
     logoUrl: text('logo_url'),
@@ -201,6 +203,14 @@ export const teams = pgTable(
       foreignColumns: [seasonsDivisions.id]
     }).onDelete('cascade'),
     unique('teams_season_division_name_key').on(t.seasonDivisionId, t.name),
+    unique('teams_id_season_name_key').on(t.id, t.seasonName),
+    foreignKey({
+      name: 'teams_season_division_season_fkey',
+      columns: [t.seasonDivisionId, t.seasonName],
+      foreignColumns: [seasonsDivisions.id, seasonsDivisions.seasonName]
+    })
+      .onUpdate('cascade')
+      .onDelete('cascade'),
     index('teams_season_division_id_idx').on(t.seasonDivisionId)
   ]
 );
@@ -211,6 +221,7 @@ export const teamMemberships = pgTable(
     teamId: uuid('team_id').notNull(),
     discordUserId: varchar('discord_user_id', { length: 32 }).notNull(),
     role: rosterRole('role').notNull(),
+    seasonName: varchar('season_name', { length: 120 }).notNull(),
     isCaptain: boolean('is_captain').notNull().default(false),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
@@ -227,6 +238,15 @@ export const teamMemberships = pgTable(
       foreignColumns: [discordUsers.discordId]
     }).onDelete('cascade'),
     primaryKey({ name: 'team_memberships_pkey', columns: [t.teamId, t.discordUserId] }),
+    foreignKey({
+      name: 'team_memberships_team_season_fkey',
+      columns: [t.teamId, t.seasonName],
+      foreignColumns: [teams.id, teams.seasonName]
+    })
+      .onUpdate('cascade')
+      .onDelete('cascade'),
+    // The filtered EXCLUDE constraint is maintained in migration 0001;
+    // Drizzle does not model PostgreSQL exclusion constraints.
     check(
       'team_memberships_captain_role_check',
       sql`"is_captain" = false OR "role" IN ('top', 'jungle', 'mid', 'adc', 'support')`

@@ -1,5 +1,5 @@
 import type { CrudField, CrudRecord, CrudResource, CrudValue } from '@rcl/contracts';
-import React, { useEffect, useId, useState } from 'react';
+import React, { useEffect, useId, useRef, useState } from 'react';
 import { Select } from '../../../shared/components/Selector/Selector.js';
 import { normalizeTeamLogoPath, teamLogoDirectory } from '../../../shared/resources/team-logos.js';
 import { getCrudRecords, recordLabel } from '../api/crud-operations-api.js';
@@ -22,19 +22,36 @@ export function CrudRecordForm({
   resource,
   record,
   busy,
+  error = '',
+  onChange,
   onSave,
   onCancel
 }: {
   resource: CrudResource;
   record: CrudRecord | null;
   busy: boolean;
+  error?: string;
+  onChange?: () => void;
   onSave: (values: CrudRecord) => void;
   onCancel: () => void;
 }) {
   const [values, setValues] = useState(() => initialValues(resource, record));
-  const change = (name: string, value: CrudValue) =>
+  const errorRef = useRef<HTMLParagraphElement>(null);
+  const captainRoles = ['top', 'jungle', 'mid', 'adc', 'support'];
+  const canCaptain = captainRoles.includes(String(values.role));
+  useEffect(() => {
+    if (error) errorRef.current?.focus();
+  }, [error]);
+  const change = (name: string, value: CrudValue) => {
+    onChange?.();
     setValues((previous) => {
       const next = { ...previous, [name]: value };
+      if (
+        resource.name === 'memberships' &&
+        name === 'role' &&
+        !captainRoles.includes(String(value))
+      )
+        next.isCaptain = false;
       if (name === 'idSeasonDivision' && resource.name === 'matches') {
         next.team1Id = null;
         next.team2Id = null;
@@ -44,16 +61,22 @@ export function CrudRecordForm({
       if (['team1Id', 'team2Id'].includes(name)) next.winnerTeamId = null;
       return next;
     });
+  };
   return (
     <form
       className="crud-operations-editor"
       onSubmit={(event) => {
         event.preventDefault();
-        onSave(values);
+        if (!busy) onSave(values);
       }}
     >
       <h3>{record ? 'Editar registro' : 'Nuevo registro'}</h3>
       <p>Los campos con * son obligatorios. Las fechas y horas se muestran en tu zona horaria.</p>
+      {error && (
+        <p ref={errorRef} tabIndex={-1} role="alert" className="crud-operations-error">
+          {error}
+        </p>
+      )}
       <fieldset disabled={busy} className="crud-operations-fields">
         <legend className="sr-only">Datos de {resource.label}</legend>
         {resource.fields.map((field) => (
@@ -62,7 +85,10 @@ export function CrudRecordForm({
             field={field}
             value={values[field.name] ?? null}
             values={values}
-            disabled={Boolean(record && field.immutable)}
+            disabled={
+              Boolean(record && field.immutable) ||
+              (resource.name === 'memberships' && field.name === 'isCaptain' && !canCaptain)
+            }
             onChange={(value) => change(field.name, value)}
           />
         ))}

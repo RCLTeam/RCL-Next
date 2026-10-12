@@ -20,6 +20,7 @@ export function CrudDataPanel({ resource }: { resource: CrudResource }) {
   const [revision, setRevision] = useState(0);
   const [data, setData] = useState<CrudPageResult | null>(null);
   const [error, setError] = useState('');
+  const [saveError, setSaveError] = useState('');
   const [notice, setNotice] = useState('');
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -63,7 +64,7 @@ export function CrudDataPanel({ resource }: { resource: CrudResource }) {
   async function mutate(action: () => Promise<unknown>, message: string) {
     if (busy) return;
     setBusy(true);
-    setError('');
+    setSaveError('');
     setNotice('');
     try {
       await action();
@@ -75,7 +76,7 @@ export function CrudDataPanel({ resource }: { resource: CrudResource }) {
       if (deleting && data?.records.length === 1 && offset) setOffset(offset - 50);
     } catch (error) {
       if (mounted.current)
-        setError(error instanceof Error ? error.message : 'No se pudo guardar el cambio.');
+        setSaveError(error instanceof Error ? error.message : 'No se pudo guardar el cambio.');
     } finally {
       if (mounted.current) setBusy(false);
     }
@@ -108,6 +109,7 @@ export function CrudDataPanel({ resource }: { resource: CrudResource }) {
           disabled={busy || Boolean(editor) || Boolean(deleting)}
           onClick={() => {
             setEditor({ record: null });
+            setSaveError('');
             setNotice('');
           }}
         >
@@ -148,7 +150,12 @@ export function CrudDataPanel({ resource }: { resource: CrudResource }) {
               resource={resource}
               record={editor.record}
               busy={busy}
-              onCancel={() => setEditor(null)}
+              error={saveError}
+              onChange={() => setSaveError('')}
+              onCancel={() => {
+                setEditor(null);
+                setSaveError('');
+              }}
               onSave={(values) =>
                 void mutate(
                   () => saveCrudRecord(resource, values, editor.record),
@@ -229,6 +236,7 @@ export function CrudDataPanel({ resource }: { resource: CrudResource }) {
                               aria-label={`Editar ${recordLabel(record)}`}
                               onClick={() => {
                                 setEditor({ record });
+                                setSaveError('');
                                 setNotice('');
                               }}
                             >

@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { PGlite } from '@electric-sql/pglite';
+import { btree_gist } from '@electric-sql/pglite/contrib/btree_gist';
 import { eq } from 'drizzle-orm';
 import { getTableConfig } from 'drizzle-orm/pg-core';
 import { drizzle } from 'drizzle-orm/pglite';
@@ -24,7 +25,7 @@ const seed = await readFile(
 );
 
 test('Database schema constraints and Discord entity attributes', async (t) => {
-  const client = new PGlite();
+  const client = new PGlite({ extensions: { btree_gist } });
   t.onTestFinished(() => client.close());
   const db = drizzle(client, { schema });
   await migrate(db, { migrationsFolder });
