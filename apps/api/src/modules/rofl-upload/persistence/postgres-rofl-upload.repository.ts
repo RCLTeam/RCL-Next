@@ -284,7 +284,9 @@ export class PostgresRoflUploadRepository implements RoflUploadRepository {
       const matchStateMap = new Map<string, MatchTrackingState>();
       const gameNumberMap = new Map<string, number>();
 
-      for (const game of games) {
+      for (const game of [...games].sort((a, b) =>
+        a.externalGameId.localeCompare(b.externalGameId, undefined, { numeric: true })
+      )) {
         if (
           game.externalGameId &&
           (existingSet.has(game.externalGameId) || seenInBatch.has(game.externalGameId))
@@ -545,6 +547,10 @@ export class PostgresRoflUploadRepository implements RoflUploadRepository {
           state.team2Score += 1;
         }
 
+        insertedGames += 1;
+      }
+      for (const [matchId, state] of matchStateMap) {
+        await orderImportedGames(tx, matchId);
         const winThreshold = Math.floor(state.bestOf / 2) + 1;
         const isCompleted = state.team1Score >= winThreshold || state.team2Score >= winThreshold;
         const seriesWinner = isCompleted
@@ -569,10 +575,7 @@ export class PostgresRoflUploadRepository implements RoflUploadRepository {
           await sealMatchMvp(tx, matchId, seriesWinner);
           state.hasMvp = true;
         }
-
-        insertedGames += 1;
       }
-      for (const matchId of matchStateMap.keys()) await orderImportedGames(tx, matchId);
     });
 
     return {

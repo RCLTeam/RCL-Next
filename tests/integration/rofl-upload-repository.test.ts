@@ -701,3 +701,66 @@ test('a replay committed after the duplicate read is skipped when its match is c
     .where(eq(schema.matchGames.matchesId, matchId));
   expect(rows.length).toBe(2);
 });
+
+test('Unordered Bo3 batch seals a 2-1 series using all three ordered maps', async () => {
+  const client = new PGlite({ extensions: { btree_gist } });
+  onTestFinished(() => client.close());
+  const db = drizzle(client, { schema });
+  await migrate(db, {
+    migrationsFolder: fileURLToPath(new URL('../../packages/database/drizzle', import.meta.url))
+  });
+  await client.exec(await readFile('packages/database/seed/demo.sql', 'utf8'));
+  const matchId = '70000000-0000-4000-8000-000000000002';
+  await db.update(schema.matches).set({ bestOf: 3 }).where(eq(schema.matches.id, matchId));
+  const repo = new PostgresRoflUploadRepository(db);
+  const identities = await repo.findPlayersByRiotIds(
+    [1, 2, 6].map((n) => ({
+      gameName: `Jugador Demo ${n}`,
+      riotTag: 'DEMO'
+    }))
+  );
+  const lookup = new Map(identities.map((p) => [`${p.gameName.toLowerCase()}#demo`, p]));
+  const teamMap = await repo.findTeamMembershipsForDiscordUsers(
+    identities.map((p) => p.discordUserId)
+  );
+  const wins = 3;
+  const games: ParsedGameData[] = Array.from({ length: wins }, (_, i) => ({
+    fileName: `mvp-${i}.rofl`,
+    externalGameId: `MVP-${i}`,
+    durationSeconds: 1800 + i * 300,
+    gameCreation: Date.parse('2050-01-17T19:00:00Z'),
+    winnerSide: i === 1 ? 'red' : 'blue',
+    participants: [
+      {
+        ...createParticipant('Jugador Demo 1', 'DEMO', 'blue', 'Ahri', i === 0 ? 'mid' : 'support'),
+        kills: i === 0 ? 50 : 3
+      },
+      createParticipant('Jugador Demo 2', 'DEMO', 'blue', 'Vi', 'jungle'),
+      createParticipant('Jugador Demo 6', 'DEMO', 'red', 'Garen', 'top')
+    ]
+  }));
+  const [first, second, third] = games;
+  assert.ok(first && second && third);
+  const result = await repo.executeBatchInsert([first, third, second], lookup, teamMap);
+  expect(result.insertedGames).toBe(3);
+  const [match] = await db.select().from(schema.matches).where(eq(schema.matches.id, matchId));
+  expect(match).toMatchObject({ status: 'completed', team1Score: 1, team2Score: 2 });
+  const maps = await db
+    .select()
+    .from(schema.matchGames)
+    .where(eq(schema.matchGames.matchesId, matchId))
+    .orderBy(asc(schema.matchGames.gameNumber));
+  expect(maps.map((map) => map.externalGameId)).toEqual(['MVP-0', 'MVP-1', 'MVP-2']);
+  expect(maps.map((map) => map.gameNumber)).toEqual([1, 2, 3]);
+  const identity = identities[0];
+  assert.ok(identity);
+  const history = await new PostgresCompetitionRepository(db).playerSeasonGames(
+    identity.playerId,
+    'Temporada DEMO — datos ficticios'
+  );
+  const rows = history.allMatchGames.filter((row) => row.matchId === matchId);
+  expect(new Set(rows.map((row) => row.gameId)).size).toBe(3);
+  const expected = matchMvps(rows)[0];
+  expect(match?.mvpPlayerId).toBe(expected?.playerId);
+  expect(Number(match?.mvpScore)).toBe(expected?.score);
+});
