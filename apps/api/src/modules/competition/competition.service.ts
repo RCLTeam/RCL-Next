@@ -179,44 +179,34 @@ export class CompetitionService {
     if (!player) throw notFound('Player');
     const activeTeam = player.teams[0];
     let competition: PlayerDetail['competition'] = player.competition;
-    if (activeTeam?.seasonName) {
+    // Without a membership, use the latest season with recorded games or awards.
+    const seasonNames = activeTeam?.seasonName
+      ? [activeTeam.seasonName]
+      : (await this.repository.seasons()).map((season) => season.name);
+    for (const seasonName of seasonNames) {
       const { playerGames, allMatchGames, mvpMatchIds } = await this.repository.playerSeasonGames(
         id,
-        activeTeam.seasonName
+        seasonName
       );
-      if (playerGames.length > 0) {
-        competition = {
-          role: activeTeam.role,
-          team: {
-            id: activeTeam.id,
-            name: activeTeam.name,
-            shortName: activeTeam.shortName,
-            logoUrl: activeTeam.logoUrl,
-            color: activeTeam.color ?? null
-          },
-          champion: mostPlayedChampion(playerGames),
-          stats: aggregatePlayerStats(playerGames, allMatchGames),
-          mvpMatchIds,
-          featured: null,
-          isCaptain: activeTeam.isCaptain ?? false
-        };
-      } else {
-        competition = {
-          role: activeTeam.role,
-          team: {
-            id: activeTeam.id,
-            name: activeTeam.name,
-            shortName: activeTeam.shortName,
-            logoUrl: activeTeam.logoUrl,
-            color: activeTeam.color ?? null
-          },
-          champion: null,
-          stats: null,
-          mvpMatchIds,
-          featured: null,
-          isCaptain: activeTeam.isCaptain ?? false
-        };
-      }
+      if (!activeTeam && playerGames.length === 0 && mvpMatchIds.length === 0) continue;
+      competition = {
+        role: activeTeam?.role ?? null,
+        team: activeTeam
+          ? {
+              id: activeTeam.id,
+              name: activeTeam.name,
+              shortName: activeTeam.shortName,
+              logoUrl: activeTeam.logoUrl,
+              color: activeTeam.color ?? null
+            }
+          : null,
+        champion: playerGames.length ? mostPlayedChampion(playerGames) : null,
+        stats: playerGames.length ? aggregatePlayerStats(playerGames, allMatchGames) : null,
+        mvpMatchIds,
+        featured: null,
+        isCaptain: activeTeam?.isCaptain ?? false
+      };
+      break;
     }
     const teamSlugs = await this.teamSlugs();
     return {

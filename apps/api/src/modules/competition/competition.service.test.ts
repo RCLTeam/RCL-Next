@@ -253,6 +253,37 @@ test('Player detail displays season-wide statistics and MVPs across transfers wh
   expect(detail.competition?.champion).toBe('Ahri');
   expect(detail.competition?.stats?.games).toBe(1);
   expect(detail.competition?.mvpMatchIds).toEqual(['m1']);
+
+  // Leaving every team must preserve the same season history.
+  const withTeams = source.playerDetail;
+  source.playerDetail = async (id) => {
+    const player = await withTeams(id);
+    if (!player) throw new Error('Missing fixture');
+    return { ...player, teams: [] };
+  };
+  source.seasons = async () => [
+    { id: '2027', name: '2027', startsOn: '2027-01-01', endsOn: null },
+    { id: '2026', name: '2026', startsOn: '2026-01-01', endsOn: null }
+  ];
+  const seasonGames = source.playerSeasonGames;
+  source.playerSeasonGames = async (id, season) =>
+    season === '2027'
+      ? { playerGames: [], allMatchGames: [], mvpMatchIds: [] }
+      : seasonGames(id, season);
+  const withoutTeam = await service.playerDetail(transferredPlayerId);
+  expect(withoutTeam.teams).toEqual([]);
+  expect(withoutTeam.competition?.team).toBeNull();
+  expect(withoutTeam.competition?.stats?.games).toBe(1);
+  expect(withoutTeam.competition?.mvpMatchIds).toEqual(['m1']);
+
+  source.playerSeasonGames = async () => ({
+    playerGames: [],
+    allMatchGames: [],
+    mvpMatchIds: ['m1']
+  });
+  const awardsOnly = await service.playerDetail(transferredPlayerId);
+  expect(awardsOnly.competition?.stats).toBeNull();
+  expect(awardsOnly.competition?.mvpMatchIds).toEqual(['m1']);
 });
 
 test('Team detail only counts MVPs won while playing for that specific team', async () => {
