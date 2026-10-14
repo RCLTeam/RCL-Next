@@ -1,0 +1,2 @@
+ALTER TABLE "matches" ADD CONSTRAINT "matches_mvp_score_nonnegative_check" CHECK ("mvp_score" IS NULL OR "mvp_score" >= 0);--> statement-breakpoint
+ALTER TABLE "matches" ADD CONSTRAINT "matches_mvp_player_score_check" CHECK ("mvp_player_id" IS NULL OR "mvp_score" IS NOT NULL);

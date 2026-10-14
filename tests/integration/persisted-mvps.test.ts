@@ -126,12 +126,12 @@ test('banner uses SQL score ordering in the latest awarded round, scoped to its 
   });
   await db
     .update(schema.matches)
-    .set({ status: 'completed', mvpScore: null })
+    .set({ status: 'completed', mvpPlayerId: null, mvpScore: null })
     .where(eq(schema.matches.id, nextMatchId));
   expect(await repository.featuredMatchMvp(divisionId)).toMatchObject({ roundId: 1 });
   await db
     .update(schema.matches)
-    .set({ mvpScore: '1.0' })
+    .set({ mvpPlayerId: player.id, mvpScore: '1.0' })
     .where(eq(schema.matches.id, nextMatchId));
   expect(await repository.featuredMatchMvp(divisionId)).toMatchObject({
     playerId: player.id,
@@ -142,4 +142,22 @@ test('banner uses SQL score ordering in the latest awarded round, scoped to its 
   expect(directory.find((p) => p.id === player.id)?.competition?.featured?.roundName).toBe(
     'Jornada 2'
   );
+});
+
+test('MVP checks reject negative scores and players without scores, but allow deleting the player', async () => {
+  const { db, player } = await setup();
+  await expect(
+    db.update(schema.matches).set({ mvpScore: '-0.1' }).where(eq(schema.matches.id, matchId))
+  ).rejects.toThrow();
+  await expect(
+    db.update(schema.matches).set({ mvpPlayerId: player.id }).where(eq(schema.matches.id, matchId))
+  ).rejects.toThrow();
+  await db
+    .update(schema.matches)
+    .set({ mvpPlayerId: player.id, mvpScore: '0.0' })
+    .where(eq(schema.matches.id, matchId));
+  await db.delete(schema.playerGameInfo).where(eq(schema.playerGameInfo.playerId, player.id));
+  await db.delete(schema.players).where(eq(schema.players.id, player.id));
+  const [match] = await db.select().from(schema.matches).where(eq(schema.matches.id, matchId));
+  expect(match).toMatchObject({ mvpPlayerId: null, mvpScore: '0.0' });
 });

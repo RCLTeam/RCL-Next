@@ -371,6 +371,11 @@ export const matches = pgTable(
     }).onDelete('set null'),
     check('matches_different_teams_check', sql`"team1_id" <> "team2_id"`),
     check('matches_best_of_check', sql`"best_of" IN (1, 3, 5)`),
+    check('matches_mvp_score_nonnegative_check', sql`"mvp_score" IS NULL OR "mvp_score" >= 0`),
+    check(
+      'matches_mvp_player_score_check',
+      sql`"mvp_player_id" IS NULL OR "mvp_score" IS NOT NULL`
+    ),
     check('matches_scores_check', sql`"team1_score" >= 0 AND "team2_score" >= 0`),
     check(
       'matches_winner_participant_check',
