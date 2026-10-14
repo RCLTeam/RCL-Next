@@ -58,7 +58,7 @@ test('every requested statistic sorts numerically descending, missing stats last
 
   const missing = { ...player, id: 'c', competition: { ...player.competition, stats: null } };
 
-  for (const [sort] of playerSortOptions)
+  for (const [sort] of playerSortOptions.filter(([key]) => key !== 'mvps'))
     expect(
       filterPlayers([missing, player, other], 'jugador', 'all', sort).map((p) => p.id)
     ).toEqual(['b', 'a', 'c']);
@@ -71,7 +71,7 @@ test('every requested statistic sorts numerically descending, missing stats last
     filterPlayers([player, other, subPlayer], 'jugador', 'substitute').map((p) => p.id)
   ).toEqual(['sub']);
 
-  expect(playerSortOptions).toHaveLength(7);
+  expect(playerSortOptions).toHaveLength(8);
 });
 
 test('includes free agent / active-role-less players with stats in "all" view', () => {
@@ -180,7 +180,7 @@ test('players missing the selected statistic sort by team, then name, with no te
     makePlayer('eagles-a', 'Álex', 'Águilas')
   ];
   const originalOrder = roster.map((p) => p.id);
-  for (const [sort] of playerSortOptions) {
+  for (const [sort] of playerSortOptions.filter(([key]) => key !== 'mvps')) {
     expect(filterPlayers(roster, '', 'all', sort).map((p) => p.id)).toEqual([
       'eagles-a',
       'eagles-z',
@@ -233,4 +233,21 @@ test('featured player shows one valid team logo with or without a champion', () 
       );
     }
   }
+});
+
+test('MVP sorting uses persisted awards without stats and renders the count once', () => {
+  const winner = {
+    ...player,
+    id: 'winner',
+    competition: { ...player.competition, stats: null, mvpMatchIds: ['m1', 'm2'] }
+  };
+  const none = { ...player, id: 'none', competition: { ...player.competition, mvpMatchIds: [] } };
+  expect(filterPlayers([none, player, winner], '', 'all', 'mvps').map((p) => p.id)).toEqual([
+    'winner',
+    'a',
+    'none'
+  ]);
+  const html = renderToStaticMarkup(<PlayerGrid players={[winner]} sort="mvps" />);
+  expect(html.match(/<dt>MVPs<\/dt>/g)).toHaveLength(1);
+  expect(html).toContain('<dd>2</dd>');
 });

@@ -174,3 +174,18 @@ test('Direct match URLs and trailing slashes preserve calendar navigation', () =
     ).toBe(true);
   }
 });
+
+test('series MVP identity links by slug even without imported participants', () => {
+  const html = renderToStaticMarkup(
+    <MatchReport
+      match={{
+        ...report,
+        games: [],
+        mvpPlayerId: 'saved',
+        mvpPlayer: { id: 'saved', slug: 'ganador-euw', gameName: 'Ganador', riotTag: 'EUW' }
+      }}
+    />
+  );
+  expect(html).toContain('href="/jugadores/ganador-euw">Ganador#EUW</a>');
+  expect(html).not.toContain('Ver jugador MVP');
+});
