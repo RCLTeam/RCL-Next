@@ -84,6 +84,13 @@ test('all views read the sealed award, without fallback, despite stat edits and 
   ).toBe(0);
   // Historical awards survive even if replay snapshots are no longer available.
   await db.delete(schema.playerGameInfo);
+  const detail = await service.matchDetail(matchId);
+  expect(detail.mvpPlayer).toMatchObject({
+    id: player.id,
+    gameName: player.gameName,
+    slug: (await service.playerDetail(player.id)).slug
+  });
+
   expect((await service.playerDetail(player.id)).competition?.mvpMatchIds).toEqual([matchId]);
   expect((await service.matchDetail(matchId)).mvpPlayerId).toBe(player.id);
 });

@@ -89,6 +89,7 @@ export interface MatchMap {
   participants: MatchParticipant[];
 }
 export interface MatchDetail {
+  mvpPlayer?: { id: string; slug: string; gameName: string; riotTag: string | null } | null;
   mvpPlayerId?: string | null;
   id: string;
   slug?: string | undefined;

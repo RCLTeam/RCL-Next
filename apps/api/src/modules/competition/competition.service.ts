@@ -115,6 +115,10 @@ export class CompetitionService {
     const homeTeam = teams.find((team) => team.id === match.homeTeamId);
     const awayTeam = teams.find((team) => team.id === match.awayTeamId);
     if (!homeTeam || !awayTeam || !division) throw notFound('Match');
+    const mvpPlayerId = match.status === 'completed' ? match.mvpPlayerId : null;
+    const directory = mvpPlayerId ? await this.playerDirectory() : null;
+    const mvp = directory?.players.find((player) => player.id === mvpPlayerId);
+
     return {
       id,
       slug: slugs.get(id),
@@ -128,7 +132,15 @@ export class CompetitionService {
       seasonName: division.seasonId,
       divisionName: division.name,
       roundName: rounds.find((round) => round.id === match.roundId)?.name ?? null,
-      mvpPlayerId: match.status === 'completed' ? match.mvpPlayerId : null,
+      mvpPlayerId,
+      mvpPlayer: mvp
+        ? {
+            id: mvp.id,
+            slug: directory?.slugs.get(mvp.id) ?? mvp.id,
+            gameName: mvp.gameName,
+            riotTag: mvp.riotTag
+          }
+        : null,
       games
     };
   }
