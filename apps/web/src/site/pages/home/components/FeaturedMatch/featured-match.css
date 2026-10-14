@@ -5,7 +5,55 @@
 }
 
 .rcl-site .featured-match .eyebrow {
+  margin-bottom: 0;
+}
+
+.rcl-site .featured-match-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
   margin-bottom: 14px;
+}
+
+.rcl-site .featured-match-count {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.rcl-site .featured-match-track {
+  display: grid;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.rcl-site .featured-match-slide {
+  grid-area: 1 / 1;
+  min-width: 0;
+  opacity: 0;
+  transform: translateY(10px) scale(0.99);
+  pointer-events: none;
+  transition:
+    opacity 650ms ease-in-out,
+    transform 650ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.rcl-site .featured-match-slide.is-active {
+  z-index: 1;
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rcl-site .featured-match-slide {
+    transition: none;
+    transform: none;
+  }
 }
 
 .rcl-site .featured-empty {
