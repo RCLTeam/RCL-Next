@@ -110,9 +110,7 @@ export class PostgresCompetitionRepository implements CompetitionRepository {
         teamId: playerGameInfo.teamId,
         side: playerGameInfo.side,
         champion: playerGameInfo.champion,
-        position: sql<
-          string | null
-        >`coalesce(${playerGameInfo.position}, ${teamMemberships.role}::text)`,
+        position: playerGameInfo.position,
         stats,
         build,
         runes
@@ -184,9 +182,7 @@ export class PostgresCompetitionRepository implements CompetitionRepository {
           logoUrl: teams.logoUrl,
           color: teams.color
         },
-        position: sql<
-          string | null
-        >`coalesce(${playerGameInfo.position}, ${teamMemberships.role}::text)`,
+        position: playerGameInfo.position,
         champion: playerGameInfo.champion,
         durationSeconds: matchGames.durationSeconds,
         winnerTeamId: matchGames.winnerTeamId,
@@ -339,9 +335,7 @@ export class PostgresCompetitionRepository implements CompetitionRepository {
           logoUrl: teams.logoUrl,
           color: teams.color
         },
-        position: sql<
-          string | null
-        >`coalesce(${playerGameInfo.position}, ${teamMemberships.role}::text)`,
+        position: playerGameInfo.position,
         champion: playerGameInfo.champion,
         durationSeconds: matchGames.durationSeconds,
         winnerTeamId: matchGames.winnerTeamId,

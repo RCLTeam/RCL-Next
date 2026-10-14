@@ -2,6 +2,7 @@ import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { PGlite } from '@electric-sql/pglite';
 import { btree_gist } from '@electric-sql/pglite/contrib/btree_gist';
+import type { Player } from '@rcl/contracts';
 import { drizzle } from 'drizzle-orm/pglite';
 import { migrate } from 'drizzle-orm/pglite/migrator';
 import request from 'supertest';
@@ -126,6 +127,51 @@ test('HTTP -> controller -> service -> real repository -> embedded PostgreSQL', 
     .get('/api/v1/matches/70000000-0000-4000-8000-000000000001')
     .expect(200);
   expect(matchMvp.body.data.mvpPlayerId).toBe(featuredPlayers[0].id);
+  // Replay positions, including unknown ones, must never inherit mutable roster roles.
+  {
+    const repository = new PostgresCompetitionRepository(db);
+    const matchId = matchMvp.body.data.id as string;
+    await client.query('UPDATE player_game_info SET position = NULL WHERE player_id = $1', [
+      playerId
+    ]);
+    const beforeMaps = await repository.matchGames(matchId);
+    const beforePlayers = await repository.players(divisionId);
+    const beforeSeason = await repository.playerSeasonGames(
+      playerId,
+      'Temporada DEMO — datos ficticios'
+    );
+    expect(beforeSeason.playerGames.length).toBeGreaterThan(0);
+    expect(beforeSeason.playerGames.every((game) => game.position === null)).toBe(true);
+    expect(
+      beforeMaps
+        .flatMap((game) => game.participants)
+        .filter((p) => p.playerId === playerId)
+        .every((p) => p.position === null)
+    ).toBe(true);
+    await client.query("UPDATE team_memberships SET role = 'support' WHERE discord_user_id = $1", [
+      '900000000000000001'
+    ]);
+    expect(await repository.matchGames(matchId)).toEqual(beforeMaps);
+    const awardsAndStats = (entries: Player[]) =>
+      entries.map((entry) => ({
+        id: entry.id,
+        awards: entry.competition?.mvpMatchIds,
+        stats: entry.competition?.stats,
+        featured: entry.competition?.featured
+      }));
+    expect(awardsAndStats(await repository.players(divisionId))).toEqual(
+      awardsAndStats(beforePlayers)
+    );
+    expect(
+      await repository.playerSeasonGames(playerId, 'Temporada DEMO — datos ficticios')
+    ).toEqual(beforeSeason);
+    await client.query("UPDATE team_memberships SET role = 'top' WHERE discord_user_id = $1", [
+      '900000000000000001'
+    ]);
+    await client.query("UPDATE player_game_info SET position = 'top' WHERE player_id = $1", [
+      playerId
+    ]);
+  }
   await db.insert(schema.seasons).values({ name: 'Otra temporada' });
   const [otherSeasonDivision] = await db
     .insert(schema.seasonsDivisions)
