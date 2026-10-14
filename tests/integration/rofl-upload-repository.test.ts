@@ -604,6 +604,19 @@ test.each([1, 3, 5])(
     await client.exec(
       'DROP TRIGGER reject_mvp_write ON matches; DROP FUNCTION reject_mvp_write();'
     );
+    // A trigger can suppress an UPDATE without throwing; RETURNING must detect it.
+    await client.exec(`CREATE FUNCTION suppress_mvp_write() RETURNS trigger LANGUAGE plpgsql AS $$
+      BEGIN RETURN NULL; END $$;
+      CREATE TRIGGER suppress_mvp_write BEFORE UPDATE OF mvp_player_id ON matches
+      FOR EACH ROW EXECUTE FUNCTION suppress_mvp_write();`);
+    await expect(repo.executeBatchInsert([last], lookup, teamMap)).rejects.toThrow(
+      /no row updated/
+    );
+    expect(await readMatch()).toEqual(before);
+    expect(await repo.checkExternalGamesExist([last.externalGameId])).toEqual([]);
+    await client.exec(
+      'DROP TRIGGER suppress_mvp_write ON matches; DROP FUNCTION suppress_mvp_write();'
+    );
     await repo.executeBatchInsert([last], lookup, teamMap);
     const sealed = await readMatch();
     expect(sealed.status).toBe('completed');

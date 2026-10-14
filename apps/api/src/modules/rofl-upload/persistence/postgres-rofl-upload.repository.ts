@@ -51,10 +51,13 @@ async function sealMatchMvp(tx: DatabaseExecutor, matchId: string, winnerTeamId:
   ) {
     throw new RoflUploadDomainError(`Cannot complete match ${matchId}: no eligible series MVP.`);
   }
-  await tx
+  const [saved] = await tx
     .update(matches)
     .set({ mvpPlayerId: award.playerId, mvpScore: award.score.toFixed(1) })
-    .where(and(eq(matches.id, matchId), isNull(matches.mvpPlayerId), isNull(matches.mvpScore)));
+    .where(and(eq(matches.id, matchId), isNull(matches.mvpPlayerId), isNull(matches.mvpScore)))
+    .returning({ id: matches.id });
+  if (!saved)
+    throw new RoflUploadDomainError(`Cannot seal MVP for match ${matchId}: no row updated.`);
 }
 
 // The caller holds the parent match lock throughout import and renumbering.

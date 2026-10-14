@@ -76,9 +76,75 @@ test('failed MVP writes roll back and can be retried', async () => {
     BEGIN RAISE EXCEPTION 'test failure'; END $$;
     CREATE TRIGGER reject_backfill BEFORE UPDATE OF mvp_player_id ON matches
     FOR EACH ROW EXECUTE FUNCTION reject_backfill();`);
-  await expect(backfillMatchMvps(db, true)).rejects.toThrow();
+  expect(await backfillMatchMvps(db, true)).toMatchObject({
+    unresolved: 1,
+    updated: 0,
+    entries: [{ matchId, reason: 'transaction_failed' }]
+  });
   const [match] = await db.select().from(schema.matches).where(eq(schema.matches.id, matchId));
   expect(match).toMatchObject({ mvpPlayerId: null, mvpScore: null });
   await client.exec('DROP TRIGGER reject_backfill ON matches; DROP FUNCTION reject_backfill();');
   expect(await backfillMatchMvps(db, true)).toMatchObject({ updated: 1 });
+});
+
+test('backfill flags a stored winner absent from the series participants', async () => {
+  const { db } = await setup();
+  const applied = await backfillMatchMvps(db, true);
+  const playerId = applied.entries[0]?.playerId;
+  assert.ok(playerId);
+  await db.delete(schema.playerGameInfo).where(eq(schema.playerGameInfo.playerId, playerId));
+  const result = await backfillMatchMvps(db, true);
+  expect(result).toMatchObject({ preserved: 0, unresolved: 1 });
+  expect(result.entries[0]?.reason).toBe('existing_mvp_not_participant');
+});
+
+test('backfill continues with later series after a transaction fails', async () => {
+  const { db, client } = await setup();
+  const nextId = '70000000-0000-4000-8000-000000000002';
+  const applied = await backfillMatchMvps(db, true);
+  const playerId = applied.entries[0]?.playerId;
+  assert.ok(playerId);
+  // Move a valid awarded series behind the deliberately failing one in processing order.
+  await db
+    .update(schema.matches)
+    .set({ status: 'completed', mvpPlayerId: playerId, mvpScore: '10.0' })
+    .where(eq(schema.matches.id, nextId));
+  const [map] = await db
+    .select()
+    .from(schema.matchGames)
+    .where(eq(schema.matchGames.matchesId, matchId));
+  const [participant] = await db
+    .select()
+    .from(schema.playerGameInfo)
+    .where(eq(schema.playerGameInfo.playerId, playerId));
+  assert.ok(map && participant);
+  const mapId = crypto.randomUUID();
+  await db
+    .insert(schema.matchGames)
+    .values({ ...map, id: mapId, matchesId: nextId, externalGameId: null });
+  await db.transaction(async (tx) => {
+    const id = crypto.randomUUID();
+    await tx.insert(schema.playerGameInfo).values({ ...participant, id, matchGameId: mapId });
+    for (const table of [schema.playerGameStats, schema.playerGameBuild, schema.playerGameRunes]) {
+      const [record] = await tx.select().from(table).where(eq(table.id, participant.id));
+      assert.ok(record);
+      await tx.insert(table).values({ ...record, id });
+    }
+  });
+  await db
+    .update(schema.matches)
+    .set({ mvpPlayerId: null, mvpScore: null })
+    .where(eq(schema.matches.id, matchId));
+  await client.exec(`CREATE FUNCTION reject_one_backfill() RETURNS trigger LANGUAGE plpgsql AS $$
+    BEGIN IF NEW.id = '${matchId}' THEN RAISE EXCEPTION 'test failure'; END IF; RETURN NEW; END $$;
+    CREATE TRIGGER reject_one_backfill BEFORE UPDATE OF mvp_player_id ON matches
+    FOR EACH ROW EXECUTE FUNCTION reject_one_backfill();`);
+  expect(await backfillMatchMvps(db, true)).toMatchObject({
+    unresolved: 1,
+    preserved: 1,
+    entries: [
+      { matchId, status: 'unresolved' },
+      { matchId: nextId, status: 'preserved' }
+    ]
+  });
 });
