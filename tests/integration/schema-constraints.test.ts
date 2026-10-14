@@ -31,6 +31,40 @@ test('Database schema constraints and Discord entity attributes', async (t) => {
   await migrate(db, { migrationsFolder });
   await client.exec(seed);
 
+  // Series MVPs are optional until backfilled, retain decimal scores and survive player deletion.
+  {
+    const [match] = await db.select().from(schema.matches).limit(1);
+    assert.ok(match);
+    expect(match.mvpPlayerId).toBeNull();
+    expect(match.mvpScore).toBeNull();
+    const [player] = await db
+      .insert(schema.players)
+      .values({ gameName: 'MVP schema test' })
+      .returning();
+    assert.ok(player);
+    await db
+      .update(schema.matches)
+      .set({ mvpPlayerId: player.id, mvpScore: '104.6' })
+      .where(eq(schema.matches.id, match.id));
+    const [awarded] = await db.select().from(schema.matches).where(eq(schema.matches.id, match.id));
+    expect(awarded?.mvpPlayerId).toBe(player.id);
+    expect(awarded?.mvpScore).toBe('104.6');
+    await expect(
+      db
+        .update(schema.matches)
+        .set({ mvpPlayerId: '00000000-0000-0000-0000-000000000000' })
+        .where(eq(schema.matches.id, match.id))
+    ).rejects.toThrow();
+    await db.delete(schema.players).where(eq(schema.players.id, player.id));
+    const [retained] = await db
+      .select()
+      .from(schema.matches)
+      .where(eq(schema.matches.id, match.id));
+    expect(retained?.mvpPlayerId).toBeNull();
+    expect(retained?.mvpScore).toBe('104.6');
+    await db.update(schema.matches).set({ mvpScore: null }).where(eq(schema.matches.id, match.id));
+  }
+
   // 1: System Catalog check for unique constraints
   // PostgreSQL catalog contains UNIQUE constraints for discord_role_id and discord_channel_id
   {

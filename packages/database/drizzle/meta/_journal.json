@@ -15,6 +15,13 @@
       "when": 1791763200000,
       "tag": "0001_competitive_membership_per_season",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791974081118,
+      "tag": "0002_match_mvp",
+      "breakpoints": true
     }
   ]
 }

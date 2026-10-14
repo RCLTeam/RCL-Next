@@ -9,6 +9,7 @@ import {
   index,
   integer,
   jsonb,
+  numeric,
   pgEnum,
   pgTable,
   primaryKey,
@@ -329,6 +330,8 @@ export const matches = pgTable(
     scheduledAt: timestamp('scheduled_at', { withTimezone: true }),
     finishedAt: timestamp('finished_at', { withTimezone: true }),
     winnerTeamId: uuid('winner_team_id'),
+    mvpPlayerId: uuid('mvp_player_id'),
+    mvpScore: numeric('mvp_score', { precision: 5, scale: 1 }),
     team1Score: smallint('team1_score').notNull().default(0),
     team2Score: smallint('team2_score').notNull().default(0),
     streamUrl: text('stream_url'),
@@ -361,6 +364,11 @@ export const matches = pgTable(
       foreignColumns: [teams.id]
     }).onDelete('set null'),
     unique('matches_unique_combination').on(t.idSeasonDivision, t.idRound, t.team1Id, t.team2Id),
+    foreignKey({
+      name: 'matches_mvp_player_id_fkey',
+      columns: [t.mvpPlayerId],
+      foreignColumns: [players.id]
+    }).onDelete('set null'),
     check('matches_different_teams_check', sql`"team1_id" <> "team2_id"`),
     check('matches_best_of_check', sql`"best_of" IN (1, 3, 5)`),
     check('matches_scores_check', sql`"team1_score" >= 0 AND "team2_score" >= 0`),
@@ -375,6 +383,9 @@ export const matches = pgTable(
     }).onDelete('set null'),
     index('matches_season_division_scheduled_at_idx').on(t.idSeasonDivision, t.scheduledAt),
     index('matches_round_idx').on(t.idRound, t.idSeasonDivision),
+    index('matches_round_mvp_score_idx')
+      .on(t.idSeasonDivision, t.idRound, t.mvpScore.desc().nullsLast())
+      .where(sql`"status" = 'completed' AND "mvp_player_id" IS NOT NULL`),
     index('matches_team1_id_idx').on(t.team1Id),
     index('matches_team2_id_idx').on(t.team2Id)
   ]
