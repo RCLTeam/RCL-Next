@@ -32,7 +32,7 @@ const player: PlayerDetail = {
   teams: [defaultTeam]
 };
 
-test('Player profiles link secondary accounts and identify the main account', () => {
+test('Player profiles show linked accounts without player detail links and identify the main account', () => {
   const secondary = {
     ...player,
     id: 'secondary',
@@ -46,12 +46,13 @@ test('Player profiles link secondary accounts and identify the main account', ()
   expect(mainHtml).toContain('Cuentas secundarias');
   expect(mainHtml).toContain('Cuenta secundaria');
   expect(mainHtml).toContain('Secondary#EUW');
-  expect(mainHtml).toContain('href="/jugadores/secondary-euw"');
+  expect(mainHtml).not.toContain('href="/jugadores/');
+  expect(mainHtml).toContain('href="https://op.gg/es/lol/summoners/euw/Secondary-EUW"');
   const secondaryHtml = renderToStaticMarkup(
     <PlayerProfile player={{ ...secondary, linkedAccounts: [player] }} />
   );
   expect(secondaryHtml).toContain('Cuenta principal');
-  expect(secondaryHtml).toContain('href="/jugadores/jugador-uno-euw"');
+  expect(secondaryHtml).not.toContain('href="/jugadores/');
   expect(
     renderToStaticMarkup(<PlayerProfile player={{ ...player, linkedAccounts: [] }} />)
   ).toContain('No hay otras cuentas vinculadas');

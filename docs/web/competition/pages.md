@@ -248,8 +248,7 @@ Orquesta la ficha de perfil de un competidor, centralizando su identidad en Riot
   - Itera sobre el listado `player.linkedAccounts` (cuentas adicionales asociadas a la misma identidad deportiva):
     - Presenta la tarjeta de membresía vinculada (`player-profile-membership player-linked-account`).
     - Etiqueta de relación clara: `{account.isMain ? 'Cuenta principal' : 'Cuenta secundaria'}`.
-    - Enlace interno mediante `SiteLink` hacia la ficha de la cuenta:
-      `/jugadores/${encodeURIComponent(account.slug ?? account.id)}`
+    - Información de la cuenta en un contenedor no interactivo, sin navegación a otra ficha de jugador.
     - Nombre del invocador y Riot ID formateado (`${account.gameName}#${accountTag}`).
     - Enlace individual a la herramienta externa OP.GG (`https://op.gg/es/lol/summoners/euw/...`) con apertura en nueva pestaña (`target="_blank"`, `rel="noopener noreferrer"`) y accesibilidad (`aria-label={`Ver OP.GG de ${account.gameName} (nueva pestaña)`}`).
   - **Estado Vacío Semántico**: Cuando el arreglo `linkedAccounts` no contiene elementos o es indefinido, renderiza un mensaje informativo limpio:
