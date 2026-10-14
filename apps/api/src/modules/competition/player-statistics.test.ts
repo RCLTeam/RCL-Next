@@ -1,11 +1,11 @@
-import type { MatchMap, MatchPlayerStats, Player } from '@rcl/contracts';
+import type { Player } from '@rcl/contracts';
 import { expect, test } from 'vitest';
 import {
   type PlayerGameRow,
   aggregatePlayerStats,
+  compareMvpRanking,
   enrichPlayers,
   mapMvpScore,
-  matchMvpPlayerId,
   matchMvpScore,
   matchMvps,
   mvpScore,
@@ -308,7 +308,7 @@ test('calculates gold efficiency metrics correctly in mvpScore and falls back to
   expect(Number.isFinite(scoreWithoutGold)).toBe(true);
 });
 
-test('MVP score calculation with goldEarned picks higher gold/impact player and unifies with matchMvpPlayerId', () => {
+test('MVP score calculation with goldEarned picks higher gold/impact player in matchMvps', () => {
   const durationSeconds = 1800;
 
   const buzel = row({
@@ -375,39 +375,54 @@ test('MVP score calculation with goldEarned picks higher gold/impact player and 
   expect(awards).toHaveLength(1);
   expect(awards[0]?.playerId).toBe('Buzel');
   expect(awards[0]?.score).toBe(108.7);
+});
 
-  const matchMap: MatchMap = {
-    id: 'g1',
-    gameNumber: 1,
-    blueTeamId: 't1',
-    redTeamId: 't2',
-    winnerTeamId: 't1',
-    durationSeconds,
-    participants: all.map((p) => ({
-      id: `part-${p.playerId}`,
-      playerId: p.playerId,
-      gameName: p.playerId,
-      riotTag: 'EUW',
-      teamId: p.teamId,
-      side: 'blue',
-      champion: p.champion,
-      position: p.position,
-      build: null,
-      runes: null,
-      stats: {
-        kills: p.kills,
-        deaths: p.deaths,
-        assists: p.assists,
-        cs: p.cs,
-        damageToChampions: p.damageToChampions,
-        goldEarned: p.goldEarned,
-        visionScore: p.visionScore,
-        damageMitigated: p.damageMitigated
-      } as unknown as MatchPlayerStats
-    }))
+test.each(['score', 'wins', 'killParticipation', 'kda', 'damageToChampions'] as const)(
+  'shared ranking breaks ties by %s before all subsequent criteria',
+  (key) => {
+    const keys = ['score', 'wins', 'killParticipation', 'kda', 'damageToChampions'] as const;
+    const a = {
+      playerId: 'a',
+      score: 100,
+      wins: 2,
+      killParticipation: 50,
+      kda: 3,
+      damageToChampions: 1000
+    };
+    const z = { ...a, playerId: 'z', [key]: a[key] + 1 };
+    for (const later of keys.slice(keys.indexOf(key) + 1)) a[later] += 100;
+    expect(compareMvpRanking(z, a)).toBeLessThan(0);
+    expect(compareMvpRanking(a, z)).toBeGreaterThan(0);
+  }
+);
+
+test('shared ranking uses player ID only after every sporting criterion ties', () => {
+  const a = {
+    playerId: 'a',
+    score: 100,
+    wins: 2,
+    killParticipation: 50,
+    kda: 3,
+    damageToChampions: 1000
   };
+  expect(compareMvpRanking(a, { ...a, playerId: 'z' })).toBeLessThan(0);
+  expect(compareMvpRanking(a, a)).toBe(0);
+});
 
-  const mvpFromMap = matchMvpPlayerId([matchMap]);
-  expect(mvpFromMap).toBe('Buzel');
-  expect(mvpFromMap).toBe(awards[0]?.playerId);
+test('series scoring visits team-kill data linearly across many maps', () => {
+  let gameReads = 0;
+  const count = 80;
+  const rows = Array.from({ length: count }, (_, index) => ({
+    ...row(),
+    get gameId() {
+      gameReads += 1;
+      return `g${index}`;
+    }
+  }));
+  const opponents = rows.map((_, index) =>
+    row({ playerId: 'opponent', teamId: 't2', gameId: `g${index}` })
+  );
+  gameReads = 0;
+  expect(matchMvpScore(rows, [...rows, ...opponents])).toBeCloseTo(mapMvpScore(row(), [row()]), 10);
+  expect(gameReads).toBeLessThan(count * 10);
 });
