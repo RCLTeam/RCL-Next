@@ -11,6 +11,7 @@ const playerId = '40000000-0000-4000-8000-000000000001';
 
 function completedMatch(index: number): Match {
   return {
+    mvpPlayerId: null,
     id: `70000000-0000-4000-8000-${String(index + 1).padStart(12, '0')}`,
     divisionId,
     roundId: '1',
@@ -70,7 +71,7 @@ function repository(matches: Match[]) {
       { id: homeId, name: 'Rebels', seasonName: '2026', divisionName: 'Primera' }
     ],
     players: async () => [],
-    playerSeasonGames: async () => ({ playerGames: [], allMatchGames: [] }),
+    playerSeasonGames: async () => ({ playerGames: [], allMatchGames: [], mvpMatchIds: [] }),
     playerDetail: async () => undefined,
     teamDetail: async () => ({
       id: homeId,
@@ -194,7 +195,7 @@ test('Player detail displays season-wide statistics and MVPs across transfers wh
     playerSeasonGames: async (pId, season) => {
       expect(pId).toBe(transferredPlayerId);
       expect(season).toBe('2026');
-      return { playerGames, allMatchGames };
+      return { playerGames, allMatchGames, mvpMatchIds: ['m1'] };
     },
     playerDetail: async (id) => ({
       id,
@@ -262,6 +263,7 @@ test('Team detail only counts MVPs won while playing for that specific team', as
 
   // Match 1: Player played for Team A against Team B, and won MVP
   const match1: Match = {
+    mvpPlayerId: playerId,
     id: '70000000-0000-4000-8000-000000000001',
     divisionId,
     roundId: '1',
@@ -322,7 +324,7 @@ test('Team detail only counts MVPs won while playing for that specific team', as
       { id: teamBId, name: 'Team B', seasonName: '2026', divisionName: 'Primera' }
     ],
     players: async () => [],
-    playerSeasonGames: async () => ({ playerGames: [], allMatchGames: [] }),
+    playerSeasonGames: async () => ({ playerGames: [], allMatchGames: [], mvpMatchIds: [] }),
     playerDetail: async () => undefined,
     teamDetail: async (id) => ({
       id,
@@ -383,7 +385,7 @@ test('Player detail gracefully handles player with active team membership but ze
       { id: teamId, name: 'Bench Team', seasonName: '2026', divisionName: 'Primera' }
     ],
     players: async () => [],
-    playerSeasonGames: async () => ({ playerGames: [], allMatchGames: [] }),
+    playerSeasonGames: async () => ({ playerGames: [], allMatchGames: [], mvpMatchIds: [] }),
     playerDetail: async (id) => ({
       id,
       gameName: 'BenchPlayer',

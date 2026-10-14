@@ -363,42 +363,29 @@ Una duración ausente, no finita o no positiva produce cero en el cálculo indiv
 
 `matchMvpPlayerId` convierte los mapas y participantes con estadísticas al mismo formato y delega en `matchMvps`, incluyendo oro y posición del replay.
 
-Esta fase modifica el cálculo. El sellado automático al finalizar la subida ROFL, el backfill histórico y la sustitución de cálculos por lecturas persistidas se implementan en los pasos siguientes.
+El sellado automático al finalizar la subida ROFL y el backfill histórico utilizan este cálculo. Los endpoints consumen sus resultados persistidos, como se describe a continuación.
 Esta unificación garantiza que el galardón de MVP sea matemáticamente idéntico tanto si se consulta desde la perspectiva de la serie individual como desde la agregación de jugadores de la división o temporada, resolviendo casos sensibles de desempate dimensional donde el oro acumulado resulta determinante (por ejemplo, el escenario verificado en tests donde Buzel con 108.7 supera a Sm0kY con 107.1).
 
-### 3.7 Resolución de Estadísticas de Temporada y MVPs en Traspasos de Jugadores (`competition.service.ts:179-241`)
-Cuando un usuario consulta el perfil de un jugador (`playerDetail(reference)`), el servicio procesa su historial deportivo en el contexto completo de la temporada activa (`competition.service.ts:187-229`):
+### 3.7 Consumo de galardones persistidos
 
-- **Historial Completo de Temporada (`playerSeasonGames`):** En lugar de restringir la consulta a una sola división, el servicio solicita `repository.playerSeasonGames(id, activeTeam.seasonName)` (`líneas 188-191`), recuperando todos los mapas disputados por el jugador durante la temporada actual y la totalidad de los mapas de las series en las que participó (`allMatchGames`).
-- **Resolución del Equipo y Rol Activo:** El equipo activo se determina a partir de `player.teams[0]`, el cual se ordena por última actualización en la persistencia (`desc(teamMemberships.updatedAt)` en `postgres-competition.repository.ts:434`), situando el equipo más reciente o vigente en primer lugar.
-- **Acumulación de Rendimiento y Galardones:**
-  - Las métricas consolidadas (`aggregatePlayerStats(playerGames, allMatchGames)`, `línea 207`) abarcan todas las partidas del jugador en la temporada, manteniendo el historial acumulado aunque haya cambiado de equipo o división.
-  - Los galardones de MVP (`mvpMatchIds`, `líneas 193-196`) se calculan sobre `allMatchGames` mediante `matchMvps(allMatchGames)` y se filtran por `award.playerId === id`, preservando los MVPs obtenidos en equipos anteriores durante la misma temporada.
-  - El campeón destacado se computa sobre la totalidad de partidas disputadas mediante `mostPlayedChampion(playerGames)` (`línea 206`).
-- **Estado sin Partidas Disputadas en la Temporada:** Si el jugador no ha disputado aún ningún mapa en toda la temporada (por ejemplo, jugadores recién fichados o suplentes que aún no han debutado, representados por `playerGames.length === 0`), se mantiene la metadata del equipo activo con `champion: null`, `stats: null` y `mvpMatchIds: []` (`líneas 212-228`). Cabe enfatizar que esta condición no sobreviene por un traspaso de equipo o división, ya que las transferencias preservan íntegramente las partidas disputadas y estadísticas acumuladas en la temporada.
+Los endpoints no ejecutan `matchMvps` ni `matchMvpPlayerId`. El cálculo queda reservado a la finalización de series por ROFL y al backfill histórico.
 
-### 3.8 Filtrado de MVPs de Plantilla en Detalle de Equipo (`competition.service.ts:242-288`)
-En el endpoint de detalle de equipo (`teamDetail(reference)`), las estadísticas individuales de cada integrante de la plantilla (`rosterStats.mvps`, `competition.service.ts:276-278`) reflejan exclusivamente los galardones obtenidos mientras el jugador defendía los colores de ese equipo:
+- Detalle de partido y calendario: leen `matches.mvp_player_id`; los partidos no completados no publican MVP.
+- Listado de jugadores de una división: consulta los galardones de los enfrentamientos completados de esa división y los entrega a `enrichPlayers`. Esta función sigue calculando estadísticas generales, pero no decide premios.
+- Ficha de jugador: consulta los identificadores de enfrentamientos con `mvp_player_id` igual al jugador dentro de su temporada, independientemente del equipo o división actual. Conserva los galardones aunque no haya snapshots de estadísticas disponibles.
+- Ficha de equipo: cuenta los MVP persistidos de sus series ganadas para cada integrante de plantilla. Los premios obtenidos con otro equipo no pasan a contabilizarse por un traspaso.
 
-```typescript
-// apps/api/src/modules/competition/competition.service.ts:254-263
-const mvps = series
-  .map((games) => {
-    const mvpId = matchMvpPlayerId(games);
-    if (!mvpId) return null;
-    const playedForThisTeam = games.some((game) =>
-      game.participants.some((player) => player.playerId === mvpId && player.teamId === id)
-    );
-    return playedForThisTeam ? mvpId : null;
-  })
-  .filter((playerId): playerId is string => playerId !== null);
-```
+Un `mvp_player_id` vacío sigue vacío: no existe recálculo de respaldo. Antes de desplegar estas lecturas sobre una base existente se debe ejecutar y verificar el [backfill histórico](../../database/mvp-backfill.md).
 
-- **Verificación de Pertenencia en la Serie:** Por cada serie concluida disputada por el equipo, se calcula el MVP de la serie mediante `matchMvpPlayerId(games)`. A continuación, se valida que dicho jugador haya participado en la serie con el `teamId` del equipo consultado (`player.playerId === mvpId && player.teamId === id`).
-- **Prevención de Contaminación de MVPs por Traspasos o Rivales:** Si el MVP de la serie fue otorgado a un jugador del equipo adversario, o a un jugador que posteriormente fue transferido a este equipo pero que ganó el galardón jugando para otro conjunto, dicho MVP se descarta (`null`) y no se contabiliza en el casillero `rosterStats.mvps` de la plantilla de este equipo.
+### 3.8 Banner de jornada
+
+El repositorio selecciona la jornada más reciente de la división que tenga al menos un enfrentamiento completado con jugador y score MVP persistidos. Ordena las jornadas por fecha de inicio descendente (fechas nulas al final) e identificador descendente. Una nueva jornada sin galardones no desplaza la última jornada con MVP disponibles.
+
+Dentro de esa jornada consulta `matches` por división, ronda y estado `completed`, exige ambos campos de MVP y aplica `ORDER BY mvp_score DESC NULLS LAST, id ASC LIMIT 1`. El índice parcial `matches_round_mvp_score_idx` cubre la búsqueda por división/ronda y la ordenación principal por score; el identificador establece un resultado estable entre puntuaciones iguales.
+
+El banner muestra estadísticas de la jornada seleccionada y su nombre. La puntuación interna no se expone en el contrato público. Sin galardones en ninguna jornada devuelve `featured: null`.
 
 ---
-
 ## 4. Normalización de Posiciones y Desempate de Campeón Destacado
 
 ### 4.1 Normalización de Roles (`player-statistics.ts:25-32`)

@@ -247,7 +247,7 @@ test('each series is evaluated independently', () => {
   expect(matchMvps([first, second])).toEqual([...matchMvps([first]), ...matchMvps([second])]);
 });
 
-test('featured player is the best current-round match MVP, excluding older rounds and other division round IDs', () => {
+test('enrichment consumes persisted awards and the selected banner without recalculating them', () => {
   const rows = [
     row({ playerId: 'old', roundId: 1, kills: 30, assists: 30, deaths: 0 }),
     row({ playerId: 'a', matchId: 'm2', gameId: 'g2' }),
@@ -261,17 +261,17 @@ test('featured player is the best current-round match MVP, excluding older round
       assists: 40
     })
   ];
-  const result = enrichPlayers(['old', 'a', 'b', 'other', 'none'].map(player), rows, [
-    { id: 2, divisionId: 'd1', name: 'Jornada 2' }
-  ]);
+  const result = enrichPlayers(
+    ['old', 'a', 'b', 'other', 'none'].map(player),
+    rows,
+    [{ matchId: 'm2', playerId: 'a' }],
+    { roundId: 2, divisionId: 'd1', roundName: 'Jornada 2', playerId: 'a' }
+  );
   expect(result.filter((p) => p.competition?.featured).map((p) => p.id)).toEqual(['a']);
   expect(result.find((p) => p.id === 'none')?.competition?.stats).toBeNull();
   expect(result.find((p) => p.id === 'a')?.competition?.mvpMatchIds).toEqual(['m2']);
   expect(JSON.stringify(result)).not.toContain('score');
-  expect(
-    enrichPlayers([player('a')], rows, [{ id: 3, divisionId: 'd1', name: 'Jornada 3' }])[0]
-      ?.competition?.featured
-  ).toBeNull();
+  expect(enrichPlayers([player('a')], rows, [])[0]?.competition?.featured).toBeNull();
 });
 
 test('support role normalization rewards vision and participation without requiring carry farm', () => {

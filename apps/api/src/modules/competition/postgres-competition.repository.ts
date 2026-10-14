@@ -1,4 +1,4 @@
-import type { MatchMap } from '@rcl/contracts';
+import type { MatchMap, Player } from '@rcl/contracts';
 import {
   discordUsers,
   divisions,
@@ -16,7 +16,7 @@ import {
   teams
 } from '@rcl/database';
 import type * as schema from '@rcl/database/schema';
-import { and, asc, desc, eq, getTableColumns, inArray, isNotNull, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, exists, getTableColumns, inArray, isNotNull, sql } from 'drizzle-orm';
 import type { PgDatabase, PgQueryResultHKT } from 'drizzle-orm/pg-core';
 import type { CompetitionRepository } from './competition.repository.js';
 import { type PlayerGameRow, enrichPlayers } from './player-statistics.js';
@@ -160,7 +160,57 @@ export class PostgresCompetitionRepository implements CompetitionRepository {
     isMain: players.isMain,
     displayName: sql<string | null>`coalesce(${discordUsers.globalName}, ${discordUsers.username})`
   };
-  async players(divisionId?: string) {
+  async featuredMatchMvp(divisionId: string) {
+    // A new calendar round must not hide the last awarded round's featured player.
+    const [round] = await this.db
+      .select({ id: rounds.id, name: rounds.name })
+      .from(rounds)
+      .where(
+        and(
+          eq(rounds.idSeasonDivision, divisionId),
+          exists(
+            this.db
+              .select({ id: matches.id })
+              .from(matches)
+              .where(
+                and(
+                  eq(matches.idSeasonDivision, divisionId),
+                  eq(matches.idRound, rounds.id),
+                  eq(matches.status, 'completed'),
+                  isNotNull(matches.mvpPlayerId),
+                  isNotNull(matches.mvpScore)
+                )
+              )
+          )
+        )
+      )
+      .orderBy(sql`${rounds.startsAt} DESC NULLS LAST`, desc(rounds.id))
+      .limit(1);
+    if (!round) return null;
+    const [award] = await this.db
+      .select({ playerId: matches.mvpPlayerId })
+      .from(matches)
+      .where(
+        and(
+          eq(matches.idSeasonDivision, divisionId),
+          eq(matches.idRound, round.id),
+          eq(matches.status, 'completed'),
+          isNotNull(matches.mvpPlayerId),
+          isNotNull(matches.mvpScore)
+        )
+      )
+      .orderBy(sql`${matches.mvpScore} DESC NULLS LAST`, asc(matches.id))
+      .limit(1);
+    return award?.playerId
+      ? {
+          playerId: award.playerId,
+          divisionId,
+          roundId: round.id,
+          roundName: round.name ?? `Jornada ${round.id}`
+        }
+      : null;
+  }
+  async players(divisionId?: string): Promise<Player[]> {
     const directory = await this.db
       .select(this.playerSelection)
       .from(players)
@@ -222,33 +272,26 @@ export class PostgresCompetitionRepository implements CompetitionRepository {
         asc(matches.id),
         asc(matchGames.gameNumber)
       );
-    const scheduledRounds = await this.db
-      .select({
-        divisionId: rounds.idSeasonDivision,
-        id: rounds.id,
-        name: rounds.name,
-        startsAt: rounds.startsAt
-      })
-      .from(rounds)
-      .innerJoin(seasonsDivisions, eq(seasonsDivisions.id, rounds.idSeasonDivision))
-      .where(eq(rounds.idSeasonDivision, divisionId));
-    const now = Date.now();
-    const currentRounds = [...new Set(scheduledRounds.map((round) => round.divisionId))].flatMap(
-      (divisionId) => {
-        const candidates = scheduledRounds.filter(
-          (round) =>
-            round.divisionId === divisionId &&
-            ((round.startsAt && round.startsAt.getTime() <= now) ||
-              rows.some((row) => row.divisionId === divisionId && row.roundId === round.id))
-        );
-        candidates.sort(
-          (a, b) => (b.startsAt?.getTime() ?? 0) - (a.startsAt?.getTime() ?? 0) || b.id - a.id
-        );
-        const round = candidates[0];
-        return round ? [{ ...round, name: round.name ?? `Jornada ${round.id}` }] : [];
-      }
+    const awards = await this.db
+      .select({ matchId: matches.id, playerId: matches.mvpPlayerId })
+      .from(matches)
+      .where(
+        and(
+          eq(matches.idSeasonDivision, divisionId),
+          eq(matches.status, 'completed'),
+          isNotNull(matches.mvpPlayerId)
+        )
+      )
+      .orderBy(asc(matches.id));
+    const featured = await this.featuredMatchMvp(divisionId);
+    const enriched = enrichPlayers(
+      directory,
+      rows,
+      awards.flatMap((award) =>
+        award.playerId ? [{ matchId: award.matchId, playerId: award.playerId }] : []
+      ),
+      featured
     );
-    const enriched = enrichPlayers(directory, rows, currentRounds);
     // Registered players without games still get their roster role and team.
     const memberships = await this.db
       .select({
@@ -272,7 +315,9 @@ export class PostgresCompetitionRepository implements CompetitionRepository {
     return enriched
       .filter(
         (player) =>
-          player.competition?.stats || memberships.some((row) => row.playerId === player.id)
+          player.competition?.stats ||
+          player.competition?.mvpMatchIds.length ||
+          memberships.some((row) => row.playerId === player.id)
       )
       .map((player) => {
         const membership = memberships.find(
@@ -298,7 +343,22 @@ export class PostgresCompetitionRepository implements CompetitionRepository {
   ): Promise<{
     playerGames: PlayerGameRow[];
     allMatchGames: PlayerGameRow[];
+    mvpMatchIds: string[];
   }> {
+    const mvpMatchIds = (
+      await this.db
+        .select({ id: matches.id })
+        .from(matches)
+        .innerJoin(seasonsDivisions, eq(seasonsDivisions.id, matches.idSeasonDivision))
+        .where(
+          and(
+            eq(matches.mvpPlayerId, playerId),
+            eq(matches.status, 'completed'),
+            eq(seasonsDivisions.seasonName, seasonName)
+          )
+        )
+        .orderBy(asc(matches.id))
+    ).map((match) => match.id);
     const matchIds = (
       await this.db
         .selectDistinct({ matchId: matches.id })
@@ -317,7 +377,7 @@ export class PostgresCompetitionRepository implements CompetitionRepository {
     ).map((row) => row.matchId);
 
     if (!matchIds.length) {
-      return { playerGames: [], allMatchGames: [] };
+      return { playerGames: [], allMatchGames: [], mvpMatchIds };
     }
 
     const allMatchGames = await this.db
@@ -377,7 +437,7 @@ export class PostgresCompetitionRepository implements CompetitionRepository {
       );
 
     const playerGames = allMatchGames.filter((row) => row.playerId === playerId);
-    return { playerGames, allMatchGames };
+    return { playerGames, allMatchGames, mvpMatchIds };
   }
   async playerDetail(id: string) {
     const [player] = await this.db
@@ -550,6 +610,9 @@ export class PostgresCompetitionRepository implements CompetitionRepository {
       .orderBy(asc(rounds.id));
   }
   private matchSelection = {
+    mvpPlayerId: sql<
+      string | null
+    >`CASE WHEN ${matches.status} = 'completed' THEN ${matches.mvpPlayerId} ELSE NULL END`,
     id: matches.id,
     divisionId: matches.idSeasonDivision,
     roundId: sql<string | null>`${matches.idRound}::text`,

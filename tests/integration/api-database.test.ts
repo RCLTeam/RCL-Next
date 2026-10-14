@@ -8,6 +8,7 @@ import { migrate } from 'drizzle-orm/pglite/migrator';
 import request from 'supertest';
 import { assert, expect, test } from 'vitest';
 import { createApp } from '../../apps/api/src/app.js';
+import { backfillMatchMvps } from '../../apps/api/src/modules/competition/backfill-match-mvps.js';
 import { PostgresCompetitionRepository } from '../../apps/api/src/modules/competition/postgres-competition.repository.js';
 import * as schema from '../../packages/database/src/schema.js';
 
@@ -23,6 +24,7 @@ test('HTTP -> controller -> service -> real repository -> embedded PostgreSQL', 
     'utf8'
   );
   await client.transaction((tx) => tx.exec(seed));
+  await backfillMatchMvps(db, true);
   const app = createApp({
     repository: new PostgresCompetitionRepository(db),
     checkDatabase: async () => {

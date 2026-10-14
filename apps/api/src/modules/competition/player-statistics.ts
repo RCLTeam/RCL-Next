@@ -272,10 +272,16 @@ export function matchMvpPlayerId(games: MatchMap[]): string | null {
   return matchMvps(rows)[0]?.playerId ?? null;
 }
 
-export interface CurrentRound {
+export interface FeaturedMatchMvp {
+  playerId: string;
   divisionId: string;
-  id: number;
-  name: string;
+  roundId: number;
+  roundName: string;
+}
+
+export interface PersistedMatchMvp {
+  playerId: string;
+  matchId: string;
 }
 
 export function mostPlayedChampion(games: PlayerGameRow[]): string | null {
@@ -299,31 +305,15 @@ export function mostPlayedChampion(games: PlayerGameRow[]): string | null {
 export function enrichPlayers(
   players: Player[],
   rows: PlayerGameRow[],
-  rounds: CurrentRound[]
+  awards: PersistedMatchMvp[],
+  featured: FeaturedMatchMvp | null = null
 ): Player[] {
-  const awards = matchMvps(rows);
-  const current = awards.filter((award) =>
-    rounds.some((round) => round.divisionId === award.divisionId && round.id === award.roundId)
-  );
-  current.sort(
-    (a, b) =>
-      b.score - a.score ||
-      b.wins - a.wins ||
-      a.playerId.localeCompare(b.playerId) ||
-      a.matchId.localeCompare(b.matchId)
-  );
-  const featured = current[0];
   const byPlayer = groupBy(rows, (row) => row.playerId);
   return players.map((player) => {
     const games = byPlayer.get(player.id) ?? [];
     const latest = games.at(-1);
     const champion = mostPlayedChampion(games);
-    const round =
-      featured?.playerId === player.id
-        ? rounds.find(
-            (round) => round.divisionId === featured.divisionId && round.id === featured.roundId
-          )
-        : undefined;
+    const round = featured?.playerId === player.id ? featured : null;
     return {
       ...player,
       competition: {
@@ -336,10 +326,10 @@ export function enrichPlayers(
           .map((award) => award.matchId),
         featured: round
           ? {
-              roundName: round.name,
+              roundName: round.roundName,
               stats: aggregatePlayerStats(
                 games.filter(
-                  (game) => game.divisionId === round.divisionId && game.roundId === round.id
+                  (game) => game.divisionId === round.divisionId && game.roundId === round.roundId
                 ),
                 rows
               )

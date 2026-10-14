@@ -2,12 +2,7 @@ import type { MatchDetail, PlayerDetail, TeamDetail } from '@rcl/contracts';
 import { notFound } from '../../shared/app-error.js';
 import { calculateChampionStats } from './champion-stats.js';
 import type { CompetitionRepository, Match, Team } from './competition.repository.js';
-import {
-  aggregatePlayerStats,
-  matchMvpPlayerId,
-  matchMvps,
-  mostPlayedChampion
-} from './player-statistics.js';
+import { aggregatePlayerStats, mostPlayedChampion } from './player-statistics.js';
 import {
   playerProfileSlugs,
   profileSlugs,
@@ -133,7 +128,7 @@ export class CompetitionService {
       seasonName: division.seasonId,
       divisionName: division.name,
       roundName: rounds.find((round) => round.id === match.roundId)?.name ?? null,
-      mvpPlayerId: match.status === 'completed' ? matchMvpPlayerId(games) : null,
+      mvpPlayerId: match.status === 'completed' ? match.mvpPlayerId : null,
       games
     };
   }
@@ -185,15 +180,11 @@ export class CompetitionService {
     const activeTeam = player.teams[0];
     let competition: PlayerDetail['competition'] = player.competition;
     if (activeTeam?.seasonName) {
-      const { playerGames, allMatchGames } = await this.repository.playerSeasonGames(
+      const { playerGames, allMatchGames, mvpMatchIds } = await this.repository.playerSeasonGames(
         id,
         activeTeam.seasonName
       );
       if (playerGames.length > 0) {
-        const awards = matchMvps(allMatchGames);
-        const mvpMatchIds = awards
-          .filter((award) => award.playerId === id)
-          .map((award) => award.matchId);
         competition = {
           role: activeTeam.role,
           team: {
@@ -221,7 +212,7 @@ export class CompetitionService {
           },
           champion: null,
           stats: null,
-          mvpMatchIds: [],
+          mvpMatchIds,
           featured: null,
           isCaptain: activeTeam.isCaptain ?? false
         };
@@ -251,16 +242,9 @@ export class CompetitionService {
     );
     const gamesByMatch = await this.repository.matchGamesByMatch(matches.map((match) => match.id));
     const series = matches.map((match) => gamesByMatch.get(match.id) ?? []);
-    const mvps = series
-      .map((games) => {
-        const mvpId = matchMvpPlayerId(games);
-        if (!mvpId) return null;
-        const playedForThisTeam = games.some((game) =>
-          game.participants.some((player) => player.playerId === mvpId && player.teamId === id)
-        );
-        return playedForThisTeam ? mvpId : null;
-      })
-      .filter((playerId): playerId is string => playerId !== null);
+    const mvps = matches
+      .filter((match) => match.winnerTeamId === id)
+      .flatMap((match) => (match.mvpPlayerId ? [match.mvpPlayerId] : []));
     const appearances = series
       .flat()
       .filter((game) => game.winnerTeamId)
