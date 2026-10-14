@@ -8,11 +8,13 @@ import {
   playerGameRunes,
   playerGameStats,
   players,
-  teamMemberships
+  teamMemberships,
+  teams
 } from '@rcl/database';
 import type * as schema from '@rcl/database/schema';
-import { and, asc, eq, inArray, or, sql } from 'drizzle-orm';
+import { and, asc, eq, inArray, isNull, or, sql } from 'drizzle-orm';
 import type { PgDatabase, PgQueryResultHKT } from 'drizzle-orm/pg-core';
+import { matchMvps } from '../../competition/player-statistics.js';
 import { RoflUploadDomainError } from '../types/rofl-upload.errors.js';
 import type {
   ExecuteBatchResult,
@@ -27,6 +29,7 @@ interface MatchTrackingState {
   bestOf: number;
   team1Score: number;
   team2Score: number;
+  hasMvp: boolean;
 }
 
 type DatabaseExecutor =
@@ -37,6 +40,50 @@ type NewPlayerGameInfo = typeof playerGameInfo.$inferInsert;
 type NewPlayerGameStats = typeof playerGameStats.$inferInsert;
 type NewPlayerGameRunes = typeof playerGameRunes.$inferInsert;
 type NewPlayerGameBuild = typeof playerGameBuild.$inferInsert;
+
+// The parent match remains locked; read every map, including earlier uploads, in this transaction.
+async function sealMatchMvp(tx: DatabaseExecutor, matchId: string, winnerTeamId: string) {
+  const rows = await tx
+    .select({
+      playerId: playerGameInfo.playerId,
+      gameId: matchGames.id,
+      matchId: matches.id,
+      divisionId: matches.idSeasonDivision,
+      roundId: matches.idRound,
+      teamId: playerGameInfo.teamId,
+      team: { id: teams.id, name: teams.name, shortName: teams.shortName, logoUrl: teams.logoUrl },
+      position: playerGameInfo.position,
+      champion: playerGameInfo.champion,
+      durationSeconds: matchGames.durationSeconds,
+      winnerTeamId: matchGames.winnerTeamId,
+      kills: playerGameStats.kills,
+      deaths: playerGameStats.deaths,
+      assists: playerGameStats.assists,
+      cs: playerGameStats.cs,
+      damageToChampions: playerGameStats.damageToChampions,
+      goldEarned: playerGameStats.goldEarned,
+      visionScore: playerGameStats.visionScore,
+      damageMitigated: playerGameStats.damageMitigated
+    })
+    .from(matchGames)
+    .innerJoin(matches, eq(matches.id, matchGames.matchesId))
+    .innerJoin(playerGameInfo, eq(playerGameInfo.matchGameId, matchGames.id))
+    .innerJoin(playerGameStats, eq(playerGameStats.id, playerGameInfo.id))
+    .innerJoin(teams, eq(teams.id, playerGameInfo.teamId))
+    .where(eq(matches.id, matchId))
+    .orderBy(asc(matchGames.gameNumber), asc(playerGameInfo.playerId));
+  const award = matchMvps(rows)[0];
+  if (
+    !award ||
+    !rows.some((row) => row.playerId === award.playerId && row.teamId === winnerTeamId)
+  ) {
+    throw new RoflUploadDomainError(`Cannot complete match ${matchId}: no eligible series MVP.`);
+  }
+  await tx
+    .update(matches)
+    .set({ mvpPlayerId: award.playerId, mvpScore: award.score.toFixed(1) })
+    .where(and(eq(matches.id, matchId), isNull(matches.mvpPlayerId), isNull(matches.mvpScore)));
+}
 
 // The caller holds the parent match lock throughout import and renumbering.
 async function orderImportedGames(tx: DatabaseExecutor, matchId: string) {
@@ -400,7 +447,8 @@ export class PostgresRoflUploadRepository implements RoflUploadRepository {
             team2Id: matchRow.team2Id,
             bestOf: matchRow.bestOf,
             team1Score: matchRow.team1Score,
-            team2Score: matchRow.team2Score
+            team2Score: matchRow.team2Score,
+            hasMvp: matchRow.mvpPlayerId !== null || matchRow.mvpScore !== null
           });
         }
 
@@ -544,6 +592,11 @@ export class PostgresRoflUploadRepository implements RoflUploadRepository {
             updatedAt: new Date()
           })
           .where(eq(matches.id, matchId));
+
+        if (seriesWinner && !state.hasMvp) {
+          await sealMatchMvp(tx, matchId, seriesWinner);
+          state.hasMvp = true;
+        }
 
         insertedGames += 1;
       }
