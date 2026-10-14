@@ -7,6 +7,8 @@ import { drizzle } from 'drizzle-orm/pglite';
 import { migrate } from 'drizzle-orm/pglite/migrator';
 import { assert, expect, onTestFinished, test } from 'vitest';
 import { CompetitionService } from '../../apps/api/src/modules/competition/competition.service.js';
+import { loadMatchMvpRows } from '../../apps/api/src/modules/competition/match-mvp-data.js';
+import { playerMvpRanking } from '../../apps/api/src/modules/competition/player-statistics.js';
 import { PostgresCompetitionRepository } from '../../apps/api/src/modules/competition/postgres-competition.repository.js';
 import * as schema from '../../packages/database/src/schema.js';
 
@@ -144,6 +146,86 @@ test('banner uses SQL score ordering in the latest awarded round, scoped to its 
   );
 });
 
+test('banner resolves rounded-score ties by full precision instead of match UUID', async () => {
+  const { db, player, other, repository } = await setup();
+  await db.update(schema.playerGameInfo).set({ position: 'mid' });
+  await db.update(schema.playerGameStats).set({
+    kills: 5,
+    deaths: 2,
+    assists: 5,
+    cs: 240,
+    damageToChampions: 21000,
+    goldEarned: 12000,
+    visionScore: 30,
+    damageMitigated: 12000
+  });
+  const [map] = await db
+    .select()
+    .from(schema.matchGames)
+    .where(eq(schema.matchGames.matchesId, matchId));
+  assert.ok(map);
+  const newMapId = crypto.randomUUID();
+  await db
+    .insert(schema.matchGames)
+    .values({ ...map, id: newMapId, matchesId: nextMatchId, externalGameId: null });
+  const participants = await db
+    .select()
+    .from(schema.playerGameInfo)
+    .where(eq(schema.playerGameInfo.matchGameId, map.id));
+  await db.transaction(async (tx) => {
+    for (const participant of participants) {
+      const id = crypto.randomUUID();
+      await tx.insert(schema.playerGameInfo).values({ ...participant, id, matchGameId: newMapId });
+      const [stats] = await tx
+        .select()
+        .from(schema.playerGameStats)
+        .where(eq(schema.playerGameStats.id, participant.id));
+      assert.ok(stats);
+      await tx.insert(schema.playerGameStats).values({
+        ...stats,
+        id,
+        damageToChampions: participant.playerId === other.id ? 21001 : 21000
+      });
+      for (const table of [schema.playerGameBuild, schema.playerGameRunes]) {
+        const [record] = await tx.select().from(table).where(eq(table.id, participant.id));
+        assert.ok(record);
+        await tx.insert(table).values({ ...record, id });
+      }
+    }
+  });
+  const originalRows = await loadMatchMvpRows(db, matchId);
+  const rivalRows = await loadMatchMvpRows(db, nextMatchId);
+  const original = playerMvpRanking(
+    player.id,
+    originalRows.filter((r) => r.playerId === player.id),
+    originalRows
+  );
+  const rival = playerMvpRanking(
+    other.id,
+    rivalRows.filter((r) => r.playerId === other.id),
+    rivalRows
+  );
+  expect(rival.score).toBeGreaterThan(original.score);
+  expect(rival.score.toFixed(1)).toBe(original.score.toFixed(1));
+  await db
+    .update(schema.matches)
+    .set({ mvpPlayerId: player.id, mvpScore: original.score.toFixed(1) })
+    .where(eq(schema.matches.id, matchId));
+  await db
+    .update(schema.matches)
+    .set({
+      status: 'completed',
+      idRound: 1,
+      mvpPlayerId: other.id,
+      mvpScore: rival.score.toFixed(1)
+    })
+    .where(eq(schema.matches.id, nextMatchId));
+  expect(await repository.featuredMatchMvp(divisionId)).toMatchObject({
+    playerId: other.id,
+    roundId: 1
+  });
+});
+
 test('MVP checks reject negative scores and players without scores, but allow deleting the player', async () => {
   const { db, player } = await setup();
   await expect(
@@ -160,4 +242,20 @@ test('MVP checks reject negative scores and players without scores, but allow de
   await db.delete(schema.players).where(eq(schema.players.id, player.id));
   const [match] = await db.select().from(schema.matches).where(eq(schema.matches.id, matchId));
   expect(match).toMatchObject({ mvpPlayerId: null, mvpScore: '0.0' });
+});
+
+test('a player without active memberships retains season games and persisted MVPs', async () => {
+  const { db, player, service } = await setup();
+  await db
+    .update(schema.matches)
+    .set({ mvpPlayerId: player.id, mvpScore: '99.0' })
+    .where(eq(schema.matches.id, matchId));
+  assert.ok(player.discordUserId);
+  await db
+    .delete(schema.teamMemberships)
+    .where(eq(schema.teamMemberships.discordUserId, player.discordUserId));
+  const detail = await service.playerDetail(player.id);
+  expect(detail.teams).toEqual([]);
+  expect(detail.competition?.stats?.games).toBe(1);
+  expect(detail.competition?.mvpMatchIds).toEqual([matchId]);
 });

@@ -19,7 +19,13 @@ import type * as schema from '@rcl/database/schema';
 import { and, asc, desc, eq, exists, getTableColumns, inArray, isNotNull, sql } from 'drizzle-orm';
 import type { PgDatabase, PgQueryResultHKT } from 'drizzle-orm/pg-core';
 import type { CompetitionRepository } from './competition.repository.js';
-import { type PlayerGameRow, enrichPlayers } from './player-statistics.js';
+import { loadMatchMvpRows } from './match-mvp-data.js';
+import {
+  type PlayerGameRow,
+  compareMvpRanking,
+  enrichPlayers,
+  playerMvpRanking
+} from './player-statistics.js';
 
 // Keep the public DTOs stable: season id is now its name; division id is
 // the seasons_divisions UUID. Round identifiers are scoped to that UUID.
@@ -187,8 +193,8 @@ export class PostgresCompetitionRepository implements CompetitionRepository {
       .orderBy(sql`${rounds.startsAt} DESC NULLS LAST`, desc(rounds.id))
       .limit(1);
     if (!round) return null;
-    const [award] = await this.db
-      .select({ playerId: matches.mvpPlayerId })
+    const [top] = await this.db
+      .select({ playerId: matches.mvpPlayerId, score: matches.mvpScore })
       .from(matches)
       .where(
         and(
@@ -199,8 +205,37 @@ export class PostgresCompetitionRepository implements CompetitionRepository {
           isNotNull(matches.mvpScore)
         )
       )
-      .orderBy(sql`${matches.mvpScore} DESC NULLS LAST`, asc(matches.id))
+      .orderBy(sql`${matches.mvpScore} DESC NULLS LAST`)
       .limit(1);
+    if (!top?.playerId || top.score === null) return null;
+    const tied = await this.db
+      .select({ matchId: matches.id, playerId: matches.mvpPlayerId })
+      .from(matches)
+      .where(
+        and(
+          eq(matches.idSeasonDivision, divisionId),
+          eq(matches.idRound, round.id),
+          eq(matches.status, 'completed'),
+          isNotNull(matches.mvpPlayerId),
+          eq(matches.mvpScore, top.score)
+        )
+      );
+    let award = top;
+    if (tied.length > 1) {
+      const candidates = await Promise.all(
+        tied.map(async (candidate) => {
+          const rows = await loadMatchMvpRows(this.db, candidate.matchId);
+          return playerMvpRanking(
+            candidate.playerId ?? '',
+            rows.filter((row) => row.playerId === candidate.playerId),
+            rows
+          );
+        })
+      );
+      candidates.sort(compareMvpRanking);
+      const winner = candidates[0];
+      if (winner) award = { playerId: winner.playerId, score: top.score };
+    }
     return award?.playerId
       ? {
           playerId: award.playerId,

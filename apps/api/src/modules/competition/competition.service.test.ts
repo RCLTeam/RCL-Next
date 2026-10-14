@@ -416,7 +416,7 @@ test('Player detail gracefully handles player with active team membership but ze
       { id: teamId, name: 'Bench Team', seasonName: '2026', divisionName: 'Primera' }
     ],
     players: async () => [],
-    playerSeasonGames: async () => ({ playerGames: [], allMatchGames: [], mvpMatchIds: [] }),
+    playerSeasonGames: async () => ({ playerGames: [], allMatchGames: [], mvpMatchIds: ['m1'] }),
     playerDetail: async (id) => ({
       id,
       gameName: 'BenchPlayer',
@@ -459,5 +459,5 @@ test('Player detail gracefully handles player with active team membership but ze
   expect(detail.competition?.isCaptain).toBe(true);
   expect(detail.competition?.stats).toBeNull();
   expect(detail.competition?.champion).toBeNull();
-  expect(detail.competition?.mvpMatchIds).toEqual([]);
+  expect(detail.competition?.mvpMatchIds).toEqual(['m1']);
 });
