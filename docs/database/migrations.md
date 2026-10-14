@@ -1,5 +1,7 @@
 # Migraciones, Concurrencia y Verificación Criptográfica
 
+Para poblar los MVP históricos después de aplicar `0002_match_mvp`, consultar [Backfill de MVP históricos](./mvp-backfill.md).
+
 [⬅️ Volver a Documentación de Base de Datos](./README.md) | [Siguiente: Datos de Siembra y Fixtures ➡️](./seed.md)
 
 ---

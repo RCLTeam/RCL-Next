@@ -5,6 +5,7 @@
   "packageManager": "pnpm@11.19.0",
   "type": "module",
   "scripts": {
+    "mvp:backfill": "pnpm build:packages && pnpm --filter @rcl/api mvp:backfill",
     "dev:api": "pnpm build:packages && pnpm --filter @rcl/api dev",
     "dev:web": "pnpm --filter @rcl/contracts build && pnpm --filter @rcl/web dev",
     "db:generate": "pnpm --filter @rcl/database db:generate",
