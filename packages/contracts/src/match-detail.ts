@@ -38,7 +38,10 @@ export type MatchStatKey =
   | 'largestCriticalStrike'
   | 'longestTimeLiving'
   | 'timeSpentDead';
-export type MatchPlayerStats = Record<MatchStatKey, number | null> & { isMvp: boolean };
+export type MatchPlayerStats = Record<MatchStatKey, number | null> & {
+  /** @deprecated Legacy map flag. Series awards use MatchDetail.mvpPlayerId. */
+  isMvp: boolean;
+};
 export interface MatchPlayerBuild {
   item0: number;
   item1: number;

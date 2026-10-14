@@ -152,10 +152,11 @@ export function filterPlayers(
     .filter((player) => {
       const playerRole = player.competition?.role;
       const hasStats = Boolean(player.competition?.stats);
+      const hasAwards = Boolean(player.competition?.mvpMatchIds.length);
 
       let matchesRole = false;
       if (role === 'all') {
-        matchesRole = VALID_PLAYER_ROLES.includes(playerRole ?? '') || hasStats;
+        matchesRole = VALID_PLAYER_ROLES.includes(playerRole ?? '') || hasStats || hasAwards;
       } else {
         matchesRole = playerRole === role;
       }
@@ -293,8 +294,7 @@ export function FeaturedPlayer({
         </SiteLink>
       ) : (
         <div className="empty-state">
-          El MVP se anunciará cuando haya enfrentamientos finalizados con estadísticas en la jornada
-          actual.
+          Todavía no hay un MVP de jornada disponible en esta división.
         </div>
       )}
     </section>
@@ -333,13 +333,19 @@ export function PlayerGrid({
               </div>
               {player.competition?.team && <TeamBadge team={player.competition.team} />}
             </div>
-            {!player.competition?.champion && !player.competition?.stats ? (
+            {!player.competition?.champion &&
+            !player.competition?.stats &&
+            !player.competition?.mvpMatchIds.length ? (
               <p className="player-pending-stats">Estadísticas pendientes.</p>
             ) : (
               <dl className="player-card-stats">
                 <div>
                   <dt>{playerCardStats[sort]}</dt>
                   <dd>{formatPlayerStat(player.competition?.stats, sort)}</dd>
+                </div>
+                <div>
+                  <dt>MVPs</dt>
+                  <dd>{player.competition?.mvpMatchIds.length ?? '—'}</dd>
                 </div>
               </dl>
             )}

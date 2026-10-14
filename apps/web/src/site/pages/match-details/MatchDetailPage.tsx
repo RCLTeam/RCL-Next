@@ -48,13 +48,16 @@ export function MatchReport({
             <h2>{match.awayTeam.name}</h2>
           </div>
         </div>
-        {mvp && (
+        {match.status === 'completed' && (
           <div className="match-series-mvp">
             <span className="meta">MVP del enfrentamiento</span>
-            <SiteLink href={`/jugadores/${encodeURIComponent(mvp.playerId)}`}>
-              {mvp.gameName}
-              {mvp.riotTag ? `#${mvp.riotTag}` : ''}
-            </SiteLink>
+            {match.mvpPlayerId ? (
+              <SiteLink href={`/jugadores/${encodeURIComponent(match.mvpPlayerId)}`}>
+                {mvp ? `${mvp.gameName}${mvp.riotTag ? `#${mvp.riotTag}` : ''}` : 'Ver jugador MVP'}
+              </SiteLink>
+            ) : (
+              <span className="meta">No disponible.</span>
+            )}
           </div>
         )}
         <div className="match-subcard-bar">

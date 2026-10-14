@@ -1,4 +1,4 @@
-import type { MatchDetail, MatchParticipant } from '@rcl/contracts';
+import type { MatchDetail, MatchParticipant, MatchPlayerStats } from '@rcl/contracts';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { expect, test } from 'vitest';
@@ -105,6 +105,48 @@ test('Duration stats display minutes and seconds while other values remain numer
   expect(formatMatchStat('crowdControlTime', 0)).toBe('00:00');
   expect(formatMatchStat('timeSpentDead', null)).toBe('—');
   expect(formatMatchStat('kills', 12)).toBe('12');
+});
+
+test('the series award comes from the API, independently of the displayed map or legacy flags', () => {
+  const maps = report.games.map((game, index) => ({
+    ...game,
+    participants:
+      index === 0
+        ? [
+            {
+              ...player,
+              playerId: 'legacy',
+              gameName: 'Legacy winner',
+              stats: { kills: 99, deaths: 0, assists: 99, isMvp: true } as MatchPlayerStats
+            }
+          ]
+        : [player]
+  }));
+  for (const games of [maps, [...maps].reverse()]) {
+    const html = renderToStaticMarkup(
+      <MatchReport match={{ ...report, mvpPlayerId: player.playerId, games }} />
+    );
+    expect(html).toContain('MVP del enfrentamiento');
+    expect(html).toContain('href="/jugadores/p1">Mid Player#EUW</a>');
+  }
+  const missing = renderToStaticMarkup(
+    <MatchReport match={{ ...report, mvpPlayerId: null, games: maps }} />
+  );
+  expect(missing).toContain('No disponible.');
+  expect(missing).not.toContain(
+    'class="match-series-mvp"><span class="meta">MVP del enfrentamiento</span><a'
+  );
+});
+
+test('a persisted MVP links to their profile even when replay participants are unavailable', () => {
+  const html = renderToStaticMarkup(
+    <MatchReport match={{ ...report, mvpPlayerId: 'saved-player', games: [] }} />
+  );
+  expect(html).toContain('href="/jugadores/saved-player">Ver jugador MVP</a>');
+  const forfeit = renderToStaticMarkup(
+    <MatchReport match={{ ...report, status: 'forfeit', mvpPlayerId: player.playerId }} />
+  );
+  expect(forfeit).not.toContain('MVP del enfrentamiento');
 });
 
 test('Position pairing uses match team IDs, normalizes roles, and retains duplicate or unknown positions', () => {

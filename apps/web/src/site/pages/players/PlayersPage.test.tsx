@@ -119,7 +119,46 @@ test('featured stats and selected card metric render without internal MVP scores
   expect(grid).toContain('Daño/min');
   expect(grid).not.toContain('Daño a campeones por minuto.');
   expect(grid).toContain('700');
-  expect(renderToStaticMarkup(<FeaturedPlayer player={undefined} />)).toContain('se anunciará');
+  expect(renderToStaticMarkup(<FeaturedPlayer player={undefined} />)).toContain(
+    'Todavía no hay un MVP de jornada disponible en esta división.'
+  );
+});
+
+test('historical awards remain visible in the directory without statistics or a roster role', () => {
+  const historical = {
+    ...player,
+    competition: { ...player.competition, role: null, stats: null, champion: null, featured: null }
+  };
+  expect(filterPlayers([historical], '').map((p) => p.id)).toEqual([player.id]);
+  const html = renderToStaticMarkup(<PlayerGrid players={[historical]} />);
+  expect(html).toContain('<dt>MVPs</dt><dd>1</dd>');
+  expect(html).toContain('<dt>KDA</dt><dd>—</dd>');
+  expect(html).not.toContain('Estadísticas pendientes.');
+  expect(
+    filterPlayers(
+      [{ ...historical, competition: { ...historical.competition, mvpMatchIds: [] } }],
+      ''
+    )
+  ).toEqual([]);
+});
+
+test('banner renders the awarded round supplied by the API even without current statistics', () => {
+  const html = renderToStaticMarkup(
+    <FeaturedPlayer
+      player={{
+        ...player,
+        competition: {
+          ...player.competition,
+          stats: null,
+          featured: { roundName: 'Jornada 1', stats }
+        }
+      }}
+    />
+  );
+  expect(html).toContain('Jornada 1');
+  expect(html).toContain('Jugador A');
+  expect(html).not.toContain('jornada actual');
+  expect(html).not.toContain('Todavía no hay');
 });
 
 test('players missing the selected statistic sort by team, then name, with no team last', () => {
