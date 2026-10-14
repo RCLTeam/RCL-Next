@@ -11,8 +11,10 @@ import {
   teamMemberships
 } from '@rcl/database';
 import type * as schema from '@rcl/database/schema';
-import { and, asc, eq, inArray, or, sql } from 'drizzle-orm';
+import { and, asc, eq, inArray, isNull, or, sql } from 'drizzle-orm';
 import type { PgDatabase, PgQueryResultHKT } from 'drizzle-orm/pg-core';
+import { loadMatchMvpRows } from '../../competition/match-mvp-data.js';
+import { matchMvps } from '../../competition/player-statistics.js';
 import { RoflUploadDomainError } from '../types/rofl-upload.errors.js';
 import type {
   ExecuteBatchResult,
@@ -27,6 +29,7 @@ interface MatchTrackingState {
   bestOf: number;
   team1Score: number;
   team2Score: number;
+  hasMvp: boolean;
 }
 
 type DatabaseExecutor =
@@ -37,6 +40,25 @@ type NewPlayerGameInfo = typeof playerGameInfo.$inferInsert;
 type NewPlayerGameStats = typeof playerGameStats.$inferInsert;
 type NewPlayerGameRunes = typeof playerGameRunes.$inferInsert;
 type NewPlayerGameBuild = typeof playerGameBuild.$inferInsert;
+
+// The parent match remains locked; read every map, including earlier uploads, in this transaction.
+async function sealMatchMvp(tx: DatabaseExecutor, matchId: string, winnerTeamId: string) {
+  const rows = await loadMatchMvpRows(tx, matchId);
+  const award = matchMvps(rows)[0];
+  if (
+    !award ||
+    !rows.some((row) => row.playerId === award.playerId && row.teamId === winnerTeamId)
+  ) {
+    throw new RoflUploadDomainError(`Cannot complete match ${matchId}: no eligible series MVP.`);
+  }
+  const [saved] = await tx
+    .update(matches)
+    .set({ mvpPlayerId: award.playerId, mvpScore: award.score.toFixed(1) })
+    .where(and(eq(matches.id, matchId), isNull(matches.mvpPlayerId), isNull(matches.mvpScore)))
+    .returning({ id: matches.id });
+  if (!saved)
+    throw new RoflUploadDomainError(`Cannot seal MVP for match ${matchId}: no row updated.`);
+}
 
 // The caller holds the parent match lock throughout import and renumbering.
 async function orderImportedGames(tx: DatabaseExecutor, matchId: string) {
@@ -265,7 +287,9 @@ export class PostgresRoflUploadRepository implements RoflUploadRepository {
       const matchStateMap = new Map<string, MatchTrackingState>();
       const gameNumberMap = new Map<string, number>();
 
-      for (const game of games) {
+      for (const game of [...games].sort((a, b) =>
+        a.externalGameId.localeCompare(b.externalGameId, undefined, { numeric: true })
+      )) {
         if (
           game.externalGameId &&
           (existingSet.has(game.externalGameId) || seenInBatch.has(game.externalGameId))
@@ -400,7 +424,8 @@ export class PostgresRoflUploadRepository implements RoflUploadRepository {
             team2Id: matchRow.team2Id,
             bestOf: matchRow.bestOf,
             team1Score: matchRow.team1Score,
-            team2Score: matchRow.team2Score
+            team2Score: matchRow.team2Score,
+            hasMvp: matchRow.mvpPlayerId !== null || matchRow.mvpScore !== null
           });
         }
 
@@ -525,6 +550,10 @@ export class PostgresRoflUploadRepository implements RoflUploadRepository {
           state.team2Score += 1;
         }
 
+        insertedGames += 1;
+      }
+      for (const [matchId, state] of matchStateMap) {
+        await orderImportedGames(tx, matchId);
         const winThreshold = Math.floor(state.bestOf / 2) + 1;
         const isCompleted = state.team1Score >= winThreshold || state.team2Score >= winThreshold;
         const seriesWinner = isCompleted
@@ -545,9 +574,11 @@ export class PostgresRoflUploadRepository implements RoflUploadRepository {
           })
           .where(eq(matches.id, matchId));
 
-        insertedGames += 1;
+        if (seriesWinner && !state.hasMvp) {
+          await sealMatchMvp(tx, matchId, seriesWinner);
+          state.hasMvp = true;
+        }
       }
-      for (const matchId of matchStateMap.keys()) await orderImportedGames(tx, matchId);
     });
 
     return {

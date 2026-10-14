@@ -18,6 +18,7 @@ import './players.css';
 
 export const playerSortOptions = [
   ['kda', 'KDA'],
+  ['mvps', 'MVPs'],
   ['csPerMinute', 'CS/min'],
   ['killParticipation', 'Kill participation'],
   ['winRate', '% de victorias'],
@@ -28,6 +29,7 @@ export const playerSortOptions = [
 export type PlayerSort = (typeof playerSortOptions)[number][0];
 const playerCardStats: Record<PlayerSort, string> = {
   kda: 'KDA',
+  mvps: 'MVPs',
   csPerMinute: 'CS/min',
   killParticipation: 'KP',
   winRate: 'WR',
@@ -48,7 +50,12 @@ const roleLabel = (role: string | null | undefined) =>
   roles.find(([key]) => key === role)?.[1] ?? 'Sin posición';
 const playerHref = (player: Player) => `/jugadores/${encodeURIComponent(player.slug ?? player.id)}`;
 
-export function formatPlayerStat(stats: PlayerStatistics | null | undefined, key: PlayerSort) {
+export function formatPlayerStat(
+  stats: PlayerStatistics | null | undefined,
+  key: PlayerSort,
+  mvps?: number
+) {
+  if (key === 'mvps') return mvps?.toLocaleString('es') ?? '—';
   const value = stats?.[key];
   if (value === null || value === undefined) return '—';
   return `${value.toLocaleString('es', { maximumFractionDigits: key === 'kda' || key === 'csPerMinute' ? 2 : 1 })}${key === 'winRate' || key === 'killParticipation' ? '%' : ''}`;
@@ -152,10 +159,11 @@ export function filterPlayers(
     .filter((player) => {
       const playerRole = player.competition?.role;
       const hasStats = Boolean(player.competition?.stats);
+      const hasAwards = Boolean(player.competition?.mvpMatchIds.length);
 
       let matchesRole = false;
       if (role === 'all') {
-        matchesRole = VALID_PLAYER_ROLES.includes(playerRole ?? '') || hasStats;
+        matchesRole = VALID_PLAYER_ROLES.includes(playerRole ?? '') || hasStats || hasAwards;
       } else {
         matchesRole = playerRole === role;
       }
@@ -168,8 +176,10 @@ export function filterPlayers(
       return matchesRole && matchesQuery;
     })
     .sort((a, b) => {
-      const left = a.competition?.stats?.[sort];
-      const right = b.competition?.stats?.[sort];
+      const left =
+        sort === 'mvps' ? (a.competition?.mvpMatchIds.length ?? 0) : a.competition?.stats?.[sort];
+      const right =
+        sort === 'mvps' ? (b.competition?.mvpMatchIds.length ?? 0) : b.competition?.stats?.[sort];
       if (left == null && right != null) return 1;
       if (right == null && left != null) return -1;
       if (left == null && right == null) {
@@ -282,19 +292,20 @@ export function FeaturedPlayer({
               )}
             </div>
             <dl className="featured-player-stats">
-              {playerSortOptions.map(([key, label]) => (
-                <div key={key}>
-                  <dt>{label}</dt>
-                  <dd>{formatPlayerStat(player.competition?.featured?.stats, key)}</dd>
-                </div>
-              ))}
+              {playerSortOptions
+                .filter(([key]) => key !== 'mvps')
+                .map(([key, label]) => (
+                  <div key={key}>
+                    <dt>{label}</dt>
+                    <dd>{formatPlayerStat(player.competition?.featured?.stats, key)}</dd>
+                  </div>
+                ))}
             </dl>
           </div>
         </SiteLink>
       ) : (
         <div className="empty-state">
-          El MVP se anunciará cuando haya enfrentamientos finalizados con estadísticas en la jornada
-          actual.
+          Todavía no hay un MVP de jornada disponible en esta división.
         </div>
       )}
     </section>
@@ -333,14 +344,29 @@ export function PlayerGrid({
               </div>
               {player.competition?.team && <TeamBadge team={player.competition.team} />}
             </div>
-            {!player.competition?.champion && !player.competition?.stats ? (
+            {sort !== 'mvps' &&
+            !player.competition?.champion &&
+            !player.competition?.stats &&
+            !player.competition?.mvpMatchIds.length ? (
               <p className="player-pending-stats">Estadísticas pendientes.</p>
             ) : (
               <dl className="player-card-stats">
                 <div>
                   <dt>{playerCardStats[sort]}</dt>
-                  <dd>{formatPlayerStat(player.competition?.stats, sort)}</dd>
+                  <dd>
+                    {formatPlayerStat(
+                      player.competition?.stats,
+                      sort,
+                      player.competition?.mvpMatchIds.length ?? 0
+                    )}
+                  </dd>
                 </div>
+                {sort !== 'mvps' && (
+                  <div>
+                    <dt>MVPs</dt>
+                    <dd>{player.competition?.mvpMatchIds.length ?? '—'}</dd>
+                  </div>
+                )}
               </dl>
             )}
           </div>

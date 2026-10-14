@@ -1,4 +1,4 @@
-import type { MatchMap, Player, PlayerStatistics, TeamSummary } from '@rcl/contracts';
+import type { Player, PlayerStatistics, TeamSummary } from '@rcl/contracts';
 
 export interface PlayerGameRow {
   playerId: string;
@@ -42,9 +42,25 @@ function groupBy<T>(rows: T[], key: (row: T) => string) {
   return groups;
 }
 
+type TeamKills = Map<string, Map<string, number>>;
+
+function teamKillIndex(rows: PlayerGameRow[]): TeamKills {
+  const index: TeamKills = new Map();
+  for (const row of rows) {
+    const teams = index.get(row.gameId) ?? new Map<string, number>();
+    teams.set(row.teamId, (teams.get(row.teamId) ?? 0) + row.kills);
+    index.set(row.gameId, teams);
+  }
+  return index;
+}
+
+function killsContext(all: PlayerGameRow[] | TeamKills): TeamKills {
+  return Array.isArray(all) ? teamKillIndex(all) : all;
+}
+
 export function aggregatePlayerStats(
   rows: PlayerGameRow[],
-  all: PlayerGameRow[]
+  all: PlayerGameRow[] | TeamKills
 ): PlayerStatistics {
   const sum = (key: 'kills' | 'deaths' | 'assists' | 'cs' | 'damageToChampions') =>
     rows.reduce((total, row) => total + row[key], 0);
@@ -56,12 +72,9 @@ export function aggregatePlayerStats(
     const values = rows.flatMap((row) => (row[key] === null ? [] : [row[key]]));
     return values.length ? values.reduce((a, b) => a + b, 0) / values.length : null;
   };
+  const index = killsContext(all);
   const teamKills = rows.reduce(
-    (total, row) =>
-      total +
-      all
-        .filter((other) => other.gameId === row.gameId && other.teamId === row.teamId)
-        .reduce((kills, other) => kills + other.kills, 0),
+    (total, row) => total + (index.get(row.gameId)?.get(row.teamId) ?? 0),
     0
   );
   return {
@@ -111,30 +124,25 @@ function dynamicScale(value: number | null, reference: number): number {
   return ratio <= 1 ? ratio : 1 + Math.log2(ratio) * 0.28;
 }
 
-// Multidimensional MVP scoring algorithm
-export function mvpScore(rows: PlayerGameRow[], all: PlayerGameRow[]) {
-  if (!rows.length) return 0;
-
-  const stats = aggregatePlayerStats(rows, all);
-  const role = playerRole(rows[0]?.position ?? null);
+// Keep full precision until the series award is selected and stored.
+export function mapMvpScore(row: PlayerGameRow, all: PlayerGameRow[] | TeamKills) {
+  const stats = aggregatePlayerStats([row], all);
+  const role = playerRole(row.position);
   const ref = ROLE_REFERENCES[role ?? ''] ?? DEFAULT_REF;
 
-  const timed = rows.filter((row) => row.durationSeconds && row.durationSeconds > 0);
-  const minutes = timed.reduce((total, row) => total + (row.durationSeconds ?? 0) / 60, 0);
-
-  if (minutes === 0) return 0;
+  const minutes = (row.durationSeconds ?? 0) / 60;
+  if (!Number.isFinite(minutes) || minutes <= 0) return 0;
 
   // Accumulated totals
-  const totalDamage = rows.reduce((total, row) => total + row.damageToChampions, 0);
-  const totalGold = rows.reduce((total, row) => total + (row.goldEarned ?? 0), 0);
+  const totalDamage = row.damageToChampions;
+  const totalGold = row.goldEarned ?? 0;
 
   // Dynamic metrics per minute and efficiency
   const gpm = totalGold > 0 ? totalGold / minutes : null;
   const dpg = totalGold > 0 ? (totalDamage / totalGold) * 1000 : null;
 
-  const vspm = timed.reduce((total, row) => total + (row.visionScore ?? 0), 0) / minutes;
-  const mitigationPm =
-    timed.reduce((total, row) => total + (row.damageMitigated ?? 0), 0) / minutes;
+  const vspm = (row.visionScore ?? 0) / minutes;
+  const mitigationPm = (row.damageMitigated ?? 0) / minutes;
 
   // Scaled scores by dimension
   const kdaScore = dynamicScale(stats.kda, 4.5);
@@ -168,67 +176,115 @@ export function mvpScore(rows: PlayerGameRow[], all: PlayerGameRow[]) {
     scoreGpm +
     scoreWinRate;
 
-  return Math.round(finalScore * 10) / 10;
+  return finalScore;
+}
+
+export function matchMvpScore(rows: PlayerGameRow[], all: PlayerGameRow[] | TeamKills) {
+  const timed = rows.filter(
+    (row) => Number.isFinite(row.durationSeconds) && (row.durationSeconds ?? 0) > 0
+  );
+  const seconds = timed.reduce((total, row) => total + (row.durationSeconds ?? 0), 0);
+  if (!seconds) return 0;
+  const index = killsContext(all);
+  return (
+    timed.reduce((total, row) => total + mapMvpScore(row, index) * (row.durationSeconds ?? 0), 0) /
+    seconds
+  );
+}
+
+export function mvpScore(rows: PlayerGameRow[], all: PlayerGameRow[] | TeamKills) {
+  return Math.round(matchMvpScore(rows, all) * 10) / 10;
+}
+
+export interface MvpRanking {
+  playerId: string;
+  score: number;
+  wins: number;
+  killParticipation: number;
+  kda: number;
+  damageToChampions: number;
+}
+
+export function compareMvpRanking(a: MvpRanking, b: MvpRanking): number {
+  return (
+    b.score - a.score ||
+    b.wins - a.wins ||
+    b.killParticipation - a.killParticipation ||
+    b.kda - a.kda ||
+    b.damageToChampions - a.damageToChampions ||
+    a.playerId.localeCompare(b.playerId)
+  );
+}
+
+export function playerMvpRanking(
+  playerId: string,
+  rows: PlayerGameRow[],
+  all: PlayerGameRow[] | TeamKills
+): MvpRanking {
+  const index = killsContext(all);
+  const stats = aggregatePlayerStats(rows, index);
+  return {
+    playerId,
+    score: matchMvpScore(rows, index),
+    wins: rows.filter((row) => row.teamId === row.winnerTeamId).length,
+    killParticipation: stats.killParticipation ?? 0,
+    kda: stats.kda,
+    damageToChampions: rows.reduce((total, row) => total + row.damageToChampions, 0)
+  };
 }
 
 export function matchMvps(rows: PlayerGameRow[]) {
   return [...groupBy(rows, (row) => row.matchId)].flatMap(([matchId, games]) => {
-    const candidates = [...groupBy(games, (row) => row.playerId)].map(
-      ([playerId, playerGames]) => ({
-        playerId,
-        matchId,
-        score: mvpScore(playerGames, games),
-        wins: playerGames.filter((row) => row.teamId === row.winnerTeamId).length,
-        divisionId: playerGames[0]?.divisionId ?? '',
-        roundId: playerGames[0]?.roundId ?? null
-      })
+    const index = teamKillIndex(games);
+    const maps = [...groupBy(games, (row) => row.gameId).values()];
+    const teamWins = new Map<string, number>();
+    for (const map of maps) {
+      const winner = map[0]?.winnerTeamId;
+      if (!winner) return [];
+      teamWins.set(winner, (teamWins.get(winner) ?? 0) + 1);
+    }
+    const teams = [...teamWins].sort((a, b) => b[1] - a[1]);
+    const winnerTeamId = teams[0]?.[1] === teams[1]?.[1] ? null : teams[0]?.[0];
+    const candidates = [...groupBy(games, (row) => row.playerId)].flatMap(
+      ([playerId, playerGames]) => {
+        if (new Set(playerGames.map((row) => row.gameId)).size * 2 < maps.length) return [];
+        if (winnerTeamId && playerGames.some((row) => row.teamId !== winnerTeamId)) return [];
+        if (
+          playerGames.some(
+            (row) => !Number.isFinite(row.durationSeconds) || (row.durationSeconds ?? 0) <= 0
+          )
+        )
+          return [];
+        return [
+          {
+            ...playerMvpRanking(playerId, playerGames, index),
+            matchId,
+            divisionId: playerGames[0]?.divisionId ?? '',
+            roundId: playerGames[0]?.roundId ?? null
+          }
+        ];
+      }
     );
-    candidates.sort(
-      (a, b) => b.score - a.score || b.wins - a.wins || a.playerId.localeCompare(b.playerId)
-    );
-    return candidates.slice(0, 1);
+    candidates.sort(compareMvpRanking);
+    return candidates
+      .slice(0, 1)
+      .map(({ killParticipation, kda, damageToChampions, ...award }) => ({
+        ...award,
+        score: Math.round(award.score * 10) / 10
+      }));
   });
 }
 
-export function matchMvpPlayerId(games: MatchMap[]): string | null {
-  const rows = games
-    .filter((game) => game.winnerTeamId)
-    .flatMap((game) =>
-      game.participants.flatMap((player) =>
-        player.stats
-          ? [
-              {
-                playerId: player.playerId,
-                gameId: game.id,
-                matchId: 'match',
-                divisionId: '',
-                roundId: null,
-                teamId: player.teamId,
-                team: { id: player.teamId, name: '', shortName: null, logoUrl: null },
-                position: player.position,
-                champion: player.champion,
-                durationSeconds: game.durationSeconds,
-                winnerTeamId: game.winnerTeamId,
-                kills: player.stats.kills ?? 0,
-                deaths: player.stats.deaths ?? 0,
-                assists: player.stats.assists ?? 0,
-                cs: player.stats.cs ?? 0,
-                damageToChampions: player.stats.damageToChampions ?? 0,
-                goldEarned: player.stats.goldEarned,
-                visionScore: player.stats.visionScore,
-                damageMitigated: player.stats.damageMitigated
-              }
-            ]
-          : []
-      )
-    );
-  return matchMvps(rows)[0]?.playerId ?? null;
+export interface FeaturedMatchMvp {
+  playerId: string;
+  divisionId: string;
+  roundId: number;
+  roundName: string;
 }
 
-export interface CurrentRound {
-  divisionId: string;
-  id: number;
-  name: string;
+export interface PersistedMatchMvp {
+  playerId: string;
+  matchId: string;
 }
 
 export function mostPlayedChampion(games: PlayerGameRow[]): string | null {
@@ -252,49 +308,34 @@ export function mostPlayedChampion(games: PlayerGameRow[]): string | null {
 export function enrichPlayers(
   players: Player[],
   rows: PlayerGameRow[],
-  rounds: CurrentRound[]
+  awards: PersistedMatchMvp[],
+  featured: FeaturedMatchMvp | null = null
 ): Player[] {
-  const awards = matchMvps(rows);
-  const current = awards.filter((award) =>
-    rounds.some((round) => round.divisionId === award.divisionId && round.id === award.roundId)
-  );
-  current.sort(
-    (a, b) =>
-      b.score - a.score ||
-      b.wins - a.wins ||
-      a.playerId.localeCompare(b.playerId) ||
-      a.matchId.localeCompare(b.matchId)
-  );
-  const featured = current[0];
+  const index = teamKillIndex(rows);
   const byPlayer = groupBy(rows, (row) => row.playerId);
   return players.map((player) => {
     const games = byPlayer.get(player.id) ?? [];
     const latest = games.at(-1);
     const champion = mostPlayedChampion(games);
-    const round =
-      featured?.playerId === player.id
-        ? rounds.find(
-            (round) => round.divisionId === featured.divisionId && round.id === featured.roundId
-          )
-        : undefined;
+    const round = featured?.playerId === player.id ? featured : null;
     return {
       ...player,
       competition: {
         role: playerRole(latest?.position ?? null),
         team: latest?.team ?? null,
         champion,
-        stats: games.length ? aggregatePlayerStats(games, rows) : null,
+        stats: games.length ? aggregatePlayerStats(games, index) : null,
         mvpMatchIds: awards
           .filter((award) => award.playerId === player.id)
           .map((award) => award.matchId),
         featured: round
           ? {
-              roundName: round.name,
+              roundName: round.roundName,
               stats: aggregatePlayerStats(
                 games.filter(
-                  (game) => game.divisionId === round.divisionId && game.roundId === round.id
+                  (game) => game.divisionId === round.divisionId && game.roundId === round.roundId
                 ),
-                rows
+                index
               )
             }
           : null

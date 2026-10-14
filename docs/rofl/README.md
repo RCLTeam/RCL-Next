@@ -12,6 +12,16 @@ El pipeline garantiza un aislamiento riguroso entre la capa de ejecución nativa
 
 Posteriormente, las estadísticas extraídas se transforman y mapean de manera normalizada sobre el esquema relacional de 5 tablas de PostgreSQL gestionado con Drizzle ORM, asegurando coherencia transaccional e integridad histórica de cada partida.
 
+### Persistencia del MVP al completar una serie
+
+Cuando una subida alcanza el umbral de victorias de un Bo1, Bo3 o Bo5, el repositorio calcula el MVP con todos los mapas almacenados del enfrentamiento, incluidos los de subidas anteriores. Utiliza la posición de cada replay, el oro y las demás métricas persistidas, sin consultar roles de plantilla para el cálculo.
+
+El resultado se guarda en `matches.mvp_player_id` y `matches.mvp_score` dentro de la misma transacción que inserta las estadísticas y marca la serie como completada. El bloqueo `FOR UPDATE` del enfrentamiento protege esta operación frente a subidas concurrentes. Si no hay candidato elegible o falla la escritura del MVP, se revierte el lote completo.
+
+Las series abiertas no reciben un MVP anticipado. Los reintentos de archivos duplicados y los intentos de subir mapas a una serie cerrada conservan el resultado. Incluso si se reabre administrativamente una serie, la subida no reemplaza ninguno de los campos de MVP cuando ya existe algún valor; esto también conserva la puntuación si el jugador fue eliminado y la clave foránea quedó en `NULL`.
+
+Este flujo solo sella nuevas finalizaciones. El backfill histórico y la lectura de estos campos desde los endpoints se implementan por separado.
+
 ---
 
 ## 2. Tabla de Contenidos del Módulo

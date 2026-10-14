@@ -17,9 +17,12 @@ export function MatchReport({
   const [gameChoice, setGameChoice] = useState('');
   const [section, setSection] = useState<'enfrentamientos' | 'estadisticas'>('enfrentamientos');
   const game = match.games.find((item) => item.id === gameChoice) ?? match.games[0];
-  const mvp = match.games
-    .flatMap((item) => item.participants)
-    .find((player) => player.playerId === match.mvpPlayerId);
+  const identity = match.mvpPlayer?.id === match.mvpPlayerId ? match.mvpPlayer : null;
+  const mvp =
+    identity ??
+    match.games
+      .flatMap((item) => item.participants)
+      .find((player) => player.playerId === match.mvpPlayerId);
   const winner =
     game?.winnerTeamId === match.homeTeam.id
       ? match.homeTeam.name
@@ -48,13 +51,18 @@ export function MatchReport({
             <h2>{match.awayTeam.name}</h2>
           </div>
         </div>
-        {mvp && (
+        {match.status === 'completed' && (
           <div className="match-series-mvp">
             <span className="meta">MVP del enfrentamiento</span>
-            <SiteLink href={`/jugadores/${encodeURIComponent(mvp.playerId)}`}>
-              {mvp.gameName}
-              {mvp.riotTag ? `#${mvp.riotTag}` : ''}
-            </SiteLink>
+            {match.mvpPlayerId ? (
+              <SiteLink
+                href={`/jugadores/${encodeURIComponent(identity?.slug ?? match.mvpPlayerId)}`}
+              >
+                {mvp ? `${mvp.gameName}${mvp.riotTag ? `#${mvp.riotTag}` : ''}` : 'Ver jugador MVP'}
+              </SiteLink>
+            ) : (
+              <span className="meta">No disponible.</span>
+            )}
           </div>
         )}
         <div className="match-subcard-bar">

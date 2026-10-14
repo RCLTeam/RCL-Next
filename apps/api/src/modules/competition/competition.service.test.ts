@@ -11,6 +11,7 @@ const playerId = '40000000-0000-4000-8000-000000000001';
 
 function completedMatch(index: number): Match {
   return {
+    mvpPlayerId: null,
     id: `70000000-0000-4000-8000-${String(index + 1).padStart(12, '0')}`,
     divisionId,
     roundId: '1',
@@ -70,7 +71,7 @@ function repository(matches: Match[]) {
       { id: homeId, name: 'Rebels', seasonName: '2026', divisionName: 'Primera' }
     ],
     players: async () => [],
-    playerSeasonGames: async () => ({ playerGames: [], allMatchGames: [] }),
+    playerSeasonGames: async () => ({ playerGames: [], allMatchGames: [], mvpMatchIds: [] }),
     playerDetail: async () => undefined,
     teamDetail: async () => ({
       id: homeId,
@@ -194,7 +195,7 @@ test('Player detail displays season-wide statistics and MVPs across transfers wh
     playerSeasonGames: async (pId, season) => {
       expect(pId).toBe(transferredPlayerId);
       expect(season).toBe('2026');
-      return { playerGames, allMatchGames };
+      return { playerGames, allMatchGames, mvpMatchIds: ['m1'] };
     },
     playerDetail: async (id) => ({
       id,
@@ -252,6 +253,37 @@ test('Player detail displays season-wide statistics and MVPs across transfers wh
   expect(detail.competition?.champion).toBe('Ahri');
   expect(detail.competition?.stats?.games).toBe(1);
   expect(detail.competition?.mvpMatchIds).toEqual(['m1']);
+
+  // Leaving every team must preserve the same season history.
+  const withTeams = source.playerDetail;
+  source.playerDetail = async (id) => {
+    const player = await withTeams(id);
+    if (!player) throw new Error('Missing fixture');
+    return { ...player, teams: [] };
+  };
+  source.seasons = async () => [
+    { id: '2027', name: '2027', startsOn: '2027-01-01', endsOn: null },
+    { id: '2026', name: '2026', startsOn: '2026-01-01', endsOn: null }
+  ];
+  const seasonGames = source.playerSeasonGames;
+  source.playerSeasonGames = async (id, season) =>
+    season === '2027'
+      ? { playerGames: [], allMatchGames: [], mvpMatchIds: [] }
+      : seasonGames(id, season);
+  const withoutTeam = await service.playerDetail(transferredPlayerId);
+  expect(withoutTeam.teams).toEqual([]);
+  expect(withoutTeam.competition?.team).toBeNull();
+  expect(withoutTeam.competition?.stats?.games).toBe(1);
+  expect(withoutTeam.competition?.mvpMatchIds).toEqual(['m1']);
+
+  source.playerSeasonGames = async () => ({
+    playerGames: [],
+    allMatchGames: [],
+    mvpMatchIds: ['m1']
+  });
+  const awardsOnly = await service.playerDetail(transferredPlayerId);
+  expect(awardsOnly.competition?.stats).toBeNull();
+  expect(awardsOnly.competition?.mvpMatchIds).toEqual(['m1']);
 });
 
 test('Team detail only counts MVPs won while playing for that specific team', async () => {
@@ -262,6 +294,7 @@ test('Team detail only counts MVPs won while playing for that specific team', as
 
   // Match 1: Player played for Team A against Team B, and won MVP
   const match1: Match = {
+    mvpPlayerId: playerId,
     id: '70000000-0000-4000-8000-000000000001',
     divisionId,
     roundId: '1',
@@ -322,7 +355,7 @@ test('Team detail only counts MVPs won while playing for that specific team', as
       { id: teamBId, name: 'Team B', seasonName: '2026', divisionName: 'Primera' }
     ],
     players: async () => [],
-    playerSeasonGames: async () => ({ playerGames: [], allMatchGames: [] }),
+    playerSeasonGames: async () => ({ playerGames: [], allMatchGames: [], mvpMatchIds: [] }),
     playerDetail: async () => undefined,
     teamDetail: async (id) => ({
       id,
@@ -383,7 +416,7 @@ test('Player detail gracefully handles player with active team membership but ze
       { id: teamId, name: 'Bench Team', seasonName: '2026', divisionName: 'Primera' }
     ],
     players: async () => [],
-    playerSeasonGames: async () => ({ playerGames: [], allMatchGames: [] }),
+    playerSeasonGames: async () => ({ playerGames: [], allMatchGames: [], mvpMatchIds: ['m1'] }),
     playerDetail: async (id) => ({
       id,
       gameName: 'BenchPlayer',
@@ -426,5 +459,5 @@ test('Player detail gracefully handles player with active team membership but ze
   expect(detail.competition?.isCaptain).toBe(true);
   expect(detail.competition?.stats).toBeNull();
   expect(detail.competition?.champion).toBeNull();
-  expect(detail.competition?.mvpMatchIds).toEqual([]);
+  expect(detail.competition?.mvpMatchIds).toEqual(['m1']);
 });

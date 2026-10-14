@@ -38,7 +38,10 @@ export type MatchStatKey =
   | 'largestCriticalStrike'
   | 'longestTimeLiving'
   | 'timeSpentDead';
-export type MatchPlayerStats = Record<MatchStatKey, number | null> & { isMvp: boolean };
+export type MatchPlayerStats = Record<MatchStatKey, number | null> & {
+  /** @deprecated Legacy map flag. Series awards use MatchDetail.mvpPlayerId. */
+  isMvp: boolean;
+};
 export interface MatchPlayerBuild {
   item0: number;
   item1: number;
@@ -86,6 +89,7 @@ export interface MatchMap {
   participants: MatchParticipant[];
 }
 export interface MatchDetail {
+  mvpPlayer?: { id: string; slug: string; gameName: string; riotTag: string | null } | null;
   mvpPlayerId?: string | null;
   id: string;
   slug?: string | undefined;

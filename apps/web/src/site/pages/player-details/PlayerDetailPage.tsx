@@ -28,13 +28,14 @@ export function PlayerProfile({ player }: { player: PlayerDetail }) {
   const riotId = `${player.gameName}${tag ? `#${tag}` : ''}`;
   const latestTeam = player.teams[0];
   const stats = player.competition?.stats;
+  const mvpCount = player.competition?.mvpMatchIds.length;
   const format = (value: number | null | undefined, suffix = '') =>
     value == null ? '—' : `${value.toLocaleString('es', { maximumFractionDigits: 2 })}${suffix}`;
   const metrics = [
     ['Partidas', format(stats?.games)],
     ['KDA', format(stats?.kda)],
     ['Victorias', format(stats?.winRate, '%')],
-    ['MVPs', stats ? String(player.competition?.mvpMatchIds.length ?? 0) : '—'],
+    ['MVPs', mvpCount === undefined ? '—' : String(mvpCount)],
     ['CS / min', format(stats?.csPerMinute)],
     ['Participación en kills', format(stats?.killParticipation, '%')],
     ['Daño / min', format(stats?.damagePerMinute)],
@@ -158,13 +159,9 @@ export function PlayerProfile({ player }: { player: PlayerDetail }) {
       <section className="player-performance" aria-labelledby="player-performance-title">
         <div className="player-detail-section-heading">
           <h2 id="player-performance-title">Rendimiento</h2>
-          {latestTeam && (
-            <span className="meta">
-              {latestTeam.seasonName} · {latestTeam.divisionName}
-            </span>
-          )}
+          {latestTeam && <span className="meta">{latestTeam.seasonName}</span>}
         </div>
-        {stats?.games ? (
+        {stats?.games || (mvpCount ?? 0) > 0 ? (
           <>
             <dl className="player-performance-grid">
               {metrics.map(([label, value]) => (

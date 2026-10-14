@@ -222,3 +222,24 @@ test('Team rosters link to the selected game account profile', () => {
   );
   expect(html).toContain('href="/jugadores/jugador-uno-euw"');
 });
+
+test('player profiles retain persisted MVP totals when match statistics are unavailable', () => {
+  const html = renderToStaticMarkup(
+    <PlayerProfile
+      player={{
+        ...player,
+        competition: {
+          role: 'mid',
+          team: defaultTeam,
+          stats: null,
+          champion: null,
+          mvpMatchIds: ['m1', 'm2'],
+          featured: null
+        }
+      }}
+    />
+  );
+  expect(html).toContain('<dt>MVPs</dt><dd>2</dd>');
+  expect(html).toContain('<dt>KDA</dt><dd>—</dd>');
+  expect(html).not.toContain('La historia está por escribir');
+});

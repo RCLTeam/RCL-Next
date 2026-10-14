@@ -25,6 +25,7 @@ const teams: Team[] = [homeId, awayId].map((id, index) => ({
   discordRoleId: null
 }));
 const match: Match = {
+  mvpPlayerId: null,
   id: '70000000-0000-4000-8000-000000000001',
   divisionId,
   roundId,
@@ -45,7 +46,7 @@ function repository(): CompetitionRepository {
   const division = { id: divisionId, seasonId, code: 'premier', name: 'Premier', sortOrder: 1 };
   return {
     players: async () => [],
-    playerSeasonGames: async () => ({ playerGames: [], allMatchGames: [] }),
+    playerSeasonGames: async () => ({ playerGames: [], allMatchGames: [], mvpMatchIds: [] }),
     playerDetail: async () => undefined,
     matchDirectory: async () => [],
     match: async () => undefined,

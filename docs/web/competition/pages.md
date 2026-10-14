@@ -13,6 +13,18 @@ Las vistas ensambladoras (*Smart Pages*) del motor de competición residen en `a
 
 Ninguna vista ensambladora contiene lógica de persistencia ni manipulación directa del DOM; operan como orquestadores declarativos de React.
 
+### MVP persistidos
+
+El frontend muestra los galardones enviados por la API y no elige ganadores a partir de estadísticas ni del antiguo `stats.isMvp` (deprecado en el contrato):
+
+- La ficha del partido utiliza `mvpPlayerId` para toda la serie, con independencia del mapa seleccionado. El nombre y el slug del MVP llegan en `mvpPlayer`, por lo que mantiene el enlace nominal aunque falten participantes importados; si no hay galardón, muestra «No disponible». Las incomparecencias no muestran un MVP.
+- El directorio y la ficha de jugador muestran el número de `mvpMatchIds`, incluso cuando faltan estadísticas. Los jugadores con galardones históricos siguen apareciendo en el filtro «Todos» aunque ya no tengan rol de plantilla. Las estadísticas ausentes se muestran con «—». El selector permite ordenar por número de MVPs guardados, de mayor a menor, con desempate por nombre e ID.
+- La sección de rendimiento de la ficha se identifica por temporada, ya que sus estadísticas y MVP abarcan todos los equipos y divisiones de esa temporada. Los contadores de equipo siguen utilizando `rosterStats.mvps` de la API.
+- En empates de nota máxima de la jornada, la API desempata entre los MVP guardados por nota sin redondear, victorias, participación en bajas, KDA y daño; el ID del jugador solo decide un empate completo. Las estadísticas se consultan únicamente para las series empatadas.
+- El banner conserva el jugador y el nombre de jornada de `competition.featured`, incluida una jornada anterior. Sin destacado, indica «Todavía no hay un MVP de jornada disponible en esta división».
+
+El campo de mapa `isMvp` se conserva temporalmente por compatibilidad, pero no representa el MVP de enfrentamiento. La migración y el [backfill de históricos](../../database/mvp-backfill.md) deben aplicarse antes de desplegar las lecturas persistidas.
+
 ---
 
 ## 2. Catálogo de Páginas de Competición

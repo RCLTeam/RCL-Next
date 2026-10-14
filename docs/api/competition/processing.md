@@ -296,19 +296,9 @@ Al sustituir los vectores de parámetros específicos de `ROLE_REFERENCES` y `DE
 
 *Degradación por Ausencia de Registro Económico:* Si en cualquiera de los roles se carece de registro de oro acumulado ($\text{Gold}_{\text{total}} \le 0$), el término de DPG degrada a $10 \cdot \text{scale}(\text{DPM}, R_{\text{dpm}})$ y el término de GPM degrada a $5 \cdot \text{scale}(\text{CSPM}, R_{\text{cspm}})$.
 
-#### Selección Hermética por Rol sin Contaminación Cruzada
-El motor asegura la separación estricta de parámetros entre posiciones mediante el flujo de resolución en `player-statistics.ts:119-120`:
+#### Posición táctica por mapa
 
-```typescript
-// apps/api/src/modules/competition/player-statistics.ts:119-120
-const role = playerRole(rows[0]?.position ?? null);
-const ref = ROLE_REFERENCES[role ?? ''] ?? DEFAULT_REF;
-```
-
-1. **Resolución Determinista del Rol (`playerRole`):** La posición del jugador en la serie se extrae de la primera fila (`rows[0]?.position`) y se normaliza canónicamente mediante `playerRole(rows[0]?.position ?? null)` (`player-statistics.ts:25-32`). Esto unifica variantes de nomenclatura externa (`'middle'` $\to$ `'mid'`, `'bot'` o `'bottom'` $\to$ `'adc'`, `'utility'` o `'sup'` $\to$ `'support'`, `'jg'` o `'jungla'` $\to$ `'jungle'`).
-2. **Asignación Aislada de Referencias (`ROLE_REFERENCES` y `DEFAULT_REF`):** La constante local `ref` se fija al inicio de la función indexando el diccionario `ROLE_REFERENCES`. Si el rol normalizado es nulo, no está reconocido o corresponde a una demarcación atípica, se selecciona de manera unívoca el vector equilibrado `DEFAULT_REF`.
-3. **Inmutabilidad y Prevención de Contaminación Cruzada:** La referencia `ref` es un objeto inmutable de solo lectura en el ámbito local de `mvpScore`. Todas las dimensiones dependientes de rol ($S_{\text{DPM}}$, $S_{\text{DPG}}$, $S_{\text{Vision}}$, $S_{\text{CS}}$, $S_{\text{Mitigation}}$, $S_{\text{GPM}}$) leen exclusivamente los campos del mismo objeto `ref` (`player-statistics.ts:142-147`). Esto garantiza que cada rol táctico aplique su propia ecuación formal de forma completamente hermética, impidiendo cualquier mezcla, mutación en caliente o contaminación cruzada de coeficientes de corte entre posiciones distintas.
-
+`mapMvpScore(row, all)` aplica `playerRole(row.position)` y las referencias de ese mapa concreto. Las consultas leen exclusivamente `player_game_info.position`; una posición ausente utiliza `DEFAULT_REF`, sin recurrir al rol de plantilla. Un cambio de rol entre mapas se evalúa con el baremo correspondiente en cada uno.
 ### 3.4 Ejemplo Práctico de Cálculo Paso a Paso
 A continuación se ilustra la resolución completa para un jugador en la posición **ADC** en una partida de 30 minutos (1.800 segundos), contrastando sus estadísticas contra las referencias `ROLE_REFERENCES.adc` ($R_{\text{cspm}} = 8.5$, $R_{\text{dpm}} = 850$, $R_{\text{gpm}} = 450$, $R_{\text{vspm}} = 0.9$, $R_{\text{mitigationPm}} = 450$, $R_{\text{dpg}} = 1850$):
 
@@ -355,69 +345,47 @@ $$\text{Puntuación Final} = \frac{\lfloor 107.01 \cdot 10 + 0.5 \rfloor}{10} = 
 > [!NOTE]
 > El motor de cálculo no trunca la puntuación a un límite de 100 puntos. La combinación del escalado logarítmico cóncavo y las 9 dimensiones premia el rendimiento sobresaliente (*overperformance*), permitiendo superar la base de 100 puntos en actuaciones extraordinarias (por ejemplo, 110.8 puntos como se verifica en `apps/api/src/modules/competition/player-statistics.test.ts:137`).
 
-### 3.5 Anotaciones Técnicas, Casos de Borde y Degradación Agraciada
-- **Filtrado Estricto de Duración (`timed`):** Solo las filas de partida con `durationSeconds > 0` entran en el cómputo de tiempo (`player-statistics.ts:122-123`). Si la suma acumulada de minutos de las partidas temporizadas es cero (`minutes === 0`), el algoritmo aborta la ejecución de forma segura y devuelve `0` (`player-statistics.ts:125`).
-- **Ámbito Diferenciado de Agregación:**
-  - `totalDamage` y `totalGold` se reducen directamente sobre la totalidad del array `rows` (`player-statistics.ts:128-129`), garantizando que cualquier registro con daño u oro computado aporte a los totales acumulados.
-  - En contraste, `vspm` y `mitigationPm` se calculan exclusivamente sobre el subconjunto `timed` dividido entre `minutes` (`player-statistics.ts:135-137`).
-- **Mecanismos de Fallback Económico (Degradación Agraciada):** Cuando una partida no registra datos válidos de oro (`totalGold <= 0`):
-  - `dpgScore` asume automáticamente el valor escalar de `dpmScore` (`player-statistics.ts:143`), conservando el peso específico de 10 puntos de la dimensión ($10 \cdot \text{scale}(\text{DPM}, R_{\text{dpm}})$ en `player-statistics.ts:153`).
-  - `gpmScore` asume automáticamente el valor escalar de `csScore` (`player-statistics.ts:147`), conservando el peso específico de 5 puntos de la dimensión ($5 \cdot \text{scale}(\text{CSPM}, R_{\text{cspm}})$ en `player-statistics.ts:157`).
-  Esto evita divisiones por cero o propagación de valores `NaN` / `null` en partidas disputadas antes de incorporar métricas económicas completas, preservando la coherencia en las ponderaciones de la matriz dimensional.
-- **Redondeo Final Determinista:** Tras acumular las 9 dimensiones ponderadas, la puntuación se redondea a un único decimal con precisión determinista mediante `Math.round(finalScore * 10) / 10` (`player-statistics.ts:171`).
+### 3.5 Agregación de la serie y datos ausentes
 
-### 3.6 Selección del MVP de Serie y Unificación de Cálculo (`player-statistics.ts:174-226`)
-Para seleccionar el MVP definitivo de un enfrentamiento o serie, el dominio expone dos funciones complementarias que comparten exactamente el mismo algoritmo y criterios de desempate:
+`mapMvpScore` calcula las nueve dimensiones por mapa sin redondear. `matchMvpScore` calcula `sum(scoreMapa * duración) / sum(duración)` sobre los mapas del jugador. `mvpScore` conserva una salida redondeada a un decimal para sus consumidores, pero la selección del ganador usa la precisión completa.
 
-1. **`matchMvps(rows: PlayerGameRow[])` (`player-statistics.ts:174-191`):**
-   - Agrupa los registros de todos los mapas por `matchId` y por jugador individual (`playerId`).
-   - Evalúa a todos los candidatos mediante una cascada determinista de tres niveles (`player-statistics.ts:186-189`):
-     - **Nivel 1 — Mayor Puntuación Acumulada (`b.score - a.score`):** Prioriza al jugador con la puntuación MVP más alta en la serie (`score: mvpScore(playerGames, games)`).
-     - **Nivel 2 — Mayor Cantidad de Mapas Ganados (`b.wins - a.wins`):** En caso de empate en puntuación, prioriza al candidato que haya obtenido más victorias de mapa dentro de la serie.
-     - **Nivel 3 — Desempate Determinista Alfanumérico (`a.playerId.localeCompare(b.playerId)`):** Si persiste el empate en puntuación y victorias, se desempata por orden lexicográfico ascendente del identificador de jugador (`playerId`), garantizando un resultado determinista sin aleatoriedad.
-   - El candidato posicionado en primer lugar tras la ordenación (`candidates.slice(0, 1)`) se designa formalmente como MVP de la serie.
+Una duración ausente, no finita o no positiva produce cero en el cálculo individual y se excluye de la media. Un candidato con algún mapa sin duración válida no recibe el galardón. Si falta oro se mantienen los fallbacks a DPM y CS. Las estadísticas generales del perfil siguen usando `aggregatePlayerStats`.
 
-2. **`matchMvpPlayerId(games: MatchMap[])` (`player-statistics.ts:193-226`):**
-   - Mapea las estructuras anidadas `MatchMap[]` y sus participantes (`player.stats`) a filas uniformes `PlayerGameRow[]`.
-   - Incluye de forma estricta y obligatoria el valor de `goldEarned: player.stats.goldEarned` (`línea 217`), evitando omisiones o fallbacks involuntarios a DPM/CSPM.
-   - Delega directamente la resolución en `matchMvps(rows)[0]?.playerId ?? null` (`línea 225`).
-   - Se utiliza en el listado de partidos de la división (`competition.service.ts:136`) y en la auditoría de MVPs de equipo (`competition.service.ts:256`).
+### 3.6 Selección del MVP de serie
 
+`matchMvps` evalúa cada enfrentamiento por separado, con todos sus mapas y participantes:
+
+- Exige haber disputado al menos el 50% de los mapas: 1 de 2, 2 de 3 o 3 de 5. No aplica una penalización adicional por cobertura.
+- Cuenta cada mapa una sola vez para determinar el equipo vencedor. Solo sus jugadores pueden optar al MVP; en una serie empatada pueden optar ambos equipos.
+- No exige haber ganado ningún MVP de mapa: un jugador regular puede ganar por su rendimiento en el conjunto de la serie.
+- Compara score sin redondear, victorias, participación en bajas, KDA sin redondear y daño total a campeones. Solo un empate en todos esos valores se resuelve por identificador para mantener un resultado estable.
+- Devuelve el ganador y su score redondeado a un decimal. Sin candidatos válidos no concede MVP.
+
+`matchMvpPlayerId` convierte los mapas y participantes con estadísticas al mismo formato y delega en `matchMvps`, incluyendo oro y posición del replay.
+
+El sellado automático al finalizar la subida ROFL y el backfill histórico utilizan este cálculo. Los endpoints consumen sus resultados persistidos, como se describe a continuación.
 Esta unificación garantiza que el galardón de MVP sea matemáticamente idéntico tanto si se consulta desde la perspectiva de la serie individual como desde la agregación de jugadores de la división o temporada, resolviendo casos sensibles de desempate dimensional donde el oro acumulado resulta determinante (por ejemplo, el escenario verificado en tests donde Buzel con 108.7 supera a Sm0kY con 107.1).
 
-### 3.7 Resolución de Estadísticas de Temporada y MVPs en Traspasos de Jugadores (`competition.service.ts:179-241`)
-Cuando un usuario consulta el perfil de un jugador (`playerDetail(reference)`), el servicio procesa su historial deportivo en el contexto completo de la temporada activa (`competition.service.ts:187-229`):
+### 3.7 Consumo de galardones persistidos
 
-- **Historial Completo de Temporada (`playerSeasonGames`):** En lugar de restringir la consulta a una sola división, el servicio solicita `repository.playerSeasonGames(id, activeTeam.seasonName)` (`líneas 188-191`), recuperando todos los mapas disputados por el jugador durante la temporada actual y la totalidad de los mapas de las series en las que participó (`allMatchGames`).
-- **Resolución del Equipo y Rol Activo:** El equipo activo se determina a partir de `player.teams[0]`, el cual se ordena por última actualización en la persistencia (`desc(teamMemberships.updatedAt)` en `postgres-competition.repository.ts:434`), situando el equipo más reciente o vigente en primer lugar.
-- **Acumulación de Rendimiento y Galardones:**
-  - Las métricas consolidadas (`aggregatePlayerStats(playerGames, allMatchGames)`, `línea 207`) abarcan todas las partidas del jugador en la temporada, manteniendo el historial acumulado aunque haya cambiado de equipo o división.
-  - Los galardones de MVP (`mvpMatchIds`, `líneas 193-196`) se calculan sobre `allMatchGames` mediante `matchMvps(allMatchGames)` y se filtran por `award.playerId === id`, preservando los MVPs obtenidos en equipos anteriores durante la misma temporada.
-  - El campeón destacado se computa sobre la totalidad de partidas disputadas mediante `mostPlayedChampion(playerGames)` (`línea 206`).
-- **Estado sin Partidas Disputadas en la Temporada:** Si el jugador no ha disputado aún ningún mapa en toda la temporada (por ejemplo, jugadores recién fichados o suplentes que aún no han debutado, representados por `playerGames.length === 0`), se mantiene la metadata del equipo activo con `champion: null`, `stats: null` y `mvpMatchIds: []` (`líneas 212-228`). Cabe enfatizar que esta condición no sobreviene por un traspaso de equipo o división, ya que las transferencias preservan íntegramente las partidas disputadas y estadísticas acumuladas en la temporada.
+Los endpoints no ejecutan `matchMvps` ni `matchMvpPlayerId`. El cálculo queda reservado a la finalización de series por ROFL y al backfill histórico.
 
-### 3.8 Filtrado de MVPs de Plantilla en Detalle de Equipo (`competition.service.ts:242-288`)
-En el endpoint de detalle de equipo (`teamDetail(reference)`), las estadísticas individuales de cada integrante de la plantilla (`rosterStats.mvps`, `competition.service.ts:276-278`) reflejan exclusivamente los galardones obtenidos mientras el jugador defendía los colores de ese equipo:
+- Detalle de partido y calendario: leen `matches.mvp_player_id`; los partidos no completados no publican MVP.
+- Listado de jugadores de una división: consulta los galardones de los enfrentamientos completados de esa división y los entrega a `enrichPlayers`. Esta función sigue calculando estadísticas generales, pero no decide premios.
+- Ficha de jugador: consulta los identificadores de enfrentamientos con `mvp_player_id` igual al jugador dentro de su temporada, independientemente del equipo o división actual. Conserva los galardones aunque no haya snapshots de estadísticas disponibles.
+- Ficha de equipo: cuenta los MVP persistidos de sus series ganadas para cada integrante de plantilla. Los premios obtenidos con otro equipo no pasan a contabilizarse por un traspaso.
 
-```typescript
-// apps/api/src/modules/competition/competition.service.ts:254-263
-const mvps = series
-  .map((games) => {
-    const mvpId = matchMvpPlayerId(games);
-    if (!mvpId) return null;
-    const playedForThisTeam = games.some((game) =>
-      game.participants.some((player) => player.playerId === mvpId && player.teamId === id)
-    );
-    return playedForThisTeam ? mvpId : null;
-  })
-  .filter((playerId): playerId is string => playerId !== null);
-```
+Un `mvp_player_id` vacío sigue vacío: no existe recálculo de respaldo. Antes de desplegar estas lecturas sobre una base existente se debe ejecutar y verificar el [backfill histórico](../../database/mvp-backfill.md).
 
-- **Verificación de Pertenencia en la Serie:** Por cada serie concluida disputada por el equipo, se calcula el MVP de la serie mediante `matchMvpPlayerId(games)`. A continuación, se valida que dicho jugador haya participado en la serie con el `teamId` del equipo consultado (`player.playerId === mvpId && player.teamId === id`).
-- **Prevención de Contaminación de MVPs por Traspasos o Rivales:** Si el MVP de la serie fue otorgado a un jugador del equipo adversario, o a un jugador que posteriormente fue transferido a este equipo pero que ganó el galardón jugando para otro conjunto, dicho MVP se descarta (`null`) y no se contabiliza en el casillero `rosterStats.mvps` de la plantilla de este equipo.
+### 3.8 Banner de jornada
+
+El repositorio selecciona la jornada más reciente de la división que tenga al menos un enfrentamiento completado con jugador y score MVP persistidos. Ordena las jornadas por fecha de inicio descendente (fechas nulas al final) e identificador descendente. Una nueva jornada sin galardones no desplaza la última jornada con MVP disponibles.
+
+Dentro de esa jornada consulta `matches` por división, ronda y estado `completed`, exige ambos campos de MVP y aplica `ORDER BY mvp_score DESC NULLS LAST, id ASC LIMIT 1`. El índice parcial `matches_round_mvp_score_idx` cubre la búsqueda por división/ronda y la ordenación principal por score; el identificador establece un resultado estable entre puntuaciones iguales.
+
+El banner muestra estadísticas de la jornada seleccionada y su nombre. La puntuación interna no se expone en el contrato público. Sin galardones en ninguna jornada devuelve `featured: null`.
 
 ---
-
 ## 4. Normalización de Posiciones y Desempate de Campeón Destacado
 
 ### 4.1 Normalización de Roles (`player-statistics.ts:25-32`)
