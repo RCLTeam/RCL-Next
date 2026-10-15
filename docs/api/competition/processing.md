@@ -8,7 +8,7 @@
 
 El archivo `apps/api/src/modules/competition/` concentra la lógica algorítmica y matemática de las competiciones de League of Legends en RCL-Next. Sus responsabilidades se dividen en cinco motores y especificaciones independientes y puras:
 1. **Motor de Clasificación y Desempates de Liga (`competition.service.ts:18-60`)**: Cómputo de la tabla de posiciones en series al mejor de 3 (BO3).
-2. **Motor de Puntuación Multidimensional de MVP (`player-statistics.ts:45-226`)**: Evaluación del rendimiento individual continuo por rol y selección del mejor jugador.
+2. **Motor de Puntuación Multidimensional de MVP (`player-statistics.ts:43-276`)**: Evaluación del rendimiento individual continuo por rol y selección del mejor jugador.
 3. **Motor de Estadísticas Agregadas de Campeones (`champion-stats.ts:1-32`)**: Consolidación de selecciones, mapas disputados, victorias y porcentajes de presencia.
 4. **Generador Determinista de Slugs y Evasión de Colisiones (`profile-slugs.ts:1-60`)**: Normalización semántica de URLs para partidos, equipos y jugadores.
 5. **Especificación de Visibilidad de Equipos y Sentinels de Roles (`team-visibility.ts:1-16`)**: Determinación del estado de los equipos mediante rangos numéricos de roles de Discord para su inclusión en clasificación, cuadrícula, calendario y pronósticos.
@@ -88,16 +88,16 @@ El orden de los equipos en la tabla de clasificación responde a la siguiente ev
 
 ## 3. Algoritmo Multidimensional de Puntuación MVP
 
-El motor de rendimiento individual (`apps/api/src/modules/competition/player-statistics.ts:45-226`) calcula la puntuación global de cada jugador por cada serie completada y consolida las métricas base del perfil.
+El motor de rendimiento individual (`apps/api/src/modules/competition/player-statistics.ts:43-276`) calcula la puntuación global de cada jugador por cada serie completada y consolida las métricas base del perfil.
 
 ### 3.0 Métricas Base de Agregación de Estadísticas de Jugador (`aggregatePlayerStats`)
-La función pura `aggregatePlayerStats(rows: PlayerGameRow[], all: PlayerGameRow[])` (`player-statistics.ts:45-79`) consolida el rendimiento estadístico base de un jugador a lo largo de un conjunto de partidas (mapas disputados en una serie o a lo largo de la temporada completa), retornando el contrato `PlayerStatistics`:
+La función pura `aggregatePlayerStats(rows: PlayerGameRow[], all: PlayerGameRow[] | TeamKills)` (`player-statistics.ts:61-92`) consolida el rendimiento estadístico base de un jugador a lo largo de un conjunto de partidas (mapas disputados en una serie o a lo largo de la temporada completa), retornando el contrato `PlayerStatistics`:
 
 ```typescript
-// apps/api/src/modules/competition/player-statistics.ts:45-79
+// apps/api/src/modules/competition/player-statistics.ts:61-92
 export function aggregatePlayerStats(
   rows: PlayerGameRow[],
-  all: PlayerGameRow[]
+  all: PlayerGameRow[] | TeamKills
 ): PlayerStatistics {
   const sum = (key: 'kills' | 'deaths' | 'assists' | 'cs' | 'damageToChampions') =>
     rows.reduce((total, row) => total + row[key], 0);
@@ -109,12 +109,9 @@ export function aggregatePlayerStats(
     const values = rows.flatMap((row) => (row[key] === null ? [] : [row[key]]));
     return values.length ? values.reduce((a, b) => a + b, 0) / values.length : null;
   };
+  const index = killsContext(all);
   const teamKills = rows.reduce(
-    (total, row) =>
-      total +
-      all
-        .filter((other) => other.gameId === row.gameId && other.teamId === row.teamId)
-        .reduce((kills, other) => kills + other.kills, 0),
+    (total, row) => total + (index.get(row.gameId)?.get(row.teamId) ?? 0),
     0
   );
   return {
@@ -132,40 +129,42 @@ export function aggregatePlayerStats(
 }
 ```
 
+Las bajas de equipo se indexan una vez por `(gameId, teamId)` y el índice se reutiliza en el cálculo de cada mapa, candidato y perfil. No se recorre todo el historial por cada mapa.
+
 El motor calcula formalmente 7 métricas agregadas:
 
-1. **KDA (`kda`, `player-statistics.ts:69`):** Ratio de asesinatos y asistencias frente a muertes:
+1. **KDA (`kda`, `player-statistics.ts:82`):** Ratio de asesinatos y asistencias frente a muertes:
    $$\text{KDA} = \frac{\sum \text{kills} + \sum \text{assists}}{\max(1, \sum \text{deaths})}$$
    Si el jugador no registra muertes ($\sum \text{deaths} = 0$), el denominador se trunca a $1$ mediante `Math.max(1, sum('deaths'))`, evitando divisiones por cero o valores indeterminados.
 
-2. **CS por minuto (`csPerMinute`, `player-statistics.ts:53-54, 70`):** Ritmo de súbditos por minuto sobre partidas finalizadas con duración registrada:
+2. **CS por minuto (`csPerMinute`, `player-statistics.ts:69-70, 83`):** Ritmo de súbditos por minuto sobre partidas finalizadas con duración registrada:
    $$\text{CSPM} = \begin{cases} \frac{\sum_{r \in \text{timed}} r.\text{cs}}{\sum_{r \in \text{timed}} \frac{r.\text{durationSeconds}}{60}} & \text{si } \text{minutes} > 0 \\ \text{null} & \text{si } \text{minutes} = 0 \end{cases}$$
    Donde $\text{timed} = \{ r \in \text{rows} \mid r.\text{durationSeconds} > 0 \}$. Se calcula estrictamente sobre partidas con `durationSeconds > 0`. Si no se dispone de minutos válidos acumulados (`minutes === 0`), devuelve `null`.
 
-3. **Kill Participation (`killParticipation`, `player-statistics.ts:59-66, 71`):** Porcentaje de bajas totales del equipo en las que el jugador participó:
+3. **Kill Participation (`killParticipation`, `player-statistics.ts:75-84`):** Porcentaje de bajas totales del equipo en las que el jugador participó:
    $$\text{KP} = \begin{cases} \frac{100 \cdot (\sum \text{kills} + \sum \text{assists})}{\text{teamKills}} & \text{si } \text{teamKills} > 0 \\ 0 & \text{si } \text{teamKills} = 0 \end{cases}$$
    Donde $\text{teamKills}$ computa las muertes totales del equipo obtenidas del parámetro `all` en los mismos mapas disputados (`líneas 59-66`). Si el equipo no consiguió ninguna baja (`teamKills === 0`), devuelve `0`.
 
-4. **WinRate (`winRate`, `player-statistics.ts:72-74`):** Porcentaje de mapas ganados respecto al total disputado:
+4. **WinRate (`winRate`, `player-statistics.ts:85-87`):** Porcentaje de mapas ganados respecto al total disputado:
    $$\text{WinRate} = \begin{cases} \frac{100 \cdot |\{ r \in \text{rows} \mid r.\text{teamId} = r.\text{winnerTeamId} \}|}{|\text{rows}|} & \text{si } |\text{rows}| > 0 \\ 0 & \text{si } |\text{rows}| = 0 \end{cases}$$
 
-5. **DPM (`damagePerMinute`, `player-statistics.ts:53-54, 75`):** Daño total infligido a campeones por minuto de juego:
+5. **DPM (`damagePerMinute`, `player-statistics.ts:69-70, 88`):** Daño total infligido a campeones por minuto de juego:
    $$\text{DPM} = \begin{cases} \frac{\sum_{r \in \text{timed}} r.\text{damageToChampions}}{\sum_{r \in \text{timed}} \frac{r.\text{durationSeconds}}{60}} & \text{si } \text{minutes} > 0 \\ \text{null} & \text{si } \text{minutes} = 0 \end{cases}$$
    Calculado de forma homóloga a CSPM sobre las partidas temporizadas (`durationSeconds > 0`), devolviendo `null` si `minutes === 0`.
 
-6. **Puntuación media de visión por partida (`visionScore`, `player-statistics.ts:55-58, 76`):** Promedio aritmético sobre partidas válidas con registro de visión:
+6. **Puntuación media de visión por partida (`visionScore`, `player-statistics.ts:71-74, 89`):** Promedio aritmético sobre partidas válidas con registro de visión:
    $$\overline{\text{Vision}} = \begin{cases} \frac{\sum_{r \in \text{rows}, r.\text{visionScore} \ne \text{null}} r.\text{visionScore}}{|\{ r \in \text{rows} \mid r.\text{visionScore} \ne \text{null} \}|} & \text{si existen registros no nulos} \\ \text{null} & \text{en caso contrario} \end{cases}$$
 
-7. **Daño mitigado medio por partida (`damageMitigated`, `player-statistics.ts:55-58, 77`):** Promedio aritmético sobre partidas válidas con registro de mitigación defensiva:
+7. **Daño mitigado medio por partida (`damageMitigated`, `player-statistics.ts:71-74, 90`):** Promedio aritmético sobre partidas válidas con registro de mitigación defensiva:
    $$\overline{\text{Mitigation}} = \begin{cases} \frac{\sum_{r \in \text{rows}, r.\text{damageMitigated} \ne \text{null}} r.\text{damageMitigated}}{|\{ r \in \text{rows} \mid r.\text{damageMitigated} \ne \text{null} \}|} & \text{si existen registros no nulos} \\ \text{null} & \text{en caso contrario} \end{cases}$$
 
 #### Distinción Arquitectónica: Agregación de Perfil vs. Calibración de MVP
 Existe una distinción conceptual deliberada entre ambas funciones:
 - **`aggregatePlayerStats` (Perfil General del Jugador):** Computa la visión y el daño mitigado como **promedios aritméticos directos por partida** (`average('visionScore')` y `average('damageMitigated')` en `líneas 55-58, 76-77`). Esto proporciona métricas representativas del impacto medio absoluto de un jugador por mapa en la interfaz de perfil.
-- **`mvpScore` (Calibración de Rendimiento):** Computa la visión y la mitigación **por minuto** (`vspm` y `mitigationPm` en `player-statistics.ts:135-137`, dividiendo la suma entre `minutes`). Esto permite contrastar el rendimiento con granularidad temporal frente a las constantes `vspm` y `mitigationPm` de cada rol táctico en `ROLE_REFERENCES`, desacoplando la puntuación de la duración de la partida.
+- **`mapMvpScore` (Calibración de Rendimiento):** Computa la visión y la mitigación **por minuto** (`vspm` y `mitigationPm` en `player-statistics.ts:144-145`, dividiendo el valor de cada mapa entre `minutes`). Esto permite contrastar el rendimiento con granularidad temporal frente a las constantes `vspm` y `mitigationPm` de cada rol táctico en `ROLE_REFERENCES`, desacoplando la puntuación de la duración de la partida.
 
 ### 3.1 Tablas de Referencia por Rol (`ROLE_REFERENCES` y `DEFAULT_REF`)
-Las métricas individuales de cada jugador se evalúan frente a valores estándar de referencia calibrados específicamente para su rol táctico (`player-statistics.ts:90-105`). Si la posición del jugador no está definida o no coincide con los roles estándar, se aplican automáticamente los valores de corte de `DEFAULT_REF`:
+Las métricas individuales de cada jugador se evalúan frente a valores estándar de referencia calibrados específicamente para su rol táctico (`player-statistics.ts:103-118`). Si la posición del jugador no está definida o no coincide con los roles estándar, se aplican automáticamente los valores de corte de `DEFAULT_REF`:
 
 | Posición | CSPM (Súbditos/min) | DPM (Daño/min) | GPM (Oro/min) | VSPM (Visión/min) | Mitigación/min | DPG (Daño por 1.000 de Oro) |
 |---|:---:|:---:|:---:|:---:|:---:|:---:|
@@ -177,7 +176,7 @@ Las métricas individuales de cada jugador se evalúan frente a valores estánda
 | **`DEFAULT`** | 6.5 | 600 | 370 | 1.2 | 750 | 1500 |
 
 ### 3.2 Función de Escalado Continuo Logarítmico (`dynamicScale`)
-Para evitar la inflación artificial producida por partidas atípicamente prolongadas o con intercambios desproporcionados de daño, los ratios relativos se atenúan mediante una curva continua cóncava logarítmica en base 2 (`player-statistics.ts:108-112`).
+Para evitar la inflación artificial producida por partidas atípicamente prolongadas o con intercambios desproporcionados de daño, los ratios relativos se atenúan mediante una curva continua cóncava logarítmica en base 2 (`player-statistics.ts:121-125`).
 
 La función matemática a trozos formaliza el comportamiento del escalado continuo:
 
@@ -186,7 +185,7 @@ $$\text{scale}(v, r) = \begin{cases} 0 & \text{si } v \le 0 \\ \frac{v}{r} & \te
 Implementación técnica en TypeScript:
 
 ```typescript
-// apps/api/src/modules/competition/player-statistics.ts:108-112
+// apps/api/src/modules/competition/player-statistics.ts:121-125
 function dynamicScale(value: number | null, reference: number): number {
   if (!value || value <= 0 || reference <= 0) return 0;
   const ratio = value / reference;
@@ -201,35 +200,35 @@ function dynamicScale(value: number | null, reference: number): number {
   $$\lim_{v \to r^-} \text{scale}(v, r) = 1, \quad \lim_{v \to r^+} \text{scale}(v, r) = 1 + 0.28 \cdot \log_2(1) = 1$$
 
 ### 3.3 Matriz Ponderada de 9 Dimensiones
-El motor consolida 9 dimensiones evaluadas de forma independiente (`player-statistics.ts:140-159`), con pesos asignados de acuerdo con su impacto en la victoria:
+El motor consolida 9 dimensiones evaluadas de forma independiente (`player-statistics.ts:148-166`), con pesos asignados de acuerdo con su impacto en la victoria:
 
 - **KDA ($S_{\text{KDA}}$):** Ponderación base 20 con referencia fija de 4.5:
   $$S_{\text{KDA}} = 20 \cdot \text{scale}(\text{kda}, 4.5)$$
-  *(Cita: `player-statistics.ts:140, 150`)*
+  *(Cita: `player-statistics.ts:148, 158`)*
 - **Participación en Asesinatos ($S_{\text{KP}}$):** Ponderación base 18 con referencia fija de 65%:
   $$S_{\text{KP}} = 18 \cdot \text{scale}(\text{KP}, 65)$$
-  *(Cita: `player-statistics.ts:141, 151`)*
+  *(Cita: `player-statistics.ts:149, 159`)*
 - **Daño por Minuto ($S_{\text{DPM}}$):** Ponderación base 14 ajustada a la referencia del rol ($R_{\text{dpm}}$):
   $$S_{\text{DPM}} = 14 \cdot \text{scale}(\text{DPM}, R_{\text{dpm}})$$
-  *(Cita: `player-statistics.ts:142, 152`)*
+  *(Cita: `player-statistics.ts:150, 160`)*
 - **Eficiencia Económica de Daño ($S_{\text{DPG}}$):** Ponderación base 10 con fallback a la escala de DPM si no se dispone de registro de oro:
   $$S_{\text{DPG}} = \begin{cases} 10 \cdot \text{scale}(\text{DPG}, R_{\text{dpg}}) & \text{si } \text{Gold}_{\text{total}} > 0 \\ 10 \cdot \text{scale}(\text{DPM}, R_{\text{dpm}}) & \text{si } \text{Gold}_{\text{total}} \le 0 \end{cases}$$
-  *(Cita: `player-statistics.ts:143, 153`)*
+  *(Cita: `player-statistics.ts:151, 161`)*
 - **Puntuación de Visión por Minuto ($S_{\text{Vision}}$):** Ponderación base 10 ajustada a la referencia del rol ($R_{\text{vspm}}$):
   $$S_{\text{Vision}} = 10 \cdot \text{scale}(\text{VSPM}, R_{\text{vspm}})$$
-  *(Cita: `player-statistics.ts:144, 154`)*
+  *(Cita: `player-statistics.ts:152, 162`)*
 - **Súbditos por Minuto ($S_{\text{CS}}$):** Ponderación base 7 ajustada a la referencia del rol ($R_{\text{cspm}}$):
   $$S_{\text{CS}} = 7 \cdot \text{scale}(\text{CSPM}, R_{\text{cspm}})$$
-  *(Cita: `player-statistics.ts:145, 155`)*
+  *(Cita: `player-statistics.ts:153, 163`)*
 - **Daño Mitigado por Minuto ($S_{\text{Mitigation}}$):** Ponderación base 6 ajustada a la referencia del rol ($R_{\text{mitigationPm}}$):
   $$S_{\text{Mitigation}} = 6 \cdot \text{scale}(\text{Mitigation}_{\text{pm}}, R_{\text{mitigationPm}})$$
-  *(Cita: `player-statistics.ts:146, 156`)*
+  *(Cita: `player-statistics.ts:154, 164`)*
 - **Oro por Minuto ($S_{\text{GPM}}$):** Ponderación base 5 con fallback a la escala de CSPM si no se dispone de registro de oro:
   $$S_{\text{GPM}} = \begin{cases} 5 \cdot \text{scale}(\text{GPM}, R_{\text{gpm}}) & \text{si } \text{Gold}_{\text{total}} > 0 \\ 5 \cdot \text{scale}(\text{CSPM}, R_{\text{cspm}}) & \text{si } \text{Gold}_{\text{total}} \le 0 \end{cases}$$
-  *(Cita: `player-statistics.ts:147, 157`)*
+  *(Cita: `player-statistics.ts:155, 165`)*
 - **Tasa de Victorias ($S_{\text{WinRate}}$):** Aporte lineal directo ponderado sobre 10 puntos:
   $$S_{\text{WinRate}} = 10 \cdot \left(\frac{\text{WinRate}}{100}\right)$$
-  *(Cita: `player-statistics.ts:158`)*
+  *(Cita: `player-statistics.ts:166`)*
 
 #### Expresión de Consolidación Acumulada
 La puntuación bruta acumulada suma directamente las 9 dimensiones:
@@ -238,7 +237,7 @@ $$\text{Score}_{\text{MVP}} = S_{\text{KDA}} + S_{\text{KP}} + S_{\text{DPM}} + 
 
 ### 3.3.1 Desglose Algebraico Explícito por Rol Táctico (Top, Jungle, Mid, ADC, Support, Default)
 
-Al sustituir los vectores de parámetros específicos de `ROLE_REFERENCES` y `DEFAULT_REF` (`player-statistics.ts:90-105`) en la expresión general consolidada, se obtienen las ecuaciones algebraicas expandidas para cada una de las 6 posiciones tácticas:
+Al sustituir los vectores de parámetros específicos de `ROLE_REFERENCES` y `DEFAULT_REF` (`player-statistics.ts:103-118`) en la expresión general consolidada, se obtienen las ecuaciones algebraicas expandidas para cada una de las 6 posiciones tácticas:
 
 1. **Score TOP ($R_{\text{dpm}}=650$, $R_{\text{dpg}}=1600$, $R_{\text{vspm}}=1.0$, $R_{\text{cspm}}=7.5$, $R_{\text{mitigationPm}}=1100$, $R_{\text{gpm}}=380$):**
    $$\begin{aligned}
@@ -338,12 +337,12 @@ Sumando los 9 componentes calculados:
 
 $$\text{finalScore} = 25.60 + 18.54 + 14.54 + 10.08 + 10.39 + 7.27 + 5.40 + 5.19 + 10.00 = 107.01$$
 
-Aplicando el redondeo final a un decimal (`Math.round(finalScore * 10) / 10`, `player-statistics.ts:171`):
+Aplicando el redondeo final a un decimal (`Math.round(matchMvpScore(rows, all) * 10) / 10`, `player-statistics.ts:195-197`):
 
 $$\text{Puntuación Final} = \frac{\lfloor 107.01 \cdot 10 + 0.5 \rfloor}{10} = 107.0\text{ puntos}$$
 
 > [!NOTE]
-> El motor de cálculo no trunca la puntuación a un límite de 100 puntos. La combinación del escalado logarítmico cóncavo y las 9 dimensiones premia el rendimiento sobresaliente (*overperformance*), permitiendo superar la base de 100 puntos en actuaciones extraordinarias (por ejemplo, 110.8 puntos como se verifica en `apps/api/src/modules/competition/player-statistics.test.ts:137`).
+> El motor de cálculo no trunca la puntuación a un límite de 100 puntos. La combinación del escalado logarítmico cóncavo y las 9 dimensiones premia el rendimiento sobresaliente (*overperformance*), permitiendo superar la base de 100 puntos en actuaciones extraordinarias (por ejemplo, 108.7 puntos en el caso de Buzel, verificado en `apps/api/src/modules/competition/player-statistics.test.ts`).
 
 ### 3.5 Agregación de la serie y datos ausentes
 
@@ -361,18 +360,18 @@ Una duración ausente, no finita o no positiva produce cero en el cálculo indiv
 - Compara score sin redondear, victorias, participación en bajas, KDA sin redondear y daño total a campeones. Solo un empate en todos esos valores se resuelve por identificador para mantener un resultado estable.
 - Devuelve el ganador y su score redondeado a un decimal. Sin candidatos válidos no concede MVP.
 
-`matchMvpPlayerId` convierte los mapas y participantes con estadísticas al mismo formato y delega en `matchMvps`, incluyendo oro y posición del replay.
+`sealMatchMvp` y `backfillMatchMvps` cargan las filas mediante `loadMatchMvpRows` (en `match-mvp-data.ts`) e invocan directamente `matchMvps(rows)[0]`, incluyendo oro y posición del replay. El sellado se ejecuta dentro de la transacción ROFL después de insertar y ordenar todos los mapas del lote; el backfill procesa y verifica cada serie en su propia transacción.
 
 El sellado automático al finalizar la subida ROFL y el backfill histórico utilizan este cálculo. Los endpoints consumen sus resultados persistidos, como se describe a continuación.
 Esta unificación garantiza que el galardón de MVP sea matemáticamente idéntico tanto si se consulta desde la perspectiva de la serie individual como desde la agregación de jugadores de la división o temporada, resolviendo casos sensibles de desempate dimensional donde el oro acumulado resulta determinante (por ejemplo, el escenario verificado en tests donde Buzel con 108.7 supera a Sm0kY con 107.1).
 
 ### 3.7 Consumo de galardones persistidos
 
-Los endpoints no ejecutan `matchMvps` ni `matchMvpPlayerId`. El cálculo queda reservado a la finalización de series por ROFL y al backfill histórico.
+Los endpoints no ejecutan `matchMvps` para asignar premios de serie. Esa asignación queda reservada a la finalización por ROFL y al backfill histórico. Solo el desempate del banner reconstruye las métricas de los MVP ya guardados cuando sus notas máximas coinciden.
 
 - Detalle de partido y calendario: leen `matches.mvp_player_id`; los partidos no completados no publican MVP.
 - Listado de jugadores de una división: consulta los galardones de los enfrentamientos completados de esa división y los entrega a `enrichPlayers`. Esta función sigue calculando estadísticas generales, pero no decide premios.
-- Ficha de jugador: consulta los identificadores de enfrentamientos con `mvp_player_id` igual al jugador dentro de su temporada, independientemente del equipo o división actual. Conserva los galardones aunque no haya snapshots de estadísticas disponibles.
+- Ficha de jugador: consulta los identificadores de enfrentamientos con `mvp_player_id` igual al jugador dentro de su temporada, independientemente del equipo o división actual. Sin equipo activo, busca la temporada más reciente con partidas o MVPs registrados. Conserva los galardones aunque no haya snapshots de estadísticas disponibles.
 - Ficha de equipo: cuenta los MVP persistidos de sus series ganadas para cada integrante de plantilla. Los premios obtenidos con otro equipo no pasan a contabilizarse por un traspaso.
 
 Un `mvp_player_id` vacío sigue vacío: no existe recálculo de respaldo. Antes de desplegar estas lecturas sobre una base existente se debe ejecutar y verificar el [backfill histórico](../../database/mvp-backfill.md).
@@ -381,14 +380,16 @@ Un `mvp_player_id` vacío sigue vacío: no existe recálculo de respaldo. Antes 
 
 El repositorio selecciona la jornada más reciente de la división que tenga al menos un enfrentamiento completado con jugador y score MVP persistidos. Ordena las jornadas por fecha de inicio descendente (fechas nulas al final) e identificador descendente. Una nueva jornada sin galardones no desplaza la última jornada con MVP disponibles.
 
-Dentro de esa jornada consulta `matches` por división, ronda y estado `completed`, exige ambos campos de MVP y aplica `ORDER BY mvp_score DESC NULLS LAST, id ASC LIMIT 1`. El índice parcial `matches_round_mvp_score_idx` cubre la búsqueda por división/ronda y la ordenación principal por score; el identificador establece un resultado estable entre puntuaciones iguales.
+Dentro de esa jornada, `featuredMatchMvp` consulta `matches` por división, ronda y estado `completed`, exige ambos campos de MVP y obtiene la nota máxima con `ORDER BY mvp_score DESC NULLS LAST LIMIT 1`. Después consulta todos los enfrentamientos de esa jornada con esa nota. El índice parcial `matches_round_mvp_score_idx` facilita la búsqueda y la ordenación principal.
+
+Si hay varios empatados, carga únicamente sus filas con `loadMatchMvpRows` y obtiene las métricas del MVP persistido de cada serie mediante `playerMvpRanking`. Ordena con `compareMvpRanking`, la misma función que utiliza `matchMvps`: score sin redondear → victorias → participación en bajas → KDA → daño total a campeones, todos descendentes; solo un empate completo se resuelve por `playerId` ascendente mediante `localeCompare`. El UUID del enfrentamiento no decide el banner. Esta comparación no modifica los galardones guardados. Si faltan filas, se aplican los valores que producen las funciones estadísticas sobre los datos disponibles (incluido cero para conjuntos vacíos), sin inventar un MVP de serie.
 
 El banner muestra estadísticas de la jornada seleccionada y su nombre. La puntuación interna no se expone en el contrato público. Sin galardones en ninguna jornada devuelve `featured: null`.
 
 ---
 ## 4. Normalización de Posiciones y Desempate de Campeón Destacado
 
-### 4.1 Normalización de Roles (`player-statistics.ts:25-32`)
+### 4.1 Normalización de Roles (`player-statistics.ts:25-34`)
 Para garantizar consistencia con los datos provenientes de la Riot API o de hojas de cálculo, las posiciones se unifican mediante la función `playerRole`:
 - `'middle'` $\to$ `'mid'`
 - `'bottom'` o `'bot'` $\to$ `'adc'`
@@ -396,11 +397,11 @@ Para garantizar consistencia con los datos provenientes de la Riot API o de hoja
 - `'jg'` o `'jungla'` $\to$ `'jungle'`
 - Otras cadenas se convierten a minúsculas o se evalúan como `null`.
 
-### 4.2 Desempate Cronológico de Campeón Destacado (*Splash Art*) (`player-statistics.ts:234-250`)
-Para seleccionar el campeón más representativo de un jugador en la temporada, la función pura exportada `mostPlayedChampion(games: PlayerGameRow[])` (`player-statistics.ts:234-250`) procesa el historial de partidas:
+### 4.2 Desempate Cronológico de Campeón Destacado (*Splash Art*) (`player-statistics.ts:290-306`)
+Para seleccionar el campeón más representativo de un jugador en la temporada, la función pura exportada `mostPlayedChampion(games: PlayerGameRow[])` (`player-statistics.ts:290-306`) procesa el historial de partidas:
 - Se contabilizan las partidas disputadas con cada campeón mediante un mapa de frecuencias `Map<string, number>`.
-- La evaluación de máximo se realiza mediante la condición `count >= mostGames` (`línea 244`).
-- Dado que las partidas se consultan ordenadas cronológicamente en orden ascendente por `asc(matches.finishedAt), asc(matchGames.gameNumber)` (tanto en `players` en `postgres-competition.repository.ts:224-225` como en `playerSeasonGames` en `postgres-competition.repository.ts:379-380`), en caso de empate en número de partidas, el campeón utilizado más recientemente sobrescribe la selección previa, garantizando un resultado determinista sin aleatoriedad.
+- La evaluación de máximo se realiza mediante la condición `count >= mostGames` (`player-statistics.ts:300`).
+- Las consultas `players` y `playerSeasonGames` de `postgres-competition.repository.ts` ordenan el historial antes de entregarlo a `mostPlayedChampion`. En caso de empate en número de mapas, vence el campeón de la última fila recibida; los criterios adicionales de fecha programada e identificadores mantienen un orden estable.
 
 ---
 

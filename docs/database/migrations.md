@@ -1,6 +1,6 @@
 # Migraciones, Concurrencia y Verificación Criptográfica
 
-Para poblar los MVP históricos después de aplicar `0002_match_mvp`, consultar [Backfill de MVP históricos](./mvp-backfill.md).
+Para poblar los MVP históricos después de aplicar las migraciones `0002_match_mvp` y `0003_match_mvp_checks`, consultar [Backfill de MVP históricos](./mvp-backfill.md).
 
 [⬅️ Volver a Documentación de Base de Datos](./README.md) | [Siguiente: Datos de Siembra y Fixtures ➡️](./seed.md)
 
@@ -11,8 +11,11 @@ Para poblar los MVP históricos después de aplicar `0002_match_mvp`, consultar 
 La base de datos utiliza **Drizzle Kit** y un ejecutor programático dedicado ubicado en `packages/database/src/migrate.ts` para aplicar evoluciones del esquema relacional de forma segura y reproducible.
 
 Las migraciones SQL versionadas residen en el directorio `packages/database/drizzle/`:
-- `0000_initial_schema.sql` (456 LoC): Contiene el DDL completo del esquema baseline, la creación de tipos enumerados, restricciones, índices y los procedimientos y disparadores PL/pgSQL.
-- `meta/_journal.json`: Registro de control de versiones generado por Drizzle Kit con el histórico de migraciones aplicadas.
+- `0000_initial_schema.sql`: Contiene el DDL completo del esquema baseline, la creación de tipos enumerados, restricciones, índices y los procedimientos y disparadores PL/pgSQL.
+- `0001_competitive_membership_per_season.sql`: Añade la temporada a equipos e inscripciones, claves foráneas compuestas y la exclusión de varias inscripciones competitivas por usuario y temporada. Los conflictos previos abortan la migración sin borrar ni reasignar inscripciones.
+- `0002_match_mvp.sql`: Añade `matches.mvp_player_id`, su FK a `players` con `ON DELETE SET NULL`, `mvp_score numeric(5,1)` y el índice parcial `matches_round_mvp_score_idx`.
+- `0003_match_mvp_checks.sql`: Impide puntuaciones negativas y jugadores MVP con puntuación nula; permite conservar el score cuando se elimina el jugador.
+- `meta/_journal.json`: Inventario ordenado de migraciones versionadas generado por Drizzle Kit. La tabla `drizzle.__drizzle_migrations` registra cuáles se han aplicado en cada base; los snapshots versionados describen el esquema tras cada migración.
 
 ---
 

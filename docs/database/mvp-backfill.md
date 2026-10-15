@@ -1,5 +1,9 @@
 # Backfill de MVP históricos
 
+[⬅️ Volver a Documentación de Base de Datos](./README.md) | [Migraciones y requisitos previos](./migrations.md)
+
+---
+
 El comando procesa enfrentamientos `completed` y rellena `matches.mvp_player_id` y `matches.mvp_score` cuando ambos campos están vacíos. Reutiliza los mismos datos y algoritmo que la subida ROFL: posición del replay por mapa, media ponderada por duración, participación mínima del 50% y candidatos del equipo vencedor.
 
 ## Ejecución
