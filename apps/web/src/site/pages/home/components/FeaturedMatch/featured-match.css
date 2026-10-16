@@ -5,7 +5,50 @@
 }
 
 .rcl-site .featured-match .eyebrow {
+  margin-bottom: 0;
+}
+
+.rcl-site .featured-match-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
   margin-bottom: 14px;
+}
+
+.rcl-site .featured-match-count {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.rcl-site .featured-match-track {
+  display: grid;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.rcl-site .featured-match-slide {
+  grid-area: 1 / 1;
+  min-width: 0;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 400ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.rcl-site .featured-match-slide.is-active {
+  z-index: 1;
+  opacity: 1;
+  pointer-events: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rcl-site .featured-match-slide {
+    transition: none;
+  }
 }
 
 .rcl-site .featured-empty {
@@ -15,4 +58,128 @@
   flex-wrap: wrap;
   color: var(--muted);
   font-size: 14px;
+}
+
+.rcl-site .featured-match-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  width: fit-content;
+  justify-self: center;
+  border: 1px solid var(--line);
+  background: var(--void);
+}
+
+.rcl-site .featured-match-control {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 32px;
+  padding: 0;
+  border: 0;
+  background: var(--void);
+  color: var(--text);
+  font: 700 10px var(--mono);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  transition: background-color 150ms, border-color 150ms, color 150ms;
+}
+
+.rcl-site .featured-match-control:hover {
+  background: var(--purple);
+  border-color: var(--purple);
+}
+
+.rcl-site .featured-match-control[aria-pressed='true'] {
+  background: var(--lime);
+  border-color: var(--lime);
+  color: var(--void);
+}
+
+.rcl-site .featured-match-arrow {
+  width: 32px;
+  padding: 0;
+  color: var(--lime);
+  font-size: 16px;
+}
+
+.rcl-site .featured-match-arrow:hover {
+  color: var(--text);
+}
+
+.rcl-site .featured-match-position {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0 8px;
+  color: var(--muted);
+  font: 400 11px var(--mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.rcl-site .featured-match-position strong {
+  color: var(--lime);
+}
+
+.rcl-site .featured-match-pause {
+  width: 32px;
+  border-left: 1px solid var(--line);
+}
+
+.rcl-site .featured-match-pause-icon {
+  width: 9px;
+  height: 10px;
+  border-inline: 3px solid currentColor;
+}
+
+.rcl-site .featured-match-play-icon {
+  width: 0;
+  height: 0;
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+  border-left: 8px solid currentColor;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rcl-site .featured-match-control {
+    transition: none;
+  }
+}
+
+/* MatchCard uses the same column widths, gaps and horizontal insets.
+   Align the controls with the score, rather than the full card width. */
+.rcl-site .featured-match-navigation {
+  display: grid;
+  margin-top: 8px;
+}
+
+.rcl-site .featured-match:has(.featured-match-navigation) {
+  padding-bottom: 18px;
+}
+
+@media (min-width: 651px) {
+  .rcl-site .featured-match-navigation {
+    grid-template-columns: 70px minmax(0, 1fr);
+    column-gap: 18px;
+    padding-inline: 25px 23px;
+  }
+
+  .rcl-site .featured-match-controls {
+    grid-column: 2;
+  }
+}
+
+@media (min-width: 1151px) {
+  .rcl-site .featured-match-navigation {
+    grid-template-columns: 80px minmax(0, 1fr) 140px 108px;
+  }
+}
+
+@media (pointer: coarse) {
+  .rcl-site .featured-match-control {
+    min-height: 44px;
+    width: 44px;
+  }
 }

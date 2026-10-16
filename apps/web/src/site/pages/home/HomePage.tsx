@@ -29,8 +29,9 @@ export function HomePage({
     return () => observer.disconnect();
   }, []);
 
+  const liveMatches = competition.calendar.data.filter((match) => match.status === 'live');
   const featured =
-    competition.calendar.data.find((match) => match.status === 'live') ??
+    liveMatches[0] ??
     competition.calendar.data
       .filter((match) => match.status === 'scheduled')
       .sort((a, b) => (a.scheduledAt ?? '9999').localeCompare(b.scheduledAt ?? '9999'))[0];
@@ -53,7 +54,7 @@ export function HomePage({
         )}
       </div>
       <HomeHero seasonName={competition.season?.name} streamUrl={stream} />
-      <HomeFeaturedMatch featured={featured} />
+      <HomeFeaturedMatch featured={featured} liveMatches={liveMatches} />
       <TeamOfTheWeekStrip competition={competition} />
       <EditorialGrid />
       {articleId && <EditorialPage key={articleId} articleId={articleId} />}
