@@ -362,6 +362,8 @@ Una duración ausente, no finita o no positiva produce cero en el cálculo indiv
 
 `sealMatchMvp` y `backfillMatchMvps` cargan las filas mediante `loadMatchMvpRows` (en `match-mvp-data.ts`) e invocan directamente `matchMvps(rows)[0]`, incluyendo oro y posición del replay. El sellado se ejecuta dentro de la transacción ROFL después de insertar y ordenar todos los mapas del lote; el backfill procesa y verifica cada serie en su propia transacción.
 
+`sealMatchMvp` está definido en `apps/api/src/modules/rofl-upload/persistence/postgres-rofl-upload.repository.ts:45`. Si `matchMvps(rows)[0]` no devuelve un candidato elegible (o el candidato no pertenece al equipo vencedor), lanza `RoflUploadDomainError` y aborta la transacción de subida, revirtiendo sus cambios. En cambio, `backfillMatchMvps` registra esa serie como `unresolved` con motivo `no_eligible_mvp` y continúa con las siguientes.
+
 El sellado automático al finalizar la subida ROFL y el backfill histórico utilizan este cálculo. Los endpoints consumen sus resultados persistidos, como se describe a continuación.
 Esta unificación garantiza que el galardón de MVP sea matemáticamente idéntico tanto si se consulta desde la perspectiva de la serie individual como desde la agregación de jugadores de la división o temporada, resolviendo casos sensibles de desempate dimensional donde el oro acumulado resulta determinante (por ejemplo, el escenario verificado en tests donde Buzel con 108.7 supera a Sm0kY con 107.1).
 
@@ -389,7 +391,7 @@ El banner muestra estadísticas de la jornada seleccionada y su nombre. La puntu
 ---
 ## 4. Normalización de Posiciones y Desempate de Campeón Destacado
 
-### 4.1 Normalización de Roles (`player-statistics.ts:25-34`)
+### 4.1 Normalización de Roles (`player-statistics.ts:25-32`)
 Para garantizar consistencia con los datos provenientes de la Riot API o de hojas de cálculo, las posiciones se unifican mediante la función `playerRole`:
 - `'middle'` $\to$ `'mid'`
 - `'bottom'` o `'bot'` $\to$ `'adc'`
