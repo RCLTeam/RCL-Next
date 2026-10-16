@@ -58,20 +58,6 @@ export function HomeFeaturedMatch({
       </div>
       {isCarousel ? (
         <section aria-label="Partidos en directo" aria-roledescription="carrusel">
-          <div className="featured-match-controls">
-            <button
-              type="button"
-              onClick={() => setActiveIndex((visibleIndex + matchCount - 1) % matchCount)}
-            >
-              Partido anterior
-            </button>
-            <button type="button" aria-pressed={paused} onClick={() => setPaused(!paused)}>
-              Pausar rotación automática
-            </button>
-            <button type="button" onClick={() => setActiveIndex((visibleIndex + 1) % matchCount)}>
-              Partido siguiente
-            </button>
-          </div>
           <div className="featured-match-track">
             {liveMatches.map((match, index) => (
               <section
@@ -85,6 +71,49 @@ export function HomeFeaturedMatch({
                 <MatchCard match={match} />
               </section>
             ))}
+          </div>
+          <div className="featured-match-navigation">
+            <div className="featured-match-controls">
+              <button
+                className="featured-match-control featured-match-arrow"
+                type="button"
+                aria-label="Partido anterior"
+                title="Partido anterior"
+                onClick={() => setActiveIndex((visibleIndex + matchCount - 1) % matchCount)}
+              >
+                <span aria-hidden="true">←</span>
+              </button>
+              <span
+                className="featured-match-position"
+                aria-label={`Partido ${visibleIndex + 1} de ${matchCount}`}
+              >
+                <strong>{String(visibleIndex + 1).padStart(2, '0')}</strong>
+                <span aria-hidden="true">/</span>
+                {String(matchCount).padStart(2, '0')}
+              </span>
+              <button
+                className="featured-match-control featured-match-pause"
+                type="button"
+                aria-label="Pausar rotación automática"
+                aria-pressed={paused}
+                title={paused ? 'Reanudar rotación automática' : 'Pausar rotación automática'}
+                onClick={() => setPaused(!paused)}
+              >
+                <span
+                  className={paused ? 'featured-match-play-icon' : 'featured-match-pause-icon'}
+                  aria-hidden="true"
+                />
+              </button>
+              <button
+                className="featured-match-control featured-match-arrow"
+                type="button"
+                aria-label="Partido siguiente"
+                title="Partido siguiente"
+                onClick={() => setActiveIndex((visibleIndex + 1) % matchCount)}
+              >
+                <span aria-hidden="true">→</span>
+              </button>
+            </div>
           </div>
         </section>
       ) : featured ? (

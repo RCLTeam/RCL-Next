@@ -50,7 +50,7 @@ const active = () => container.querySelector('.is-active')?.getAttribute('aria-l
 const click = (label: string) =>
   act(() => {
     const button = Array.from(container.querySelectorAll('button')).find(
-      (item) => item.textContent === label
+      (item) => (item.getAttribute('aria-label') ?? item.textContent) === label
     );
     expect(button).toBeDefined();
     button?.click();
