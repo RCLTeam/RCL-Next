@@ -227,7 +227,7 @@ Orquesta la vista del perfil institucional y deportivo de un club, integrando la
 ---
 
 ### 3.9 `PlayerDetailPage` (Ficha de Detalle de Jugador)
-**Archivo**: `site/pages/player-details/PlayerDetailPage.tsx:1-256`
+**Archivo**: `site/pages/player-details/PlayerDetailPage.tsx:1-249`
 
 Orquesta la ficha de perfil de un competidor, centralizando su identidad en Riot Games, sus estadísticas acumuladas en el torneo, la vinculación de cuentas secundarias (*smurfs* / secundarias) y su historial cronológico de inscripciones.
 

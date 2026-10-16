@@ -64,3 +64,10 @@
   color: var(--muted);
   font-size: 14px;
 }
+
+.rcl-site .featured-match-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+}
