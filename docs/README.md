@@ -24,6 +24,7 @@ docs/
 │   ├── schema.md                                # Especificación de las 21 tablas relacionales y 6 enums
 │   ├── constraints.md                           # Claves foráneas, índices parciales y triggers PL/pgSQL
 │   ├── migrations.md                            # Ciclo de migraciones, advisory lock 72160419 y hashes SHA-256
+│   ├── mvp-backfill.md                          # Recálculo histórico de MVP: simulación, aplicación y verificación
 │   ├── seed.md                                  # Siembra transaccional protegida, demo.sql con roles de Discord y showcase.sql
 │   └── contracts.md                             # Mapeo y trazabilidad hacia tipos de @rcl/contracts
 ├── reference/                                   # Archivo arqueológico y comparativa histórica
@@ -212,6 +213,7 @@ Gestiona el esquema de persistencia en PostgreSQL 16+ / PGlite 0.3+, modelado co
 - [docs/database/schema.md](database/schema.md): Catálogo exhaustivo de las 21 tablas y 6 enums.
 - [docs/database/constraints.md](database/constraints.md): Claves foráneas, checks, índices únicos parciales y triggers.
 - [docs/database/migrations.md](database/migrations.md): Flujo de migraciones, advisory lock `72160419` y verificación de integridad.
+- [docs/database/mvp-backfill.md](database/mvp-backfill.md): Recálculo histórico mediante `backfill-match-mvps.ts`, con datos de `match-mvp-data.ts` y CLI en `apps/api/src/scripts/backfill-match-mvps.ts`.
 - [docs/database/seed.md](database/seed.md): Estrategia de siembra transaccional protegida, demo.sql con roles de Discord, showcase.sql y verificación del invariante 5.
 - [docs/database/contracts.md](database/contracts.md): Trazabilidad de entidades relacionales hacia `@rcl/contracts`.
 - [docs/reference/README.md](reference/README.md): Comparativa técnica del esquema histórico vs el modelo Drizzle actual.

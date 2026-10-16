@@ -17,7 +17,7 @@ Ninguna vista ensambladora contiene lógica de persistencia ni manipulación dir
 
 El frontend muestra los galardones enviados por la API y no elige ganadores a partir de estadísticas ni del antiguo `stats.isMvp` (deprecado en el contrato):
 
-- La ficha del partido utiliza `mvpPlayerId` para toda la serie, con independencia del mapa seleccionado. El nombre y el slug del MVP llegan en `mvpPlayer`, por lo que mantiene el enlace nominal aunque falten participantes importados; si no hay galardón, muestra «No disponible». Las incomparecencias no muestran un MVP.
+- La ficha del partido utiliza `mvpPlayerId` para toda la serie, con independencia del mapa seleccionado. El nombre y el slug del MVP llegan en `mvpPlayer`, por lo que mantiene el enlace nominal aunque falten participantes importados; si no hay galardón, muestra «No disponible.». Las incomparecencias no muestran un MVP.
 - El directorio y la ficha de jugador muestran el número de `mvpMatchIds`, incluso cuando faltan estadísticas. Los jugadores con galardones históricos siguen apareciendo en el filtro «Todos» aunque ya no tengan rol de plantilla. Las estadísticas ausentes se muestran con «—». El selector permite ordenar por número de MVPs guardados, de mayor a menor, con desempate por nombre e ID.
 - La sección de rendimiento de la ficha se identifica por temporada, ya que sus estadísticas y MVP abarcan todos los equipos y divisiones de esa temporada. Los contadores de equipo siguen utilizando `rosterStats.mvps` de la API.
 - En empates de nota máxima de la jornada, la API desempata entre los MVP guardados por nota sin redondear, victorias, participación en bajas, KDA y daño; el ID del jugador solo decide un empate completo. Las estadísticas se consultan únicamente para las series empatadas.
@@ -46,7 +46,7 @@ El campo de mapa `isMvp` se conserva temporalmente por compatibilidad, pero no r
 ## 3. Especificación Técnica de las Vistas Principales
 
 ### 3.1 `StandingsPage` (Clasificación de Liga)
-**Archivo**: `site/pages/standings/StandingsPage.tsx:1-38`
+**Archivo**: `site/pages/standings/StandingsPage.tsx:1-37`
 
 - **Estructura**:
   ```tsx
@@ -77,7 +77,7 @@ El campo de mapa `isMvp` se conserva temporalmente por compatibilidad, pero no r
 ---
 
 ### 3.2 `CalendarPage` (Calendario de Partidos y Jornadas)
-**Archivo**: `site/pages/calendar/CalendarPage.tsx:1-102`
+**Archivo**: `site/pages/calendar/CalendarPage.tsx:1-101`
 
 - **Resolución Automática de la Jornada Más Cercana**:
   Calcula en tiempo real cuál es la jornada actual mediante la función `getClosestRoundId(rounds)` (`líneas 14-36`):
@@ -90,7 +90,7 @@ El campo de mapa `isMvp` se conserva temporalmente por compatibilidad, pero no r
 ---
 
 ### 3.3 `TeamsPage` (Directorio de Equipos)
-**Archivo**: `site/pages/teams/TeamsPage.tsx:1-48`
+**Archivo**: `site/pages/teams/TeamsPage.tsx:1-47`
 
 - **Búsqueda Reactiva**:
   Implementa filtrado en memoria sin peticiones de red adicionales:
@@ -104,7 +104,7 @@ El campo de mapa `isMvp` se conserva temporalmente por compatibilidad, pero no r
 ---
 
 ### 3.4 `PlayersPage` (Directorio de Jugadores y Ficha Destacada)
-**Archivo**: `site/pages/players/PlayersPage.tsx:1-338`
+**Archivo**: `site/pages/players/PlayersPage.tsx:1-377`
 
 - **Jugador Destacado (*Featured MVP*)**:
   Identifica al jugador con la marca `player.competition?.featured` y renderiza el componente `FeaturedPlayer` (`líneas 81-84, 243-285`) con su KDA, participación en bajas y campeón más jugado.
@@ -124,7 +124,7 @@ El campo de mapa `isMvp` se conserva temporalmente por compatibilidad, pero no r
 ---
 
 ### 3.5 `PlayoffsPage` (Cuadro de Eliminatorias)
-**Archivo**: `site/pages/playoffs/PlayoffsPage.tsx:1-39`
+**Archivo**: `site/pages/playoffs/PlayoffsPage.tsx:1-38`
 
 - **Filtro de Fase de Eliminatorias**:
   ```typescript
@@ -137,7 +137,7 @@ El campo de mapa `isMvp` se conserva temporalmente por compatibilidad, pero no r
 ---
 
 ### 3.6 `ChampionsPage` (Estadísticas de Campeones)
-**Archivo**: `site/pages/champions/ChampionsPage.tsx:1-49`
+**Archivo**: `site/pages/champions/ChampionsPage.tsx:1-48`
 
 - Consulta `divisions/:divisionId/champions` mediante `useCollection`.
 - Integra el catálogo de recursos gráficos de Riot Games (`useGameCatalog`, `apps/web/src/shared/riot/riot-assets.service.ts`) para renderizar iconos oficiales de campeones junto a sus porcentajes de victoria y presencia en el torneo.
@@ -145,7 +145,7 @@ El campo de mapa `isMvp` se conserva temporalmente por compatibilidad, pero no r
 ---
 
 ### 3.7 `MatchDetailPage` (Ficha de Detalle de Partido)
-**Archivo**: `site/pages/match-details/MatchDetailPage.tsx:1-159`
+**Archivo**: `site/pages/match-details/MatchDetailPage.tsx:1-166`
 
 Orquesta la vista completa del resultado de un enfrentamiento competitivo, integrando el catálogo visual de Riot Games (`useGameCatalog`), el selector de mapas disputados, el MVP determinista de la serie y la navegación por pestañas entre enfrentamientos directos y estadísticas cuantitativas.
 
@@ -161,14 +161,10 @@ Orquesta la vista completa del resultado de un enfrentamiento competitivo, integ
 - **Cabecera y Reporte Oficial de Incidencias (`match-header-card`)**:
   - **Marcador Global (`match-report-score`)**: Presenta los emblemas (`TeamBadge`) y nombres de ambos equipos, el marcador de la serie (`match.homeScore – match.awayScore`) y el estado competitivo, distinguiendo incomparecencias administrativas (`match.status === 'forfeit' ? 'Incomparecencia' : 'Resultado final'`) y el formato al mejor de mapas (`BO{match.bestOf}`).
   - **Sección Destacada de MVP de la Serie (`match-series-mvp`)**:
-    - Resuelve al jugador galardonado con el MVP de la serie mediante `match.mvpPlayerId`, calculado deterministamente en el backend a través del algoritmo `matchMvps` (`apps/api/src/modules/competition/player-statistics.ts:174-225`).
-    - Localiza la entidad del participante en el árbol de mapas:
-      ```typescript
-      const mvp = match.games
-        .flatMap((item) => item.participants)
-        .find((player) => player.playerId === match.mvpPlayerId);
-      ```
-    - Muestra la insignia `"MVP del enfrentamiento"` y un enlace enriquecido mediante `SiteLink` hacia su perfil (`/jugadores/${encodeURIComponent(mvp.playerId)}`), mostrando `gameName` y `riotTag`.
+    - El galardón de toda la serie se identifica con `match.mvpPlayerId`, persistido por el backend usando `matchMvps` (`apps/api/src/modules/competition/player-statistics.ts:236-276`). La interfaz no lo recalcula.
+    - Usa `match.mvpPlayer` si su `id` coincide con `match.mvpPlayerId`; como respaldo busca ese ID entre los participantes de todos los mapas. El enlace es `/jugadores/${encodeURIComponent(identity?.slug ?? match.mvpPlayerId)}`: prefiere el slug y conserva el ID persistido como fallback.
+    - En partidos `completed` muestra «MVP del enfrentamiento». Con identidad disponible presenta `gameName` y, si existe, `#riotTag`; si hay ID pero no identidad ni participante, el enlace dice «Ver jugador MVP». Sin `match.mvpPlayerId` muestra «No disponible.». En `forfeit` no muestra la sección MVP.
+    - Implementación: `site/pages/match-details/MatchDetailPage.tsx:20-25, 54-67`.
 
 - **Barra Unificada de Sub-Tarjetas de Mapas (`match-subcard-bar`)**:
   - **Columna de Contexto (`match-context-col`)**: Despliega la ruta competitiva completa (`seasonName · divisionName · roundName`).
@@ -183,7 +179,7 @@ Orquesta la vista completa del resultado de un enfrentamiento competitivo, integ
 ---
 
 ### 3.8 `TeamDetailPage` (Ficha de Detalle de Equipo)
-**Archivo**: `site/pages/team-details/TeamDetailPage.tsx:1-243`
+**Archivo**: `site/pages/team-details/TeamDetailPage.tsx:1-242`
 
 Orquesta la vista del perfil institucional y deportivo de un club, integrando la temática visual del equipo, el estado de actividad competitiva, el generador de enlaces a la herramienta Multi OP.GG y la plantilla categorizada por funciones técnicas.
 
@@ -227,7 +223,7 @@ Orquesta la vista del perfil institucional y deportivo de un club, integrando la
 ---
 
 ### 3.9 `PlayerDetailPage` (Ficha de Detalle de Jugador)
-**Archivo**: `site/pages/player-details/PlayerDetailPage.tsx:1-256`
+**Archivo**: `site/pages/player-details/PlayerDetailPage.tsx:1-252`
 
 Orquesta la ficha de perfil de un competidor, centralizando su identidad en Riot Games, sus estadísticas acumuladas en el torneo, la vinculación de cuentas secundarias (*smurfs* / secundarias) y su historial cronológico de inscripciones.
 
@@ -258,6 +254,7 @@ Orquesta la ficha de perfil de un competidor, centralizando su identidad en Riot
     ```
 
 - **Sección de Rendimiento Deportivo (`player-performance`)**:
+  - Definición de métricas: `PlayerDetailPage.tsx:26-43`; representación y estado vacío: `PlayerDetailPage.tsx:159-188`. La cuadrícula aparece si hay partidas o MVPs; los premios se muestran incluso sin estadísticas.
   - Cuadrícula con 8 métricas de rendimiento (`player-performance-grid`): Partidas, KDA, % Victorias, MVPs conseguidos (`player.competition?.mvpMatchIds.length`), CS/minuto, Participación en kills %, Daño/minuto y Puntuación de visión. Formateo en español (`'es'`) con un máximo de 2 dígitos fraccionarios.
   - Campeón insignia (`player-signature-champion`): Muestra el campeón más jugado por el usuario en la competición (`player.competition?.champion`).
   - Estado vacío de rendimiento (`player-performance-empty`): Mensaje inspirador ("La historia está por escribir. Próxima parada: la Grieta.") para participantes que aún no han debutado en partidos oficiales.
