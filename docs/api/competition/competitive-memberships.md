@@ -147,3 +147,25 @@ temporada, capitanías inválidas o duplicadas y membresías huérfanas. Devuelv
 de salida 1 si encuentra problemas; no repara, borra ni reasigna registros.
 Debe revisarse el informe antes de decidir una corrección de datos. No se añade
 ninguna migración en esta fase.
+
+## Validación de regresión (fase 7)
+
+La cobertura automática se organiza así:
+
+| Comportamiento | Pruebas |
+| --- | --- |
+| Clasificación compartida, suplentes, temporadas e inactivos | `tests/unit/roster-roles.test.ts` |
+| Selección de inscripción y temporada estadística, sin depender del staff | `apps/api/src/modules/competition/competition.service.test.ts` |
+| Listados, separación de divisiones/temporadas, resultados históricos y MVPs | `tests/integration/persisted-mvps.test.ts` |
+| Filtros y estados del perfil, trayectoria y vinculaciones | `tests/unit/render/player-pages.test.tsx` y `apps/web/src/site/pages/players/PlayersPage.test.tsx` |
+| Administración → API pública: cambio de equipo competitivo por rol, rechazo atómico, capitanía y retirada | `tests/integration/crud-operations.test.ts` |
+| Datos persistidos → HTTP → perfil renderizado, conservando estadísticas al pasar a staff | `tests/integration/player-profile-flow.test.tsx` |
+| Restricciones, migración e informe de integridad, incluidos datos dañados | `tests/integration/competitive-memberships.test.ts` |
+
+Ejecutar `pnpm check` para tipos, formato/lint y la suite completa. Las pruebas
+de integración usan PostgreSQL embebido desechable; las pruebas de perfil validan
+HTML renderizado por React, no una sesión interactiva de navegador.
+
+La comprobación de la base real es una operación independiente mediante
+`pnpm --filter @rcl/database db:check --memberships` con su conexión configurada.
+No se deduce la integridad de datos reales a partir del resultado de los fixtures.

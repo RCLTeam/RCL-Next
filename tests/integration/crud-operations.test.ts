@@ -5,10 +5,11 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { PGlite } from '@electric-sql/pglite';
 import { btree_gist } from '@electric-sql/pglite/contrib/btree_gist';
-import type { CrudDeletePreview, CrudRecord } from '@rcl/contracts';
+import type { CrudDeletePreview, CrudRecord, PlayerDetail } from '@rcl/contracts';
 import { eq, sql } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/pglite';
 import { migrate } from 'drizzle-orm/pglite/migrator';
+
 import request from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createApp } from '../../apps/api/src/app.js';
@@ -19,6 +20,7 @@ import { PostgresCompetitionRepository } from '../../apps/api/src/modules/compet
 import { crudResources } from '../../apps/api/src/modules/crud-operations/crud-operations.resources.js';
 import { PostgresCrudOperationsRepository } from '../../apps/api/src/modules/crud-operations/postgres-crud-operations.repository.js';
 import { resolveTeamLogo } from '../../apps/web/src/shared/resources/team-logos.js';
+
 import * as schema from '../../packages/database/src/schema.js';
 
 describe('admin CRUD with HTTP sessions and PostgreSQL constraints', () => {
@@ -1115,5 +1117,113 @@ describe('admin CRUD with HTTP sessions and PostgreSQL constraints', () => {
       .delete(schema.rosterMovements)
       .where(eq(schema.rosterMovements.discordUserId, playerId));
     await db.delete(schema.discordUsers).where(eq(schema.discordUsers.discordId, playerId));
+  });
+
+  it('admin role changes reach the public API without mixing affiliations', async () => {
+    const person = '833456789012345678';
+    const secondPerson = '843456789012345678';
+    await db.insert(schema.discordUsers).values([
+      { discordId: person, username: 'Profile flow' },
+      { discordId: secondPerson, username: 'Captain conflict' }
+    ]);
+    await create('seasons', { name: 'Profile flow season', startsOn: '2026-01-01' });
+    const competition = await create('competitions', {
+      seasonName: 'Profile flow season',
+      divisionName: 'Base division'
+    });
+    const a = await create('teams', {
+      name: 'Flow Alpha',
+      seasonDivisionId: competition.id,
+      color: '#112233'
+    });
+    const b = await create('teams', {
+      name: 'Flow Beta',
+      seasonDivisionId: competition.id,
+      color: '#445566'
+    });
+    const account = await create('players', {
+      gameName: 'Flow player',
+      discordUserId: person,
+      isMain: true
+    });
+    const alpha = await create('memberships', {
+      teamId: a.id,
+      discordUserId: person,
+      role: 'mid',
+      isCaptain: true
+    });
+    const beta = await create('memberships', {
+      teamId: b.id,
+      discordUserId: person,
+      role: 'staff'
+    });
+    const counts = async () => [
+      (await db.select().from(schema.auditLogs)).length,
+      (await db.select().from(schema.rosterMovements)).length
+    ];
+    const beforeRejected = await counts();
+    const captain = await send('post', 'memberships', {
+      teamId: a.id,
+      discordUserId: secondPerson,
+      role: 'top',
+      isCaptain: true
+    }).expect(409);
+    expect(captain.body.error.message).toBe(
+      'El equipo ya tiene un capitán. Retira esa capitanía antes de asignar otra.'
+    );
+    for (const role of ['substitute', 'coach', 'staff', 'partners']) {
+      const invalid = await send('post', 'memberships', {
+        teamId: b.id,
+        discordUserId: secondPerson,
+        role,
+        isCaptain: true
+      }).expect(409);
+      expect(invalid.body.error.message).toBe(
+        'Solo los roles top, jungle, mid, adc y support pueden ser capitán.'
+      );
+    }
+    await send(
+      'put',
+      'memberships',
+      updateBody('memberships', beta, { role: 'substitute' })
+    ).expect(409);
+    expect(await counts()).toEqual(beforeRejected);
+
+    const publicProfile = async () => {
+      const response = await request(app).get(`/api/v1/players/${account.id}`).expect(200);
+      const detail = response.body.data as PlayerDetail;
+      return { detail };
+    };
+    const before = await publicProfile();
+    expect(before.detail.registrationTeam?.id).toBe(a.id);
+
+    await send(
+      'put',
+      'memberships',
+      updateBody('memberships', alpha, { role: 'coach', isCaptain: false })
+    ).expect(200);
+    const promoted = await send(
+      'put',
+      'memberships',
+      updateBody('memberships', beta, { role: 'substitute' })
+    ).expect(200);
+    const after = await publicProfile();
+    expect(after.detail.registrationTeam?.id).toBe(b.id);
+    expect(after.detail.statisticsSeasonName).toBe('Profile flow season');
+    const directory = await request(app)
+      .get(`/api/v1/divisions/${competition.id}/players`)
+      .expect(200);
+    expect(directory.body.data).toHaveLength(1);
+    expect(directory.body.data[0].competition.team.id).toBe(b.id);
+
+    await send(
+      'put',
+      'memberships',
+      updateBody('memberships', promoted.body.data, { role: 'partners' })
+    ).expect(200);
+    const retired = await publicProfile();
+    expect(retired.detail.registrationTeam).toBeNull();
+    const empty = await request(app).get(`/api/v1/divisions/${competition.id}/players`).expect(200);
+    expect(empty.body.data).toEqual([]);
   });
 });
