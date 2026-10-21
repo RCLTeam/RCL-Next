@@ -1,4 +1,5 @@
 import type { Player, PlayerStatistics } from '@rcl/contracts';
+import { isCompetitiveRole } from '@rcl/contracts';
 import React, { useState } from 'react';
 import {
   DataState,
@@ -147,7 +148,6 @@ export function PlayersPage({ competition }: { competition: Competition }) {
   );
 }
 
-const VALID_PLAYER_ROLES = ['top', 'jungle', 'mid', 'adc', 'support', 'substitute'];
 export function filterPlayers(
   players: Player[],
   query: string,
@@ -163,7 +163,7 @@ export function filterPlayers(
 
       let matchesRole = false;
       if (role === 'all') {
-        matchesRole = VALID_PLAYER_ROLES.includes(playerRole ?? '') || hasStats || hasAwards;
+        matchesRole = isCompetitiveRole(playerRole) || hasStats || hasAwards;
       } else {
         matchesRole = playerRole === role;
       }

@@ -1,3 +1,4 @@
+import { COMPETITIVE_ROLES, isCompetitiveRole } from '@rcl/contracts';
 import type React from 'react';
 import { useEffect } from 'react';
 import { TeamBadge } from '../../../features/competition/components/TeamBadge.js';
@@ -22,7 +23,7 @@ const roleLabels: Record<TeamMember['role'], string> = {
   staff: 'Staff',
   partners: 'Partner'
 };
-const playerRoles: TeamMember['role'][] = ['top', 'jungle', 'mid', 'adc', 'support', 'substitute'];
+const playerRoles: readonly TeamMember['role'][] = COMPETITIVE_ROLES;
 
 function MemberSection({
   title,
@@ -48,7 +49,7 @@ function MemberSection({
               }
               key={member.id}
             >
-              {team && playerRoles.includes(member.role) && (
+              {team && isCompetitiveRole(member.role) && (
                 <div className="team-player-overview">
                   <dl className="team-player-stats">
                     <div>
@@ -79,7 +80,7 @@ function MemberSection({
                 )}
               </div>
               <div className="team-member-identity">
-                {(!team || !playerRoles.includes(member.role)) && member.isCaptain && (
+                {(!team || !isCompetitiveRole(member.role)) && member.isCaptain && (
                   <span className="team-tag">Capitán</span>
                 )}
                 <h3>
@@ -119,7 +120,7 @@ function MemberSection({
 
 export function TeamProfile({ team }: { team: TeamDetail }) {
   const players = team.members
-    .filter((member) => playerRoles.includes(member.role))
+    .filter((member) => isCompetitiveRole(member.role))
     .sort(
       (a, b) =>
         playerRoles.indexOf(a.role) - playerRoles.indexOf(b.role) ||

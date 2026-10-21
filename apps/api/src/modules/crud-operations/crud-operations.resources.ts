@@ -1,4 +1,5 @@
 import type { CrudField, CrudResource } from '@rcl/contracts';
+import { ROSTER_ROLES } from '@rcl/contracts';
 import { z } from 'zod';
 
 export type ResourceDefinition = CrudResource;
@@ -123,12 +124,7 @@ export const crudResources: ResourceDefinition[] = [
     fields: [
       fixed(ref('teamId', 'Equipo', 'teams')),
       fixed(ref('discordUserId', 'Miembro de Discord', 'users')),
-      options(
-        'role',
-        'Rol',
-        ['top', 'jungle', 'mid', 'adc', 'support', 'substitute', 'coach', 'staff', 'partners'],
-        'substitute'
-      ),
+      options('role', 'Rol', [...ROSTER_ROLES], 'substitute'),
       bool('isCaptain', 'Capitán')
     ]
   },

@@ -2,6 +2,8 @@
 
 [⬅️ Volver a API](../README.md) | [Siguiente: API Auth ➡️](../auth/README.md)
 
+[Reglas compartidas de roles y contexto competitivo](competitive-memberships.md)
+
 ---
 
 ## 1. Resumen Ejecutivo

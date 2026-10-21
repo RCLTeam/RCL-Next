@@ -1,3 +1,5 @@
+import type { RosterRole } from './roster-roles.js';
+
 export interface TeamSummary {
   slug?: string | undefined;
   id: string;
@@ -13,16 +15,7 @@ export interface TeamMember {
   playerId?: string | null;
   id: string;
   name: string;
-  role:
-    | 'top'
-    | 'jungle'
-    | 'mid'
-    | 'adc'
-    | 'support'
-    | 'substitute'
-    | 'coach'
-    | 'staff'
-    | 'partners';
+  role: RosterRole;
   isCaptain: boolean;
   gameName: string | null;
   riotTag: string | null;
