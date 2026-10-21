@@ -96,5 +96,16 @@ La API sigue mostrando solo cuentas principales, sin duplicar personas por sus
 cuentas secundarias. El directorio general sin división conserva su función de
 resolver perfiles y slugs.
 
-Pendiente: consumo de los nuevos campos en la cabecera y etiquetas de estadísticas
-(fase 4). La cabecera aún usa `teams[0]`.
+## Perfil visual (fase 4)
+
+La cabecera usa exclusivamente `registrationTeam` para escudo, enlace, color,
+posición y capitanía. Se presenta como «Última inscripción competitiva», sin
+afirmar que sea el equipo actual; las inscripciones inactivas se identifican.
+Sin inscripción se muestra «Sin equipo competitivo», iniciales y color neutro.
+No se recurre a `teams[0]` si los campos opcionales del contexto no están presentes.
+
+Rendimiento muestra `statisticsSeasonName`, aunque el jugador ya no tenga equipo.
+Sin resultados aparece «Sin partidas registradas». Si existen MVPs pero faltan
+estadísticas de partidas, se mantienen los premios y se explica la ausencia de
+estadísticas. Todas las afiliaciones y cuentas vinculadas siguen accesibles.
+La separación visual de trayectoria y otras vinculaciones queda para la fase 5.

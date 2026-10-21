@@ -29,6 +29,8 @@ const player: PlayerDetail = {
   countryCode: 'es',
   isMain: true,
   displayName: 'Nombre público',
+  registrationTeam: defaultTeam,
+  statisticsSeasonName: 'Temporada 1',
   teams: [defaultTeam]
 };
 
@@ -137,7 +139,15 @@ test('Player profiles show real membership context and handle missing data', () 
     expect(html).toContain(text);
   const empty = renderToStaticMarkup(
     <PlayerProfile
-      player={{ ...player, teams: [], displayName: null, countryCode: null, riotTag: null }}
+      player={{
+        ...player,
+        teams: [],
+        registrationTeam: null,
+        statisticsSeasonName: null,
+        displayName: null,
+        countryCode: null,
+        riotTag: null
+      }}
     />
   );
   expect(empty).toContain('Sin cuenta vinculada');
@@ -242,4 +252,101 @@ test('player profiles retain persisted MVP totals when match statistics are unav
   expect(html).toContain('<dt>MVPs</dt><dd>2</dd>');
   expect(html).toContain('<dt>KDA</dt><dd>—</dd>');
   expect(html).not.toContain('La historia está por escribir');
+  expect(html).toContain('Estadísticas de partidas no disponibles');
+});
+
+test('profile header uses API registration for team, color, role and captaincy regardless of affiliations order', () => {
+  const staffTeam = {
+    ...defaultTeam,
+    id: 'staff-team',
+    slug: 'staff-team',
+    name: 'Staff Team',
+    role: 'staff' as const,
+    color: '#00ff00',
+    seasonName: 'Temporada staff'
+  };
+  const registrationTeam = { ...defaultTeam, isCaptain: false, role: 'substitute' as const };
+  for (const teams of [
+    [staffTeam, defaultTeam],
+    [defaultTeam, staffTeam]
+  ]) {
+    const html = renderToStaticMarkup(
+      <PlayerProfile player={{ ...player, teams, registrationTeam }} />
+    );
+    const header = html.split('</header>')[0] ?? '';
+    expect(header).toContain('--profile-color:#ff0000');
+    expect(header).toContain('href="/equipos/lobos"');
+    expect(header).toContain('Última inscripción competitiva');
+    expect(header).toContain('Suplente');
+    expect(header).not.toContain('Staff Team');
+    expect(header).not.toContain('Capitán');
+    expect(html).toContain('Staff Team');
+  }
+});
+
+test('a profile without competitive registration uses a neutral header and keeps historical awards and season', () => {
+  const staff = { ...defaultTeam, role: 'coach' as const, seasonName: 'Temporada staff' };
+  const html = renderToStaticMarkup(
+    <PlayerProfile
+      player={{
+        ...player,
+        registrationTeam: null,
+        teams: [staff],
+        statisticsSeasonName: 'Temporada histórica',
+        competition: {
+          team: null,
+          role: null,
+          champion: null,
+          stats: null,
+          mvpMatchIds: ['m1'],
+          featured: null
+        }
+      }}
+    />
+  );
+  const header = html.split('</header>')[0] ?? '';
+  expect(header).toContain('--profile-color:var(--purple)');
+  expect(header).toContain('Sin equipo competitivo');
+  expect(header).not.toContain('Capitán');
+  expect(header).not.toContain('href="/equipos/');
+  const performance = html
+    .split('aria-labelledby="player-performance-title"')[1]
+    ?.split('</section>')[0];
+  expect(performance).toContain('Temporada histórica');
+  expect(performance).not.toContain('Temporada staff');
+  expect(performance).toContain('<dt>MVPs</dt><dd>1</dd>');
+});
+
+test('inactive registration is identified without claiming a current team and empty stats are explicit', () => {
+  const html = renderToStaticMarkup(
+    <PlayerProfile
+      player={{
+        ...player,
+        registrationTeam: { ...defaultTeam, isActive: false }
+      }}
+    />
+  );
+  const header = html.split('</header>')[0] ?? '';
+  expect(header).toContain('Última inscripción competitiva');
+  expect(header).toContain('Equipo inactivo');
+  expect(header).not.toContain('Equipo actual');
+  expect(html).toContain('Sin partidas registradas');
+  expect(html).not.toContain('player-performance-grid');
+});
+
+test('missing optional API context never falls back to the first affiliation', () => {
+  const {
+    registrationTeam: _registration,
+    statisticsSeasonName: _season,
+    ...withoutContext
+  } = player;
+  const html = renderToStaticMarkup(<PlayerProfile player={withoutContext} />);
+  const header = html.split('</header>')[0] ?? '';
+  expect(header).toContain('Sin equipo competitivo');
+  expect(header).not.toContain('href="/equipos/');
+  const performance = html
+    .split('aria-labelledby="player-performance-title"')[1]
+    ?.split('</section>')[0];
+  expect(performance).not.toContain('Temporada 1');
+  expect(performance).toContain('No hay partidas ni premios registrados');
 });
