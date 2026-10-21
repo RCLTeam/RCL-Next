@@ -2,10 +2,13 @@ import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { PGlite } from '@electric-sql/pglite';
 import { btree_gist } from '@electric-sql/pglite/contrib/btree_gist';
+import { COMPETITIVE_ROLES, type Player, ROSTER_ROLES } from '@rcl/contracts';
 import { eq } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/pglite';
 import { migrate } from 'drizzle-orm/pglite/migrator';
+import request from 'supertest';
 import { assert, expect, onTestFinished, test } from 'vitest';
+import { createApp } from '../../apps/api/src/app.js';
 import { CompetitionService } from '../../apps/api/src/modules/competition/competition.service.js';
 import { loadMatchMvpRows } from '../../apps/api/src/modules/competition/match-mvp-data.js';
 import { playerMvpRanking } from '../../apps/api/src/modules/competition/player-statistics.js';
@@ -39,6 +42,144 @@ async function setup() {
   const repository = new PostgresCompetitionRepository(db);
   return { client, db, player, other, repository, service: new CompetitionService(repository) };
 }
+
+test('division HTTP directory admits only competitive registrations without results', async () => {
+  const { db, repository, service } = await setup();
+  const [home] = await db.select().from(schema.teams).where(eq(schema.teams.id, homeId));
+  assert.ok(home);
+  await db
+    .insert(schema.discordUsers)
+    .values(ROSTER_ROLES.map((role) => ({ discordId: `directory-${role}`, username: role })));
+  const accounts = await db
+    .insert(schema.players)
+    .values(
+      ROSTER_ROLES.map((role) => ({
+        discordUserId: `directory-${role}`,
+        gameName: `Directory ${role}`,
+        isMain: true
+      }))
+    )
+    .returning();
+  await db.insert(schema.teamMemberships).values(
+    ROSTER_ROLES.map((role) => ({
+      discordUserId: `directory-${role}`,
+      teamId: homeId,
+      seasonName: home.seasonName,
+      role
+    }))
+  );
+  // A newer noncompetitive affiliation must not supply the displayed team.
+  await db.insert(schema.teamMemberships).values({
+    discordUserId: 'directory-substitute',
+    teamId: awayId,
+    seasonName: home.seasonName,
+    role: 'staff',
+    updatedAt: new Date('2099-01-01')
+  });
+  const [secondary] = await db
+    .insert(schema.players)
+    .values({
+      discordUserId: 'directory-substitute',
+      gameName: 'Directory secondary',
+      isMain: false
+    })
+    .returning();
+  assert.ok(secondary);
+  const app = createApp({
+    repository,
+    corsOrigin: 'http://localhost:5173',
+    checkDatabase: async () => {
+      await db.select().from(schema.seasons).limit(1);
+    }
+  });
+  const response = await request(app).get(`/api/v1/divisions/${divisionId}/players`).expect(200);
+  const listed: Player[] = response.body.data;
+  const added = listed.filter((entry) => accounts.some((account) => account.id === entry.id));
+  expect(added).toHaveLength(COMPETITIVE_ROLES.length);
+  expect(added.map((entry) => entry.competition?.role).sort()).toEqual(
+    [...COMPETITIVE_ROLES].sort()
+  );
+  expect(added.every((entry) => entry.competition?.team?.id === homeId)).toBe(true);
+  expect(added.every((entry) => entry.competition?.stats === null)).toBe(true);
+  expect(listed.some((entry) => entry.id === secondary.id)).toBe(false);
+
+  await db
+    .update(schema.teamMemberships)
+    .set({ teamId: '30000000-0000-4000-8000-000000000003' })
+    .where(eq(schema.teamMemberships.discordUserId, 'directory-top'));
+  expect(
+    (await service.players(divisionId)).some((entry) => entry.gameName === 'Directory top')
+  ).toBe(false);
+  expect(
+    (await service.players(otherDivisionId)).find((entry) => entry.gameName === 'Directory top')
+      ?.competition?.role
+  ).toBe('top');
+
+  // A competitive role in another season must not qualify a local staff membership.
+  await db.insert(schema.seasons).values({ name: 'Other season', startsOn: '2099-01-01' });
+  const [otherDivision] = await db
+    .insert(schema.seasonsDivisions)
+    .values({
+      seasonName: 'Other season',
+      divisionName: 'Ascend DEMO'
+    })
+    .returning();
+  assert.ok(otherDivision);
+  const [otherTeam] = await db
+    .insert(schema.teams)
+    .values({
+      seasonName: 'Other season',
+      seasonDivisionId: otherDivision.id,
+      name: 'Other team'
+    })
+    .returning();
+  assert.ok(otherTeam);
+  await db.insert(schema.teamMemberships).values({
+    discordUserId: 'directory-staff',
+    teamId: otherTeam.id,
+    seasonName: 'Other season',
+    role: 'mid'
+  });
+  expect(
+    (await service.players(divisionId)).some((entry) => entry.gameName === 'Directory staff')
+  ).toBe(false);
+  expect((await service.players(otherDivision.id)).map((entry) => entry.gameName)).toEqual([
+    'Directory staff'
+  ]);
+});
+
+test('division directory retains historical games and awards after moving to staff', async () => {
+  const { db, player, service } = await setup();
+  assert.ok(player.discordUserId);
+  // Demo games have no position; record one to distinguish match history from roster fallback.
+  await db
+    .update(schema.playerGameInfo)
+    .set({ position: 'top' })
+    .where(eq(schema.playerGameInfo.playerId, player.id));
+  const before = (await service.players(divisionId)).find((entry) => entry.id === player.id);
+  assert.ok(before?.competition?.stats);
+  await db
+    .update(schema.teamMemberships)
+    .set({ role: 'staff', isCaptain: false })
+    .where(eq(schema.teamMemberships.discordUserId, player.discordUserId));
+  const historical = (await service.players(divisionId)).find((entry) => entry.id === player.id);
+  expect(historical?.competition?.stats).toEqual(before.competition.stats);
+  expect(historical?.competition?.team).toEqual(before.competition.team);
+  expect(historical?.competition?.role).toBe(before.competition.role);
+  expect(historical?.competition?.isCaptain ?? false).toBe(false);
+  await db
+    .update(schema.matches)
+    .set({ mvpPlayerId: player.id, mvpScore: '99.0' })
+    .where(eq(schema.matches.id, matchId));
+  await db.delete(schema.playerGameInfo).where(eq(schema.playerGameInfo.playerId, player.id));
+  const awardsOnly = (await service.players(divisionId)).find((entry) => entry.id === player.id);
+  expect(awardsOnly?.competition).toMatchObject({
+    team: null,
+    role: null,
+    stats: null,
+    mvpMatchIds: [matchId]
+  });
+});
 
 test('recent staff membership cannot replace competitive registration in the persisted profile', async () => {
   const { db, player, service } = await setup();

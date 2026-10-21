@@ -165,7 +165,7 @@ export function filterPlayers(
       if (role === 'all') {
         matchesRole = isCompetitiveRole(playerRole) || hasStats || hasAwards;
       } else {
-        matchesRole = playerRole === role;
+        matchesRole = isCompetitiveRole(role) && playerRole === role;
       }
 
       const matchesQuery =

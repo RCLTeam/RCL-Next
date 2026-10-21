@@ -75,5 +75,26 @@ mantiene su temporada y estadísticas nulas. Las partidas siguen conservando su
 equipo de origen y se agregan por cuenta y temporada, incluso después de un cambio
 de equipo o rol. `teams` conserva todas las afiliaciones y su orden original.
 
-Pendientes: consultas y filtros de listados (fase 3), consumo de los nuevos campos
-en la cabecera y etiquetas de estadísticas (fase 4). La cabecera aún usa `teams[0]`.
+## Listados por división (fase 3)
+
+La consulta de membresías de `/divisions/:id/players` solo admite roles
+competitivos de esa división y temporada para incluir personas sin resultados.
+Los seis roles, incluidos suplentes sin partidas, conservan su equipo y rol de
+inscripción. Una afiliación de staff en otro equipo no altera estos campos.
+
+Las partidas y premios históricos siguen siendo vías independientes de inclusión:
+pasar a coach, staff o partner no elimina a un participante del listado histórico.
+El equipo y posición de las partidas siguen siendo los registrados en ellas;
+una membresía no competitiva no completa ni sobrescribe ese contexto. Con premios
+pero sin partidas ni inscripción competitiva, equipo y rol quedan vacíos.
+
+El filtro de posición acepta únicamente roles competitivos; «Todos» conserva
+participantes con estadísticas o premios. Búsqueda, ordenación y contador usan
+el resultado filtrado. La página dispone de filtros de temporada, división,
+posición y búsqueda por nombre/Riot ID; no tiene un selector de equipo.
+La API sigue mostrando solo cuentas principales, sin duplicar personas por sus
+cuentas secundarias. El directorio general sin división conserva su función de
+resolver perfiles y slugs.
+
+Pendiente: consumo de los nuevos campos en la cabecera y etiquetas de estadísticas
+(fase 4). La cabecera aún usa `teams[0]`.
