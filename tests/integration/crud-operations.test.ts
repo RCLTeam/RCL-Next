@@ -998,6 +998,39 @@ describe('admin CRUD with HTTP sessions and PostgreSQL constraints', () => {
       history: (await db.select().from(schema.rosterMovements)).length
     });
     const before = await counts();
+    const duplicate = await send('post', 'memberships', {
+      teamId: a.id,
+      discordUserId: playerId,
+      role: 'coach'
+    }).expect(409);
+    expect(duplicate.body.error.message).toBe(
+      'Este miembro ya está inscrito en el equipo. Edita su inscripción existente.'
+    );
+    const invalidCaptain = await send('post', 'memberships', {
+      teamId: b.id,
+      discordUserId: playerId,
+      role: 'staff',
+      isCaptain: true
+    }).expect(409);
+    expect(invalidCaptain.body.error.message).toBe(
+      'Solo los roles top, jungle, mid, adc y support pueden ser capitán.'
+    );
+    const blockedMove = await send(
+      'put',
+      'teams',
+      updateBody('teams', a, {
+        seasonDivisionId: String(c.seasonDivisionId)
+      })
+    ).expect(409);
+    expect(blockedMove.body.error.code).toBe('RELATED_RECORDS');
+    expect(
+      (
+        await db
+          .select()
+          .from(schema.teams)
+          .where(eq(schema.teams.id, String(a.id)))
+      )[0]?.seasonName
+    ).toBe('Roster S1');
     for (const role of ['top', 'jungle', 'mid', 'adc', 'support', 'substitute']) {
       const rejected = await send('post', 'memberships', {
         teamId: b.id,

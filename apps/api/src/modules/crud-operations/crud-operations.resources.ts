@@ -119,7 +119,8 @@ export const crudResources: ResourceDefinition[] = [
   {
     name: 'memberships',
     label: 'Plantillas',
-    description: 'Asigna miembros a equipos, roles y capitanía. Cada cambio queda en el historial.',
+    description:
+      'Cada miembro puede competir en un solo equipo por temporada, incluidos suplentes. Coach, staff y partner permiten otras vinculaciones. Cada cambio queda en el historial.',
     keys: ['teamId', 'discordUserId'],
     fields: [
       fixed(ref('teamId', 'Equipo', 'teams')),

@@ -603,6 +603,21 @@ export class PostgresCrudOperationsRepository implements CrudOperationsRepositor
             throw conflict(
               'El jugador ya pertenece a otra plantilla con un rol competitivo en esta temporada.'
             );
+          if ('constraint' in cause) {
+            if (cause.code === '23505' && cause.constraint === 'team_memberships_pkey')
+              throw conflict(
+                'Este miembro ya está inscrito en el equipo. Edita su inscripción existente.'
+              );
+            if (cause.code === '23505' && cause.constraint === 'team_memberships_unique_captain')
+              throw conflict(
+                'El equipo ya tiene un capitán. Retira esa capitanía antes de asignar otra.'
+              );
+            if (
+              cause.code === '23514' &&
+              cause.constraint === 'team_memberships_captain_role_check'
+            )
+              throw conflict('Solo los roles top, jungle, mid, adc y support pueden ser capitán.');
+          }
           if (cause.code === '23505')
             throw conflict('A record with these values already exists. Check the captain too.');
           if (cause.code === '23503')

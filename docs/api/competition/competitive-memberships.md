@@ -125,3 +125,25 @@ dentro de cada sección, sin reordenar ni modificar las membresías originales.
 La trayectoria muestra las inscripciones conservadas en el sistema; no reconstruye
 membresías eliminadas ni roles anteriores a partir de partidas o del registro de
 auditoría. Las estadísticas históricas permanecen disponibles en Rendimiento.
+
+## Administración e integridad (fase 6)
+
+Se mantienen la exclusión competitiva por temporada, las claves compuestas que
+validan la temporada, la capitanía única y el control de versiones. Los rechazos
+no generan auditoría ni movimientos parciales. Los conflictos de inscripción
+duplicada, capitán existente y rol no habilitado para capitanía tienen mensajes
+específicos. Las relaciones no competitivas siguen permitidas en varios equipos.
+
+La administración bloquea el cambio de competición de equipos con dependencias
+(`RELATED_RECORDS`); los equipos sin dependencias pueden moverse y su temporada
+se deriva del destino. La temporada de una membresía se deriva de su equipo,
+nunca del cuerpo de la petición. El equipo y la persona de una inscripción son
+inmutables; un traslado individual requiere baja y alta, ambas auditadas.
+
+Diagnóstico de solo lectura: `pnpm --filter @rcl/database db:check --memberships`.
+Usa la conexión configurada en `DATABASE_URL` y requiere el esquema migrado.
+Detecta equipos competitivos múltiples por persona y temporada, discrepancias de
+temporada, capitanías inválidas o duplicadas y membresías huérfanas. Devuelve código
+de salida 1 si encuentra problemas; no repara, borra ni reasigna registros.
+Debe revisarse el informe antes de decidir una corrección de datos. No se añade
+ninguna migración en esta fase.
