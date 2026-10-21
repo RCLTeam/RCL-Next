@@ -67,6 +67,10 @@ export interface PlayerTeam extends TeamSummary {
   isActive: boolean;
 }
 export interface PlayerDetail extends Player {
+  /** Latest competitive registration, possibly historical; not necessarily a current team. */
+  registrationTeam?: PlayerTeam | null;
+  /** Season of the aggregate statistics and awards, independent of other affiliations. */
+  statisticsSeasonName?: string | null;
   linkedAccounts?: Player[];
   teams: PlayerTeam[];
 }

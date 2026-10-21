@@ -1,4 +1,4 @@
-import type { MatchMap, MatchPlayerStats } from '@rcl/contracts';
+import type { MatchMap, MatchPlayerStats, PlayerDetail, PlayerTeam } from '@rcl/contracts';
 import { expect, test, vi } from 'vitest';
 import type { CompetitionRepository, Match } from './competition.repository.js';
 import { CompetitionService } from './competition.service.js';
@@ -8,6 +8,146 @@ const divisionId = '20000000-0000-4000-8000-000000000001';
 const homeId = '30000000-0000-4000-8000-000000000001';
 const awayId = '30000000-0000-4000-8000-000000000002';
 const playerId = '40000000-0000-4000-8000-000000000001';
+
+function profileTeam(id: string, role: PlayerTeam['role'], seasonName = '2026'): PlayerTeam {
+  return {
+    id,
+    name: id,
+    shortName: null,
+    logoUrl: null,
+    color: '#123456',
+    seasonName,
+    divisionName: 'Primera',
+    role,
+    isCaptain: false,
+    isActive: true
+  };
+}
+
+function profileRepository(teams: PlayerTeam[]) {
+  const { source } = repository([]);
+  const player: PlayerDetail = {
+    id: playerId,
+    gameName: 'Player',
+    riotTag: 'EUW',
+    displayName: null,
+    countryCode: null,
+    isMain: true,
+    teams
+  };
+  source.players = async () => [player];
+  source.playerDetail = async () => player;
+  source.seasons = async () => [
+    { id: '2027', name: '2027', startsOn: '2027-01-01', endsOn: null },
+    { id: '2026', name: '2026', startsOn: '2026-01-01', endsOn: '2026-12-31' }
+  ];
+  source.teamDirectory = async () => teams;
+  const seasonGames = vi.fn<CompetitionRepository['playerSeasonGames']>(async () => ({
+    playerGames: [],
+    allMatchGames: [],
+    mvpMatchIds: []
+  }));
+  source.playerSeasonGames = seasonGames;
+  return { source, player, seasonGames, service: new CompetitionService(source) };
+}
+
+test.each(['coach', 'staff', 'partners'] as const)(
+  'a newer %s affiliation never overrides competitive registration or statistics season',
+  async (role) => {
+    const competitive = { ...profileTeam(homeId, 'mid'), isCaptain: true };
+    const other = profileTeam(awayId, role, '2027');
+    const { service, player, seasonGames } = profileRepository([other, competitive]);
+    for (const teams of [
+      [other, competitive],
+      [competitive, other]
+    ]) {
+      player.teams = teams;
+      const detail = await service.playerDetail(playerId);
+      expect(detail.registrationTeam).toMatchObject({ id: homeId, role: 'mid', isCaptain: true });
+      expect(detail.registrationTeam?.slug).toBeTruthy();
+      expect(detail.statisticsSeasonName).toBe('2026');
+      expect(detail.competition).toMatchObject({
+        team: { id: homeId },
+        role: 'mid',
+        isCaptain: true
+      });
+      expect(detail.teams.map((team) => team.id)).toEqual(teams.map((team) => team.id));
+    }
+    expect(seasonGames.mock.calls).toEqual([
+      [playerId, '2026'],
+      [playerId, '2026']
+    ]);
+  }
+);
+
+test('same-season staff captaincy cannot override the player role or captaincy', async () => {
+  const { service } = profileRepository([
+    { ...profileTeam(awayId, 'staff'), isCaptain: true },
+    profileTeam(homeId, 'substitute')
+  ]);
+  const detail = await service.playerDetail(playerId);
+  expect(detail.competition).toMatchObject({
+    role: 'substitute',
+    isCaptain: false,
+    team: { id: homeId }
+  });
+});
+
+test('season chronology selects the latest registration, including inactive historical teams', async () => {
+  const { service, seasonGames } = profileRepository([
+    profileTeam(homeId, 'mid'),
+    { ...profileTeam(awayId, 'substitute', '2027'), isActive: false }
+  ]);
+  const detail = await service.playerDetail(playerId);
+  expect(detail.registrationTeam).toMatchObject({ id: awayId, isActive: false });
+  expect(detail.statisticsSeasonName).toBe('2027');
+  expect(detail.competition?.stats).toBeNull();
+  expect(seasonGames.mock.calls).toEqual([[playerId, '2027']]);
+});
+
+test('staff-only profiles recover historical awards without claiming a competitive team', async () => {
+  const { service, seasonGames } = profileRepository([profileTeam(awayId, 'coach', '2027')]);
+  seasonGames.mockImplementation(async (_id, season) => ({
+    playerGames: [],
+    allMatchGames: [],
+    mvpMatchIds: season === '2026' ? ['historic-award'] : []
+  }));
+  const detail = await service.playerDetail(playerId);
+  expect(detail.registrationTeam).toBeNull();
+  expect(detail.statisticsSeasonName).toBe('2026');
+  expect(detail.competition).toMatchObject({
+    team: null,
+    role: null,
+    isCaptain: false,
+    stats: null,
+    mvpMatchIds: ['historic-award']
+  });
+});
+
+test('profiles without competitive registration or results clear stale projections', async () => {
+  const { service, player } = profileRepository([profileTeam(awayId, 'staff')]);
+  player.competition = {
+    role: 'staff',
+    team: player.teams[0] ?? null,
+    isCaptain: true,
+    champion: 'Ahri',
+    stats: null,
+    mvpMatchIds: ['stale'],
+    featured: null
+  };
+  const detail = await service.playerDetail(playerId);
+  expect(detail.registrationTeam).toBeNull();
+  expect(detail.statisticsSeasonName).toBeNull();
+  expect(detail.competition).toEqual({
+    team: null,
+    role: null,
+    isCaptain: false,
+    champion: null,
+    stats: null,
+    mvpMatchIds: [],
+    featured: null
+  });
+});
 
 function completedMatch(index: number): Match {
   return {
@@ -96,7 +236,7 @@ function repository(matches: Match[]) {
         }
       ]
     }),
-    seasons: async () => [],
+    seasons: async () => [{ id: '2026', name: '2026', startsOn: '2026-01-01', endsOn: null }],
     season: async () => undefined,
     divisions: async () => [],
     division: async () => undefined,
@@ -228,14 +368,14 @@ test('Player detail displays season-wide statistics and MVPs across transfers wh
           seasonName: '2026',
           divisionName: 'Primera',
           divisionId: division1Id,
-          role: 'mid',
-          isCaptain: true,
+          role: 'coach',
+          isCaptain: false,
           isActive: true
         }
       ]
     }),
     teamDetail: async () => undefined,
-    seasons: async () => [],
+    seasons: async () => [{ id: '2026', name: '2026', startsOn: '2026-01-01', endsOn: null }],
     season: async () => undefined,
     divisions: async () => [],
     division: async () => undefined,
@@ -248,6 +388,8 @@ test('Player detail displays season-wide statistics and MVPs across transfers wh
   const detail = await service.playerDetail(transferredPlayerId);
 
   expect(detail.competition?.team?.name).toBe('Team B');
+  expect(detail.registrationTeam?.id).toBe(teamBId);
+  expect(detail.statisticsSeasonName).toBe('2026');
   expect(detail.competition?.role).toBe('top');
   expect(detail.competition?.isCaptain).toBe(false);
   expect(detail.competition?.champion).toBe('Ahri');
@@ -380,7 +522,7 @@ test('Team detail only counts MVPs won while playing for that specific team', as
         }
       ]
     }),
-    seasons: async () => [],
+    seasons: async () => [{ id: '2026', name: '2026', startsOn: '2026-01-01', endsOn: null }],
     season: async () => undefined,
     divisions: async () => [],
     division: async () => undefined,
@@ -442,7 +584,7 @@ test('Player detail gracefully handles player with active team membership but ze
       ]
     }),
     teamDetail: async () => undefined,
-    seasons: async () => [],
+    seasons: async () => [{ id: '2026', name: '2026', startsOn: '2026-01-01', endsOn: null }],
     season: async () => undefined,
     divisions: async () => [],
     division: async () => undefined,

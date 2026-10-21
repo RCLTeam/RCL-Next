@@ -40,6 +40,36 @@ async function setup() {
   return { client, db, player, other, repository, service: new CompetitionService(repository) };
 }
 
+test('recent staff membership cannot replace competitive registration in the persisted profile', async () => {
+  const { db, player, service } = await setup();
+  assert.ok(player.discordUserId);
+  const before = await service.playerDetail(player.id);
+  assert.ok(before.registrationTeam);
+  const staffTeamId = before.registrationTeam.id === homeId ? awayId : homeId;
+  await db.insert(schema.teamMemberships).values({
+    teamId: staffTeamId,
+    discordUserId: player.discordUserId,
+    seasonName: before.registrationTeam.seasonName,
+    role: 'staff',
+    updatedAt: new Date('2099-01-01')
+  });
+  const after = await service.playerDetail(player.id);
+  expect(after.teams[0]?.id).toBe(staffTeamId);
+  expect(after.registrationTeam).toEqual(before.registrationTeam);
+  expect(after.statisticsSeasonName).toBe(before.statisticsSeasonName);
+  expect(after.competition).toEqual(before.competition);
+
+  await db
+    .update(schema.teamMemberships)
+    .set({ role: 'coach', isCaptain: false })
+    .where(eq(schema.teamMemberships.discordUserId, player.discordUserId));
+  const retired = await service.playerDetail(player.id);
+  expect(retired.registrationTeam).toBeNull();
+  expect(retired.competition?.team).toBeNull();
+  expect(retired.statisticsSeasonName).toBe(before.statisticsSeasonName);
+  expect(retired.competition?.stats).toEqual(before.competition?.stats);
+});
+
 test('all views read the sealed award, without fallback, despite stat edits and transfers', async () => {
   const { db, player, service } = await setup();
   expect((await service.matchDetail(matchId)).mvpPlayerId).toBeNull();

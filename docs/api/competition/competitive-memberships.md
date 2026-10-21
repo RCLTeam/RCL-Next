@@ -49,6 +49,31 @@ Para integrar el contexto en las siguientes fases:
 
 Esta fase centraliza los roles usados por los contratos, el formulario generado
 por la API y la clasificación existente de jugadores y plantillas en la web.
-Incluye el selector puro y sus pruebas. Su integración en consultas, servicio
-de perfil y cabecera se hará en las fases 2–4; el fallo de `teams[0]` aún no se
-corrige en esta fase. No requiere cambios de esquema ni migraciones.
+Incluye el selector puro y sus pruebas. No requiere cambios de esquema ni migraciones.
+
+## Perfil del backend (fase 2)
+
+El servicio de detalle ya resuelve la inscripción con el selector compartido,
+recorriendo las temporadas por fecha de inicio descendente (sin fecha al final;
+el nombre solo desempata de forma estable). No usa el orden de las membresías.
+Los empates no implican que un equipo sea actual.
+
+La respuesta añade dos campos, opcionales en el contrato por compatibilidad
+con los consumidores existentes, pero siempre presentes en el detalle de la API:
+
+- `registrationTeam`: última inscripción competitiva, con rol, capitanía,
+  temporada, división, estado y slug; `null` si no existe. Puede ser histórica
+  o inactiva y no se etiqueta como equipo actual.
+- `statisticsSeasonName`: temporada del resumen estadístico y los premios;
+  `null` cuando no hay inscripción competitiva ni resultados.
+
+`competition.team`, `role` e `isCaptain` reflejan esa inscripción competitiva.
+Si solo quedan relaciones no competitivas, esos campos quedan vacíos y se busca
+la última temporada con partidas o premios. Sin resultados se devuelve un
+contexto vacío, sin reutilizar proyecciones antiguas. Una inscripción sin partidas
+mantiene su temporada y estadísticas nulas. Las partidas siguen conservando su
+equipo de origen y se agregan por cuenta y temporada, incluso después de un cambio
+de equipo o rol. `teams` conserva todas las afiliaciones y su orden original.
+
+Pendientes: consultas y filtros de listados (fase 3), consumo de los nuevos campos
+en la cabecera y etiquetas de estadísticas (fase 4). La cabecera aún usa `teams[0]`.
