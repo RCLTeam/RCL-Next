@@ -108,4 +108,20 @@ Rendimiento muestra `statisticsSeasonName`, aunque el jugador ya no tenga equipo
 Sin resultados aparece «Sin partidas registradas». Si existen MVPs pero faltan
 estadísticas de partidas, se mantienen los premios y se explica la ausencia de
 estadísticas. Todas las afiliaciones y cuentas vinculadas siguen accesibles.
-La separación visual de trayectoria y otras vinculaciones queda para la fase 5.
+
+## Trayectoria y otras vinculaciones (fase 5)
+
+El perfil divide las membresías con los predicados compartidos en «Trayectoria
+competitiva» (los cinco roles titulares y suplentes) y «Otras vinculaciones»
+(coach, staff y partners). Ambas secciones tienen contador y estado vacío propios;
+el resumen también distingue inscripciones competitivas de otras vinculaciones.
+
+Cada tarjeta conserva enlace, escudo, temporada, división, rol y capitanía,
+e indica si el equipo está activo o inactivo. Solo la inscripción resuelta por
+la API recibe la etiqueta «Última inscripción competitiva». Un equipo activo
+no implica que la inscripción sea actual. Se mantiene el orden recibido de la API
+dentro de cada sección, sin reordenar ni modificar las membresías originales.
+
+La trayectoria muestra las inscripciones conservadas en el sistema; no reconstruye
+membresías eliminadas ni roles anteriores a partir de partidas o del registro de
+auditoría. Las estadísticas históricas permanecen disponibles en Rendimiento.

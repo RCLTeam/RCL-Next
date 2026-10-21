@@ -1,3 +1,4 @@
+import { type PlayerTeam, isCompetitiveRole, isNonCompetitiveRole } from '@rcl/contracts';
 import type React from 'react';
 import { useEffect } from 'react';
 import { TeamBadge } from '../../../features/competition/components/TeamBadge.js';
@@ -23,10 +24,64 @@ const roleLabels: Record<TeamMember['role'], string> = {
   partners: 'Partner'
 };
 
+function PlayerMembershipSection({
+  id,
+  title,
+  teams,
+  empty,
+  registrationTeamId
+}: {
+  id: string;
+  title: string;
+  teams: PlayerTeam[];
+  empty: string;
+  registrationTeamId?: string | undefined;
+}) {
+  return (
+    <section className="player-teams" aria-labelledby={id}>
+      <div className="player-detail-section-heading">
+        <h2 id={id}>{title}</h2>
+        <span className="meta">
+          {teams.length} {teams.length === 1 ? 'vinculación' : 'vinculaciones'}
+        </span>
+      </div>
+      {teams.length ? (
+        <div className="player-profile-team-grid">
+          {teams.map((team) => (
+            <SiteLink
+              className="player-profile-membership"
+              key={team.id}
+              href={`/equipos/${encodeURIComponent(team.slug ?? team.id)}`}
+            >
+              <TeamBadge team={team} />
+              <div>
+                <span className="meta">
+                  {team.seasonName} · {team.divisionName}
+                </span>
+                <h3>{team.name}</h3>
+                <p>
+                  {roleLabels[team.role]}
+                  {team.isCaptain ? ' · Capitán' : ''}
+                </p>
+                {team.id === registrationTeamId && <p>Última inscripción competitiva</p>}
+                <span className="meta">{team.isActive ? 'Equipo activo' : 'Equipo inactivo'}</span>
+              </div>
+            </SiteLink>
+          ))}
+        </div>
+      ) : (
+        <div className="empty-state">{empty}</div>
+      )}
+    </section>
+  );
+}
+
 export function PlayerProfile({ player }: { player: PlayerDetail }) {
   const tag = player.riotTag?.replace(/^#/, '').trim();
   const riotId = `${player.gameName}${tag ? `#${tag}` : ''}`;
   const registrationTeam = player.registrationTeam ?? null;
+  const competitiveTeams = player.teams.filter((team) => isCompetitiveRole(team.role));
+  const otherTeams = player.teams.filter((team) => isNonCompetitiveRole(team.role));
   const stats = player.competition?.stats;
   const mvpCount = player.competition?.mvpMatchIds.length;
   const format = (value: number | null | undefined, suffix = '') =>
@@ -113,8 +168,12 @@ export function PlayerProfile({ player }: { player: PlayerDetail }) {
           <dd>{displayName(player.displayName ?? 'Sin cuenta vinculada')}</dd>
         </div>
         <div>
-          <dt>Inscripciones</dt>
-          <dd>{player.teams.length}</dd>
+          <dt>Inscripciones competitivas</dt>
+          <dd>{competitiveTeams.length}</dd>
+        </div>
+        <div>
+          <dt>Otras vinculaciones</dt>
+          <dd>{otherTeams.length}</dd>
         </div>
       </dl>
       <section className="player-linked-accounts" aria-labelledby="player-accounts-title">
@@ -200,38 +259,19 @@ export function PlayerProfile({ player }: { player: PlayerDetail }) {
           </div>
         )}
       </section>
-      <section className="player-teams" aria-label="Equipos e inscripciones">
-        <div className="player-detail-section-heading">
-          <h2>Equipos e inscripciones</h2>
-          <span className="meta">Por temporada y división</span>
-        </div>
-        {player.teams.length ? (
-          <div className="player-profile-team-grid">
-            {player.teams.map((team) => (
-              <SiteLink
-                className="player-profile-membership"
-                key={team.id}
-                href={`/equipos/${encodeURIComponent(team.slug ?? team.id)}`}
-              >
-                <TeamBadge team={team} />
-                <div>
-                  <span className="meta">
-                    {team.seasonName} · {team.divisionName}
-                  </span>
-                  <h3>{team.name}</h3>
-                  <p>
-                    {roleLabels[team.role]}
-                    {team.isCaptain ? ' · Capitán' : ''}
-                  </p>
-                  {!team.isActive && <span className="meta">Equipo inactivo</span>}
-                </div>
-              </SiteLink>
-            ))}
-          </div>
-        ) : (
-          <div className="empty-state">Este jugador todavía no tiene inscripciones en equipos.</div>
-        )}
-      </section>
+      <PlayerMembershipSection
+        id="player-competitive-teams-title"
+        title="Trayectoria competitiva"
+        teams={competitiveTeams}
+        registrationTeamId={registrationTeam?.id}
+        empty="Este jugador todavía no tiene inscripciones competitivas registradas."
+      />
+      <PlayerMembershipSection
+        id="player-other-teams-title"
+        title="Otras vinculaciones"
+        teams={otherTeams}
+        empty="Este jugador no tiene vinculaciones como coach, staff o partner."
+      />
     </div>
   );
 }
