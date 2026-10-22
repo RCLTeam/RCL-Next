@@ -79,38 +79,50 @@ function SecondaryNews({ articles }: { articles: EditorialArticle[] }) {
       </div>
       {rotating && (
         <div className="news-controls">
-          <span
-            className="news-count"
-            aria-label={`Primera noticia visible: ${start + 1} de ${articles.length}`}
-          >
-            {String(start + 1).padStart(2, '0')} / {String(articles.length).padStart(2, '0')}
-          </span>
           <div className="news-control-buttons">
-            {!reducedMotion && (
-              <button
-                type="button"
-                onClick={() => setPaused((value) => !value)}
-                aria-controls={listId}
-                aria-label={paused ? 'Activar rotación automática' : 'Pausar rotación automática'}
-              >
-                {paused ? 'Reanudar' : 'Pausar'}
-              </button>
-            )}
             <button
+              className="news-control news-arrow"
               type="button"
               aria-label="Noticias anteriores"
+              title="Noticias anteriores"
               aria-controls={listId}
               onClick={() => move(-1)}
             >
-              ←
+              <span aria-hidden="true">←</span>
             </button>
+            <span
+              className="news-position"
+              aria-label={`Primera noticia visible: ${start + 1} de ${articles.length}`}
+            >
+              <strong>{String(start + 1).padStart(2, '0')}</strong>
+              <span aria-hidden="true">/</span>
+              {String(articles.length).padStart(2, '0')}
+            </span>
+            {!reducedMotion && (
+              <button
+                className="news-control news-pause"
+                type="button"
+                onClick={() => setPaused((value) => !value)}
+                aria-controls={listId}
+                aria-label="Pausar rotación automática"
+                aria-pressed={paused}
+                title={paused ? 'Reanudar rotación automática' : 'Pausar rotación automática'}
+              >
+                <span
+                  className={paused ? 'news-play-icon' : 'news-pause-icon'}
+                  aria-hidden="true"
+                />
+              </button>
+            )}
             <button
+              className="news-control news-arrow"
               type="button"
               aria-label="Noticias siguientes"
+              title="Noticias siguientes"
               aria-controls={listId}
               onClick={() => move(1)}
             >
-              →
+              <span aria-hidden="true">→</span>
             </button>
           </div>
         </div>
