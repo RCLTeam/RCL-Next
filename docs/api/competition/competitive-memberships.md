@@ -115,11 +115,14 @@ El perfil reúne todas las membresías en «Equipos y vinculaciones», con un co
 y un estado vacío comunes. El resumen distingue inscripciones competitivas de
 otras vinculaciones mediante los predicados compartidos.
 
-Cada tarjeta conserva enlace, escudo, temporada, división, rol y capitanía,
-e indica si el equipo está activo o inactivo. Se mantiene el orden recibido de
+Cada tarjeta conserva enlace, escudo, temporada, división, rol y capitanía.
+El escudo aparece a la derecha y el nombre ocupa una línea, con puntos suspensivos
+si no cabe; el nombre completo se conserva en el texto y en el atributo `title`.
+Se mantiene el orden recibido de
 la API y no se añade una etiqueta de última inscripción. La cuadrícula, el
 espaciado y la altura mínima se comparten con las tarjetas de cuentas secundarias;
 el contenido largo puede ampliar la altura para mantener su legibilidad.
+
 La trayectoria muestra las inscripciones conservadas en el sistema; no reconstruye
 membresías eliminadas ni roles anteriores a partir de partidas o del registro de
 auditoría. Las estadísticas históricas permanecen disponibles en Rendimiento.
