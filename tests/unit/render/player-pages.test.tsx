@@ -277,7 +277,7 @@ test('profile header uses API registration for team, color, role and captaincy r
     const header = html.split('</header>')[0] ?? '';
     expect(header).toContain('--profile-color:#ff0000');
     expect(header).toContain('href="/equipos/lobos"');
-    expect(header).toContain('Última inscripción competitiva');
+    expect(header).toContain('Equipo competitivo');
     expect(header).toContain('Suplente');
     expect(header).not.toContain('Staff Team');
     expect(header).not.toContain('Capitán');
@@ -328,7 +328,7 @@ test('inactive registration is identified without claiming a current team and em
     />
   );
   const header = html.split('</header>')[0] ?? '';
-  expect(header).toContain('Última inscripción competitiva');
+  expect(header).toContain('Equipo competitivo');
   expect(header).toContain('Equipo inactivo');
   expect(header).not.toContain('Equipo actual');
   expect(html).toContain('Sin partidas registradas');
@@ -352,104 +352,70 @@ test('missing optional API context never falls back to the first affiliation', (
   expect(performance).toContain('No hay partidas ni premios registrados');
 });
 
-test('profile separates all competitive roles from other affiliations with independent counts', () => {
-  const competitiveTeams = COMPETITIVE_ROLES.map((role, index) => ({
+test('profile unifies all roles while retaining context, counts and API order', () => {
+  const teams = [...NON_COMPETITIVE_ROLES, ...COMPETITIVE_ROLES].map((role, index) => ({
     ...defaultTeam,
-    id: `competitive-${role}`,
-    slug: `competitive-${role}`,
-    name: `Competitive ${role}`,
+    id: role,
+    slug: role,
+    name: `Team ${role}`,
     role,
-    seasonName: `Season ${index}`,
     isActive: index === 0
   }));
-  const otherTeams = NON_COMPETITIVE_ROLES.map((role) => ({
-    ...defaultTeam,
-    id: `other-${role}`,
-    slug: `other-${role}`,
-    name: `Other ${role}`,
-    role,
-    isCaptain: false
-  }));
   const html = renderToStaticMarkup(
-    <PlayerProfile
-      player={{
-        ...player,
-        teams: [...otherTeams, ...competitiveTeams],
-        registrationTeam: competitiveTeams[0] ?? null
-      }}
-    />
+    <PlayerProfile player={{ ...player, teams, registrationTeam: teams[3] ?? null }} />
   );
-  const competitive =
-    html.split('aria-labelledby="player-competitive-teams-title"')[1]?.split('</section>')[0] ?? '';
-  const other =
-    html.split('aria-labelledby="player-other-teams-title"')[1]?.split('</section>')[0] ?? '';
+  const section =
+    html.split('aria-labelledby="player-memberships-title"')[1]?.split('</section>')[0] ?? '';
+  expect(section).toContain('Equipos y vinculaciones');
+  expect(section).toContain('9 vinculaciones');
   expect(html).toContain('<dt>Inscripciones competitivas</dt><dd>6</dd>');
   expect(html).toContain('<dt>Otras vinculaciones</dt><dd>3</dd>');
-  expect(competitive).toContain('6 vinculaciones');
-  expect(other).toContain('3 vinculaciones');
-  for (const team of competitiveTeams) {
-    expect(competitive).toContain(`href="/equipos/${team.slug}"`);
-    expect(competitive).toContain(team.name);
-    expect(competitive).toContain(team.seasonName);
-    expect(competitive).toContain(team.divisionName);
-    expect(other).not.toContain(team.name);
+  for (const [index, team] of teams.entries()) {
+    expect(section).toContain(`href="/equipos/${team.slug}"`);
+    expect(section).toContain(team.name);
+    expect(section).toContain(team.seasonName);
+    expect(section).toContain(team.divisionName);
+    const previous = teams[index - 1];
+    if (previous) expect(section.indexOf(previous.name)).toBeLessThan(section.indexOf(team.name));
   }
-  for (const team of otherTeams) {
-    expect(other).toContain(`href="/equipos/${team.slug}"`);
-    expect(other).toContain(team.name);
-    expect(competitive).not.toContain(team.name);
-  }
-  expect(competitive).toContain('Equipo activo');
-  expect(competitive).toContain('Equipo inactivo');
-  expect(competitive.match(/Última inscripción competitiva/g)).toHaveLength(1);
-  expect(other).not.toContain('Última inscripción competitiva');
-  expect(html).not.toContain('Equipo actual');
+  expect(html).not.toContain('Última inscripción competitiva');
+  expect(html).not.toContain('player-competitive-teams-title');
+  expect(html).not.toContain('player-other-teams-title');
 });
 
-test('staff-only profiles keep their affiliations without manufacturing a competitive trajectory', () => {
-  const staffTeam = {
-    ...defaultTeam,
-    id: 'staff',
-    name: 'Staff affiliation',
-    role: 'staff' as const
-  };
+test('staff-only profiles show the unified list without a competitive team', () => {
   const html = renderToStaticMarkup(
     <PlayerProfile
       player={{
         ...player,
         registrationTeam: null,
-        teams: [staffTeam]
+        teams: [
+          {
+            ...defaultTeam,
+            id: 'staff',
+            name: 'Staff affiliation',
+            role: 'staff'
+          }
+        ]
       }}
     />
   );
-  const competitive = html
-    .split('aria-labelledby="player-competitive-teams-title"')[1]
-    ?.split('</section>')[0];
-  const other = html.split('aria-labelledby="player-other-teams-title"')[1]?.split('</section>')[0];
-  expect(competitive).toContain('no tiene inscripciones competitivas registradas');
-  expect(competitive).not.toContain('player-profile-membership');
-  expect(other).toContain('Staff affiliation');
-  expect(other).toContain('1 vinculación');
+  const section =
+    html.split('aria-labelledby="player-memberships-title"')[1]?.split('</section>')[0] ?? '';
+  expect(section).toContain('Staff affiliation');
+  expect(section).toContain('1 vinculación');
+  expect(section).toContain('Staff');
+  expect(html).toContain('Sin equipo competitivo');
   expect(html).toContain('<dt>Inscripciones competitivas</dt><dd>0</dd>');
 });
 
-test('empty affiliation categories have separate empty states and retain API order', () => {
-  const empty = renderToStaticMarkup(
+test('profiles without memberships show a single team empty state', () => {
+  const html = renderToStaticMarkup(
     <PlayerProfile player={{ ...player, registrationTeam: null, teams: [] }} />
   );
-  expect(empty).toContain('no tiene inscripciones competitivas registradas');
-  expect(empty).toContain('no tiene vinculaciones como coach, staff o partner');
-  const older = {
-    ...defaultTeam,
-    id: 'older',
-    name: 'Earlier registration',
-    seasonName: 'Earlier season'
-  };
-  const teams = [defaultTeam, older];
-  const html = renderToStaticMarkup(<PlayerProfile player={{ ...player, teams }} />);
-  const competitive =
-    html.split('aria-labelledby="player-competitive-teams-title"')[1]?.split('</section>')[0] ?? '';
-  expect(competitive.indexOf('Lobos')).toBeLessThan(competitive.indexOf('Earlier registration'));
-  expect(teams).toEqual([defaultTeam, older]);
-  expect(html).toContain('no tiene vinculaciones como coach, staff o partner');
+  const section =
+    html.split('aria-labelledby="player-memberships-title"')[1]?.split('</section>')[0] ?? '';
+  expect(section).toContain('todavía no tiene inscripciones en equipos');
+  expect(section).toContain('0 vinculaciones');
+  expect(section).not.toContain('player-profile-membership');
 });

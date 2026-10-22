@@ -63,5 +63,5 @@ test('persisted affiliations flow through HTTP into the profile while historical
   expect(retired.html.split('</header>')[0]).toContain('Sin equipo competitivo');
   expect(retired.html).toContain('player-performance-grid');
   expect(retired.html).toContain('<dt>Otras vinculaciones</dt><dd>2</dd>');
-  expect(retired.html).toContain('no tiene inscripciones competitivas registradas');
+  expect(retired.html).toContain('2 vinculaciones');
 });

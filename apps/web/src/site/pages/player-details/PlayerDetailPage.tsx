@@ -28,14 +28,12 @@ function PlayerMembershipSection({
   id,
   title,
   teams,
-  empty,
-  registrationTeamId
+  empty
 }: {
   id: string;
   title: string;
   teams: PlayerTeam[];
   empty: string;
-  registrationTeamId?: string | undefined;
 }) {
   return (
     <section className="player-teams" aria-labelledby={id}>
@@ -49,23 +47,21 @@ function PlayerMembershipSection({
         <div className="player-profile-team-grid">
           {teams.map((team) => (
             <SiteLink
-              className="player-profile-membership"
+              className="player-profile-membership player-affiliation-card"
               key={team.id}
               href={`/equipos/${encodeURIComponent(team.slug ?? team.id)}`}
             >
-              <TeamBadge team={team} />
-              <div>
-                <span className="meta">
+              <div className="player-affiliation-body">
+                <span className="player-affiliation-context">
                   {team.seasonName} · {team.divisionName}
                 </span>
-                <h3>{team.name}</h3>
-                <p>
+                <h3 title={team.name}>{team.name}</h3>
+                <span className="player-affiliation-role">
                   {roleLabels[team.role]}
                   {team.isCaptain ? ' · Capitán' : ''}
-                </p>
-                {team.id === registrationTeamId && <p>Última inscripción competitiva</p>}
-                <span className="meta">{team.isActive ? 'Equipo activo' : 'Equipo inactivo'}</span>
+                </span>
               </div>
+              <TeamBadge team={team} />
             </SiteLink>
           ))}
         </div>
@@ -138,7 +134,7 @@ export function PlayerProfile({ player }: { player: PlayerDetail }) {
             className="player-profile-team"
             href={`/equipos/${encodeURIComponent(registrationTeam.slug ?? registrationTeam.id)}`}
           >
-            <span className="meta">Última inscripción competitiva</span>
+            <span className="meta">Equipo competitivo</span>
             <TeamBadge team={registrationTeam} />
             <strong>{registrationTeam.name}</strong>
             <span className="meta">
@@ -260,17 +256,10 @@ export function PlayerProfile({ player }: { player: PlayerDetail }) {
         )}
       </section>
       <PlayerMembershipSection
-        id="player-competitive-teams-title"
-        title="Trayectoria competitiva"
-        teams={competitiveTeams}
-        registrationTeamId={registrationTeam?.id}
-        empty="Este jugador todavía no tiene inscripciones competitivas registradas."
-      />
-      <PlayerMembershipSection
-        id="player-other-teams-title"
-        title="Otras vinculaciones"
-        teams={otherTeams}
-        empty="Este jugador no tiene vinculaciones como coach, staff o partner."
+        id="player-memberships-title"
+        title="Equipos y vinculaciones"
+        teams={player.teams}
+        empty="Este jugador todavía no tiene inscripciones en equipos."
       />
     </div>
   );

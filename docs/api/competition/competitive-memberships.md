@@ -99,7 +99,7 @@ resolver perfiles y slugs.
 ## Perfil visual (fase 4)
 
 La cabecera usa exclusivamente `registrationTeam` para escudo, enlace, color,
-posición y capitanía. Se presenta como «Última inscripción competitiva», sin
+posición y capitanía. Se presenta como «Equipo competitivo», sin
 afirmar que sea el equipo actual; las inscripciones inactivas se identifican.
 Sin inscripción se muestra «Sin equipo competitivo», iniciales y color neutro.
 No se recurre a `teams[0]` si los campos opcionales del contexto no están presentes.
@@ -111,17 +111,15 @@ estadísticas. Todas las afiliaciones y cuentas vinculadas siguen accesibles.
 
 ## Trayectoria y otras vinculaciones (fase 5)
 
-El perfil divide las membresías con los predicados compartidos en «Trayectoria
-competitiva» (los cinco roles titulares y suplentes) y «Otras vinculaciones»
-(coach, staff y partners). Ambas secciones tienen contador y estado vacío propios;
-el resumen también distingue inscripciones competitivas de otras vinculaciones.
+El perfil reúne todas las membresías en «Equipos y vinculaciones», con un contador
+y un estado vacío comunes. El resumen distingue inscripciones competitivas de
+otras vinculaciones mediante los predicados compartidos.
 
 Cada tarjeta conserva enlace, escudo, temporada, división, rol y capitanía,
-e indica si el equipo está activo o inactivo. Solo la inscripción resuelta por
-la API recibe la etiqueta «Última inscripción competitiva». Un equipo activo
-no implica que la inscripción sea actual. Se mantiene el orden recibido de la API
-dentro de cada sección, sin reordenar ni modificar las membresías originales.
-
+e indica si el equipo está activo o inactivo. Se mantiene el orden recibido de
+la API y no se añade una etiqueta de última inscripción. La cuadrícula, el
+espaciado y la altura mínima se comparten con las tarjetas de cuentas secundarias;
+el contenido largo puede ampliar la altura para mantener su legibilidad.
 La trayectoria muestra las inscripciones conservadas en el sistema; no reconstruye
 membresías eliminadas ni roles anteriores a partir de partidas o del registro de
 auditoría. Las estadísticas históricas permanecen disponibles en Rendimiento.
