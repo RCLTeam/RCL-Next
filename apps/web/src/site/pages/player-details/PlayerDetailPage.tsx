@@ -162,22 +162,20 @@ export function PlayerProfile({ player }: { player: PlayerDetail }) {
           {latestTeam && <span className="meta">{latestTeam.seasonName}</span>}
         </div>
         {stats?.games || (mvpCount ?? 0) > 0 ? (
-          <>
-            <dl className="player-performance-grid">
-              {metrics.map(([label, value]) => (
-                <div key={label}>
-                  <dt>{label}</dt>
-                  <dd>{value}</dd>
-                </div>
-              ))}
-            </dl>
+          <dl className="player-performance-grid">
+            {metrics.map(([label, value]) => (
+              <div key={label}>
+                <dt>{label}</dt>
+                <dd>{value}</dd>
+              </div>
+            ))}
             {player.competition?.champion && (
-              <p className="player-signature-champion">
-                <span className="meta">Campeón más jugado</span>
-                <strong>{player.competition.champion}</strong>
-              </p>
+              <div className="player-signature-champion">
+                <dt>Campeón más jugado</dt>
+                <dd>{player.competition.champion}</dd>
+              </div>
             )}
-          </>
+          </dl>
         ) : (
           <div className="player-performance-empty">
             <span className="eyebrow">La historia está por escribir</span>

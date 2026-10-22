@@ -199,20 +199,24 @@
   font: 700 clamp(32px, 4vw, 48px)/1 var(--display2);
   color: var(--profile-color);
   overflow-wrap: anywhere;
+  font-variant-numeric: tabular-nums;
 }
 
-.rcl-site .player-signature-champion {
-  display: flex;
+.rcl-site .player-performance-grid>.player-signature-champion {
+  grid-column: 1 / -1;
+  margin-top: -1px;
+  border-top: 1px solid var(--line);
+  flex-direction: row;
   flex-wrap: wrap;
-  gap: 16px;
+  justify-content: space-between;
+  gap: 12px 24px;
   align-items: center;
-  padding: 18px 0;
-  margin: 0;
-  border-bottom: 1px solid var(--line);
+  background: linear-gradient(110deg, color-mix(in srgb, var(--profile-color) 9%, var(--panel)), var(--panel) 75%);
 }
 
-.rcl-site .player-signature-champion strong {
-  font: 700 26px var(--display2);
+.rcl-site .player-signature-champion dd {
+  font-size: clamp(28px, 3vw, 36px);
+  color: var(--text);
 }
 
 .rcl-site .player-performance-empty {
