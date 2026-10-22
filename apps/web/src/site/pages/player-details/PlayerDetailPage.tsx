@@ -233,13 +233,13 @@ export function PlayerProfile({ player }: { player: PlayerDetail }) {
                   <dd>{value}</dd>
                 </div>
               ))}
-            </dl>
             {player.competition?.champion && (
-              <p className="player-signature-champion">
-                <span className="meta">Campeón más jugado</span>
-                <strong>{player.competition.champion}</strong>
-              </p>
+              <div className="player-signature-champion">
+                <dt>Campeón más jugado</dt>
+                <dd>{player.competition.champion}</dd>
+              </div>
             )}
+            </dl>
           </>
         ) : (
           <div className="player-performance-empty">
