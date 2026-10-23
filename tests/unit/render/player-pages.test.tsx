@@ -92,7 +92,7 @@ test('normalizes roster display names without changing source data, Riot IDs or 
   const profile = renderToStaticMarkup(
     <PlayerProfile player={{ ...player, displayName: member.name }} />
   );
-  expect(profile).toContain('>Ozaru</p>');
+  expect(profile).not.toContain('>Ozaru</p>');
   expect(profile).toContain('>Ozaru</dd>');
 });
 
@@ -127,7 +127,6 @@ test('Player profiles show real membership context and handle missing data', () 
   const html = renderToStaticMarkup(<PlayerProfile player={player} />);
   for (const text of [
     'Jugador Uno#EUW',
-    'Cuenta principal',
     'Premier',
     'Temporada 1',
     'Mid',

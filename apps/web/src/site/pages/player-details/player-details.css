@@ -1,80 +1,133 @@
-.rcl-site .player-detail-profile {
-  min-width: 0;
-}
+.rcl-site .player-detail-profile { min-width: 0; }
 
 .rcl-site .player-profile-header {
-  position: relative;
   display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 32px;
-  padding: clamp(24px, 3vw, 36px);
+  position: relative;
+  margin-bottom: 44px;
   border: 1px solid var(--line);
-  border-left: 2px solid transparent;
-  background: linear-gradient(to left, var(--panel) 35%, color-mix(in srgb, var(--profile-color) 18%, var(--panel)));
+  border-left: 3px solid var(--profile-color);
+  background: linear-gradient(120deg, var(--panel), var(--void));
   overflow-wrap: anywhere;
 }
 
-.rcl-site .player-profile-header::before {
-  content: '';
+.rcl-site .player-profile-header-body {
+  display: grid;
+  min-width: 0;
+}
+
+.rcl-site .player-profile-champion {
+  position: relative;
+  min-height: 220px;
+  overflow: hidden;
+  background: radial-gradient(ellipse, color-mix(in srgb, var(--profile-color) 30%, var(--panel)), var(--panel));
+}
+
+.rcl-site .player-profile-champion img {
   position: absolute;
-  top: -1px;
-  bottom: -1px;
-  left: -2px;
-  width: 2px;
-  background: linear-gradient(to bottom, var(--profile-color) 70%, var(--line));
-  pointer-events: none;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 65% 20%;
 }
 
 .rcl-site .player-profile-identity {
   min-width: 0;
+  padding: 24px;
+  align-self: center;
+}
+
+.rcl-site .player-profile-name {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px 12px;
+  margin-top: 12px;
 }
 
 .rcl-site .player-profile-header h2 {
-  margin: 20px 0 12px;
-  font: 900 clamp(48px, 7vw, 92px)/0.95 var(--display);
+  margin: 0;
+  font: 900 clamp(40px, 4vw, 64px)/1 var(--display);
+  letter-spacing: 0.025em;
   text-transform: uppercase;
 }
 
-.rcl-site .player-profile-header p {
-  margin: 8px 0;
+.rcl-site .player-profile-tag {
   color: var(--muted);
-  font-size: 14px;
-}
-
-.rcl-site .player-profile-header .player-profile-riot {
-  color: var(--text);
-  font: 12px var(--mono);
-}
-
-.rcl-site .player-profile-account {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 4px 28px;
-}
-
-.rcl-site .player-profile-account-names {
-  min-width: 0;
+  font: 14px var(--mono);
 }
 
 .rcl-site .player-profile-labels {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 16px;
+  gap: 8px;
 }
 
-.rcl-site .player-profile-labels>span {
-  padding: 7px 10px;
+.rcl-site .player-profile-labels > span {
+  padding: 4px 7px;
   border: 1px solid var(--line);
-  background: var(--void);
   font: 10px var(--mono);
   text-transform: uppercase;
 }
 
+.rcl-site .player-profile-labels > span:first-child,
 .rcl-site .player-profile-labels .player-captain-label {
-  color: var(--profile-color);
+  color: var(--text);
+  background: color-mix(in srgb, var(--profile-color) 35%, var(--panel));
   border-color: var(--profile-color);
+}
+
+.rcl-site .player-profile-details {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  border-top: 1px solid var(--line);
+}
+
+.rcl-site .player-profile-champion-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--line);
+}
+
+.rcl-site .player-profile-champion-summary strong {
+  font: 700 22px/1.2 var(--display2);
+}
+
+.rcl-site .player-profile-info-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  padding: 16px 12px;
+  gap: 8px;
+}
+
+.rcl-site .player-profile-info {
+  display: grid;
+  flex: 1 1 260px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  min-width: 0;
+  margin: 0;
+}
+
+.rcl-site .player-profile-info > div {
+  min-width: 0;
+  padding: 0 12px;
+}
+
+.rcl-site .player-profile-info > div + div { border-left: 1px solid var(--line); }
+.rcl-site .player-profile-info dt {
+  color: var(--muted);
+  font: 9px/1.5 var(--mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.rcl-site .player-profile-info dd {
+  margin: 6px 0 0;
+  overflow-wrap: anywhere;
+  font-size: 13px;
 }
 
 .rcl-site .player-profile-opgg {
@@ -83,71 +136,52 @@
   min-height: 44px;
   flex-shrink: 0;
   color: var(--muted);
-  font: 10px var(--mono);
   text-decoration: none;
 }
-
-.rcl-site .player-profile-opgg img {
-  width: 60px;
-  height: 28px;
-  object-fit: contain;
-}
+.rcl-site .player-profile-opgg img { width: 60px; height: 28px; object-fit: contain; }
+.rcl-site .player-profile-info-row > .player-profile-opgg { margin-left: auto; margin-right: 24px; }
 
 .rcl-site .player-profile-team {
+  position: relative;
   display: flex;
   flex-direction: column;
-  justify-content: center;
   align-items: center;
-  gap: 14px;
+  justify-content: center;
+  gap: 8px;
+  padding: 20px;
+  border-top: 1px solid var(--profile-color);
+  background: repeating-linear-gradient(135deg, transparent 0 12px, rgb(255 255 255 / 0.015) 12px 24px);
   text-align: center;
   color: var(--text);
   text-decoration: none;
 }
-
+.rcl-site .player-profile-team .meta { font-size: 9px; }
 .rcl-site .player-profile-team .team-badge {
-  width: 120px;
-  height: 120px;
-  padding: 0;
-  border: 0;
-  background: transparent;
+  width: 72px; height: 72px; padding: 0; border: 0; background: transparent;
+}
+.rcl-site .player-profile-team strong { font: 700 24px/1.1 var(--display2); text-transform: uppercase; }
+.rcl-site .player-profile-initials { align-self: center; text-align: center; font: 900 80px/1 var(--display); color: var(--muted); opacity: 0.3; }
+
+@media (min-width: 701px) {
+  .rcl-site .player-profile-header-body { grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr); }
+  .rcl-site .player-profile-details { border-top: 0; border-left: 1px solid var(--line); }
+  .rcl-site .player-profile-team { grid-column: 1 / -1; }
 }
 
-.rcl-site .player-profile-team strong {
-  font: 700 30px/1.1 var(--display2);
-  text-transform: uppercase;
-}
-
-.rcl-site .player-profile-initials {
-  align-self: center;
-  text-align: center;
-  font: 900 140px/1 var(--display);
-  color: var(--muted);
-  opacity: 0.3;
-}
-
-.rcl-site .player-profile-info {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  margin: 0 0 44px;
-  border: 1px solid var(--line);
-  border-top: 0;
-}
-
-.rcl-site .player-profile-info>div {
-  padding: 20px;
-  min-width: 0;
-}
-
-.rcl-site .player-profile-info dt {
-  color: var(--muted);
-  font: 10px var(--mono);
-  text-transform: uppercase;
-}
-
-.rcl-site .player-profile-info dd {
-  margin: 10px 0 0;
-  overflow-wrap: anywhere;
-  font-size: 14px;
+@media (min-width: 1101px) {
+  .rcl-site .player-profile-header { overflow: hidden; }
+  .rcl-site .player-profile-header-featured { grid-template-columns: minmax(180px, 24%) minmax(0, 1fr); }
+  .rcl-site .player-profile-header-body { grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) minmax(150px, 0.9fr); }
+  .rcl-site .player-profile-champion { min-height: 190px; }
+  .rcl-site .player-profile-identity { padding: 20px; }
+  .rcl-site .player-profile-details { margin-block: 18px; }
+  .rcl-site .player-profile-team { grid-column: auto; border-top: 0; background: none; isolation: isolate; }
+  .rcl-site .player-profile-team::before {
+    content: ''; position: absolute; left: 0; right: -50%; top: 0; bottom: 0;
+    border-left: 2px solid var(--profile-color);
+    background: repeating-linear-gradient(135deg, transparent 0 12px, rgb(255 255 255 / 0.015) 12px 24px);
+    transform: skewX(-15deg); pointer-events: none; z-index: -1;
+  }
 }
 
 .rcl-site .player-detail-section-heading {
@@ -179,11 +213,13 @@
   background: var(--line);
 }
 
+.rcl-site .player-performance-grid { border-left: 3px solid var(--profile-color); }
+
 .rcl-site .player-performance-grid>div {
   display: flex;
   flex-direction: column-reverse;
-  gap: 12px;
-  padding: 24px 20px;
+  gap: 8px;
+  padding: 20px;
   background: var(--panel);
   min-width: 0;
 }
@@ -196,23 +232,10 @@
 
 .rcl-site .player-performance-grid dd {
   margin: 0;
-  font: 700 clamp(32px, 4vw, 48px)/1 var(--display2);
+  font: 700 clamp(30px, 3vw, 40px)/1 var(--display2);
   color: var(--profile-color);
   overflow-wrap: anywhere;
-}
-
-.rcl-site .player-signature-champion {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
-  align-items: center;
-  padding: 18px 0;
-  margin: 0;
-  border-bottom: 1px solid var(--line);
-}
-
-.rcl-site .player-signature-champion strong {
-  font: 700 26px var(--display2);
+  font-variant-numeric: tabular-nums;
 }
 
 .rcl-site .player-performance-empty {
@@ -241,55 +264,81 @@
 }
 
 .rcl-site .player-profile-membership {
+  position: relative;
+  isolation: isolate;
   display: flex;
   align-items: center;
-  gap: 20px;
-  padding: 24px;
+  gap: 32px;
+  min-height: 136px;
+  padding: 22px 20px;
   color: var(--text);
   text-decoration: none;
-  background: var(--panel);
+  background: linear-gradient(120deg, color-mix(in srgb, var(--profile-color) 6%, var(--panel)), var(--void));
   border: 1px solid var(--line);
-  overflow-wrap: anywhere;
+  border-left: 3px solid var(--profile-color);
 }
-
-.rcl-site .player-profile-membership>div {
-  min-width: 0;
+.rcl-site .player-profile-membership:not(.player-linked-account)::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  clip-path: polygon(calc(100% - 76px) 0, 100% 0, 100% 100%, calc(100% - 112px) 100%);
+  background: repeating-linear-gradient(135deg, transparent 0 12px, rgb(255 255 255 / 0.025) 12px 24px);
+  pointer-events: none;
 }
-
-.rcl-site .player-linked-account {
-  flex-wrap: wrap;
+.rcl-site .player-profile-membership:not(.player-linked-account)::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  clip-path: polygon(calc(100% - 77px) 0, calc(100% - 76px) 0, calc(100% - 112px) 100%, calc(100% - 113px) 100%);
+  background: var(--profile-color);
+  pointer-events: none;
 }
-
+.rcl-site .player-profile-membership > div,
 .rcl-site .player-linked-account-profile {
   flex: 1;
   min-width: 0;
+}
+.rcl-site .player-linked-account-profile {
   color: inherit;
   text-decoration: none;
 }
-
-.rcl-site .player-profile-membership .team-badge {
-  width: 68px;
-  height: 68px;
+.rcl-site .player-profile-membership > .team-badge {
+  order: 2;
+  flex: 0 0 48px;
+  width: 48px;
+  height: 48px;
   border: 0;
   padding: 0;
   background: transparent;
 }
-
-.rcl-site .player-profile-membership h3 {
-  margin: 10px 0;
-  font: 700 28px/1 var(--display2);
-  text-transform: uppercase;
+.rcl-site .player-linked-account > .player-profile-opgg {
+  flex: 0 0 48px;
+  justify-content: center;
 }
-
+.rcl-site .player-linked-account > .player-profile-opgg img { width: 48px; }
+.rcl-site .player-profile-membership .meta {
+  display: block;
+  font-size: 9px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.rcl-site .player-profile-membership h3 {
+  margin: 10px 0 8px;
+  font: 700 28px/1.1 var(--display2);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .rcl-site .player-profile-membership p {
   margin: 0;
   color: var(--profile-color);
-  font: 11px/1.6 var(--mono);
+  font: 10px/1.6 var(--mono);
+  overflow-wrap: anywhere;
 }
-
-.rcl-site .player-profile-membership:hover {
-  border-color: var(--profile-color);
-}
+.rcl-site .player-profile-membership:hover { border-color: var(--profile-color); }
 
 .rcl-site .player-detail-profile a:focus-visible {
   outline: 2px solid var(--profile-color);
@@ -302,11 +351,6 @@
 }
 
 @media (min-width: 701px) {
-  .rcl-site .player-profile-header {
-    grid-template-columns: minmax(0, 1fr) minmax(200px, 0.5fr);
-  }
-
-  .rcl-site .player-profile-info,
   .rcl-site .player-performance-grid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
