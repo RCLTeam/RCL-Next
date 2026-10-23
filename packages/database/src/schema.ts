@@ -22,7 +22,7 @@ import {
   varchar
 } from 'drizzle-orm/pg-core';
 
-export const appRole = pgEnum('app_role', ['viewer', 'admin', 'owner']);
+export const appRole = pgEnum('app_role', ['viewer', 'editor', 'admin', 'owner']);
 export const gameSide = pgEnum('game_side', ['blue', 'red']);
 export const stage = pgEnum('stage', ['regular', 'playoff']);
 export const matchStatus = pgEnum('match_status', [
