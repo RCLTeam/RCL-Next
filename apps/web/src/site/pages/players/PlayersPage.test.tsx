@@ -131,7 +131,10 @@ test('historical awards remain visible in the directory without statistics or a 
   };
   expect(filterPlayers([historical], '').map((p) => p.id)).toEqual([player.id]);
   const html = renderToStaticMarkup(<PlayerGrid players={[historical]} />);
-  expect(html).toContain('<dt>MVPs</dt><dd>1</dd>');
+  expect(html).not.toContain('<dt>MVPs</dt>');
+  expect(renderToStaticMarkup(<PlayerGrid players={[historical]} sort="mvps" />)).toContain(
+    '<dt>MVPs</dt><dd>1</dd>'
+  );
   expect(html).toContain('<dt>KDA</dt><dd>—</dd>');
   expect(html).not.toContain('Estadísticas pendientes.');
   expect(
