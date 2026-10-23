@@ -44,7 +44,7 @@ function ChampionSlides({
           key={slide.id}
           className={`totw-splash${index === active % slides.length ? ' is-active' : ''}`}
           asset={slide.asset}
-          variant="portrait"
+          variant="original"
           alt=""
         />
       ))}

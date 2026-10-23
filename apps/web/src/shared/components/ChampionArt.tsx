@@ -9,7 +9,7 @@ import type { GameAsset } from '../riot/riot-assets.types.js';
 interface ChampionArtProps {
   asset: GameAsset;
   skinId?: number;
-  variant?: 'portrait' | 'centered' | 'tile';
+  variant?: 'portrait' | 'centered' | 'tile' | 'original';
   className?: string;
   alt: string;
 }
@@ -36,7 +36,11 @@ export function ChampionArt({ asset, skinId, variant = 'centered', ...image }: C
   }, [championId]);
   const skin = selectChampionArt(loaded?.id === championId ? (loaded?.skins ?? []) : [], skinId);
   const sources = [
-    ...new Set([skin?.[variant], skin?.centered, asset.splashImage, asset.image])
+    ...new Set(
+      variant === 'original'
+        ? [skin?.original, asset.splashImage, asset.image]
+        : [skin?.[variant], skin?.centered, asset.splashImage, asset.image]
+    )
   ].filter((source): source is string => Boolean(source));
   return <ArtImage key={sources.join('|')} sources={sources} {...image} />;
 }
