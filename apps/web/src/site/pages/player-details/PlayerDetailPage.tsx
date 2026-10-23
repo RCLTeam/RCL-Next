@@ -50,19 +50,21 @@ function PlayerMembershipSection({
         <div className="player-profile-team-grid">
           {teams.map((team) => (
             <SiteLink
-              className="player-profile-membership player-affiliation-card"
+              className="player-profile-membership"
+              style={{ '--profile-color': team.color || 'var(--purple)' } as React.CSSProperties}
               key={team.id}
               href={`/equipos/${encodeURIComponent(team.slug ?? team.id)}`}
             >
-              <div className="player-affiliation-body">
-                <span className="player-affiliation-context">
+              <div className="player-membership-body">
+                <span className="meta">
                   {team.seasonName} · {team.divisionName}
                 </span>
                 <h3 title={team.name}>{team.name}</h3>
-                <span className="player-affiliation-role">
+                <p>
                   {roleLabels[team.role]}
                   {team.isCaptain ? ' · Capitán' : ''}
-                </span>
+                </p>
+                {!team.isActive && <span className="meta">Equipo inactivo</span>}
               </div>
               <TeamBadge team={team} />
             </SiteLink>
@@ -217,7 +219,7 @@ export function PlayerProfile({ player }: { player: PlayerDetail }) {
                     <span className="meta">
                       {account.isMain ? 'Cuenta principal' : 'Cuenta secundaria'}
                     </span>
-                    <h3>{account.gameName}</h3>
+                    <h3 title={account.gameName}>{account.gameName}</h3>
                     <p>
                       {account.gameName}
                       {accountTag ? `#${accountTag}` : ''}
@@ -263,12 +265,6 @@ export function PlayerProfile({ player }: { player: PlayerDetail }) {
                   <dd>{value}</dd>
                 </div>
               ))}
-            {player.competition?.champion && (
-              <div className="player-signature-champion">
-                <dt>Campeón más jugado</dt>
-                <dd>{player.competition.champion}</dd>
-              </div>
-            )}
             </dl>
           </>
         ) : (
