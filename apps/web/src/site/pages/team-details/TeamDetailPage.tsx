@@ -42,7 +42,7 @@ function MemberSection({
         <div className="team-member-grid">
           {members.map((member) => (
             <article
-              className={`team-member-card ${team ? 'team-player-card' : 'team-support-card'}${member.isCaptain ? ' is-captain' : ''}`}
+              className={`team-member-card ${team && playerRoles.includes(member.role) ? 'team-player-card' : 'team-support-card'}${member.isCaptain ? ' is-captain' : ''}`}
               style={
                 team
                   ? ({ '--team-color': team.color || 'var(--purple)' } as React.CSSProperties)
@@ -54,7 +54,7 @@ function MemberSection({
                 <div className="team-player-overview">
                   <dl className="team-player-stats">
                     <div>
-                      <dt>Partidas jugadas</dt>
+                      <dt>Partidas</dt>
                       <dd>{member.rosterStats?.games ?? '—'}</dd>
                     </div>
                     <div>
@@ -62,27 +62,24 @@ function MemberSection({
                       <dd>{member.rosterStats?.mvps ?? '—'}</dd>
                     </div>
                     <div>
-                      <dt>Campeones jugados</dt>
+                      <dt>Campeones</dt>
                       <dd>{member.rosterStats?.champions ?? '—'}</dd>
                     </div>
                   </dl>
-                  <div className="team-player-emblem">
-                    <TeamBadge team={team} />
-                  </div>
-                  {member.isCaptain && (
-                    <span className="team-tag team-player-captain">Capitán</span>
-                  )}
                 </div>
               )}
               <div className="team-member-role">
                 <span className="meta">{roleLabels[member.role]}</span>
+                {member.isCaptain && <span className="team-tag">Capitán</span>}
                 {team && member.countryCode && (
                   <span className="meta">{member.countryCode.toUpperCase()}</span>
                 )}
               </div>
               <div className="team-member-identity">
-                {(!team || !playerRoles.includes(member.role)) && member.isCaptain && (
-                  <span className="team-tag">Capitán</span>
+                {team && (
+                  <div className="team-player-emblem">
+                    <TeamBadge team={team} />
+                  </div>
                 )}
                 <h3>
                   {member.playerId ? (
