@@ -10,6 +10,8 @@ import { CompetitionService } from './modules/competition/competition.service.js
 import type { CrudOperationsRepository } from './modules/crud-operations/crud-operations.repository.js';
 import { crudOperationsRouter } from './modules/crud-operations/crud-operations.router.js';
 import { CrudOperationsService } from './modules/crud-operations/crud-operations.service.js';
+import type { CrystalBallRepository } from './modules/crystal-ball/crystal-ball.repository.js';
+import { crystalBallRouter } from './modules/crystal-ball/crystal-ball.router.js';
 import type { DatabaseTransferRepository } from './modules/database-transfer/database-transfer.repository.js';
 import { databaseTransferRouter } from './modules/database-transfer/database-transfer.router.js';
 import { DatabaseTransferService } from './modules/database-transfer/database-transfer.service.js';
@@ -42,6 +44,7 @@ export function createApp(options: {
   webDirectory?: string | undefined;
   repository: CompetitionRepository;
   predictionsRepository?: PredictionsRepository;
+  crystalBallRepository?: CrystalBallRepository;
   checkDatabase: () => Promise<void>;
   corsOrigin: string;
   auth?: AuthOptions;
@@ -103,6 +106,8 @@ export function createApp(options: {
     );
   }
   app.use(express.json({ limit: '1mb' }));
+  if (options.crystalBallRepository)
+    app.use('/api/v1/crystal-ball', crystalBallRouter(options.crystalBallRepository, options.auth));
   app.use('/api/v1/discord-avatars', discordAvatarsRouter());
   app.use(
     '/api/v1/team-logos',
