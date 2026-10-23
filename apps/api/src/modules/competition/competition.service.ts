@@ -252,11 +252,48 @@ export class CompetitionService {
       .filter((game) => game.winnerTeamId)
       .flatMap((game) => game.participants.filter((player) => player.teamId === id));
     const { slugs: playerSlugs } = await this.playerDirectory();
+    const roles = ['top', 'jungle', 'mid', 'adc', 'support'] as const;
+    const positionAliases: Record<string, string> = {
+      middle: 'mid',
+      bottom: 'adc',
+      utility: 'support'
+    };
+    const lineup = roles.flatMap((role) => {
+      const starter = team.members.find((member) => member.role === role);
+      if (starter?.playerId && appearances.some((player) => player.playerId === starter.playerId))
+        return [starter];
+      const counts = new Map<string, number>();
+      for (const player of appearances) {
+        const position = player.position?.toLowerCase() ?? '';
+        if (player.playerId && (positionAliases[position] ?? position) === role)
+          counts.set(player.playerId, (counts.get(player.playerId) ?? 0) + 1);
+      }
+      const replacementId = [...counts].sort(
+        ([a, ac], [b, bc]) => bc - ac || a.localeCompare(b)
+      )[0]?.[0];
+      if (!replacementId) return starter ? [starter] : [];
+      const member = team.members.find((entry) => entry.playerId === replacementId);
+      if (member) return [{ ...member, role }];
+      const appearance = appearances.find((entry) => entry.playerId === replacementId);
+      if (!appearance) return starter ? [starter] : [];
+      return [
+        {
+          id: replacementId,
+          playerId: replacementId,
+          name: appearance.gameName,
+          gameName: appearance.gameName,
+          riotTag: appearance.riotTag,
+          countryCode: null,
+          role,
+          isCaptain: false
+        }
+      ];
+    });
     const champions = new Map(
       await Promise.all(
         [
           ...new Set(
-            team.members
+            [...team.members, ...lineup]
               .filter((member) => ['top', 'jungle', 'mid', 'adc', 'support'].includes(member.role))
               .flatMap((member) => (member.playerId ? [member.playerId] : []))
           )
@@ -272,6 +309,11 @@ export class CompetitionService {
     return {
       ...team,
       slug: slugs.get(id),
+      featuredLineup: lineup.map((member) => ({
+        ...member,
+        champion: member.playerId ? (champions.get(member.playerId) ?? null) : null,
+        playerSlug: member.playerId ? playerSlugs.get(member.playerId) : undefined
+      })),
       members: team.members.map((member) => ({
         ...member,
         champion: member.playerId ? (champions.get(member.playerId) ?? null) : null,
