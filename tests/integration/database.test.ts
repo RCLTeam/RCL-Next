@@ -53,10 +53,10 @@ test('PostgreSQL migrations, fixtures and relational constraints', async (t) => 
   expect((await db.select().from(schema.teams)).length).toBe(4);
   expect((await db.select().from(schema.playerGameInfo)).length).toBe(10);
   expect('isActive' in ((await db.select().from(schema.seasons))[0] ?? {})).toBe(false);
-  // all 21 ORM tables map to executable SQL
+  // All ORM tables map to executable SQL.
   {
     const tables = Object.values(schema).filter((value) => is(value, Table));
-    expect(tables.length).toBe(21);
+    expect(tables.length).toBe(23);
     for (const table of tables) await db.select().from(table).limit(1);
   }
   // SQL columns, foreign keys, checks and indexes match Drizzle metadata

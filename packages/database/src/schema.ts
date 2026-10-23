@@ -666,6 +666,55 @@ export const predictions = pgTable(
     index('predictions_discord_user_id_idx').on(t.discordUserId)
   ]
 );
+export const crystalBallCampaigns = pgTable(
+  'crystal_ball_campaigns',
+  {
+    seasonName: varchar('season_name', { length: 120 })
+      .primaryKey()
+      .references(() => seasons.name, { onDelete: 'cascade', onUpdate: 'cascade' }),
+    opensAt: timestamp('opens_at', { withTimezone: true }).notNull(),
+    closesAt: timestamp('closes_at', { withTimezone: true }).notNull(),
+    finalizedAt: timestamp('finalized_at', { withTimezone: true }),
+    results: jsonb('results').$type<Record<string, string[]>>().notNull().default({}),
+    resolvedBy: varchar('resolved_by', { length: 32 }).references(() => discordUsers.discordId, {
+      onDelete: 'set null'
+    }),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
+  },
+  (t) => [
+    check('crystal_ball_window_check', sql`${t.opensAt} < ${t.closesAt}`),
+    check('crystal_ball_results_object_check', sql`jsonb_typeof(${t.results}) = 'object'`)
+  ]
+);
+
+export const crystalBallEntries = pgTable(
+  'crystal_ball_entries',
+  {
+    seasonName: varchar('season_name', { length: 120 }).notNull(),
+    discordUserId: varchar('discord_user_id', { length: 32 }).notNull(),
+    answers: jsonb('answers').$type<Record<string, string[]>>().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
+  },
+  (t) => [
+    // PostgreSQL materializes generated migration identifiers at its 63-byte limit.
+    foreignKey({
+      name: 'crystal_ball_entries_season_name_crystal_ball_campaigns_season_',
+      columns: [t.seasonName],
+      foreignColumns: [crystalBallCampaigns.seasonName]
+    })
+      .onDelete('cascade')
+      .onUpdate('cascade'),
+    foreignKey({
+      name: 'crystal_ball_entries_discord_user_id_discord_users_discord_id_f',
+      columns: [t.discordUserId],
+      foreignColumns: [discordUsers.discordId]
+    }).onDelete('cascade'),
+    primaryKey({ columns: [t.seasonName, t.discordUserId] }),
+    index('crystal_ball_entries_user_idx').on(t.discordUserId),
+    check('crystal_ball_answers_object_check', sql`jsonb_typeof(${t.answers}) = 'object'`)
+  ]
+);
+
 export const homeWeeklyTeams = pgTable(
   'home_weekly_teams',
   {
