@@ -31,7 +31,7 @@ export function homeContentRouter(
     res.json({ data: await service.weeklyTeam(req.params.id) })
   );
   if (auth) {
-    router.use('/admin', requireAuth(auth, 'admin'));
+    router.use('/admin', requireAuth(auth, ['editor', 'admin']));
     router.get('/admin/articles', async (_req, res) =>
       res.json({ data: await service.listArticles(true) })
     );
