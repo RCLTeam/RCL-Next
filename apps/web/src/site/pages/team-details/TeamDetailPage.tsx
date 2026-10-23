@@ -148,7 +148,9 @@ export function TeamProfile({ team }: { team: TeamDetail }) {
           {playerRoles
             .filter((role) => role !== 'substitute')
             .map((role) => {
-              const member = players.find((player) => player.role === role);
+              const member = (team.featuredLineup ?? players).find(
+                (player) => player.role === role
+              );
               const champion = getGameAsset('champion', member?.champion ?? null, catalog);
               return (
                 <div className="team-profile-champion" key={role}>

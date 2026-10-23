@@ -644,3 +644,37 @@ test('Player detail gracefully handles player with active team membership but ze
   expect(detail.competition?.champion).toBeNull();
   expect(detail.competition?.mvpMatchIds).toEqual(['m1']);
 });
+
+test('Featured lineup prefers a played starter and otherwise the most used player in that team position', async () => {
+  const { source, matchGamesByMatch } = repository([completedMatch(0)]);
+  const match = completedMatch(0);
+  const substituteGame = (id: string, position: string) => {
+    const map = game(match.id, 'Ahri');
+    map.participants = map.participants.map((entry) => ({
+      ...entry,
+      playerId: id,
+      gameName: id,
+      position
+    }));
+    return map;
+  };
+  const maps = [
+    substituteGame('sub', 'mid'),
+    substituteGame('sub', 'mid'),
+    substituteGame('other', 'mid'),
+    substituteGame('jungler', 'jungle')
+  ];
+  matchGamesByMatch.mockResolvedValue(new Map([[match.id, maps]]));
+  let detail = await new CompetitionService(source).teamDetail('rebels');
+  expect(detail.featuredLineup?.find((member) => member.role === 'mid')?.playerId).toBe('sub');
+  expect(detail.members[0]?.playerId).toBe(playerId);
+  maps.push(game(match.id, 'Ahri'));
+  detail = await new CompetitionService(source).teamDetail('rebels');
+  expect(detail.featuredLineup?.find((member) => member.role === 'mid')?.playerId).toBe(playerId);
+  const empty = repository([]);
+  expect(
+    (await new CompetitionService(empty.source).teamDetail('rebels')).featuredLineup?.find(
+      (member) => member.role === 'mid'
+    )?.playerId
+  ).toBe(playerId);
+});

@@ -29,6 +29,7 @@ export interface TeamDetail extends TeamSummary {
   seasonName: string;
   divisionName: string;
   members: TeamMember[];
+  featuredLineup?: TeamMember[];
 }
 
 export interface Player {
