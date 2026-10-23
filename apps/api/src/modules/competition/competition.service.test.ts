@@ -116,6 +116,47 @@ test('Team detail loads the games of every completed match with one lookup', asy
   expect(matchGamesByMatch).toHaveBeenCalledTimes(1);
   expect(matchGamesByMatch).toHaveBeenCalledWith(matches.slice(0, 20).map((match) => match.id));
   expect(detail.members[0]?.rosterStats).toEqual({ games: 20, mvps: 0, champions: 2 });
+  expect(detail.members[0]?.champion).toBeNull();
+});
+
+test('Team champion uses the player season history rather than only current-team games', async () => {
+  const { source } = repository([completedMatch(0)]);
+  const seasonGames = ['Orianna', 'Ahri', 'Orianna'].map(
+    (champion, index): PlayerGameRow => ({
+      playerId,
+      gameId: `g${index}`,
+      matchId: `m${index}`,
+      divisionId,
+      roundId: 1,
+      teamId: awayId,
+      team: { id: awayId, name: 'Previous team', shortName: null, logoUrl: null },
+      position: 'mid',
+      champion,
+      durationSeconds: 1800,
+      winnerTeamId: awayId,
+      kills: 0,
+      deaths: 0,
+      assists: 0,
+      cs: 0,
+      damageToChampions: 0,
+      goldEarned: null,
+      visionScore: null,
+      damageMitigated: null
+    })
+  );
+  source.playerSeasonGames = vi.fn(async () => ({
+    playerGames: seasonGames,
+    allMatchGames: seasonGames,
+    mvpMatchIds: []
+  }));
+  expect((await new CompetitionService(source).teamDetail('rebels')).members[0]?.champion).toBe(
+    'Orianna'
+  );
+  expect(source.playerSeasonGames).toHaveBeenCalledWith(playerId, '2026');
+  const empty = repository([]);
+  expect(
+    (await new CompetitionService(empty.source).teamDetail('rebels')).members[0]?.champion
+  ).toBeNull();
 });
 
 test('Player detail displays season-wide statistics and MVPs across transfers while showing active team', async () => {

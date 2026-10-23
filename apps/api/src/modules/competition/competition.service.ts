@@ -252,11 +252,29 @@ export class CompetitionService {
       .filter((game) => game.winnerTeamId)
       .flatMap((game) => game.participants.filter((player) => player.teamId === id));
     const { slugs: playerSlugs } = await this.playerDirectory();
+    const champions = new Map(
+      await Promise.all(
+        [
+          ...new Set(
+            team.members
+              .filter((member) => ['top', 'jungle', 'mid', 'adc', 'support'].includes(member.role))
+              .flatMap((member) => (member.playerId ? [member.playerId] : []))
+          )
+        ].map(async (playerId) => {
+          const { playerGames } = await this.repository.playerSeasonGames(
+            playerId,
+            team.seasonName
+          );
+          return [playerId, mostPlayedChampion(playerGames)] as const;
+        })
+      )
+    );
     return {
       ...team,
       slug: slugs.get(id),
       members: team.members.map((member) => ({
         ...member,
+        champion: member.playerId ? (champions.get(member.playerId) ?? null) : null,
         rosterStats: {
           games: appearances.filter((player) => player.playerId === member.playerId).length,
           mvps: member.playerId
