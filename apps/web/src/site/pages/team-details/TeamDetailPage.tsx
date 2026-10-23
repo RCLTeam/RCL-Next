@@ -10,6 +10,8 @@ import type {
 import { PageLayout } from '../../../shared/components/PageLayout/PageLayout.js';
 import { SiteLink } from '../../../shared/components/SiteLink.js';
 import { displayName } from '../../../shared/display-name.js';
+import { getGameAsset } from '../../../shared/riot/riot-assets.service.js';
+import { useGameCatalog } from '../../../shared/riot/useGameCatalog.js';
 import './team-details.css';
 
 const roleLabels: Record<TeamMember['role'], string> = {
@@ -119,6 +121,7 @@ function MemberSection({
 }
 
 export function TeamProfile({ team }: { team: TeamDetail }) {
+  const catalog = useGameCatalog();
   const players = team.members
     .filter((member) => isCompetitiveRole(member.role))
     .sort(
@@ -141,13 +144,53 @@ export function TeamProfile({ team }: { team: TeamDetail }) {
         className="team-profile-header"
         style={{ '--team-color': team.color || 'var(--panel)' } as React.CSSProperties}
       >
-        <TeamBadge team={team} />
-        <div>
+        <div className="team-profile-champions" aria-label="Campeones más jugados de los titulares">
+          {playerRoles
+            .filter((role) => role !== 'substitute')
+            .map((role) => {
+              const member = players.find((player) => player.role === role);
+              const champion = getGameAsset('champion', member?.champion ?? null, catalog);
+              return (
+                <div className="team-profile-champion" key={role}>
+                  <div className="team-profile-champion-art">
+                    {champion?.splashImage && (
+                      <img
+                        src={champion.splashImage}
+                        alt=""
+                        onError={(event) => {
+                          event.currentTarget.hidden = true;
+                        }}
+                      />
+                    )}
+                  </div>
+                  <div className="team-profile-champion-label">
+                    <span>{roleLabels[role]}</span>
+                    <strong>
+                      {member ? (member.gameName ?? displayName(member.name)) : 'Sin titular'}
+                    </strong>
+                    {member && <small>{champion?.name ?? member.champion ?? 'Sin partidas'}</small>}
+                  </div>
+                </div>
+              );
+            })}
+        </div>
+        <div className="team-profile-identity">
           <span className="eyebrow">{team.divisionName}</span>
           <h2>{team.shortName ?? team.name}</h2>
-          <p>{team.seasonName}</p>
+          <p>{team.name}</p>
+          <dl className="team-profile-info">
+            <div>
+              <dt>Temporada</dt>
+              <dd>{team.seasonName}</dd>
+            </div>
+            <div>
+              <dt>Jugadores</dt>
+              <dd>{players.length}</dd>
+            </div>
+          </dl>
         </div>
         <div className="team-profile-actions">
+          <TeamBadge team={team} />
           <span className="team-profile-status">
             {team.isActive ? 'Equipo activo' : 'Equipo inactivo'}
           </span>
@@ -165,24 +208,6 @@ export function TeamProfile({ team }: { team: TeamDetail }) {
           )}
         </div>
       </header>
-      <dl className="team-profile-info">
-        <div>
-          <dt>Equipo</dt>
-          <dd>{team.name}</dd>
-        </div>
-        <div>
-          <dt>División</dt>
-          <dd>{team.divisionName}</dd>
-        </div>
-        <div>
-          <dt>Temporada</dt>
-          <dd>{team.seasonName}</dd>
-        </div>
-        <div>
-          <dt>Jugadores</dt>
-          <dd>{players.length}</dd>
-        </div>
-      </dl>
       <MemberSection
         title="Jugadores"
         team={team}
