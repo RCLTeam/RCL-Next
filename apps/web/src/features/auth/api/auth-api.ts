@@ -25,7 +25,10 @@ export async function getSession(signal?: AbortSignal): Promise<AuthUser | null>
     !('avatarHash' in user) ||
     (user.avatarHash !== null && typeof user.avatarHash !== 'string') ||
     !('role' in user) ||
-    (user.role !== 'viewer' && user.role !== 'admin' && user.role !== 'owner')
+    (user.role !== 'viewer' &&
+      user.role !== 'editor' &&
+      user.role !== 'admin' &&
+      user.role !== 'owner')
   )
     throw new Error('La respuesta de sesión no es válida.');
   return user as AuthUser;
