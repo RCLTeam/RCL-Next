@@ -1,0 +1,48 @@
+.rcl-site #bola-cristal select,
+.rcl-site #bola-cristal input[type='number'],
+.rcl-site #bola-cristal input[type='datetime-local'] {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  padding: 10px;
+  margin-top: 8px;
+  color: var(--text);
+  background: var(--void);
+  border: 1px solid var(--line);
+  font: inherit;
+  color-scheme: dark;
+}
+.rcl-site #bola-cristal button {
+  min-height: 44px;
+  padding: 10px 18px;
+  color: var(--lime);
+  border: 1px solid var(--lime);
+  background: var(--panel);
+  cursor: pointer;
+  font: inherit;
+}
+.rcl-site #bola-cristal button:disabled { opacity: 0.5; cursor: not-allowed; }
+.rcl-site #bola-cristal :focus-visible { outline: 2px solid var(--lime); outline-offset: 3px; }
+.rcl-site .crystal-section { margin-block: 32px; }
+.rcl-site .crystal-section > h2,
+.rcl-site .crystal-admin h2 { margin-block: 24px 16px; font: 700 24px var(--display2); }
+.rcl-site fieldset.crystal-card { min-width: 0; margin: 0; padding: 16px; }
+.rcl-site .crystal-card legend { padding-inline: 8px; font-weight: 700; overflow-wrap: anywhere; }
+.rcl-site .crystal-options { display: grid; gap: 4px; }
+.rcl-site .crystal-options label { display: flex; align-items: center; gap: 12px; min-height: 44px; overflow-wrap: anywhere; }
+.rcl-site .crystal-options input { width: 20px; height: 20px; flex-shrink: 0; accent-color: var(--lime); }
+.rcl-site .crystal-card .crystal-result { color: var(--lime); }
+.rcl-site .crystal-status { display: flex; flex-wrap: wrap; gap: 12px 24px; padding: 20px 0; color: var(--muted); }
+.rcl-site .crystal-status strong { color: var(--lime); }
+.rcl-site .crystal-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; margin-block: 24px; }
+.rcl-site .crystal-ranking,
+.rcl-site .crystal-admin { padding: 20px; margin-block: 32px; border: 1px solid var(--line); background: var(--panel); overflow-wrap: anywhere; }
+.rcl-site .crystal-ranking ol { padding-left: 24px; }
+.rcl-site .crystal-ranking li { padding: 12px 0; }
+.rcl-site .crystal-ranking strong { display: inline-block; margin-left: 16px; color: var(--lime); }
+.rcl-site .crystal-admin summary { min-height: 44px; cursor: pointer; font-weight: 700; }
+.rcl-site .crystal-window { display: grid; gap: 16px; margin-block: 16px; }
+@media (min-width: 640px) {
+  .rcl-site .crystal-window { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}

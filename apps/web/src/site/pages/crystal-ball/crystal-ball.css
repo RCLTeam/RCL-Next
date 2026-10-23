@@ -1,4 +1,4 @@
-/* Page-specific styles: crystal-ball. Base styles, states and responsive rules stay with their component. */
+@import '../../../features/crystal-ball/crystal-form.css';
 
 /* crystal-ball page and components */
 .rcl-site #bola-cristal {

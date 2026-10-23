@@ -1,39 +1,56 @@
 import React from 'react';
+import { canAccessAdmin, useAuth } from '../../../features/auth/components/AuthProvider.js';
+import type { Competition } from '../../../features/competition/hooks/useCompetition.js';
+import { CrystalSeason } from '../../../features/crystal-ball/CrystalSeason.js';
 import { PageLayout } from '../../../shared/components/PageLayout/PageLayout.js';
-import { CrystalCard } from './CrystalCard.js';
-import { SeerRankingPanel } from './SeerRankingPanel.js';
-import '../players/ranking-panel.css';
 import './crystal-ball.css';
 
-const categories = [
-  ['Campeón Rift Premier', 'El equipo que conquistará la máxima categoría.', 'premier'],
-  ['Campeón Rift Ascend', 'La próxima generación que llegará a lo más alto.', 'ascend'],
-  ['MVP de la temporada', 'El jugador que dejará su huella en el split.', null],
-  ['Equipo revelación', 'La sorpresa de la temporada.', null],
-  ['Primer eliminado en playoffs', 'El primer desenlace de las eliminatorias.', null]
-] as const;
-
-export function CrystalBallPage() {
+export function CrystalBallPage({ competition }: { competition: Competition }) {
+  const { state } = useAuth();
+  const userId = state.status === 'authenticated' ? state.user.discordId : undefined;
   return (
     <PageLayout
       id="bola-cristal"
       number="09"
       title="Bola de cristal"
-      subtitle="Antes de que empiece"
-      description="Pronósticos de temporada completa: campeones, MVP y sorpresas. El desenlace llega al final del split."
-      toolbar={
-        <>
-          <span className="meta">Pronósticos de temporada</span>
-          <span className="availability">Próximamente</span>
-        </>
-      }
+      subtitle="El futuro de los playoffs"
+      description="Elige a los seis clasificados y anticipa campeones, jugadores y meta. Cada acierto suma un punto."
     >
-      <div className="crystal-grid">
-        {categories.map(([title, description, badge]) => (
-          <CrystalCard key={title} title={title} description={description} badge={badge} />
-        ))}
+      <div className="page-toolbar">
+        <label>
+          Temporada
+          <select
+            value={competition.season?.id ?? ''}
+            onChange={(e) => competition.selectSeason(e.target.value)}
+          >
+            <option value="" disabled>
+              Seleccionar temporada
+            </option>
+            {competition.seasons.data.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name}
+              </option>
+            ))}
+          </select>
+        </label>
       </div>
-      <SeerRankingPanel />
+      {competition.season ? (
+        <CrystalSeason
+          key={`${competition.season.name}/${userId}`}
+          season={competition.season.name}
+          userId={userId}
+          admin={canAccessAdmin(state)}
+        />
+      ) : (
+        <output>
+          {competition.seasons.status === 'error'
+            ? 'No se pudieron cargar las temporadas.'
+            : 'Selecciona una temporada para ver sus predicciones.'}
+          <button type="button" onClick={competition.retry}>
+            Reintentar
+          </button>
+        </output>
+      )}
     </PageLayout>
   );
 }
