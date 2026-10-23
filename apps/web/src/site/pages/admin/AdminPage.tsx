@@ -1,4 +1,5 @@
 import React from 'react';
+import { useAuth } from '../../../features/auth/components/AuthProvider.js';
 import { RequireAdmin } from '../../../features/auth/components/RequireAdmin.js';
 import { CrudOperationsPanel } from '../../../features/crud-operations/components/CrudOperationsPanel.js';
 import { DatabaseTransferPanel } from '../../../features/database-transfer/components/DatabaseTransferPanel.js';
@@ -13,6 +14,8 @@ export function AdminPage({
   wsUrl,
   path = '/admin'
 }: { wsUrl?: string | undefined; path?: string }) {
+  const { state } = useAuth();
+  const editorOnly = state.status === 'authenticated' && state.user.role === 'editor';
   return (
     <section id="admin" className="admin-content" aria-label="Administración">
       <div className="admin-heading">
@@ -27,35 +30,50 @@ export function AdminPage({
           >
             Home content
           </SiteLink>
-          <SiteLink
-            href="/admin/rofl/upload"
-            aria-current={path === '/admin/rofl/upload' ? 'page' : undefined}
-          >
-            ROFL Upload
-          </SiteLink>
-          <SiteLink href="/admin/crud" aria-current={path === '/admin/crud' ? 'page' : undefined}>
-            CRUD Operations
-          </SiteLink>
-          <SiteLink
-            href="/admin/member-roles"
-            aria-current={path === '/admin/member-roles' ? 'page' : undefined}
-          >
-            Roles Management
-          </SiteLink>
-          <SiteLink
-            href="/admin/team-logos"
-            aria-current={path === '/admin/team-logos' ? 'page' : undefined}
-          >
-            Team Logos
-          </SiteLink>
-          <SiteLink
-            href="/admin/database-transfer"
-            aria-current={path === '/admin/database-transfer' ? 'page' : undefined}
-          >
-            Database Transfer
-          </SiteLink>
+          {!editorOnly && (
+            <>
+              <SiteLink
+                href="/admin/rofl/upload"
+                aria-current={path === '/admin/rofl/upload' ? 'page' : undefined}
+              >
+                ROFL Upload
+              </SiteLink>
+              <SiteLink
+                href="/admin/crud"
+                aria-current={path === '/admin/crud' ? 'page' : undefined}
+              >
+                CRUD Operations
+              </SiteLink>
+              <SiteLink
+                href="/admin/member-roles"
+                aria-current={path === '/admin/member-roles' ? 'page' : undefined}
+              >
+                Roles Management
+              </SiteLink>
+              <SiteLink
+                href="/admin/team-logos"
+                aria-current={path === '/admin/team-logos' ? 'page' : undefined}
+              >
+                Team Logos
+              </SiteLink>
+              <SiteLink
+                href="/admin/database-transfer"
+                aria-current={path === '/admin/database-transfer' ? 'page' : undefined}
+              >
+                Database Transfer
+              </SiteLink>
+            </>
+          )}
         </nav>
-        {path === '/admin/team-logos' ? (
+        {editorOnly ? (
+          path === '/admin' || path === '/admin/home-content' ? (
+            <HomeContentPanel />
+          ) : (
+            <p className="empty-state error-state" role="alert">
+              No tienes permisos para acceder a esta sección.
+            </p>
+          )
+        ) : path === '/admin/team-logos' ? (
           <TeamLogosPanel />
         ) : path === '/admin/home-content' ? (
           <HomeContentPanel />
