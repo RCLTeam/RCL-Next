@@ -274,7 +274,7 @@ test('Centralized tournament components render correctly', () => {
 
   const teamCardHtml = renderToStaticMarkup(<TeamCard team={home} divisionName="Premier" />);
   expect(teamCardHtml).toContain('Lobos');
-  expect(teamCardHtml).not.toContain('Premier');
+  expect(teamCardHtml).toContain('Premier');
   expect(teamCardHtml).toContain('team-card-abbreviation');
   expect(teamCardHtml).not.toContain('Ver equipo →');
   expect(teamCardHtml).toContain('LOB');

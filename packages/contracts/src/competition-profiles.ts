@@ -8,6 +8,7 @@ export interface TeamSummary {
   discordRoleId?: string | null;
 }
 export interface TeamMember {
+  champion?: string | null;
   rosterStats?: { games: number; mvps: number; champions: number };
   playerSlug?: string | undefined;
   playerId?: string | null;
@@ -35,6 +36,7 @@ export interface TeamDetail extends TeamSummary {
   seasonName: string;
   divisionName: string;
   members: TeamMember[];
+  featuredLineup?: TeamMember[];
 }
 
 export interface Player {
