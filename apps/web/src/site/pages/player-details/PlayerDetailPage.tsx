@@ -150,7 +150,7 @@ export function PlayerProfile({ player }: { player: PlayerDetail }) {
                     <span className="meta">
                       {account.isMain ? 'Cuenta principal' : 'Cuenta secundaria'}
                     </span>
-                    <h3>{account.gameName}</h3>
+                    <h3 title={account.gameName}>{account.gameName}</h3>
                     <p>
                       {account.gameName}
                       {accountTag ? `#${accountTag}` : ''}
@@ -188,12 +188,6 @@ export function PlayerProfile({ player }: { player: PlayerDetail }) {
                 <dd>{value}</dd>
               </div>
             ))}
-            {player.competition?.champion && (
-              <div className="player-signature-champion">
-                <dt>Campeón más jugado</dt>
-                <dd>{player.competition.champion}</dd>
-              </div>
-            )}
           </dl>
         ) : (
           <div className="player-performance-empty">
@@ -213,6 +207,7 @@ export function PlayerProfile({ player }: { player: PlayerDetail }) {
             {player.teams.map((team) => (
               <SiteLink
                 className="player-profile-membership"
+                style={{ '--profile-color': team.color || 'var(--purple)' } as React.CSSProperties}
                 key={team.id}
                 href={`/equipos/${encodeURIComponent(team.slug ?? team.id)}`}
               >
@@ -221,7 +216,7 @@ export function PlayerProfile({ player }: { player: PlayerDetail }) {
                   <span className="meta">
                     {team.seasonName} · {team.divisionName}
                   </span>
-                  <h3>{team.name}</h3>
+                  <h3 title={team.name}>{team.name}</h3>
                   <p>
                     {roleLabels[team.role]}
                     {team.isCaptain ? ' · Capitán' : ''}

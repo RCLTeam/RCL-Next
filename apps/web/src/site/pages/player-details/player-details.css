@@ -213,11 +213,13 @@
   background: var(--line);
 }
 
+.rcl-site .player-performance-grid { border-left: 3px solid var(--profile-color); }
+
 .rcl-site .player-performance-grid>div {
   display: flex;
   flex-direction: column-reverse;
-  gap: 12px;
-  padding: 24px 20px;
+  gap: 8px;
+  padding: 20px;
   background: var(--panel);
   min-width: 0;
 }
@@ -230,27 +232,10 @@
 
 .rcl-site .player-performance-grid dd {
   margin: 0;
-  font: 700 clamp(32px, 4vw, 48px)/1 var(--display2);
+  font: 700 clamp(30px, 3vw, 40px)/1 var(--display2);
   color: var(--profile-color);
   overflow-wrap: anywhere;
   font-variant-numeric: tabular-nums;
-}
-
-.rcl-site .player-performance-grid>.player-signature-champion {
-  grid-column: 1 / -1;
-  margin-top: -1px;
-  border-top: 1px solid var(--line);
-  flex-direction: row;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  gap: 12px 24px;
-  align-items: center;
-  background: linear-gradient(110deg, color-mix(in srgb, var(--profile-color) 9%, var(--panel)), var(--panel) 75%);
-}
-
-.rcl-site .player-signature-champion dd {
-  font-size: clamp(28px, 3vw, 36px);
-  color: var(--text);
 }
 
 .rcl-site .player-performance-empty {
@@ -279,55 +264,81 @@
 }
 
 .rcl-site .player-profile-membership {
+  position: relative;
+  isolation: isolate;
   display: flex;
   align-items: center;
-  gap: 20px;
-  padding: 24px;
+  gap: 32px;
+  min-height: 136px;
+  padding: 22px 20px;
   color: var(--text);
   text-decoration: none;
-  background: var(--panel);
+  background: linear-gradient(120deg, color-mix(in srgb, var(--profile-color) 6%, var(--panel)), var(--void));
   border: 1px solid var(--line);
-  overflow-wrap: anywhere;
+  border-left: 3px solid var(--profile-color);
 }
-
-.rcl-site .player-profile-membership>div {
-  min-width: 0;
+.rcl-site .player-profile-membership:not(.player-linked-account)::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  clip-path: polygon(calc(100% - 76px) 0, 100% 0, 100% 100%, calc(100% - 112px) 100%);
+  background: repeating-linear-gradient(135deg, transparent 0 12px, rgb(255 255 255 / 0.025) 12px 24px);
+  pointer-events: none;
 }
-
-.rcl-site .player-linked-account {
-  flex-wrap: wrap;
+.rcl-site .player-profile-membership:not(.player-linked-account)::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  clip-path: polygon(calc(100% - 77px) 0, calc(100% - 76px) 0, calc(100% - 112px) 100%, calc(100% - 113px) 100%);
+  background: var(--profile-color);
+  pointer-events: none;
 }
-
+.rcl-site .player-profile-membership > div,
 .rcl-site .player-linked-account-profile {
   flex: 1;
   min-width: 0;
+}
+.rcl-site .player-linked-account-profile {
   color: inherit;
   text-decoration: none;
 }
-
-.rcl-site .player-profile-membership .team-badge {
-  width: 68px;
-  height: 68px;
+.rcl-site .player-profile-membership > .team-badge {
+  order: 2;
+  flex: 0 0 48px;
+  width: 48px;
+  height: 48px;
   border: 0;
   padding: 0;
   background: transparent;
 }
-
-.rcl-site .player-profile-membership h3 {
-  margin: 10px 0;
-  font: 700 28px/1 var(--display2);
-  text-transform: uppercase;
+.rcl-site .player-linked-account > .player-profile-opgg {
+  flex: 0 0 48px;
+  justify-content: center;
 }
-
+.rcl-site .player-linked-account > .player-profile-opgg img { width: 48px; }
+.rcl-site .player-profile-membership .meta {
+  display: block;
+  font-size: 9px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.rcl-site .player-profile-membership h3 {
+  margin: 10px 0 8px;
+  font: 700 28px/1.1 var(--display2);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .rcl-site .player-profile-membership p {
   margin: 0;
   color: var(--profile-color);
-  font: 11px/1.6 var(--mono);
+  font: 10px/1.6 var(--mono);
+  overflow-wrap: anywhere;
 }
-
-.rcl-site .player-profile-membership:hover {
-  border-color: var(--profile-color);
-}
+.rcl-site .player-profile-membership:hover { border-color: var(--profile-color); }
 
 .rcl-site .player-detail-profile a:focus-visible {
   outline: 2px solid var(--profile-color);
