@@ -1,6 +1,10 @@
 # Roles y contexto competitivo
 
-## Regla compartida (fase 1)
+[⬅️ Volver a Competition](README.md) | [Siguiente: Contratos y DTOs ➡️](contracts.md)
+
+---
+
+## Regla compartida
 
 `@rcl/contracts` exporta `ROSTER_ROLES`, `COMPETITIVE_ROLES`,
 `NON_COMPETITIVE_ROLES`, sus tipos y sus predicados. API y web deben consumir
@@ -25,7 +29,7 @@ Por defecto excluye equipos inactivos; `includeInactive: true` permite consultar
 la afiliación histórica. Varias membresías competitivas en la misma temporada
 producen un error, sin escoger arbitrariamente una de ellas.
 
-Para integrar el contexto en las siguientes fases:
+Reglas de contexto:
 
 1. Una temporada seleccionada por el usuario fija el contexto. No sustituirla
    silenciosamente por otra temporada con datos.
@@ -45,13 +49,7 @@ Para integrar el contexto en las siguientes fases:
 6. Sin membresía competitiva, devolver y mostrar ausencia de equipo competitivo;
    nunca recurrir a coach, staff o partners como alternativa.
 
-## Alcance
-
-Esta fase centraliza los roles usados por los contratos, el formulario generado
-por la API y la clasificación existente de jugadores y plantillas en la web.
-Incluye el selector puro y sus pruebas. No requiere cambios de esquema ni migraciones.
-
-## Perfil del backend (fase 2)
+## Perfil del backend
 
 El servicio de detalle ya resuelve la inscripción con el selector compartido,
 recorriendo las temporadas por fecha de inicio descendente (sin fecha al final;
@@ -75,7 +73,7 @@ mantiene su temporada y estadísticas nulas. Las partidas siguen conservando su
 equipo de origen y se agregan por cuenta y temporada, incluso después de un cambio
 de equipo o rol. `teams` conserva todas las afiliaciones y su orden original.
 
-## Listados por división (fase 3)
+## Listados por división
 
 La consulta de membresías de `/divisions/:id/players` solo admite roles
 competitivos de esa división y temporada para incluir personas sin resultados.
@@ -96,7 +94,7 @@ La API sigue mostrando solo cuentas principales, sin duplicar personas por sus
 cuentas secundarias. El directorio general sin división conserva su función de
 resolver perfiles y slugs.
 
-## Perfil visual (fase 4)
+## Perfil visual
 
 La cabecera usa exclusivamente `registrationTeam` para escudo, enlace, color,
 posición y capitanía. Se presenta como «Equipo competitivo», sin
@@ -109,13 +107,13 @@ Sin resultados aparece «Sin partidas registradas». Si existen MVPs pero faltan
 estadísticas de partidas, se mantienen los premios y se explica la ausencia de
 estadísticas. Todas las afiliaciones y cuentas vinculadas siguen accesibles.
 
-## Trayectoria y otras vinculaciones (fase 5)
+## Equipos y vinculaciones
 
 El perfil reúne todas las membresías en «Equipos y vinculaciones», con un contador
 y un estado vacío comunes. El resumen distingue inscripciones competitivas de
 otras vinculaciones mediante los predicados compartidos.
 
-Cada tarjeta conserva enlace, escudo, temporada, división, rol y capitanía.
+Cada tarjeta conserva enlace, escudo, temporada, división, rol y capitanía. El indicador «Equipo inactivo» se muestra solo en la cabecera del equipo competitivo; su retirada de las tarjetas es intencionada.
 El escudo aparece a la derecha y el nombre ocupa una línea, con puntos suspensivos
 si no cabe; el nombre completo se conserva en el texto y en el atributo `title`.
 Se mantiene el orden recibido de
@@ -127,9 +125,15 @@ La trayectoria muestra las inscripciones conservadas en el sistema; no reconstru
 membresías eliminadas ni roles anteriores a partir de partidas o del registro de
 auditoría. Las estadísticas históricas permanecen disponibles en Rendimiento.
 
-## Administración e integridad (fase 6)
+## Administración e integridad
 
-Se mantienen la exclusión competitiva por temporada, las claves compuestas que
+La migración `0001_competitive_membership_per_season.sql` establece una restricción
+`EXCLUDE` por persona y temporada para todos los roles competitivos, sin filtrar
+por actividad del equipo. `PlayerTeam.isActive` es el estado del equipo, no una
+baja individual de la membresía. Dos inscripciones competitivas inactivas en una
+misma temporada también infringen la restricción y el diagnóstico las detecta.
+No se selecciona una arbitrariamente para ocultar esa inconsistencia.
+Se mantienen las claves compuestas que
 validan la temporada, la capitanía única y el control de versiones. Los rechazos
 no generan auditoría ni movimientos parciales. Los conflictos de inscripción
 duplicada, capitán existente y rol no habilitado para capitanía tienen mensajes
@@ -146,10 +150,9 @@ Usa la conexión configurada en `DATABASE_URL` y requiere el esquema migrado.
 Detecta equipos competitivos múltiples por persona y temporada, discrepancias de
 temporada, capitanías inválidas o duplicadas y membresías huérfanas. Devuelve código
 de salida 1 si encuentra problemas; no repara, borra ni reasigna registros.
-Debe revisarse el informe antes de decidir una corrección de datos. No se añade
-ninguna migración en esta fase.
+Debe revisarse el informe antes de decidir una corrección de datos.
 
-## Validación de regresión (fase 7)
+## Validación de regresión
 
 La cobertura automática se organiza así:
 

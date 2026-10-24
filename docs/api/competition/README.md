@@ -2,8 +2,6 @@
 
 [⬅️ Volver a API](../README.md) | [Siguiente: API Auth ➡️](../auth/README.md)
 
-[Reglas compartidas de roles y contexto competitivo](competitive-memberships.md)
-
 ---
 
 ## 1. Resumen Ejecutivo
@@ -28,6 +26,7 @@ El módulo opera bajo cinco pilares arquitectónicos y de ingeniería:
 | **Lógica de Procesamiento y Algoritmos** | [processing.md](processing.md) | Algoritmo de clasificación de 4 niveles (wins -> mapDifference -> losses -> localeCompare), motor de MVP unificado con escalado continuo a trozos de 9 dimensiones, resolución de estadísticas de temporada en traspasos, reglas de visibilidad deportiva (`team-visibility.ts`), fallbacks económicos, desempates deterministas, normalización de roles y slugs deterministas con SHA-256. |
 | **Persistencia y Consultas Relacionales** | [persistence.md](persistence.md) | Implementación de `PostgresCompetitionRepository` sobre Drizzle ORM, proyección SQL, resolución de jornada activa, consulta de estadísticas de temporada del jugador (`playerSeasonGames`), detalle de equipo con cuentas principales y filtrado de MVPs, detalle de jugador con cuentas secundarias (`linkedAccounts`), deduplicación con `selectDistinctOn` y purga de campos sensibles. |
 | **Validación y Manejo de Errores** | [validation.md](validation.md) | Esquemas Zod con `.strict()`, validación regex unicode para identificadores alfanuméricos, límites de rango `smallint` para jornadas y ciclo de error 422 / 404. |
+| **Roles y contexto competitivo** | [competitive-memberships.md](competitive-memberships.md) | Clasificación de roles, inscripción competitiva, contexto estadístico, presentación e integridad por temporada. |
 | **Contratos y DTOs** | [contracts.md](contracts.md) | Estructuras de datos TypeScript exportadas en `@rcl/contracts` (`Standing`, `MatchDetail`, `TeamDetail`, `PlayerDetail`, `ChampionStats`, `Season`, `Division`, `Round`). |
 
 ---

@@ -124,7 +124,7 @@ const linkedAccounts = discordUserId
   2. `asc(players.gameName)`: Orden lexicográfico ascendente por nombre de invocador.
   3. `asc(players.riotTag)`: Orden lexicográfico ascendente por etiqueta de Riot.
   4. `asc(players.id)`: Desempate determinista por clave primaria.
-- **Historial de Equipos (`memberships`)**: En la misma consulta (`líneas 426-439`), se recupera el historial de participaciones del jugador en equipos a través de todas las temporadas registradas, ordenado cronológicamente por `sql`${seasons.startsOn} DESC NULLS LAST``, `desc(teamMemberships.updatedAt)`, `asc(seasons.name)`, `asc(teams.name)` y `asc(teams.id)`. La inclusión de `desc(teamMemberships.updatedAt)` garantiza que en caso de transferencias entre equipos dentro de una misma temporada, la membresía más recientemente actualizada o activa figure en primer lugar (`memberships[0]`).
+- **Historial de Equipos (`memberships`)**: En la misma consulta (`líneas 426-439`), se recupera el historial de participaciones del jugador en equipos a través de todas las temporadas registradas, ordenado cronológicamente por `sql`${seasons.startsOn} DESC NULLS LAST``, `desc(teamMemberships.updatedAt)`, `asc(seasons.name)`, `asc(teams.name)` y `asc(teams.id)`. Este orden solo organiza las afiliaciones; la inscripción competitiva se resuelve por rol y temporada mediante `competitiveTeamForSeason`, nunca tomando `memberships[0]` ni deduciendo actividad de la fecha de actualización.
 
 ### 4.3 Consulta de Partidas de Temporada de un Jugador (`playerSeasonGames`)
 **Archivo**: `postgres-competition.repository.ts:299-387`
@@ -139,13 +139,16 @@ async playerSeasonGames(
 ): Promise<{
   playerGames: PlayerGameRow[];
   allMatchGames: PlayerGameRow[];
+  mvpMatchIds: string[];
 }>
 ```
 
+Los identificadores de premios en `mvpMatchIds` proceden de partidos completados de la temporada cuyo MVP persistido es el jugador. Se conservan aunque falten estadísticas de partidas.
+
 1. **Descubrimiento de Enfrentamientos (`líneas 306-321`)**: Localiza de forma diferenciada los identificadores de partido (`matches.id`) de la temporada `seasonName` donde el jugador participó en al menos un mapa completado (`status = 'completed'` y `winnerTeamId IS NOT NULL`).
-2. **Retorno Temprano Seguro (`líneas 323-325`)**: Si `matchIds.length === 0`, retorna de inmediato `{ playerGames: [], allMatchGames: [] }` sin disparar consultas adicionales.
+2. **Retorno Temprano Seguro (`líneas 323-325`)**: Si `matchIds.length === 0`, retorna de inmediato `{ playerGames: [], allMatchGames: [], mvpMatchIds }`, conservando los premios persistidos consultados previamente.
 3. **Carga Completa de Series con Oro (`líneas 327-383`)**: Consulta todas las filas de rendimiento de todos los participantes en esos enfrentamientos con `inArray(matches.id, matchIds)`. Proyecta de manera obligatoria `goldEarned: playerGameStats.goldEarned` (junto con KDA, CS, daño a campeones, visión y mitigación) para alimentar las métricas de eficiencia económica en el algoritmo de MVP.
-4. **Ordenación y Segregación (`líneas 379-386`)**: Los resultados se ordenan cronológicamente por fecha de finalización y número de mapa. Se devuelve tanto la participación individual del jugador (`playerGames`) como el contexto completo de los partidos disputados (`allMatchGames`), permitiendo calcular de forma determinista la participación en asesinatos (Kill Participation sobre el total de bajas del equipo) y los galardones MVP de cada serie.
+4. **Ordenación y Segregación (`líneas 379-386`)**: Los resultados se ordenan cronológicamente por fecha de finalización y número de mapa. Se devuelve tanto la participación individual del jugador (`playerGames`) como el contexto completo de los partidos disputados (`allMatchGames`), permitiendo calcular de forma determinista la participación en asesinatos (Kill Participation sobre el total de bajas del equipo) sin recalcular los galardones MVP persistidos de cada serie.
 
 ### 4.4 Determinación Dinámica de la Jornada Activa
 **Archivo**: `postgres-competition.repository.ts:238-253`
@@ -274,4 +277,3 @@ matches(divisionId: string) {
 - **`matchGames(id)`** delega en `matchGamesByMatch([id])`, por lo que el detalle de partido y el de equipo comparten la misma proyección y la misma purga de columnas técnicas (sección 3.1).
 
 `CompetitionService.teamDetail()` usa `matchGamesByMatch()` para calcular `rosterStats` de todos los partidos completados del equipo con una sola llamada, en lugar de una llamada por partido.
-

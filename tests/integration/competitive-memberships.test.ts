@@ -57,6 +57,28 @@ test('read-only membership diagnostic distinguishes valid affiliations from corr
   ).toContain('invalid_captain_role');
 });
 
+test('inactive teams do not release season-wide competitive uniqueness', async (t) => {
+  const client = new PGlite({ extensions: { btree_gist } });
+  t.onTestFinished(() => client.close());
+  await migrate(drizzle(client, { schema }), { migrationsFolder });
+  await fixtures(client);
+  await client.exec('UPDATE teams SET is_active = false');
+  await client.exec(membership(1, 'mid'));
+  await expect(client.exec(membership(2, 'substitute'))).rejects.toMatchObject({
+    code: '23P01',
+    constraint: 'one_competitive_team_per_player_and_season'
+  });
+  expect((await client.query(membershipIntegritySql)).rows).toEqual([]);
+  // Imported invalid history is reported even when both teams are inactive.
+  await client.exec(
+    'ALTER TABLE team_memberships DROP CONSTRAINT one_competitive_team_per_player_and_season'
+  );
+  await client.exec(membership(2, 'substitute'));
+  expect(
+    (await client.query<{ issue: string }>(membershipIntegritySql)).rows.map((r) => r.issue)
+  ).toContain('multiple_competitive_teams');
+});
+
 test('competitive membership is unique per season; other roles remain unrestricted', async (t) => {
   const client = new PGlite({ extensions: { btree_gist } });
   t.onTestFinished(() => client.close());

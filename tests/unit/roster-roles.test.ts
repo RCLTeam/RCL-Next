@@ -63,6 +63,16 @@ test('inactive teams require an explicit historical request', () => {
   expect(competitiveTeamForSeason([inactive], 'T2', { includeInactive: true })).toBe(inactive);
 });
 
+test('historical lookup rejects two inactive competitive memberships in the same season', () => {
+  const memberships = [
+    membership('A', 'mid', 'T2', false),
+    membership('B', 'substitute', 'T2', false)
+  ];
+  expect(() => competitiveTeamForSeason(memberships, 'T2', { includeInactive: true })).toThrow(
+    'Multiple competitive memberships in the same season'
+  );
+});
+
 test('conflicting memberships are rejected even if one team is inactive', () => {
   expect(() =>
     competitiveTeamForSeason(
