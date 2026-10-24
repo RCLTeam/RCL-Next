@@ -186,6 +186,56 @@ test('PostgresRoflUploadRepository complete lifecycle and constraints', async (t
 
   // findTeamMembershipsForDiscordUsers maps discord IDs to team UUIDs
   {
+    await db.insert(schema.seasons).values({
+      name: 'Temporada Histórica 2049',
+      startsOn: '2049-01-01',
+      endsOn: '2049-12-31'
+    });
+    await db.insert(schema.seasonsDivisions).values({
+      id: '20000000-0000-4000-8000-000000000099',
+      seasonName: 'Temporada Histórica 2049',
+      divisionName: 'Premier DEMO'
+    });
+    await db.insert(schema.teams).values({
+      id: '30000000-0000-4000-8000-000000000099',
+      seasonDivisionId: '20000000-0000-4000-8000-000000000099',
+      seasonName: 'Temporada Histórica 2049',
+      name: 'Cuervos 2049 DEMO',
+      shortName: 'C49'
+    });
+    await db.insert(schema.teamMemberships).values([
+      {
+        teamId: '30000000-0000-4000-8000-000000000002',
+        discordUserId: '900000000000000001',
+        role: 'coach',
+        seasonName: 'Temporada DEMO — datos ficticios'
+      },
+      {
+        teamId: '30000000-0000-4000-8000-000000000003',
+        discordUserId: '900000000000000001',
+        role: 'staff',
+        seasonName: 'Temporada DEMO — datos ficticios'
+      },
+      {
+        teamId: '30000000-0000-4000-8000-000000000004',
+        discordUserId: '900000000000000001',
+        role: 'partners',
+        seasonName: 'Temporada DEMO — datos ficticios'
+      },
+      {
+        teamId: '30000000-0000-4000-8000-000000000001',
+        discordUserId: '900000000000000099',
+        role: 'coach',
+        seasonName: 'Temporada DEMO — datos ficticios'
+      },
+      {
+        teamId: '30000000-0000-4000-8000-000000000099',
+        discordUserId: '900000000000000006',
+        role: 'top',
+        seasonName: 'Temporada Histórica 2049'
+      }
+    ]);
+
     const teamMap = await repo.findTeamMembershipsForDiscordUsers([
       '900000000000000001',
       '900000000000000006',
