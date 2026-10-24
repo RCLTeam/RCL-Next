@@ -8,7 +8,9 @@
 
 Censo medido el 6 de octubre de 2026 con `vitest run --reporter=json` y `wc -l` (líneas brutas). El frontend (`apps/web`) tiene **28 suites co-ubicadas con 168 pruebas** (2.962 LoC brutas), todas en verde en esa medición. Las cifras cambian con cada PR que añade pruebas; la forma de volver a medirlas está en el [índice de suites](README.md#5-cómo-actualizar-este-censo).
 
-Las pruebas se ejecutan bajo Vitest en el entorno `node`, sin JSDOM: los componentes se renderizan a HTML con `react-dom/server` y `window`, `document` o `fetch` se sustituyen por dobles cuando hacen falta. Validan la separación del Golden Standard: componentes visuales puros (*Dumb UI*), *headless hooks*, reducers de estado puro, clientes de API y servicios de activos de Riot Games (DataDragon y CommunityDragon).
+Ampliación del 24 de octubre de 2026: el inventario incorpora `champion-art.service.test.ts` (8 pruebas) y `ChampionArt.test.tsx` (9 pruebas); el censo anterior es histórico y no incluye estas suites.
+
+Las pruebas se ejecutan bajo Vitest en el entorno `node` por defecto: los componentes se renderizan a HTML con `react-dom/server` y `window`, `document` o `fetch` se sustituyen por dobles cuando hacen falta. `ChampionArt.test.tsx` selecciona JSDOM para verificar efectos React, eventos de imagen y conservación del nodo DOM. Validan la separación del Golden Standard: componentes visuales puros (*Dumb UI*), *headless hooks*, reducers de estado puro, clientes de API y servicios de activos de Riot Games (DataDragon y CommunityDragon).
 
 ---
 
@@ -38,12 +40,14 @@ Las pruebas se ejecutan bajo Vitest en el entorno `node`, sin JSDOM: los compone
 | 20 | `apps/web/src/shared/display-name.test.ts` | 2 | 12 | Utilidad Nombres | Sanitización y formateo de nombres de usuario en Discord, soporte de caracteres unicode, emojis y fuentes decorativas. |
 | 21 | `apps/web/src/shared/league-time.test.ts` | 3 | 32 | Hora de la Liga | `formatLeagueDate`: instante cercano a medianoche, cambio de horario de invierno y fecha no válida, con independencia de la zona horaria del proceso. |
 | 22 | `apps/web/src/shared/riot/community-dragon.service.test.tsx` | 20 | 68 | Servicio CommunityDragon | Resolución de URLs de iconos de posiciones de juego (top, jungle, mid, adc, support), mapeo de nombres abreviados y URLs de respaldo (*fallbacks*). |
-| 23 | `apps/web/src/shared/riot/data-dragon.service.test.ts` | 6 | 137 | Servicio Data Dragon | Consulta de versión activa de parches de League of Legends, obtención y caché en memoria de catálogos de campeones, objetos y runas reforzadas. |
+| 23 | `apps/web/src/shared/riot/data-dragon.service.test.ts` | 6 | 140 | Servicio Data Dragon | Consulta de versión activa de parches de League of Legends, obtención y caché en memoria de catálogos de campeones, objetos y runas reforzadas, y exposición de `championId` como número. |
 | 24 | `apps/web/src/site/layout/SiteLayout.test.tsx` | 1 | 21 | Layout General | Montaje del caparazón estructural de la aplicación: barra de navegación superior, contenedor principal de vista y pie de página. |
 | 25 | `apps/web/src/site/pages/champions/ChampionsTable.test.tsx` | 3 | 56 | Página Campeones | Tabla de estadísticas de campeones de la liga: ordenación por columnas (partidas, victorias, KDA), filtrado y estado vacío. |
 | 26 | `apps/web/src/site/pages/players/PlayersPage.test.tsx` | 5 | 197 | Página Jugadores | Ordenación numérica por estadística con los valores ausentes al final, jugadores sin rol activo en la vista general, estadísticas destacadas sin puntuaciones internas de MVP y escudo del jugador destacado. |
 | 27 | `apps/web/src/site/pages/predictions/PredictionCard.test.tsx` | 15 | 212 | Tarjeta Predicciones | Votación en series Bo1/Bo3/Bo5 con porcentajes ocultos hasta el cierre, participantes inactivos (6 identificadores de rol) sin votación, ranking de predictores (top 5 más la fila propia identificada por texto, avatares por el proxy e iniciales), placeholder sin anuncio redundante y hora del partido en `Europe/Madrid`. |
 | 28 | `apps/web/src/site/routes.test.tsx` | 3 | 37 | Enrutamiento Global | Resolución del mapa de rutas (`/`, `/competition`, `/teams`, `/players`, `/predictions` con recursos `['calendar', 'rounds']`, `/admin`), parámetros dinámicos de URL, ruta 404 y ausencia de secciones retiradas (`/fantasy`). |
+| 29 | `apps/web/src/shared/riot/champion-art.service.test.ts` | 8 | 85 | Arte de skins | Caché por campeón, selección de skins, URLs del cliente, reintentos y validación de respuestas y entradas nulas o malformadas. |
+| 30 | `apps/web/src/shared/riot/ChampionArt.test.tsx` | 9 | 178 | Presentación de splash arts | Original base sin metadatos, espera de variantes, caché, cambios de fuente sin reemplazar el nodo, alternativas progresivas, agotamiento sin iconos cuadrados y respuestas asíncronas de campeones anteriores. |
 
 ---
 

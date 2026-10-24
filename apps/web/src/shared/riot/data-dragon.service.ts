@@ -30,7 +30,10 @@ async function fetchGameCatalog(): Promise<{ catalog: GameCatalog; complete: boo
       catalog[`${kind}:${kind === 'summoner' ? value.key : id}`] = {
         name: value.name,
         ...(kind === 'champion'
-          ? { splashImage: `${CDN}/cdn/img/champion/splash/${encodeURIComponent(id)}_0.jpg` }
+          ? {
+              championId: value.key ? Number(value.key) : undefined,
+              splashImage: `${CDN}/cdn/img/champion/splash/${encodeURIComponent(id)}_0.jpg`
+            }
           : {}),
         image: value.image
           ? `${base}/img/${kind === 'summoner' ? 'spell' : kind}/${encodeURIComponent(value.image.full)}`

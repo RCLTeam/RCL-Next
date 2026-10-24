@@ -25,6 +25,7 @@ export interface StatShardSlot {
 }
 
 export interface GameAsset {
+  championId?: number | undefined;
   name: string;
   image?: string | undefined;
   splashImage?: string | undefined;

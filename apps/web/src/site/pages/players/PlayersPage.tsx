@@ -13,6 +13,7 @@ import { PageLayout } from '../../../shared/components/PageLayout/PageLayout.js'
 import { Select } from '../../../shared/components/Selector/Selector.js';
 import { SiteLink } from '../../../shared/components/SiteLink.js';
 import { resolveTeamLogo } from '../../../shared/resources/team-logos.js';
+import { ChampionArt } from '../../../shared/riot/ChampionArt.js';
 import { type GameCatalog, getGameAsset } from '../../../shared/riot/riot-assets.service.js';
 import { useGameCatalog } from '../../../shared/riot/useGameCatalog.js';
 import './players.css';
@@ -230,14 +231,7 @@ function PlayerArt({ player, catalog }: { player: Player; catalog: GameCatalog }
         </>
       )}
       {champion?.splashImage && (
-        <img
-          src={champion.splashImage}
-          alt={champion.name}
-          loading="lazy"
-          onError={(event) => {
-            event.currentTarget.hidden = true;
-          }}
-        />
+        <ChampionArt asset={champion} variant="centered" alt={champion.name} />
       )}
       <div className="player-art-labels">
         <span className="role-chip">{roleLabel(player.competition?.role)}</span>
