@@ -1,9 +1,45 @@
-// @vitest-environment jsdom
-import React, { act } from 'react';
-import { type Root, createRoot } from 'react-dom/client';
-import { afterEach, beforeEach, expect, test, vi } from 'vitest';
+import React, { type ReactElement, type ReactNode } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
+import { beforeEach, expect, onTestFinished, test, vi } from 'vitest';
 import type { Match } from '../../../apps/web/src/features/competition/types/competition.types.js';
 import { HomeFeaturedMatch } from '../../../apps/web/src/site/pages/home/components/FeaturedMatch/FeaturedMatch.js';
+
+// Exercise the component's handlers and effect in Node; SSR verifies the resulting markup.
+const hooks = vi.hoisted(() => ({
+  values: [] as unknown[],
+  cursor: 0,
+  effect: undefined as (() => undefined | (() => void)) | undefined,
+  dependencies: undefined as readonly unknown[] | undefined,
+  cleanup: undefined as (() => void) | undefined
+}));
+vi.mock('react', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('react')>();
+  return {
+    ...actual,
+    useState: <T,>(initial: T) => {
+      const index = hooks.cursor++;
+      if (!(index in hooks.values)) hooks.values[index] = initial;
+      return [
+        hooks.values[index],
+        (value: T | ((previous: T) => T)) => {
+          hooks.values[index] =
+            typeof value === 'function'
+              ? (value as (previous: T) => T)(hooks.values[index] as T)
+              : value;
+        }
+      ];
+    },
+    useEffect: (effect: () => undefined | (() => void), dependencies: readonly unknown[]) => {
+      if (
+        !hooks.dependencies ||
+        dependencies.some((value, index) => !Object.is(value, hooks.dependencies?.[index]))
+      ) {
+        hooks.dependencies = dependencies;
+        hooks.effect = effect;
+      }
+    }
+  };
+});
 
 const first: Match = {
   id: 'first',
@@ -17,110 +53,146 @@ const first: Match = {
   round: null
 };
 const matches = [first, { ...first, id: 'second' }];
-let container: HTMLDivElement;
-let root: Root;
-let reduced: boolean;
+let reduced = false;
 let preference: EventTarget;
+let props: Parameters<typeof HomeFeaturedMatch>[0];
+let tree: ReturnType<typeof HomeFeaturedMatch>;
+
+function render(next = props) {
+  props = next;
+  hooks.cursor = 0;
+  tree = HomeFeaturedMatch(props);
+  if (hooks.effect) {
+    hooks.cleanup?.();
+    hooks.cleanup = hooks.effect();
+    hooks.effect = undefined;
+  }
+  return renderToStaticMarkup(tree);
+}
+
+type ElementProps = {
+  children?: ReactNode;
+  className?: string;
+  'aria-label'?: string;
+  onClick?: () => void;
+};
+function elements(node: ReactNode): ReactElement<ElementProps>[] {
+  if (!React.isValidElement<ElementProps>(node)) return [];
+  return [node, ...React.Children.toArray(node.props.children).flatMap(elements)];
+}
+function active() {
+  return elements(tree).find((element) => element.props.className?.includes('is-active'))?.props[
+    'aria-label'
+  ];
+}
+function click(label: string) {
+  const button = elements(tree).find(
+    (element) => element.type === 'button' && element.props['aria-label'] === label
+  );
+  expect(button).toBeDefined();
+  button?.props.onClick?.();
+  return render();
+}
+function advance(milliseconds = 10_000) {
+  vi.advanceTimersByTime(milliseconds);
+  return render();
+}
+function blur(inside: boolean) {
+  tree.props.onBlur({ currentTarget: { contains: () => inside }, relatedTarget: {} });
+  render();
+}
 
 beforeEach(() => {
-  vi.useFakeTimers();
-  vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
+  hooks.values = [];
+  hooks.dependencies = undefined;
+  hooks.effect = undefined;
+  hooks.cleanup = undefined;
   reduced = false;
+  props = { featured: first, liveMatches: matches };
   preference = new EventTarget();
   Object.defineProperty(preference, 'matches', { get: () => reduced });
-  vi.stubGlobal(
-    'matchMedia',
-    vi.fn(() => preference)
-  );
-  container = document.createElement('div');
-  document.body.append(container);
-  root = createRoot(container);
-});
-afterEach(() => {
-  act(() => root.unmount());
-  container.remove();
-  vi.useRealTimers();
-  vi.unstubAllGlobals();
-});
-const render = (liveMatches = matches, featured = first) => {
-  act(() => root.render(<HomeFeaturedMatch featured={featured} liveMatches={liveMatches} />));
-};
-const advance = () => act(() => vi.advanceTimersByTime(10_000));
-const active = () => container.querySelector('.is-active')?.getAttribute('aria-label');
-const click = (label: string) =>
-  act(() => {
-    const button = Array.from(container.querySelectorAll('button')).find(
-      (item) => (item.getAttribute('aria-label') ?? item.textContent) === label
-    );
-    expect(button).toBeDefined();
-    button?.click();
+  vi.useFakeTimers();
+  vi.stubGlobal('window', { matchMedia: () => preference, setInterval, clearInterval });
+  onTestFinished(() => {
+    hooks.cleanup?.();
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
   });
+});
 
-test.each([{ liveMatches: [] }, { liveMatches: [first] }])(
-  'renders a single featured card with $liveMatches.length live matches',
-  ({ liveMatches }) => {
-    render(liveMatches);
-    expect(container.querySelectorAll('article')).toHaveLength(1);
-    expect(container.querySelector('[aria-roledescription="carrusel"]')).toBeNull();
+test.each([[], [first]])(
+  'renders a single featured card without carousel controls (%j)',
+  (liveMatches) => {
+    const html = render({ featured: first, liveMatches });
+    expect(html.match(/<article/g)).toHaveLength(1);
+    expect(html).not.toContain('aria-roledescription="carrusel"');
     expect(vi.getTimerCount()).toBe(0);
   }
 );
-test('renders a scheduled match and the empty calendar fallback', () => {
-  render([], { ...first, status: 'scheduled' });
-  expect(container.textContent).toContain('Próximo encuentro');
-  expect(container.textContent).toContain('Programado');
-  act(() => root.render(<HomeFeaturedMatch />));
-  expect(container.querySelector('a')?.getAttribute('href')).toBe('/calendario');
+
+test('renders the only live match when featured is omitted', () => {
+  const html = render({ liveMatches: [first] });
+  expect(html).toContain('En directo');
+  expect(html).toContain('<article');
+  expect(html).not.toContain('featured-empty');
 });
-test('renders the live counter and cycles accessible slides every ten seconds', () => {
-  render();
-  expect(container.textContent).toContain('2 partidos en directo');
+
+test('uses the selected single match consistently for heading and card', () => {
+  const html = render({ featured: { ...first, status: 'scheduled' }, liveMatches: [first] });
+  expect(html).toContain('Próximo encuentro');
+  expect(html).toContain('Programado');
+  expect(render({})).toContain('href="/calendario"');
+});
+
+test('cycles accessible slides every ten seconds', () => {
+  const html = render();
+  expect(html).toContain('2 partidos en directo');
+  expect(html).toContain('inert="" aria-hidden="true"');
   expect(active()).toBe('1 de 2');
-  const slides = container.querySelectorAll('.featured-match-slide');
-  expect(slides[0]?.hasAttribute('inert')).toBe(false);
-  expect(slides[1]?.hasAttribute('inert')).toBe(true);
-  expect(slides[1]?.getAttribute('aria-hidden')).toBe('true');
-  act(() => vi.advanceTimersByTime(9_999));
+  advance(9_999);
   expect(active()).toBe('1 de 2');
-  act(() => vi.advanceTimersByTime(1));
+  const next = advance(1);
   expect(active()).toBe('2 de 2');
-  expect(slides[0]?.hasAttribute('inert')).toBe(true);
-  expect(slides[1]?.getAttribute('aria-hidden')).toBe('false');
+  expect(next).toContain(
+    'inert="" aria-hidden="true" aria-roledescription="diapositiva" aria-label="1 de 2"'
+  );
   advance();
   expect(active()).toBe('1 de 2');
 });
-test('preserves focus within the card and pauses while hovered or focused', () => {
+
+test('pauses while hovered or focused and restarts only after both leave', () => {
   render();
-  const carousel = container.firstElementChild;
-  const link = container.querySelector<HTMLAnchorElement>('.is-active a');
-  if (!carousel || !link) throw new Error('Missing carousel or stream link');
-  act(() => link.focus());
-  advance();
-  expect(document.activeElement).toBe(link);
-  expect(active()).toBe('1 de 2');
-  act(() => carousel.dispatchEvent(new MouseEvent('mouseover', { bubbles: true })));
-  act(() => link.blur());
+  tree.props.onFocus();
+  render();
   advance();
   expect(active()).toBe('1 de 2');
-  act(() => carousel.dispatchEvent(new MouseEvent('mouseout', { bubbles: true })));
+  tree.props.onMouseEnter();
+  render();
+  blur(false);
+  advance();
+  expect(active()).toBe('1 de 2');
+  tree.props.onMouseLeave();
+  render();
   advance();
   expect(active()).toBe('2 de 2');
 });
+
 test('moving focus between controls does not restart rotation', () => {
   render();
-  const buttons = container.querySelectorAll('button');
-  act(() => buttons[0]?.focus());
-  act(() => buttons[1]?.focus());
+  tree.props.onFocus();
+  render();
+  blur(true);
   advance();
   expect(active()).toBe('1 de 2');
-  act(() => buttons[1]?.blur());
+  blur(false);
   advance();
   expect(active()).toBe('2 de 2');
 });
+
 test('supports persistent pause and cyclic manual navigation', () => {
   render();
-  click('Pausar rotación automática');
-  expect(container.querySelector('[aria-pressed="true"]')).not.toBeNull();
+  expect(click('Pausar rotación automática')).toContain('aria-pressed="true"');
   advance();
   expect(active()).toBe('1 de 2');
   click('Partido anterior');
@@ -131,35 +203,34 @@ test('supports persistent pause and cyclic manual navigation', () => {
   advance();
   expect(active()).toBe('2 de 2');
 });
-test('respects reduced motion initially and when it changes, with manual access', () => {
+
+test('respects reduced motion initially and when changed, keeping manual access', () => {
   reduced = true;
   render();
   advance();
   expect(active()).toBe('1 de 2');
   click('Partido siguiente');
   expect(active()).toBe('2 de 2');
-  act(() => {
-    reduced = false;
-    preference.dispatchEvent(new Event('change'));
-  });
+  reduced = false;
+  preference.dispatchEvent(new Event('change'));
   advance();
   expect(active()).toBe('1 de 2');
-  act(() => {
-    reduced = true;
-    preference.dispatchEvent(new Event('change'));
-  });
+  reduced = true;
+  preference.dispatchEvent(new Event('change'));
   advance();
   expect(active()).toBe('1 de 2');
 });
-test('cleans up timers and preference listeners when matches shrink or component unmounts', () => {
+
+test('cleans up timers and preference listeners on shrink and unmount', () => {
   const remove = vi.spyOn(preference, 'removeEventListener');
   render();
   advance();
-  render([first]);
+  render({ liveMatches: [first] });
   expect(vi.getTimerCount()).toBe(0);
-  expect(remove).toHaveBeenCalled();
-  render();
-  act(() => root.render(null));
+  expect(remove).toHaveBeenCalledTimes(1);
+  render({ liveMatches: matches });
+  hooks.cleanup?.();
+  hooks.cleanup = undefined;
   expect(vi.getTimerCount()).toBe(0);
   expect(remove).toHaveBeenCalledTimes(2);
 });

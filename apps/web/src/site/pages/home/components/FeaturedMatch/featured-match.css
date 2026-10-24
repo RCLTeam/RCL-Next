@@ -76,7 +76,7 @@
   align-items: center;
   justify-content: center;
   gap: 10px;
-  min-height: 32px;
+  min-height: var(--control-height);
   padding: 0;
   border: 0;
   background: var(--void);
@@ -99,7 +99,7 @@
 }
 
 .rcl-site .featured-match-arrow {
-  width: 32px;
+  width: 44px;
   padding: 0;
   color: var(--lime);
   font-size: 16px;
@@ -124,7 +124,7 @@
 }
 
 .rcl-site .featured-match-pause {
-  width: 32px;
+  width: 44px;
   border-left: 1px solid var(--line);
 }
 
@@ -174,12 +174,5 @@
 @media (min-width: 1151px) {
   .rcl-site .featured-match-navigation {
     grid-template-columns: 80px minmax(0, 1fr) 140px 108px;
-  }
-}
-
-@media (pointer: coarse) {
-  .rcl-site .featured-match-control {
-    min-height: 44px;
-    width: 44px;
   }
 }

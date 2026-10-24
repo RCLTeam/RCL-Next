@@ -194,7 +194,7 @@ export type {
     teams: PlayerTeam[];
   }
   ```
-  - `linkedAccounts`: Arreglo opcional con las cuentas adicionales asociadas al mismo usuario (`discordUserId`), permitiendo la navegación cruzada y la auditoría de cuentas secundarias (*smurfs*).
+  - `linkedAccounts`: Arreglo opcional con las cuentas adicionales asociadas al mismo usuario (`discordUserId`), mostradas como información de cuentas secundarias (*smurfs*), sin enlaces ni navegación cruzada desde el perfil.
   - `teams`: Historial completo de inscripciones en competiciones de la liga por división y temporada.
 
 ### 4.2 Modelos Propios de la API Pública de Competición

@@ -11,6 +11,7 @@ export function HomeFeaturedMatch({
   const [hovered, setHovered] = useState(false);
   const [focused, setFocused] = useState(false);
   const [paused, setPaused] = useState(false);
+  const singleMatch = featured ?? liveMatches[0];
   const matchCount = liveMatches.length;
   const visibleIndex = matchCount > 0 ? activeIndex % matchCount : 0;
   const isCarousel = liveMatches.length > 1;
@@ -46,9 +47,7 @@ export function HomeFeaturedMatch({
     >
       <div className="featured-match-heading">
         <span className="eyebrow">
-          {liveMatches.length > 0 || featured?.status === 'live'
-            ? 'En directo'
-            : 'Próximo encuentro'}
+          {isCarousel || singleMatch?.status === 'live' ? 'En directo' : 'Próximo encuentro'}
         </span>
         {isCarousel && (
           <div className="featured-match-count">
@@ -116,8 +115,8 @@ export function HomeFeaturedMatch({
             </div>
           </div>
         </section>
-      ) : featured ? (
-        <MatchCard match={featured} />
+      ) : singleMatch ? (
+        <MatchCard match={singleMatch} />
       ) : (
         <div className="featured-empty">
           <span>Consulta las jornadas y los resultados de la competición.</span>
