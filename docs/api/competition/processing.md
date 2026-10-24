@@ -7,21 +7,21 @@
 ## 1. Visión General
 
 El archivo `apps/api/src/modules/competition/` concentra la lógica algorítmica y matemática de las competiciones de League of Legends en RCL-Next. Sus responsabilidades se dividen en cinco motores y especificaciones independientes y puras:
-1. **Motor de Clasificación y Desempates de Liga (`competition.service.ts:18-60`)**: Cómputo de la tabla de posiciones en series al mejor de 3 (BO3).
-2. **Motor de Puntuación Multidimensional de MVP (`player-statistics.ts:43-276`)**: Evaluación del rendimiento individual continuo por rol y selección del mejor jugador.
-3. **Motor de Estadísticas Agregadas de Campeones (`champion-stats.ts:1-32`)**: Consolidación de selecciones, mapas disputados, victorias y porcentajes de presencia.
-4. **Generador Determinista de Slugs y Evasión de Colisiones (`profile-slugs.ts:1-60`)**: Normalización semántica de URLs para partidos, equipos y jugadores.
-5. **Especificación de Visibilidad de Equipos y Sentinels de Roles (`team-visibility.ts:1-16`)**: Determinación del estado de los equipos mediante rangos numéricos de roles de Discord para su inclusión en clasificación, cuadrícula, calendario y pronósticos.
+1. **Motor de Clasificación y Desempates de Liga (`competition.service.ts:13-55`)**: Cómputo de la tabla de posiciones en series al mejor de 3 (BO3).
+2. **Motor de Puntuación Multidimensional de MVP (`player-statistics.ts:45-276`)**: Evaluación del rendimiento individual continuo por rol y selección del mejor jugador.
+3. **Motor de Estadísticas Agregadas de Campeones (`champion-stats.ts:1-31`)**: Consolidación de selecciones, mapas disputados, victorias y porcentajes de presencia.
+4. **Generador Determinista de Slugs y Evasión de Colisiones (`profile-slugs.ts:1-85`)**: Normalización semántica de URLs para partidos, equipos y jugadores.
+5. **Especificación de Visibilidad de Equipos y Sentinels de Roles (`team-visibility.ts:1-15`)**: Determinación del estado de los equipos mediante rangos numéricos de roles de Discord para su inclusión en clasificación, cuadrícula, calendario y pronósticos.
 
 ---
 
 ## 2. Motor de Clasificación de Liga y Reglas de Desempate
 
 ### 2.1 Algoritmo de Acumulación (`calculateStandings`)
-La función pura `calculateStandings(teams, matches)` (`competition.service.ts:18-60`) procesa los resultados de los partidos disputados en la fase indicada (por defecto `'regular'`):
+La función pura `calculateStandings(teams, matches)` (`competition.service.ts:13-55`) procesa los resultados de los partidos disputados en la fase indicada (por defecto `'regular'`):
 
 ```typescript
-// apps/api/src/modules/competition/competition.service.ts:18-60
+// apps/api/src/modules/competition/competition.service.ts:13-55
 export function calculateStandings(teams: Team[], matches: Match[]) {
   const totals = new Map(
     teams.map((team) => [
@@ -68,7 +68,7 @@ export function calculateStandings(teams: Team[], matches: Match[]) {
 ```
 
 ### 2.2 Cascada Estricta de 4 Niveles de Ordenación
-El orden de los equipos en la tabla de clasificación responde a la siguiente evaluación jerárquica (`competition.service.ts:52-58`):
+El orden de los equipos en la tabla de clasificación responde a la siguiente evaluación jerárquica (`competition.service.ts:47-53`):
 
 1. **Nivel 1 — Victorias de Serie (`b.wins - a.wins`):**
    - Número total de series completas ganadas.
@@ -80,7 +80,7 @@ El orden de los equipos en la tabla de clasificación responde a la siguiente ev
    - Ordenación lexicográfica por nombre de equipo bajo el locale español (`'es'`).
 
 ### 2.3 Reglas de Desempate y Ausencia de Head-to-Head
-- **Ausencia de Enfrentamiento Directo:** El sistema **no implementa desempate por enfrentamiento directo (*Head-to-Head*)**. Si dos equipos empatan en diferencia de mapas, victorias y derrotas, su posición relativa no se decide por el resultado del partido entre ellos, sino por el orden alfabético de sus nombres (`competition.service.ts:57`).
+- **Ausencia de Enfrentamiento Directo:** El sistema **no implementa desempate por enfrentamiento directo (*Head-to-Head*)**. Si dos equipos empatan en diferencia de mapas, victorias y derrotas, su posición relativa no se decide por el resultado del partido entre ellos, sino por el orden alfabético de sus nombres (`competition.service.ts:52`).
 - **Ausencia de Mini-liga:** El sistema **no implementa desempate por mini-liga olímpica** para empates triples o cuádruples.
 - **Ausencia de Rachas:** El sistema **no realiza seguimiento ni expone rachas de victorias/derrotas (*streaks*)**. El tipo de contrato `Standing` carece de dicho atributo.
 
@@ -88,7 +88,7 @@ El orden de los equipos en la tabla de clasificación responde a la siguiente ev
 
 ## 3. Algoritmo Multidimensional de Puntuación MVP
 
-El motor de rendimiento individual (`apps/api/src/modules/competition/player-statistics.ts:43-276`) calcula la puntuación global de cada jugador por cada serie completada y consolida las métricas base del perfil.
+El motor de rendimiento individual (`apps/api/src/modules/competition/player-statistics.ts:45-276`) calcula la puntuación global de cada jugador por cada serie completada y consolida las métricas base del perfil.
 
 ### 3.0 Métricas Base de Agregación de Estadísticas de Jugador (`aggregatePlayerStats`)
 La función pura `aggregatePlayerStats(rows: PlayerGameRow[], all: PlayerGameRow[] | TeamKills)` (`player-statistics.ts:61-92`) consolida el rendimiento estadístico base de un jugador a lo largo de un conjunto de partidas (mapas disputados en una serie o a lo largo de la temporada completa), retornando el contrato `PlayerStatistics`:
@@ -143,7 +143,7 @@ El motor calcula formalmente 7 métricas agregadas:
 
 3. **Kill Participation (`killParticipation`, `player-statistics.ts:75-84`):** Porcentaje de bajas totales del equipo en las que el jugador participó:
    $$\text{KP} = \begin{cases} \frac{100 \cdot (\sum \text{kills} + \sum \text{assists})}{\text{teamKills}} & \text{si } \text{teamKills} > 0 \\ 0 & \text{si } \text{teamKills} = 0 \end{cases}$$
-   Donde $\text{teamKills}$ computa las muertes totales del equipo obtenidas del parámetro `all` en los mismos mapas disputados (`líneas 59-66`). Si el equipo no consiguió ninguna baja (`teamKills === 0`), devuelve `0`.
+   Donde $\text{teamKills}$ computa las bajas conseguidas por el equipo obtenidas del parámetro `all` en los mismos mapas disputados (`player-statistics.ts:75-79`, con el índice de `teamKillIndex`/`killsContext` en `player-statistics.ts:47-59`). Si el equipo no consiguió ninguna baja (`teamKills === 0`), devuelve `0`.
 
 4. **WinRate (`winRate`, `player-statistics.ts:85-87`):** Porcentaje de mapas ganados respecto al total disputado:
    $$\text{WinRate} = \begin{cases} \frac{100 \cdot |\{ r \in \text{rows} \mid r.\text{teamId} = r.\text{winnerTeamId} \}|}{|\text{rows}|} & \text{si } |\text{rows}| > 0 \\ 0 & \text{si } |\text{rows}| = 0 \end{cases}$$
@@ -160,7 +160,7 @@ El motor calcula formalmente 7 métricas agregadas:
 
 #### Distinción Arquitectónica: Agregación de Perfil vs. Calibración de MVP
 Existe una distinción conceptual deliberada entre ambas funciones:
-- **`aggregatePlayerStats` (Perfil General del Jugador):** Computa la visión y el daño mitigado como **promedios aritméticos directos por partida** (`average('visionScore')` y `average('damageMitigated')` en `líneas 55-58, 76-77`). Esto proporciona métricas representativas del impacto medio absoluto de un jugador por mapa en la interfaz de perfil.
+- **`aggregatePlayerStats` (Perfil General del Jugador):** Computa la visión y el daño mitigado como **promedios aritméticos directos por partida** (`average('visionScore')` y `average('damageMitigated')` en `player-statistics.ts:71-74, 89-90`). Esto proporciona métricas representativas del impacto medio absoluto de un jugador por mapa en la interfaz de perfil.
 - **`mapMvpScore` (Calibración de Rendimiento):** Computa la visión y la mitigación **por minuto** (`vspm` y `mitigationPm` en `player-statistics.ts:144-145`, dividiendo el valor de cada mapa entre `minutes`). Esto permite contrastar el rendimiento con granularidad temporal frente a las constantes `vspm` y `mitigationPm` de cada rol táctico en `ROLE_REFERENCES`, desacoplando la puntuación de la duración de la partida.
 
 ### 3.1 Tablas de Referencia por Rol (`ROLE_REFERENCES` y `DEFAULT_REF`)
@@ -409,7 +409,7 @@ Para seleccionar el campeón más representativo de un jugador en la temporada, 
 
 ## 5. Motor de Estadísticas de Campeones (`champion-stats.ts`)
 
-La función `calculateChampionStats(picks: ChampionPick[])` (`champion-stats.ts:1-32`) agrega las selecciones de campeones en mapas concluidos:
+La función `calculateChampionStats(picks: ChampionPick[])` (`champion-stats.ts:1-31`) agrega las selecciones de campeones en mapas concluidos:
 
 1. **Filtro de Integridad**: Descarta picks donde `winnerTeamId === null` o el nombre del campeón esté vacío (`línea 5`).
 2. **Conteo Único de Mapas**: Almacena los identificadores de mapa en un `Set<string>` para determinar el número real de mapas únicos disputados en la división (`totalGames = new Set(valid.map((pick) => pick.gameId)).size`, `línea 6`).
@@ -425,7 +425,7 @@ La función `calculateChampionStats(picks: ChampionPick[])` (`champion-stats.ts:
 
 ## 6. Generador Determinista de Slugs (`profile-slugs.ts`)
 
-Para generar URLs semánticas y amigables para el usuario (ej. `/partidos/los-chicos-vs-team-rebel-jornada-1`), el módulo `profile-slugs.ts:1-60` implementa un generador con resolución de colisiones en tres etapas:
+Para generar URLs semánticas y amigables para el usuario (ej. `/partidos/los-chicos-vs-team-rebel-jornada-1`), el módulo `profile-slugs.ts:1-85` implementa un generador con resolución de colisiones en tres etapas:
 
 1. **Normalización Base (`líneas 3-12`)**:
    - Aplica descomposición Unicode `NFKD`, remueve diacríticos (`\p{M}`), convierte a minúsculas y reemplaza caracteres no alfanuméricos por guiones `-`.
@@ -445,10 +445,10 @@ Para generar URLs semánticas y amigables para el usuario (ej. `/partidos/los-ch
 
 ## 7. Especificación de Visibilidad de Equipos y Sentinels de Roles (`team-visibility.ts`)
 
-La visibilidad y participación de los equipos en la plataforma se gestiona mediante la especificación canónica en `apps/web/src/features/competition/team-visibility.ts:1-16`, vinculando el identificador numérico de rol de Discord (`discordRoleId`, almacenado como `bigint` en PostgreSQL y serializado como `string | null` en la API):
+La visibilidad y participación de los equipos en la plataforma se gestiona mediante la especificación canónica en `apps/web/src/features/competition/team-visibility.ts:1-15`, vinculando el identificador numérico de rol de Discord (`discordRoleId`, almacenado como `bigint` en PostgreSQL y serializado como `string | null` en la API):
 
 ```typescript
-// apps/web/src/features/competition/team-visibility.ts:1-16
+// apps/web/src/features/competition/team-visibility.ts:1-15
 type TeamRole = { discordRoleId?: string | null };
 
 function hasRoleAtLeast(team: TeamRole | undefined, minimum: bigint): boolean {

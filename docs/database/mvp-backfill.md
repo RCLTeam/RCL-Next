@@ -1,10 +1,17 @@
 # Backfill de MVP históricos
 
-[⬅️ Volver a Documentación de Base de Datos](./README.md) | [Siguiente: Migraciones y Requisitos Previos ➡️](./migrations.md)
+[⬅️ Volver a Documentación de Base de Datos](./README.md) | [Siguiente: Datos de Siembra y Fixtures ➡️](./seed.md)
 
 ---
 
 El comando procesa enfrentamientos `completed` y rellena `matches.mvp_player_id` y `matches.mvp_score` cuando ambos campos están vacíos. Reutiliza los mismos datos y algoritmo que la subida ROFL: posición del replay por mapa, media ponderada por duración, participación mínima del 50% y candidatos del equipo vencedor.
+
+## Trazabilidad de la implementación
+
+- CLI, argumentos y códigos de salida: `apps/api/src/scripts/backfill-match-mvps.ts:1-35`.
+- Selección de series, transacciones, validaciones e informe: `apps/api/src/modules/competition/backfill-match-mvps.ts:15-143`.
+- Consulta compartida de mapas y estadísticas: `apps/api/src/modules/competition/match-mvp-data.ts:9-40`.
+- Pruebas de integración: `tests/integration/mvp-backfill.test.ts`.
 
 ## Ejecución
 
@@ -33,7 +40,19 @@ Después de aplicar, la simulación debería mostrar `planned: 0`, `unresolved: 
 
 ## Incidencias e idempotencia
 
-Se señalan series sin mapas, mapas sin ganador o duración, marcadores incompatibles con los mapas, participantes sin estadísticas y ausencia de candidatos elegibles. Un galardón con solo uno de los campos informado tampoco se sobrescribe: puede reflejar la eliminación del jugador y necesita revisión.
+Los registros `unresolved` incluyen uno de estos valores literales de `reason`. Las líneas de la tabla corresponden a `apps/api/src/modules/competition/backfill-match-mvps.ts`:
+
+| `reason` | Situación | Líneas |
+|---|---|---|
+| `partial_existing_award` | Solo uno de los campos MVP está informado; no se sobrescribe. Puede reflejar la eliminación del jugador. | 35-36 |
+| `existing_mvp_not_participant` | El jugador del premio existente no figura entre los participantes registrados de la serie. | 37-45 |
+| `no_maps` | La serie no tiene mapas registrados. | 53-54 |
+| `unfinished_map_or_missing_duration` | Algún mapa no tiene ganador o su duración está ausente o no es positiva. | 55-61 |
+| `inconsistent_series_result` | El número de mapas, las victorias, el marcador, el formato o el ganador de serie son incompatibles. | 62-73 |
+| `missing_participant_statistics` | Faltan estadísticas de participantes o representación de alguno de los equipos en un mapa. | 74-89 |
+| `no_eligible_mvp` | No hay candidato elegible o el candidato no pertenece al equipo vencedor. | 90-98 |
+| `transaction_failed` | Falla la transacción de esa serie, incluida la verificación de escritura. | 129-131 |
+
 
 Cada serie se procesa en su propia transacción y, al aplicar, se bloquea su fila con `FOR UPDATE`. Una interrupción conserva las series ya confirmadas y revierte la serie en curso; el comando puede repetirse sin duplicar ni reemplazar galardones. Un fallo en una transacción se registra como `unresolved` con motivo `transaction_failed`, revierte esa serie y permite continuar con las siguientes. Un premio existente cuyo jugador no figura entre los participantes se registra como `existing_mvp_not_participant`.
 

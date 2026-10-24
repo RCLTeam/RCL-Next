@@ -1,10 +1,10 @@
 # Migraciones, Concurrencia y Verificación Criptográfica
 
-Para poblar los MVP históricos después de aplicar las migraciones `0002_match_mvp` y `0003_match_mvp_checks`, consultar [Backfill de MVP históricos](./mvp-backfill.md).
-
-[⬅️ Volver a Documentación de Base de Datos](./README.md) | [Siguiente: Datos de Siembra y Fixtures ➡️](./seed.md)
+[⬅️ Volver a Documentación de Base de Datos](./README.md) | [Siguiente: Backfill de MVP históricos ➡️](./mvp-backfill.md)
 
 ---
+
+Para poblar los MVP históricos después de aplicar las migraciones `0002_match_mvp` y `0003_match_mvp_checks`, consultar [Backfill de MVP históricos](./mvp-backfill.md).
 
 ## 1. Arquitectura de Migraciones
 

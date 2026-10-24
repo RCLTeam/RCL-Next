@@ -106,20 +106,18 @@ El campo de mapa `isMvp` se conserva temporalmente por compatibilidad, pero no r
 ### 3.4 `PlayersPage` (Directorio de Jugadores y Ficha Destacada)
 **Archivo**: `site/pages/players/PlayersPage.tsx:1-377`
 
-- **Jugador Destacado (*Featured MVP*)**:
-  Identifica al jugador con la marca `player.competition?.featured` y renderiza el componente `FeaturedPlayer` (`líneas 81-84, 243-285`) con su KDA, participación en bajas y campeón más jugado.
+- **Jugador Destacado (`FeaturedPlayer`)**:
+  Se monta en `PlayersPage.tsx:97-100` con el jugador que tenga `player.competition?.featured`. El componente (`PlayersPage.tsx:261-313`) muestra `featured.roundName`, identidad, equipo y campeón, además de las siete métricas de `playerSortOptions.filter(([key]) => key !== 'mvps')` (`PlayersPage.tsx:294-303`). Sus valores proceden de `featured.stats`, correspondientes a la jornada destacada.
 - **Filtrado Multicriterio (`filterPlayers`)**:
-  Combina tres filtros concurrentes:
-  1. Posición / Rol (`role`): Soporta `all`, `top`, `jungle`, `mid`, `adc`, `support`, `substitute` (`VALID_PLAYER_ROLES`).
+  Combina filtros de rol y texto con la ordenación seleccionada:
+  1. Posición / Rol (`role`): Soporta `all`, `top`, `jungle`, `mid`, `adc`, `support` y `substitute`. Para `all`, admite un rol incluido en `VALID_PLAYER_ROLES`, estadísticas o MVPs guardados: `VALID_PLAYER_ROLES.includes(playerRole ?? '') || hasStats || hasAwards` (`PlayersPage.tsx:165-167`).
   2. Consulta de texto (`query`): Coincidencia en `gameName`, `riotTag` y `displayName`.
-  3. Ordenación estadística (`sort`): 7 métricas disponibles (`PlayerSort`: `kda`, `csPerMinute`, `killParticipation`, `winRate`, `damagePerMinute`, `visionScore`, `damageMitigated`).
-- **Desempate en Cascada de Jugadores (`líneas 161-184`)**:
-  Si dos jugadores tienen igual puntuación estadística:
-  1. Valor estadístico descendente.
-  2. Nombre del equipo alfabético en locale `'es'`.
-  3. Identificador de equipo alfabético.
-  4. `gameName` del jugador en locale `'es'`.
-  5. Identificador de jugador.
+  3. Ordenación (`sort`): Ocho opciones (`PlayersPage.tsx:19-29`): `kda`, `mvps`, `csPerMinute`, `killParticipation`, `winRate`, `damagePerMinute`, `visionScore` y `damageMitigated`. `mvps` utiliza el número de identificadores en `mvpMatchIds`, con fallback a `0`, sin depender de estadísticas.
+- **Ordenación y Desempates (`PlayersPage.tsx:178-203`)**:
+  - Si solo un jugador tiene valor nulo, queda después del que tiene valor.
+  - Si ambos tienen valor, ordena de mayor a menor y desempata exclusivamente por `gameName` en locale `'es'` y por ID de jugador (`PlayersPage.tsx:200-202`). Esta regla también se aplica a `mvps`, cuyo valor nunca es nulo.
+  - Solo cuando ambos valores son nulos aplica el criterio por equipo (`PlayersPage.tsx:185-197`): primero jugadores con equipo; después nombre de equipo en locale `'es'`, ID de equipo, `gameName` en locale `'es'` e ID de jugador.
+
 
 ---
 
