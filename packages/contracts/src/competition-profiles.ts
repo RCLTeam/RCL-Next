@@ -1,3 +1,5 @@
+import type { RosterRole } from './roster-roles.js';
+
 export interface TeamSummary {
   slug?: string | undefined;
   id: string;
@@ -13,16 +15,7 @@ export interface TeamMember {
   playerId?: string | null;
   id: string;
   name: string;
-  role:
-    | 'top'
-    | 'jungle'
-    | 'mid'
-    | 'adc'
-    | 'support'
-    | 'substitute'
-    | 'coach'
-    | 'staff'
-    | 'partners';
+  role: RosterRole;
   isCaptain: boolean;
   gameName: string | null;
   riotTag: string | null;
@@ -74,6 +67,10 @@ export interface PlayerTeam extends TeamSummary {
   isActive: boolean;
 }
 export interface PlayerDetail extends Player {
+  /** Latest competitive registration, possibly historical; not necessarily a current team. */
+  registrationTeam?: PlayerTeam | null;
+  /** Season of the aggregate statistics and awards, independent of other affiliations. */
+  statisticsSeasonName?: string | null;
   linkedAccounts?: Player[];
   teams: PlayerTeam[];
 }

@@ -78,6 +78,7 @@ export interface CompetitionRepository {
   }>;
   playerDetail(id: string): Promise<PlayerDetail | undefined>;
   teamDetail(id: string): Promise<TeamDetail | undefined>;
+  /** Newest startsOn first, undated seasons last; names break ties deterministically. */
   seasons(): Promise<Season[]>;
   season(id: string): Promise<Season | undefined>;
   divisions(seasonId: string): Promise<Division[]>;

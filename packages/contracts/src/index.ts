@@ -1,4 +1,5 @@
 export type { AuthUser } from './auth.js';
+export * from './roster-roles.js';
 export {
   getPageMetadata,
   pageMetadata,

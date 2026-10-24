@@ -1,4 +1,5 @@
 import type { MatchMap, Player } from '@rcl/contracts';
+import { COMPETITIVE_ROLES } from '@rcl/contracts';
 import {
   discordUsers,
   divisions,
@@ -327,7 +328,8 @@ export class PostgresCompetitionRepository implements CompetitionRepository {
       ),
       featured
     );
-    // Registered players without games still get their roster role and team.
+    // Only competitive registrations admit players without games or awards.
+    // Historical participation above remains independent of their current roster role.
     const memberships = await this.db
       .select({
         playerId: players.id,
@@ -345,7 +347,12 @@ export class PostgresCompetitionRepository implements CompetitionRepository {
       .innerJoin(teamMemberships, eq(teamMemberships.discordUserId, players.discordUserId))
       .innerJoin(teams, eq(teams.id, teamMemberships.teamId))
       .innerJoin(seasonsDivisions, eq(seasonsDivisions.id, teams.seasonDivisionId))
-      .where(eq(teams.seasonDivisionId, divisionId))
+      .where(
+        and(
+          eq(teams.seasonDivisionId, divisionId),
+          inArray(teamMemberships.role, [...COMPETITIVE_ROLES])
+        )
+      )
       .orderBy(asc(teams.id));
     return enriched
       .filter(

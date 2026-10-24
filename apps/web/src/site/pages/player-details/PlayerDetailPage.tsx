@@ -1,3 +1,4 @@
+import { type PlayerTeam, isCompetitiveRole, isNonCompetitiveRole } from '@rcl/contracts';
 import type React from 'react';
 import { useEffect } from 'react';
 import { TeamBadge } from '../../../features/competition/components/TeamBadge.js';
@@ -23,10 +24,60 @@ const roleLabels: Record<TeamMember['role'], string> = {
   partners: 'Partner'
 };
 
+function PlayerMembershipSection({
+  id,
+  title,
+  teams,
+  empty
+}: {
+  id: string;
+  title: string;
+  teams: PlayerTeam[];
+  empty: string;
+}) {
+  return (
+    <section className="player-teams" aria-labelledby={id}>
+      <div className="player-detail-section-heading">
+        <h2 id={id}>{title}</h2>
+        <span className="meta">
+          {teams.length} {teams.length === 1 ? 'vinculación' : 'vinculaciones'}
+        </span>
+      </div>
+      {teams.length ? (
+        <div className="player-profile-team-grid">
+          {teams.map((team) => (
+            <SiteLink
+              className="player-profile-membership player-affiliation-card"
+              key={team.id}
+              href={`/equipos/${encodeURIComponent(team.slug ?? team.id)}`}
+            >
+              <div className="player-affiliation-body">
+                <span className="player-affiliation-context">
+                  {team.seasonName} · {team.divisionName}
+                </span>
+                <h3 title={team.name}>{team.name}</h3>
+                <span className="player-affiliation-role">
+                  {roleLabels[team.role]}
+                  {team.isCaptain ? ' · Capitán' : ''}
+                </span>
+              </div>
+              <TeamBadge team={team} />
+            </SiteLink>
+          ))}
+        </div>
+      ) : (
+        <div className="empty-state">{empty}</div>
+      )}
+    </section>
+  );
+}
+
 export function PlayerProfile({ player }: { player: PlayerDetail }) {
   const tag = player.riotTag?.replace(/^#/, '').trim();
   const riotId = `${player.gameName}${tag ? `#${tag}` : ''}`;
-  const latestTeam = player.teams[0];
+  const registrationTeam = player.registrationTeam ?? null;
+  const competitiveTeams = player.teams.filter((team) => isCompetitiveRole(team.role));
+  const otherTeams = player.teams.filter((team) => isNonCompetitiveRole(team.role));
   const stats = player.competition?.stats;
   const mvpCount = player.competition?.mvpMatchIds.length;
   const format = (value: number | null | undefined, suffix = '') =>
@@ -44,7 +95,9 @@ export function PlayerProfile({ player }: { player: PlayerDetail }) {
   return (
     <div
       className="player-detail-profile"
-      style={{ '--profile-color': latestTeam?.color || 'var(--purple)' } as React.CSSProperties}
+      style={
+        { '--profile-color': registrationTeam?.color || 'var(--purple)' } as React.CSSProperties
+      }
     >
       <header className="player-profile-header">
         <div className="player-profile-identity">
@@ -70,22 +123,24 @@ export function PlayerProfile({ player }: { player: PlayerDetail }) {
             )}
           </div>
           <div className="player-profile-labels">
-            {latestTeam && <span>{roleLabels[latestTeam.role]}</span>}
-            {latestTeam?.isCaptain && <span className="player-captain-label">Capitán</span>}
+            {registrationTeam && <span>{roleLabels[registrationTeam.role]}</span>}
+            {!registrationTeam && <span>Sin equipo competitivo</span>}
+            {registrationTeam?.isCaptain && <span className="player-captain-label">Capitán</span>}
             {player.countryCode && <span>{player.countryCode.toUpperCase()}</span>}
           </div>
         </div>
-        {latestTeam ? (
+        {registrationTeam ? (
           <SiteLink
             className="player-profile-team"
-            href={`/equipos/${encodeURIComponent(latestTeam.slug ?? latestTeam.id)}`}
+            href={`/equipos/${encodeURIComponent(registrationTeam.slug ?? registrationTeam.id)}`}
           >
-            <span className="meta">Inscripción más reciente</span>
-            <TeamBadge team={latestTeam} />
-            <strong>{latestTeam.name}</strong>
+            <span className="meta">Equipo competitivo</span>
+            <TeamBadge team={registrationTeam} />
+            <strong>{registrationTeam.name}</strong>
             <span className="meta">
-              {latestTeam.seasonName} · {latestTeam.divisionName}
+              {registrationTeam.seasonName} · {registrationTeam.divisionName}
             </span>
+            {!registrationTeam.isActive && <span className="meta">Equipo inactivo</span>}
           </SiteLink>
         ) : (
           <span className="player-profile-initials" aria-hidden="true">
@@ -109,8 +164,12 @@ export function PlayerProfile({ player }: { player: PlayerDetail }) {
           <dd>{displayName(player.displayName ?? 'Sin cuenta vinculada')}</dd>
         </div>
         <div>
-          <dt>Inscripciones</dt>
-          <dd>{player.teams.length}</dd>
+          <dt>Inscripciones competitivas</dt>
+          <dd>{competitiveTeams.length}</dd>
+        </div>
+        <div>
+          <dt>Otras vinculaciones</dt>
+          <dd>{otherTeams.length}</dd>
         </div>
       </dl>
       <section className="player-linked-accounts" aria-labelledby="player-accounts-title">
@@ -159,10 +218,17 @@ export function PlayerProfile({ player }: { player: PlayerDetail }) {
       <section className="player-performance" aria-labelledby="player-performance-title">
         <div className="player-detail-section-heading">
           <h2 id="player-performance-title">Rendimiento</h2>
-          {latestTeam && <span className="meta">{latestTeam.seasonName}</span>}
+          {player.statisticsSeasonName && (
+            <span className="meta">{player.statisticsSeasonName}</span>
+          )}
         </div>
         {stats?.games || (mvpCount ?? 0) > 0 ? (
           <>
+            {!stats?.games && (
+              <p className="meta">
+                Estadísticas de partidas no disponibles. Se conservan los MVPs registrados.
+              </p>
+            )}
             <dl className="player-performance-grid">
               {metrics.map(([label, value]) => (
                 <div key={label}>
@@ -180,44 +246,21 @@ export function PlayerProfile({ player }: { player: PlayerDetail }) {
           </>
         ) : (
           <div className="player-performance-empty">
-            <span className="eyebrow">La historia está por escribir</span>
-            <h3>Próxima parada: la Grieta.</h3>
-            <p>Las estadísticas aparecerán cuando haya partidas registradas en esta competición.</p>
+            <h3>Sin partidas registradas</h3>
+            <p>
+              {player.statisticsSeasonName
+                ? 'Las estadísticas aparecerán cuando haya partidas registradas en esta temporada.'
+                : 'No hay partidas ni premios registrados para este jugador.'}
+            </p>
           </div>
         )}
       </section>
-      <section className="player-teams" aria-label="Equipos e inscripciones">
-        <div className="player-detail-section-heading">
-          <h2>Equipos e inscripciones</h2>
-          <span className="meta">Por temporada y división</span>
-        </div>
-        {player.teams.length ? (
-          <div className="player-profile-team-grid">
-            {player.teams.map((team) => (
-              <SiteLink
-                className="player-profile-membership"
-                key={team.id}
-                href={`/equipos/${encodeURIComponent(team.slug ?? team.id)}`}
-              >
-                <TeamBadge team={team} />
-                <div>
-                  <span className="meta">
-                    {team.seasonName} · {team.divisionName}
-                  </span>
-                  <h3>{team.name}</h3>
-                  <p>
-                    {roleLabels[team.role]}
-                    {team.isCaptain ? ' · Capitán' : ''}
-                  </p>
-                  {!team.isActive && <span className="meta">Equipo inactivo</span>}
-                </div>
-              </SiteLink>
-            ))}
-          </div>
-        ) : (
-          <div className="empty-state">Este jugador todavía no tiene inscripciones en equipos.</div>
-        )}
-      </section>
+      <PlayerMembershipSection
+        id="player-memberships-title"
+        title="Equipos y vinculaciones"
+        teams={player.teams}
+        empty="Este jugador todavía no tiene inscripciones en equipos."
+      />
     </div>
   );
 }

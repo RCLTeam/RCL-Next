@@ -231,11 +231,11 @@ Orquesta la ficha de perfil de un competidor, centralizando su identidad en Riot
   - Gestiona los estados en `PageLayout`: `'loading'`, `'missing'` ("Jugador no encontrado. Puede que ya no esté disponible."), `'error'` con reintento (`retry`) y `'ready'` renderizando `PlayerProfile`.
 
 - **Cabecera de Identidad (`player-profile-header`)**:
-  - Aplica la variable CSS `--profile-color` vinculada al color corporativo del equipo más reciente (`latestTeam?.color || 'var(--purple)'`).
+  - Aplica la variable CSS `--profile-color` vinculada al color corporativo del equipo más reciente (`registrationTeam?.color || 'var(--purple)'`).
   - Distingue la naturaleza de la cuenta: `{player.isMain ? 'Cuenta principal' : 'Cuenta registrada'}`.
   - Presenta el Riot ID canónico (`${player.gameName}#${tag}`), el nombre de comunidad en Discord (`displayName(player.displayName ?? 'Jugador RCL')`), el rol habitual y el distintivo de capitán (`player-captain-label`).
   - Integra enlace directo a OP.GG (`player-profile-opgg`) con atributos seguros `target="_blank"`, `rel="noopener noreferrer"` y etiqueta de accesibilidad.
-  - Enlace al equipo más reciente (`player-profile-team`, `latestTeam = player.teams[0]`) o iniciales en fallback si el jugador no cuenta con equipo activo.
+  - Enlace al equipo competitivo resuelto por la API (`player-profile-team`, `player.registrationTeam`). Sin inscripción se muestran iniciales y «Sin equipo competitivo». No se usa `player.teams[0]`; la cabecera identifica el equipo inactivo cuando corresponde.
 
 - **Sección de Cuentas Secundarias Vinculadas (`player-linked-accounts`)**:
   - Contenedor accesible identificado semánticamente mediante `aria-labelledby="player-accounts-title"`, con encabezado `"Cuentas secundarias"` y subtítulo `"Cuentas del mismo jugador"`.
@@ -255,9 +255,9 @@ Orquesta la ficha de perfil de un competidor, centralizando su identidad en Riot
   - Definición de métricas: `PlayerDetailPage.tsx:26-43`; representación y estado vacío: `PlayerDetailPage.tsx:159-188`. La cuadrícula aparece si hay partidas o MVPs; los premios se muestran incluso sin estadísticas.
   - Cuadrícula con 8 métricas de rendimiento (`player-performance-grid`): Partidas, KDA, % Victorias, MVPs conseguidos (`player.competition?.mvpMatchIds.length`), CS/minuto, Participación en kills %, Daño/minuto y Puntuación de visión. Formateo en español (`'es'`) con un máximo de 2 dígitos fraccionarios.
   - Campeón insignia (`player-signature-champion`): Muestra el campeón más jugado por el usuario en la competición (`player.competition?.champion`).
-  - Estado vacío de rendimiento (`player-performance-empty`): Mensaje inspirador ("La historia está por escribir. Próxima parada: la Grieta.") para participantes que aún no han debutado en partidos oficiales.
+  - Estado vacío de rendimiento (`player-performance-empty`): «Sin partidas registradas». El contexto procede de `statisticsSeasonName`; sin temporada ni resultados se indica «No hay partidas ni premios registrados para este jugador». Los MVPs persistidos se conservan aunque falten estadísticas.
 
-- **Historial de Equipos e Inscripciones (`player-teams`)**:
-  - Recorre el arreglo `player.teams` (`PlayerTeam[]`), listando las participaciones históricas del jugador ordenadas por división y temporada.
+- **Equipos y vinculaciones (`player-teams`)**:
+  - Recorre el arreglo `player.teams` (`PlayerTeam[]`), reuniendo roles competitivos, coach, staff y partners en una única sección, en el orden recibido de la API. El estado vacío es «Este jugador todavía no tiene inscripciones en equipos».
   - Cada fila enlaza a la ficha del club (`/equipos/:slugOrId`), muestra el escudo (`TeamBadge`), temporada, división, rol desempeñado y condición de capitán.
-  - Avisa de clubes dados de baja mediante la etiqueta semántica `{!team.isActive && <span className="meta">Equipo inactivo</span>}`.
+  - Comparte cuadrícula y altura mínima con las cuentas secundarias. El logo se sitúa a la derecha y el nombre ocupa una línea con puntos suspensivos, conservando el texto completo en `title`. El indicador de inactividad se reserva a la cabecera.

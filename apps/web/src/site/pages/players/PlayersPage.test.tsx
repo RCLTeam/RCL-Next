@@ -142,6 +142,42 @@ test('historical awards remain visible in the directory without statistics or a 
   ).toEqual([]);
 });
 
+test('noncompetitive affiliations are excluded without results and never become role filters', () => {
+  const affiliations = ['coach', 'staff', 'partners'].map((role) => ({
+    ...player,
+    id: role,
+    competition: {
+      ...player.competition,
+      role,
+      stats: null,
+      mvpMatchIds: [],
+      featured: null
+    }
+  }));
+  const substitute = {
+    ...player,
+    id: 'substitute',
+    competition: {
+      ...player.competition,
+      role: 'substitute',
+      stats: null,
+      mvpMatchIds: [],
+      featured: null
+    }
+  };
+  expect(filterPlayers([...affiliations, substitute], '').map((p) => p.id)).toEqual(['substitute']);
+  for (const role of ['coach', 'staff', 'partners', 'unknown']) {
+    expect(filterPlayers(affiliations, '', role)).toEqual([]);
+  }
+  const historical = affiliations.map((p) => ({
+    ...p,
+    competition: { ...p.competition, mvpMatchIds: ['historical'] }
+  }));
+  expect(filterPlayers(historical, '')).toHaveLength(3);
+  expect(filterPlayers(historical, '', 'mid')).toEqual([]);
+  expect(filterPlayers(historical, 'no match')).toEqual([]);
+});
+
 test('banner renders the awarded round supplied by the API even without current statistics', () => {
   const html = renderToStaticMarkup(
     <FeaturedPlayer

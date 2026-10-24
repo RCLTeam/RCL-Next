@@ -1,4 +1,5 @@
 import type { CrudField, CrudResource } from '@rcl/contracts';
+import { ROSTER_ROLES } from '@rcl/contracts';
 import { z } from 'zod';
 
 export type ResourceDefinition = CrudResource;
@@ -118,17 +119,13 @@ export const crudResources: ResourceDefinition[] = [
   {
     name: 'memberships',
     label: 'Plantillas',
-    description: 'Asigna miembros a equipos, roles y capitanía. Cada cambio queda en el historial.',
+    description:
+      'Cada miembro puede competir en un solo equipo por temporada, incluidos suplentes. Coach, staff y partner permiten otras vinculaciones. Cada cambio queda en el historial.',
     keys: ['teamId', 'discordUserId'],
     fields: [
       fixed(ref('teamId', 'Equipo', 'teams')),
       fixed(ref('discordUserId', 'Miembro de Discord', 'users')),
-      options(
-        'role',
-        'Rol',
-        ['top', 'jungle', 'mid', 'adc', 'support', 'substitute', 'coach', 'staff', 'partners'],
-        'substitute'
-      ),
+      options('role', 'Rol', [...ROSTER_ROLES], 'substitute'),
       bool('isCaptain', 'Capitán')
     ]
   },
