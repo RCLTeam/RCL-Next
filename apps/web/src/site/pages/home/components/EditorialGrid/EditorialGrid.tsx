@@ -4,6 +4,10 @@ import { ContentStatus } from '../../../../../features/home-content/components/C
 import { useHomeContent } from '../../../../../features/home-content/useHomeContent.js';
 import { SiteLink } from '../../../../../shared/components/SiteLink.js';
 
+export function circularNewsIndex(index: number, count: number): number {
+  return count > 0 ? ((index % count) + count) % count : 0;
+}
+
 function SecondaryNews({ articles }: { articles: EditorialArticle[] }) {
   const listId = useId();
   const [start, setStart] = useState(0);
@@ -12,13 +16,15 @@ function SecondaryNews({ articles }: { articles: EditorialArticle[] }) {
   const [focused, setFocused] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(
     () =>
-      typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      typeof window !== 'undefined' &&
+      (window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches ?? false)
   );
   const rotating = articles.length > 3;
   const automatic = rotating && !paused && !hovered && !focused && !reducedMotion;
 
   useEffect(() => {
-    const preference = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const preference = window.matchMedia?.('(prefers-reduced-motion: reduce)');
+    if (!preference) return;
     const update = () => setReducedMotion(preference.matches);
     update();
     preference.addEventListener('change', update);
@@ -28,14 +34,14 @@ function SecondaryNews({ articles }: { articles: EditorialArticle[] }) {
   useEffect(() => {
     if (!automatic) return;
     const timer = window.setInterval(() => {
-      if (!document.hidden) setStart((value) => (value + 1) % articles.length);
+      if (!document.hidden) setStart((value) => circularNewsIndex(value + 1, articles.length));
     }, 6000);
     return () => window.clearInterval(timer);
   }, [automatic, articles.length]);
 
   const move = (direction: number) => {
     setPaused(true);
-    setStart((value) => (value + direction + articles.length) % articles.length);
+    setStart((value) => circularNewsIndex(value + direction, articles.length));
   };
 
   return (
@@ -59,7 +65,7 @@ function SecondaryNews({ articles }: { articles: EditorialArticle[] }) {
       </div>
       <div className="news-list" id={listId} aria-live={automatic ? 'off' : 'polite'}>
         {Array.from({ length: Math.min(3, articles.length) }, (_, offset) => {
-          const index = (start + offset) % articles.length;
+          const index = circularNewsIndex(start + offset, articles.length);
           const article = articles[index];
           if (!article) return null;
           return (
