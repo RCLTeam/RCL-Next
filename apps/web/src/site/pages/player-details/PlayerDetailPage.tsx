@@ -124,10 +124,7 @@ export function PlayerProfile({ player }: { player: PlayerDetail }) {
               const accountTag = account.riotTag?.replace(/^#/, '').trim();
               return (
                 <div className="player-profile-membership player-linked-account" key={account.id}>
-                  <SiteLink
-                    className="player-linked-account-profile"
-                    href={`/jugadores/${encodeURIComponent(account.slug ?? account.id)}`}
-                  >
+                  <div className="player-linked-account-profile">
                     <span className="meta">
                       {account.isMain ? 'Cuenta principal' : 'Cuenta secundaria'}
                     </span>
@@ -136,7 +133,7 @@ export function PlayerProfile({ player }: { player: PlayerDetail }) {
                       {account.gameName}
                       {accountTag ? `#${accountTag}` : ''}
                     </p>
-                  </SiteLink>
+                  </div>
                   {accountTag && (
                     <a
                       className="player-profile-opgg"
