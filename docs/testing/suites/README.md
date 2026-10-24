@@ -8,13 +8,13 @@
 
 Este directorio es el censo por archivo de las pruebas del monorepo. Las cifras son una medición fechada, no un valor permanente: cada PR que añade, quita o amplía suites actualiza la fila correspondiente y, si cambia, la fecha. Para conocer el total actual basta con ejecutar `pnpm test` (Vitest) y `python3 -m unittest discover apps/parser/tests` (parser); el [apartado 5](#5-cómo-actualizar-este-censo) explica cómo obtener las cifras por archivo.
 
-Medición del 6 de octubre de 2026: **97 archivos de pruebas y 1.149 pruebas** (96 archivos y 1.137 pruebas de Vitest, más 1 archivo y 12 pruebas de Python), **24.120 líneas brutas** (`wc -l`, incluidas líneas vacías y comentarios). Todas pasaron.
+Censo actualizado parcialmente el 24 de octubre de 2026: **98 archivos de pruebas y 1.163 pruebas** (97 archivos y 1.151 pruebas de Vitest, más 1 archivo y 12 pruebas de Python), **24.435 líneas brutas**. Se han vuelto a ejecutar las 139 pruebas de `tests/unit/` (16 archivos), todas correctas; los demás dominios conservan las cifras y resultados de la medición del 6 de octubre de 2026.
 
 La distribución abarca pruebas unitarias co-ubicadas en el backend, el frontend y `packages/contracts`, pruebas de clientes y renderizado en `tests/unit/`, pruebas transversales de integración (en su mayoría con base de datos en memoria) y pruebas de bajo nivel del parser de repeticiones en Python.
 
 ---
 
-## 2. Censo Cuantitativo de Suites (6 de octubre de 2026)
+## 2. Censo Cuantitativo de Suites (actualización parcial: 24 de octubre de 2026)
 
 | Dominio / Área del Proyecto | Ejecutor / Entorno | Archivos de Prueba | Total Pruebas | LoC brutas | Aprobadas |
 |---|---|---:|---:|---:|:---:|
@@ -23,8 +23,8 @@ La distribución abarca pruebas unitarias co-ubicadas en el backend, el frontend
 | **Frontend Web (`apps/web`)** | Vitest (`node`, `react-dom/server`) | 28 | 168 | 2.962 | 168/168 |
 | **Parser ROFL (`apps/parser`)** | Python `unittest` | 1 | 12 | 254 | 12/12 |
 | **Integración (`tests/integration`)** | Vitest (PGlite en memoria o dobles) | 29 | 573 | 13.589 | 573/573 |
-| **Clientes y Renderizado (`tests/unit`)** | Vitest (`node`, `react-dom/server`) | 15 | 125 | 1.929 | 125/125 |
-| **Total Global del Monorepo** | | **97** | **1.149** | **24.120** | **1.149/1.149** |
+| **Clientes y Renderizado (`tests/unit`)** | Vitest (`node`, `react-dom/server`) | 16 | 139 | 2.244 | 139/139 |
+| **Total Global del Monorepo** | | **98** | **1.163** | **24.435** | **1.163/1.163** |
 
 ---
 
