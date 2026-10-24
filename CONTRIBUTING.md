@@ -5,7 +5,7 @@
 - El idioma del código, nombres y mensajes de error es inglés; la documentación orientada a la liga puede estar en español.
 - TypeScript se mantiene en modo estricto. No se acepta `any`.
 - Cada modificación de datos debe mantener la migración SQL y el esquema Drizzle sincronizados.
-- Mientras la base no esté en producción, los cambios se consolidan en `0000_initial_schema.sql`, su snapshot y una única entrada del journal. No se añaden migraciones incrementales. Si una base local ya existe, conserva sus datos y reconcilia su historial explícitamente después de comprobar que el esquema coincide; el migrador no acepta cambios de historial automáticamente. En producción se usarán migraciones incrementales.
+- Los cambios de esquema se incorporan como migraciones incrementales versionadas en `packages/database/drizzle/`, junto con su snapshot y una nueva entrada en `meta/_journal.json`. Mantén `packages/database/src/schema.ts` sincronizado y genera la siguiente migración con `pnpm db:generate`; revísala y aplícala mediante `pnpm db:migrate`. No reescribas migraciones ya registradas ni consolides el historial en `0000_initial_schema.sql`: el migrador verifica los hashes y rechaza cambios del historial aplicado. Si una base local necesita reconciliación, conserva sus datos y verifica explícitamente su esquema e historial.
 
 ## Organización del código
 

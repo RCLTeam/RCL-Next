@@ -20,7 +20,7 @@ El monorepo RCL-Next sigue un diseño estrictamente desacoplado organizado en cu
    Motor de bajo nivel (`roflParser.py`) que analiza archivos de repetición `.rofl` de League of Legends mediante un algoritmo de búsqueda inversa (*reverse seek*) que lee directamente los metadatos finales sin descomprimir paquetes pesados de red. Opera con cero dependencias externas de terceros y códigos de salida delimitados (0-14). Consulta la [documentación de ROFL](docs/rofl/README.md).
 
 4. **Capa de Persistencia Relacional (`packages/database`) — PostgreSQL & PGlite:**  
-   Modelo de 21 tablas relacionales y 6 enums tipados con Drizzle ORM (`packages/database/src/schema.ts`). Utiliza claves primarias naturales e inmutables, transacciones ACID con bloqueos consultivos de PostgreSQL (`pg_advisory_lock`), y disparadores PL/pgSQL transaccionales y diferidos (`complete_player_game`). Para pruebas automatizadas, utiliza PostgreSQL embebido en memoria (**PGlite 0.3+**) sin dependencias de red ni servicios externos. Consulta la [documentación de base de datos](docs/database/README.md).
+   Modelo de 21 tablas relacionales y 6 enums tipados con Drizzle ORM (`packages/database/src/schema.ts`). Utiliza claves primarias naturales e inmutables, transacciones ACID con bloqueos consultivos de PostgreSQL (`pg_advisory_lock`), y disparadores PL/pgSQL transaccionales y diferidos (`complete_player_game`). Para pruebas automatizadas, utiliza PostgreSQL embebido en memoria (**PGlite 0.3+**) sin dependencias de red ni servicios externos. Consulta la [documentación de base de datos](docs/database/README.md) y la [guía de backfill de MVP](docs/database/mvp-backfill.md).
 
 ---
 
@@ -47,9 +47,13 @@ RCL-Next/
 │   │       ├── server.ts                        # Punto de entrada, escucha HTTP/WS y apagado controlado
 │   │       ├── config/                          # Carga y validación estricta de variables de entorno
 │   │       ├── shared/                          # Errores de dominio (AppError) y utilidades HTTP
+│   │       ├── scripts/                         # Herramientas operativas de la API
+│   │       │   └── backfill-match-mvps.ts         # CLI de simulación y aplicación de MVP históricos
 │   │       └── modules/                         # Rebanadas verticales de negocio
 │   │           ├── auth/                        # Discord OAuth2, sesiones opacas (hash SHA-256 en BD), cookie y proxy de avatares
 │   │           ├── competition/                 # Clasificaciones, desempates, estadísticas, visibilidad y algoritmo MVP
+│   │           │   ├── backfill-match-mvps.ts    # Procesamiento y verificación por serie
+│   │           │   └── match-mvp-data.ts         # Consulta compartida de mapas y estadísticas para MVP
 │   │           ├── crud-operations/             # Motor CRUD administrativo con detección de dependencias FK y reordenación de mapas
 │   │           ├── database-transfer/           # Copia con pg_dump (formato custom) y restauración de los datos COPY leídos con pg_restore
 │   │           ├── discord-bridge/              # Cliente WebSocket hacia el bot de Discord con reintentos
@@ -99,6 +103,9 @@ RCL-Next/
 │       ├── drizzle.config.ts                    # Configuración de Drizzle Kit (esquema, salida de migraciones y conexión)
 │       ├── drizzle/                             # Migraciones DDL SQL y journal versionado de Drizzle
 │       │   ├── 0000_initial_schema.sql          # Esquema relacional consolidado (21 tablas, 6 enums)
+│       │   ├── 0001_competitive_membership_per_season.sql # Una inscripción competitiva por temporada
+│       │   ├── 0002_match_mvp.sql               # MVP persistido por enfrentamiento
+│       │   ├── 0003_match_mvp_checks.sql         # Restricciones de coherencia del MVP
 │       │   └── meta/                            # Journal y snapshot de Drizzle Kit
 │       ├── seed/                                # Conjuntos de datos reproducibles
 │       │   ├── demo.sql                         # Fixture mínimo para pruebas automatizadas
@@ -116,6 +123,7 @@ RCL-Next/
 └── docs/                                        # Documentación técnica canónica e hipergranular
     ├── README.md                                # Portal central de documentación y sitemap maestro
     ├── database/                                # Arquitectura relacional, tablas, constraints y migraciones
+    │   └── mvp-backfill.md                      # Guía de recálculo y verificación de MVP históricos
     ├── reference/                               # Referencia histórica y esquema original conservado
     ├── rofl/                                    # Formato binario, algoritmo del parser y mapeo de datos
     ├── api/                                     # Especificaciones de los módulos de la API y su configuración
