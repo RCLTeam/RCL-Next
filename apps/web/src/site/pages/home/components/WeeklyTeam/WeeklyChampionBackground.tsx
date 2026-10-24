@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ChampionArt } from '../../../../../shared/components/ChampionArt.js';
+import { ChampionArt } from '../../../../../shared/riot/ChampionArt.js';
 import { getGameAsset } from '../../../../../shared/riot/riot-assets.service.js';
 import { useGameCatalog } from '../../../../../shared/riot/useGameCatalog.js';
 

@@ -8,11 +8,11 @@ import { CompetitionFilters } from '../../../features/competition/components/Com
 import { TeamBadge } from '../../../features/competition/components/TeamBadge.js';
 import { useCollection } from '../../../features/competition/hooks/useCollection.js';
 import type { Competition } from '../../../features/competition/hooks/useCompetition.js';
-import { ChampionArt } from '../../../shared/components/ChampionArt.js';
 import { PageLayout } from '../../../shared/components/PageLayout/PageLayout.js';
 import { Select } from '../../../shared/components/Selector/Selector.js';
 import { SiteLink } from '../../../shared/components/SiteLink.js';
 import { resolveTeamLogo } from '../../../shared/resources/team-logos.js';
+import { ChampionArt } from '../../../shared/riot/ChampionArt.js';
 import { type GameCatalog, getGameAsset } from '../../../shared/riot/riot-assets.service.js';
 import { useGameCatalog } from '../../../shared/riot/useGameCatalog.js';
 import './players.css';

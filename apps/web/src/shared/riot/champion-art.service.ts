@@ -10,6 +10,8 @@ export interface ChampionSkinArt {
   portrait?: string | undefined;
 }
 
+export type ChampionArtVariant = 'original' | 'centered' | 'portrait' | 'tile';
+
 const requests = new Map<number, Promise<ChampionSkinArt[]>>();
 
 /** Client paths are relative to lol-game-data; CommunityDragon paths are lowercase. */
@@ -28,9 +30,17 @@ export function loadChampionArt(championId: number): Promise<ChampionSkinArt[]> 
   })
     .then(async (response) => {
       if (!response.ok) throw new Error('Champion art unavailable');
-      const data = await response.json();
-      if (!Array.isArray(data.skins)) throw new Error('Invalid champion art');
-      return data.skins.flatMap((skin: Record<string, unknown>): ChampionSkinArt[] => {
+      const data: unknown = await response.json();
+      if (
+        typeof data !== 'object' ||
+        data === null ||
+        !('skins' in data) ||
+        !Array.isArray(data.skins)
+      )
+        throw new Error('Invalid champion art');
+      return data.skins.flatMap((raw: unknown): ChampionSkinArt[] => {
+        if (typeof raw !== 'object' || raw === null) return [];
+        const skin = raw as Record<string, unknown>;
         if (typeof skin.id !== 'number' || typeof skin.name !== 'string') return [];
         return [
           {

@@ -1,7 +1,11 @@
-import { afterEach, beforeEach, expect, test, vi } from 'vitest';
+import { beforeEach, expect, onTestFinished, test, vi } from 'vitest';
 
-beforeEach(() => vi.resetModules());
-afterEach(() => vi.unstubAllGlobals());
+beforeEach(() => {
+  vi.resetModules();
+  onTestFinished(() => {
+    vi.unstubAllGlobals();
+  });
+});
 
 test('Shares requests and resolves base and future skins from client metadata', async () => {
   const fetch = vi.fn(async () => ({
@@ -52,4 +56,30 @@ test('Failed requests can retry and invalid IDs never fetch', async () => {
   await expect(loadChampionArt(103)).resolves.toEqual([]);
   await expect(loadChampionArt(Number.NaN)).resolves.toEqual([]);
   expect(fetch).toHaveBeenCalledTimes(2);
+});
+
+test.each([null, 1, 'invalid', {}, { skins: null }])(
+  'Rejects malformed champion metadata: %j',
+  async (data) => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({ ok: true, json: async () => data }))
+    );
+    const { loadChampionArt } = await import('./champion-art.service.js');
+    await expect(loadChampionArt(103)).rejects.toThrow('Invalid champion art');
+  }
+);
+
+test('Ignores null, primitive and malformed skin entries', async () => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async () => ({
+      ok: true,
+      json: async () => ({
+        skins: [null, 1, 'skin', {}, { id: 103000, name: 'Ahri', isBase: true }]
+      })
+    }))
+  );
+  const { loadChampionArt } = await import('./champion-art.service.js');
+  expect(await loadChampionArt(103)).toEqual([expect.objectContaining({ id: 103000 })]);
 });

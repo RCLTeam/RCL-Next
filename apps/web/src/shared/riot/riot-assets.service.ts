@@ -1,6 +1,8 @@
 import { getPositionAsset, positionAssets } from './community-dragon.service.js';
 import { loadGameCatalog as loadDataDragonCatalog } from './data-dragon.service.js';
 import { STAT_SHARD_SLOTS, statShardAssets } from './stat-shards.js';
+export { loadChampionArt, selectChampionArt } from './champion-art.service.js';
+export type { ChampionArtVariant, ChampionSkinArt } from './champion-art.service.js';
 export { STAT_SHARD_SLOTS } from './stat-shards.js';
 import type { GameAssetKind, GameCatalog, RuneTree } from './riot-assets.types.js';
 

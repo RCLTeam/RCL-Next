@@ -221,8 +221,9 @@ Tira horizontal en la página de inicio que exhibe el quinteto ideal de la divis
 - Renderiza 5 tarjetas (`.totw-card`) para los roles competitivos. Si una posición no ha sido cubierta, muestra una silueta de torre de ajedrez (`♜`, línea 66).
 - Integra como fondo de tarjeta el carrusel de splash arts de campeones `WeeklyChampionBackground`.
 
-### 3.3 `WeeklyChampionBackground.tsx` (`WeeklyChampionBackground.tsx:5-56`)
+### 3.3 `WeeklyChampionBackground.tsx`
 Carrusel rotativo de fondos de campeones utilizados por el jugador en esa jornada.
 - **Rotación Automática:** Conmuta de campeón cada 4.500 ms mediante `setInterval` (`WeeklyChampionBackground.tsx:30`).
 - **Respeto a Accesibilidad de Movimiento:** Escucha la consulta de medios `window.matchMedia('(prefers-reduced-motion: reduce)')`. Si el usuario tiene habilitada la reducción de movimiento en su sistema operativo, el temporizador se detiene por completo (`lines 25-37`), manteniendo estática la primera imagen.
-- **Ocultamiento de Imágenes Rotas:** Incorpora manejador `onError={(event) => { event.currentTarget.hidden = true; }}` para no mostrar marcos rotos si falla la carga de un recurso gráfico externo.
+- **Arte original:** Usa `ChampionArt` de `shared/riot/` con `variant="original"`, sin `skinId`. El hook `useChampionArt` utiliza directamente el splash base de Data Dragon, sin consultar metadatos de CommunityDragon. La imagen rellena la celda con `object-fit: cover` y `object-position: center`.
+- **Fallos de imagen:** `ChampionArt` gestiona los errores de sus fuentes y devuelve `null` cuando se agotan, dejando visible el fondo de la tarjeta. Conserva el nodo `<img>` al cambiar de fuente, sin reiniciar la transición de opacidad por una clave basada en URLs.
