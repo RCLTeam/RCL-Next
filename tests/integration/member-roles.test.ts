@@ -167,4 +167,19 @@ describe('member role authorization and persistence', () => {
     expect((await repository.list(ids.owner, 0)).members[0]?.discordId).toBe(ids.owner);
     await request(app).get(`${endpoint}?offset=-1`).set('Cookie', cookie('admin')).expect(422);
   });
+  it('lets owners assign editor and revoke it while editors cannot access other admin APIs', async () => {
+    await patch('admin', ids.viewer, { role: 'editor', expectedRole: 'viewer' }).expect(200);
+    const session = await request(app)
+      .get('/api/v1/auth/me')
+      .set('Cookie', cookie('viewer'))
+      .expect(200);
+    expect(session.body.data.role).toBe('editor');
+    await request(app).get(endpoint).set('Cookie', cookie('viewer')).expect(403);
+    await request(app)
+      .get('/api/v1/crud-operations/resources')
+      .set('Cookie', cookie('viewer'))
+      .expect(403);
+    await patch('viewer', ids.viewer, { role: 'owner', expectedRole: 'editor' }).expect(403);
+    await patch('admin', ids.viewer, { role: 'viewer', expectedRole: 'editor' }).expect(200);
+  });
 });
