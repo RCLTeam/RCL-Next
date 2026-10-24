@@ -18,9 +18,9 @@ Siguiendo el patrón **Smart Pages** del monorepo, las páginas actúan como orq
 `HomePage` es el punto de entrada público principal del portal web. Ensambla la identidad de la liga, la retransmisión en directo, los enfrentamientos destacados, la tira del quinteto ideal y la cuadrícula editorial:
 
 ```tsx
-// apps/web/src/site/pages/home/HomePage.tsx:55-60
+// apps/web/src/site/pages/home/HomePage.tsx:56-60
 <HomeHero seasonName={competition.season?.name} streamUrl={stream} />
-<HomeFeaturedMatch featured={featured} />
+<HomeFeaturedMatch featured={featured} liveMatches={liveMatches} />
 <TeamOfTheWeekStrip competition={competition} />
 <EditorialGrid />
 {articleId && <EditorialPage key={articleId} articleId={articleId} />}
