@@ -51,24 +51,6 @@ function MemberSection({
               }
               key={member.id}
             >
-              {team && isCompetitiveRole(member.role) && (
-                <div className="team-player-overview">
-                  <dl className="team-player-stats">
-                    <div>
-                      <dt>Partidas</dt>
-                      <dd>{member.rosterStats?.games ?? '—'}</dd>
-                    </div>
-                    <div>
-                      <dt>MVPs</dt>
-                      <dd>{member.rosterStats?.mvps ?? '—'}</dd>
-                    </div>
-                    <div>
-                      <dt>Campeones</dt>
-                      <dd>{member.rosterStats?.champions ?? '—'}</dd>
-                    </div>
-                  </dl>
-                </div>
-              )}
               <div className="team-member-role">
                 <span className="meta">{roleLabels[member.role]}</span>
                 {member.isCaptain && <span className="team-tag">Capitán</span>}
@@ -94,7 +76,11 @@ function MemberSection({
                     displayName(member.gameName ?? member.name)
                   )}
                 </h3>
-                {team && <p>{displayName(member.name)}</p>}
+                {team &&
+                  member.gameName &&
+                  displayName(member.gameName) !== displayName(member.name) && (
+                    <p>{displayName(member.name)}</p>
+                  )}
                 {team && member.gameName && member.riotTag?.replace(/^#/, '').trim() && (
                   <a
                     className="team-member-opgg"
@@ -107,6 +93,24 @@ function MemberSection({
                   </a>
                 )}
               </div>
+              {team && isCompetitiveRole(member.role) && (
+                <div className="team-player-overview">
+                  <dl className="team-player-stats">
+                    <div>
+                      <dt>Partidas</dt>
+                      <dd>{member.rosterStats?.games ?? '—'}</dd>
+                    </div>
+                    <div>
+                      <dt>MVPs</dt>
+                      <dd>{member.rosterStats?.mvps ?? '—'}</dd>
+                    </div>
+                    <div>
+                      <dt>Campeones</dt>
+                      <dd>{member.rosterStats?.champions ?? '—'}</dd>
+                    </div>
+                  </dl>
+                </div>
+              )}
             </article>
           ))}
         </div>
@@ -139,7 +143,7 @@ export function TeamProfile({ team }: { team: TeamDetail }) {
     <>
       <header
         className="team-profile-header"
-        style={{ '--team-color': team.color || 'var(--panel)' } as React.CSSProperties}
+        style={{ '--team-color': team.color || 'var(--purple)' } as React.CSSProperties}
       >
         <div className="team-profile-champions" aria-label="Campeones más jugados de los titulares">
           {playerRoles
@@ -164,7 +168,9 @@ export function TeamProfile({ team }: { team: TeamDetail }) {
                   </div>
                   <div className="team-profile-champion-label">
                     <span>{roleLabels[role]}</span>
-                    <strong>
+                    <strong
+                      title={member ? (member.gameName ?? displayName(member.name)) : 'Sin titular'}
+                    >
                       {member ? (member.gameName ?? displayName(member.name)) : 'Sin titular'}
                     </strong>
                     {member && <small>{champion?.name ?? member.champion ?? 'Sin partidas'}</small>}
