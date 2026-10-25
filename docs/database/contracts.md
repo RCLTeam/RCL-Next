@@ -26,7 +26,7 @@ Al transformar las filas de la base de datos (Drizzle ORM) a los DTOs de `@rcl/c
 
 | Módulo de Contrato | Tipos / Interfaces Exportadas | Archivo de Contrato | Tablas de Base de Datos Relacionadas | Mapeo y Responsabilidad |
 |---|---|---|---|---|
-| **Autenticación** | `AuthUser` | `packages/contracts/src/auth.ts:1-7` | `discord_users` | Mapea `discordId`, `username`, `globalName`, `avatarHash` y `role` (`'viewer'`, `'admin'`, `'owner'`). |
+| **Autenticación** | `AuthUser` | `packages/contracts/src/auth.ts:1-7` | `discord_users` | Mapea `discordId`, `username`, `globalName`, `avatarHash` y `role` (`'viewer'`, `'editor'`, `'admin'`, `'owner'`). |
 | **Roles de Miembros** | `MemberRole`, `RoleMember`, `MemberRolesPage`, `ChangeMemberRole` | `packages/contracts/src/member-roles.ts:3-17` | `discord_users` | Gestión y paginación administrativa de roles de usuario. |
 | **Perfiles Deportivos** | `TeamSummary`, `TeamDetail`, `TeamMember`, `PlayerTeam`, `Player`, `PlayerStatistics`, `PlayerDetail` | `packages/contracts/src/competition-profiles.ts:1-77` | `teams`, `team_memberships`, `discord_users`, `players`, `seasons_divisions` | Ensambla la vista pública de clubes y perfiles de jugadores, calculando KDA, winrate y estadísticas acumuladas. |
 | **Detalle de Partidos** | `MatchStatKey`, `MatchPlayerStats`, `MatchPlayerBuild`, `MatchPlayerRunes`, `MatchParticipant`, `MatchMap`, `MatchDetail` | `packages/contracts/src/match-detail.ts:1-103` | `matches`, `match_games`, `player_game_info`, `player_game_build`, `player_game_runes`, `player_game_stats`, `teams`, `rounds` | Expone el desglose integral de una serie competitiva, mapas disputados, bans, objetos, runas y las 43 métricas de partida. |

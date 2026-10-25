@@ -76,7 +76,7 @@ docs/
 │   │   ├── contracts.md                         # Contratos de usuario autenticado y roles de sistema
 │   │   └── avatars.md                           # Proxy de avatares de Discord: contrato, caché y despliegue
 │   ├── member-roles/                            # Rebanada: Control de acceso basado en roles (RBAC)
-│   │   ├── README.md                            # Resumen de permisos (viewer, admin, owner)
+│   │   ├── README.md                            # Resumen de permisos (viewer, editor, admin, owner)
 │   │   ├── routes.md                            # Endpoints administrativos de auditoría y asignación
 │   │   ├── processing.md                        # Reglas de elevación de privilegios y protección de owner
 │   │   ├── persistence.md                       # Mutación de discord_users y registro en audit_logs

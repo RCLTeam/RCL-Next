@@ -72,18 +72,7 @@ export function EditorialPage({ articleId }: { articleId: string }) {
 
 ## 4. Panel de Administración: `AdminPage.tsx` (`apps/web/src/site/pages/admin/AdminPage.tsx`)
 
-El panel de administración monta `HomeContentPanel` como una pestaña de primer nivel bajo la ruta `/admin/home-content`:
-
-```tsx
-// apps/web/src/site/pages/admin/AdminPage.tsx:50-53
-<nav className="admin-nav" aria-label="Secciones de administración">
-  {/* Enlaces de navegación administrativa ... */}
-</nav>
-{path === '/admin/home-content' ? (
-  <HomeContentPanel />
-) : path === '/admin/rofl/upload' ? (
-  // ...
-```
+El panel monta `HomeContentPanel` en `/admin/home-content` para `editor`, `admin` y `owner`. Para el editor también lo monta directamente en `/admin`: Home Content es su único enlace administrativo, marcado con `aria-current="page"` en ambas rutas. Las demás URLs administrativas muestran una denegación sin montar sus paneles.
 
 ### Funciones Orquestadas en `HomeContentPanel`:
 1. **Gestión de Quintetos Ideales (`WeeklyTeamManager`):** Permite a los administradores seleccionar la temporada, la división y la jornada deportiva, consultar los jugadores candidatos verificados por la base de datos y asignar el quinteto ideal con publicación inmediata.

@@ -11,7 +11,7 @@ Las interfaces y tipos que modelan la membresía y los roles de usuario se encue
 ### 1.1 Tipo de Rol de Miembro (`MemberRole`)
 
 ```typescript
-export type MemberRole = AuthUser['role']; // 'viewer' | 'admin' | 'owner'
+export type MemberRole = AuthUser['role']; // 'viewer' | 'editor' | 'admin' | 'owner'
 ```
 Reutiliza directamente la definición del contrato de autenticación `AuthUser['role']`, garantizando consistencia en todo el monorepo.
 
@@ -31,7 +31,7 @@ export interface RoleMember {
 - `discordId` (*string*): Snowflake único de Discord.
 - `username` (*string*): Nombre de usuario primario en Discord.
 - `globalName` (*string \| null*): Nombre público para mostrar, o `null` si no está configurado.
-- `role` (*MemberRole*): Nivel de acceso asignado (`'viewer'`, `'admin'` u `'owner'`).
+- `role` (*MemberRole*): Nivel de acceso asignado (`'viewer'`, `'editor'`, `'admin'` u `'owner'`).
 
 ---
 
