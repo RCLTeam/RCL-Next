@@ -35,7 +35,7 @@ const player: PlayerDetail = {
   teams: [defaultTeam]
 };
 
-test('Player profiles show linked accounts without player detail links and identify the main account', () => {
+test('Player profiles identify account types and link secondary accounts only to OP.GG', () => {
   const secondary = {
     ...player,
     id: 'secondary',
@@ -49,13 +49,15 @@ test('Player profiles show linked accounts without player detail links and ident
   expect(mainHtml).toContain('Cuentas secundarias');
   expect(mainHtml).toContain('Cuenta secundaria');
   expect(mainHtml).toContain('Secondary#EUW');
-  expect(mainHtml).not.toContain('href="/jugadores/');
-  expect(mainHtml).toContain('href="https://op.gg/es/lol/summoners/euw/Secondary-EUW"');
+  expect(mainHtml).not.toContain('href="/jugadores/secondary-euw"');
+  expect(mainHtml).toContain('https://op.gg/es/lol/summoners/euw/Secondary-EUW');
+  expect(mainHtml).toContain('player-profile-account-type">Cuenta principal');
   const secondaryHtml = renderToStaticMarkup(
     <PlayerProfile player={{ ...secondary, linkedAccounts: [player] }} />
   );
   expect(secondaryHtml).toContain('Cuenta principal');
-  expect(secondaryHtml).not.toContain('href="/jugadores/');
+  expect(secondaryHtml).not.toContain('href="/jugadores/jugador-uno-euw"');
+  expect(secondaryHtml).toContain('player-profile-account-type">Cuenta secundaria');
   expect(
     renderToStaticMarkup(<PlayerProfile player={{ ...player, linkedAccounts: [] }} />)
   ).toContain('No hay otras cuentas vinculadas');
@@ -151,6 +153,7 @@ test('Player profiles show real membership context and handle missing data', () 
       }}
     />
   );
+  expect(empty).not.toContain('player-profile-labels');
   expect(empty).toContain('Sin cuenta vinculada');
   expect(empty).toContain('todavía no tiene inscripciones');
 });
@@ -194,6 +197,8 @@ test('Player profiles display competition metrics and distinguish missing result
       }}
     />
   );
+  expect(html).toContain('player-profile-champion-fallback');
+  expect(html).toContain('role="img" aria-label="Ahri"');
   expect(html).toContain('75%');
   expect(html).toContain('4,5');
   expect(html).toContain('Campeón más jugado');
@@ -418,4 +423,15 @@ test('profiles without memberships show a single team empty state', () => {
   expect(section).toContain('todavía no tiene inscripciones en equipos');
   expect(section).toContain('0 vinculaciones');
   expect(section).not.toContain('player-profile-membership');
+});
+
+test('country-only profiles do not mark the country as a playing role', () => {
+  const html = renderToStaticMarkup(
+    <PlayerProfile player={{ ...player, teams: [], registrationTeam: null }} />
+  );
+  expect(html).toContain('<span>ES</span>');
+  expect(html).not.toContain('player-role-label');
+  expect(renderToStaticMarkup(<PlayerProfile player={player} />)).toContain(
+    'player-role-label">Mid'
+  );
 });

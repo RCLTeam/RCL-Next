@@ -109,18 +109,16 @@ export function PlayersPage({ competition }: { competition: Competition }) {
           </div>
           <div className="players-controls">
             <fieldset className="players-roles" aria-label="Filtrar por posición">
-              {roles
-                .filter(([value]) => value !== 'substitute')
-                .map(([value, label]) => (
-                  <button
-                    key={value}
-                    type="button"
-                    aria-pressed={role === value}
-                    onClick={() => setRole(value)}
-                  >
-                    {label}
-                  </button>
-                ))}
+              {roles.map(([value, label]) => (
+                <button
+                  key={value}
+                  type="button"
+                  aria-pressed={role === value}
+                  onClick={() => setRole(value)}
+                >
+                  {label}
+                </button>
+              ))}
             </fieldset>
             <label className="select-field">
               Buscar jugador
@@ -366,11 +364,12 @@ export function PlayerGrid({
                   </div>
                 </dl>
               </div>
-              {player.competition?.team && (
-                <div className="player-identity-emblem">
-                  <TeamBadge team={player.competition.team} />
-                </div>
-              )}
+              {player.competition?.champion &&
+                resolveTeamLogo(player.competition.team?.logoUrl) && (
+                  <div className="player-identity-emblem">
+                    <TeamBadge team={player.competition.team} />
+                  </div>
+                )}
             </div>
           </div>
         </SiteLink>

@@ -290,3 +290,32 @@ test('MVP sorting uses persisted awards without stats and renders the count once
   expect(html.match(/<dt>MVPs<\/dt>/g)).toHaveLength(1);
   expect(html).toContain('<dd>2</dd>');
 });
+
+test('directory cards show a single logo with or without champion history', () => {
+  for (const champion of ['Ahri', null]) {
+    const html = renderToStaticMarkup(
+      <PlayerGrid
+        players={[
+          {
+            ...player,
+            competition: {
+              ...player.competition,
+              champion,
+              team: {
+                id: 'team',
+                name: 'Team',
+                shortName: null,
+                logoUrl: '/images/team.png'
+              }
+            }
+          }
+        ]}
+      />
+    );
+    expect(html.match(/class="team-badge/g)).toHaveLength(1);
+    expect(html.includes('player-identity-emblem')).toBe(champion !== null);
+  }
+  expect(renderToStaticMarkup(<PlayerGrid players={[player]} />)).not.toContain(
+    'player-identity-emblem'
+  );
+});
