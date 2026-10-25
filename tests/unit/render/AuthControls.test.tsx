@@ -93,6 +93,16 @@ describe('Discord header controls', () => {
     expect(html).toContain('Cerrar sesión');
     expect(html).not.toContain('Entrar con Discord');
   });
+  it('shows the Editor label for authenticated editors', () => {
+    const html = renderToString(
+      <AuthControlsView
+        state={{ status: 'authenticated', user: { ...user, role: 'editor' } }}
+        {...callbacks}
+      />
+    );
+    expect(html).toContain('>Editor</span>');
+    expect(html).toContain('Cerrar sesión');
+  });
   it('disables logout while it is pending', () => {
     const html = renderToString(
       <AuthControlsView state={{ status: 'authenticated', user }} signingOut {...callbacks} />

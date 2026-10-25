@@ -26,7 +26,11 @@ export function AdminPage({
         <nav className="admin-navigation" aria-label="Funciones de administración">
           <SiteLink
             href="/admin/home-content"
-            aria-current={path === '/admin/home-content' ? 'page' : undefined}
+            aria-current={
+              path === '/admin/home-content' || (editorOnly && path === '/admin')
+                ? 'page'
+                : undefined
+            }
           >
             Home content
           </SiteLink>
