@@ -9,6 +9,7 @@ import request from 'supertest';
 import { assert, expect, test } from 'vitest';
 import { createApp } from '../../apps/api/src/app.js';
 import { backfillMatchMvps } from '../../apps/api/src/modules/competition/backfill-match-mvps.js';
+import { mostPlayedChampion } from '../../apps/api/src/modules/competition/player-statistics.js';
 import { PostgresCompetitionRepository } from '../../apps/api/src/modules/competition/postgres-competition.repository.js';
 import * as schema from '../../packages/database/src/schema.js';
 
@@ -458,4 +459,40 @@ test('HTTP -> controller -> service -> real repository -> embedded PostgreSQL', 
     'Undated'
   ]);
   expect(ordered.body.data.some((season: object) => 'isActive' in season)).toBe(false);
+});
+
+test('season champion batch matches individual histories with one narrow query', async (t) => {
+  const client = new PGlite({ extensions: { btree_gist } });
+  t.onTestFinished(() => client.close());
+  const queries: string[] = [];
+  const db = drizzle(client, {
+    schema,
+    logger: {
+      logQuery: (query) => {
+        queries.push(query);
+      }
+    }
+  });
+  await migrate(db, {
+    migrationsFolder: fileURLToPath(new URL('../../packages/database/drizzle', import.meta.url))
+  });
+  await client.exec(await readFile('packages/database/seed/demo.sql', 'utf8'));
+  const repository = new PostgresCompetitionRepository(db);
+  const players = await db.select({ id: schema.players.id }).from(schema.players);
+  const ids = players.map((player) => player.id);
+  queries.length = 0;
+  const champions = await repository.playerSeasonChampions(ids, 'Temporada DEMO — datos ficticios');
+  expect(queries).toHaveLength(1);
+  expect(queries[0]).not.toContain('player_game_stats');
+  expect(champions.size).toBeGreaterThan(0);
+  for (const id of ids) {
+    const history = await repository.playerSeasonGames(id, 'Temporada DEMO — datos ficticios');
+    expect(champions.get(id) ?? null).toBe(mostPlayedChampion(history.playerGames));
+  }
+  expect(await repository.playerSeasonChampions(ids, 'Missing season')).toEqual(new Map());
+  queries.length = 0;
+  expect(await repository.playerSeasonChampions([], 'Temporada DEMO — datos ficticios')).toEqual(
+    new Map()
+  );
+  expect(queries).toHaveLength(0);
 });
