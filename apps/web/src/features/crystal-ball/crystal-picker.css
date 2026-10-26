@@ -10,8 +10,8 @@
 .rcl-site .crystal-picker > p { color: var(--muted); font: 12px/1.6 var(--body-f); }
 .rcl-site .crystal-picker-search { display: grid; gap: 8px; margin: 16px 0; color: var(--muted); font: 11px var(--mono); }
 .rcl-site .crystal-picker-search input { width: 100%; box-sizing: border-box; min-height: 48px; padding: 12px; border: 1px solid var(--line); background: var(--void); color: var(--text); font: 14px var(--body-f); }
-.rcl-site .crystal-picker-grid { min-width: 0; margin: 0; border: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; max-height: 44dvh; overflow-y: auto; padding: 4px; scrollbar-width: thin; scrollbar-color: var(--purple) var(--void); }
-.rcl-site .crystal-picker-grid button { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; min-height: 118px; padding: 12px 8px; border: 1px solid var(--line); background: var(--void); color: var(--text); font: 12px/1.4 var(--body-f); overflow-wrap: anywhere; cursor: pointer; }
+.rcl-site .crystal-picker-grid { min-width: 0; margin: 0; border: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; min-height: 0; flex: 1 1 auto; align-content: start; overflow-y: auto; padding: 4px; scrollbar-width: thin; scrollbar-color: var(--purple) var(--void); }
+.rcl-site .crystal-picker-grid button { min-width: 0; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; min-height: 118px; padding: 12px 8px; border: 1px solid var(--line); background: var(--void); color: var(--text); font: 12px/1.4 var(--body-f); overflow-wrap: anywhere; cursor: pointer; }
 .rcl-site .crystal-picker-grid button[aria-pressed='true'] { border-color: var(--lime); background: color-mix(in srgb, var(--lime) 8%, var(--void)); }
 .rcl-site .crystal-picker-grid button:disabled { cursor: default; }
 .rcl-site .crystal-picker-grid button:disabled:not([aria-pressed='true']) { opacity: .6; }
@@ -31,3 +31,13 @@
 .rcl-site .crystal-answer-icon.is-player svg { width: 40px; height: 40px; color: var(--muted); }
 
 .rcl-site .crystal-answer-icon .team-badge { width: 56px; height: 56px; }
+
+/* Only the option grid scrolls; the header, search and actions stay visible. */
+.rcl-site .base-dialog[open]:has(.crystal-picker) { display: flex; flex-direction: column; max-height: calc(100dvh - 24px); overflow: hidden; }
+.rcl-site .base-dialog:has(.crystal-picker-grid > button:nth-child(13)) { height: min(900px, calc(100dvh - 24px)); }
+.rcl-site .base-dialog:has(.crystal-picker) .base-dialog-toolbar { flex-shrink: 0; }
+.rcl-site .base-dialog:has(.crystal-picker) .base-dialog-content { display: flex; flex-direction: column; min-height: 0; flex: 1 1 auto; overflow: hidden; }
+.rcl-site .crystal-picker { display: flex; flex-direction: column; min-height: 0; flex: 1 1 auto; }
+.rcl-site .crystal-picker > p, .rcl-site .crystal-picker-search, .rcl-site .crystal-picker-footer { flex-shrink: 0; }
+.rcl-site .crystal-option-name { max-width: 100%; }
+.rcl-site .crystal-option-name.is-player { display: block; width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

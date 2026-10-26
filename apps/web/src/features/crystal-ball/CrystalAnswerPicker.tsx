@@ -21,7 +21,7 @@ function AnswerIcon({ option, kind }: { option: Option; kind: CrystalQuestion['k
         <TeamBadge
           team={{
             name: option.name,
-            shortName: option.name.slice(0, 3),
+            shortName: option.shortName || option.name.slice(0, 3),
             logoUrl: option.imageUrl ?? null
           }}
         />
@@ -60,7 +60,7 @@ export function CrystalAnswerPicker({
   const multiple = question.count > 1 || (manual && question.kind !== 'duration');
   const limit = question.count > 1 ? question.count : multiple ? Number.POSITIVE_INFINITY : 1;
   const options = question.options.filter((option) =>
-    normalize(option.name).includes(normalize(query))
+    normalize(`${option.name} ${option.shortName ?? ''}`).includes(normalize(query))
   );
   const optionFor = (id: string) =>
     question.options.find((option) => option.id === id) ?? { id, name: id };
@@ -149,7 +149,9 @@ export function CrystalAnswerPicker({
                     }
                   >
                     <AnswerIcon option={option} kind={question.kind} />
-                    <span>{option.name}</span>
+                    <span className={`crystal-option-name is-${question.kind}`}>
+                      {question.kind === 'team' ? option.shortName || option.name : option.name}
+                    </span>
                     {selected && (
                       <span className="crystal-picked-check" aria-hidden="true">
                         ✓
