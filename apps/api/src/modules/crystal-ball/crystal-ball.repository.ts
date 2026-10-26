@@ -44,7 +44,12 @@ export class CrystalBallRepository {
       .orderBy(divisionDefinitions.sortOrder, seasonsDivisions.divisionName);
     if (!divisions.length) throw notFound('Division');
     const candidates = await this.db
-      .select({ id: teams.id, name: teams.name, divisionId: teams.seasonDivisionId })
+      .select({
+        id: teams.id,
+        name: teams.name,
+        imageUrl: teams.logoUrl,
+        divisionId: teams.seasonDivisionId
+      })
       .from(teams)
       .where(
         and(

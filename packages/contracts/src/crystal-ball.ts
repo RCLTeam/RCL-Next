@@ -6,7 +6,7 @@ export interface CrystalQuestion {
   mode: 'manual' | 'automatic';
   count: number;
   divisionId?: string;
-  options: { id: string; name: string }[];
+  options: { id: string; name: string; imageUrl?: string | null }[];
 }
 export type CrystalAnswers = Record<string, string[]>;
 export interface CrystalBallData {
