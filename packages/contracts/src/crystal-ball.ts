@@ -9,6 +9,7 @@ export interface CrystalQuestion {
   options: {
     id: string;
     name: string;
+    shortName?: string | null;
     imageUrl?: string | null;
     discordId?: string | null;
     avatarHash?: string | null;

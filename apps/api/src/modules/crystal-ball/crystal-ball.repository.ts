@@ -47,6 +47,7 @@ export class CrystalBallRepository {
       .select({
         id: teams.id,
         name: teams.name,
+        shortName: teams.shortName,
         imageUrl: teams.logoUrl,
         divisionId: teams.seasonDivisionId
       })
