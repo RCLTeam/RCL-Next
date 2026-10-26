@@ -15,7 +15,8 @@ export function CrystalAdminPanel() {
         <span className="eyebrow">Predicciones de playoffs</span>
         <h2>Bola de cristal</h2>
         <p>
-          Configura la participación, publica los resultados y calcula los puntos de cada temporada.
+          Configura la participación, publica los resultados y calcula los puntos de cada liga y
+          temporada.
         </p>
       </header>
       <div className="page-toolbar">
@@ -35,10 +36,27 @@ export function CrystalAdminPanel() {
             </option>
           ))}
         </Select>
+        <Select
+          label="Liga"
+          value={competition.division?.id ?? ''}
+          disabled={busy || !competition.divisions.data.length}
+          onChange={(e) => {
+            if (dirty && !window.confirm('Hay cambios sin guardar. ¿Quieres descartarlos?')) return;
+            setDirty(false);
+            competition.selectDivision(e.target.value);
+          }}
+        >
+          {competition.divisions.data.map((d) => (
+            <option key={d.id} value={d.id}>
+              {d.name}
+            </option>
+          ))}
+        </Select>
       </div>
-      {competition.season ? (
+      {competition.season && competition.division ? (
         <AdminSeason
-          key={competition.season.name}
+          key={competition.division.id}
+          divisionId={competition.division.id}
           season={competition.season.name}
           onDirty={setDirty}
           onBusy={setBusy}
@@ -58,10 +76,16 @@ export function CrystalAdminPanel() {
 }
 function AdminSeason({
   season,
+  divisionId,
   onDirty,
   onBusy
-}: { season: string; onDirty: (dirty: boolean) => void; onBusy: (busy: boolean) => void }) {
-  const model = useCrystalBall(season, undefined);
+}: {
+  season: string;
+  divisionId: string;
+  onDirty: (dirty: boolean) => void;
+  onBusy: (busy: boolean) => void;
+}) {
+  const model = useCrystalBall(season, divisionId, undefined);
   if (!model.data)
     return model.error ? (
       <div role="alert">

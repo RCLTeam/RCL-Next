@@ -12,8 +12,12 @@ const statuses = {
   closed: 'Predicciones cerradas',
   resolved: 'Resultados publicados'
 };
-export function CrystalSeason({ season, userId }: { season: string; userId: string | undefined }) {
-  const model = useCrystalBall(season, userId);
+export function CrystalSeason({
+  season,
+  divisionId,
+  userId
+}: { season: string; divisionId: string; userId: string | undefined }) {
+  const model = useCrystalBall(season, divisionId, userId);
   const catalog = useGameCatalog();
   const champions = Object.entries(catalog)
     .filter(([key]) => key.startsWith('champion:'))
@@ -123,15 +127,12 @@ function Ballot({
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
   const [category, setCategory] = useState('qualification');
-  const [division, setDivision] = useState(
-    data.questions.find((q) => q.category === 'qualification')?.divisionId ?? ''
-  );
   const categories = [
     [
       'qualification',
       'Clasificados',
       'Elige quién sigue en la lucha',
-      'Cuatro equipos en winner bracket y dos en loser bracket por división. No importa el orden dentro de cada rama.'
+      'Cuatro equipos en winner bracket y dos en loser bracket en esta liga. No importa el orden dentro de cada rama.'
     ],
     [
       'classification',
@@ -143,18 +144,17 @@ function Ballot({
       'players',
       'Jugadores',
       'Los nombres que harán historia',
-      'Elige a los protagonistas de los playoffs de ambas divisiones. Busca a cada jugador por su nombre.'
+      'Elige a los protagonistas de los playoffs de esta liga. Busca a cada jugador por su nombre.'
     ],
     [
       'meta',
       'Meta',
       'Anticípate al próximo mapa',
-      'Picks, récords y tendencias de ambas divisiones. Winrate: mínimo tres partidas. Oro: diferencia final exacta entre equipos.'
+      'Picks, récords y tendencias de esta liga. Winrate: mínimo tres partidas. Oro: diferencia final exacta entre equipos.'
     ]
   ] as const;
   const selected = categories.find(([id]) => id === category) ?? categories[0];
   const answered = data.questions.filter((q) => answers[q.id]?.length === q.count).length;
-  const divisions = data.questions.filter((q) => q.id.startsWith('winner:'));
   const editable = authenticated && data.status === 'open';
   const complete = data.questions.every((q) => answers[q.id]?.length === q.count);
   return (
@@ -211,25 +211,8 @@ function Ballot({
           <h2>{selected[2]}</h2>
           <p>{selected[3]}</p>
         </div>
-        {category === 'qualification' && (
-          <div className="crystal-divisions" aria-label="División de clasificados">
-            {divisions.map((q) => (
-              <button
-                key={q.id}
-                type="button"
-                aria-pressed={division === q.divisionId}
-                onClick={() => setDivision(q.divisionId ?? '')}
-              >
-                {q.label.split(' · ')[0]}
-              </button>
-            ))}
-          </div>
-        )}
         <CrystalFields
-          questions={data.questions.filter(
-            (q) =>
-              q.category === category && (category !== 'qualification' || q.divisionId === division)
-          )}
+          questions={data.questions.filter((q) => q.category === category)}
           answers={answers}
           onChange={(next) => {
             setAnswers(next);

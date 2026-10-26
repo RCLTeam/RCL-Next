@@ -1,12 +1,20 @@
 import type { CrystalAnswers, CrystalBallData } from '@rcl/contracts';
 import { useEffect, useState } from 'react';
 
-async function request<T>(season: string, path = '', options: RequestInit = {}): Promise<T> {
-  const response = await fetch(`/api/v1/crystal-ball/${encodeURIComponent(season)}${path}`, {
-    credentials: 'include',
-    cache: 'no-store',
-    ...options
-  });
+async function request<T>(
+  season: string,
+  divisionId: string,
+  path = '',
+  options: RequestInit = {}
+): Promise<T> {
+  const response = await fetch(
+    `/api/v1/crystal-ball/${encodeURIComponent(season)}/${encodeURIComponent(divisionId)}${path}`,
+    {
+      credentials: 'include',
+      cache: 'no-store',
+      ...options
+    }
+  );
   if (!response.ok) {
     const body = await response.json().catch(() => null);
     const errors: Record<string, string> = {
@@ -28,7 +36,7 @@ async function request<T>(season: string, path = '', options: RequestInit = {}):
   return (await response.json()).data as T;
 }
 
-export function useCrystalBall(season: string, userId: string | undefined) {
+export function useCrystalBall(season: string, divisionId: string, userId: string | undefined) {
   const [data, setData] = useState<CrystalBallData | null>(null);
   const [answers, setAnswers] = useState<CrystalAnswers | null>(null);
   const [error, setError] = useState('');
@@ -38,9 +46,9 @@ export function useCrystalBall(season: string, userId: string | undefined) {
     const controller = new AbortController();
     setError('');
     Promise.all([
-      request<CrystalBallData>(season, '', { signal: controller.signal }),
+      request<CrystalBallData>(season, divisionId, '', { signal: controller.signal }),
       userId
-        ? request<CrystalAnswers>(season, '/mine', { signal: controller.signal })
+        ? request<CrystalAnswers>(season, divisionId, '/mine', { signal: controller.signal })
         : Promise.resolve({})
     ])
       .then(([next, mine]) => {
@@ -58,7 +66,7 @@ export function useCrystalBall(season: string, userId: string | undefined) {
       controller.abort();
       window.clearTimeout(timer);
     };
-  }, [season, userId, revision]);
+  }, [season, divisionId, userId, revision]);
   useEffect(() => {
     const interval = window.setInterval(() => {
       const now = Date.now();
@@ -71,7 +79,7 @@ export function useCrystalBall(season: string, userId: string | undefined) {
     return () => window.clearInterval(interval);
   }, []);
   const mutate = async (path: string, body: unknown) => {
-    await request(season, path, {
+    await request(season, divisionId, path, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body)
