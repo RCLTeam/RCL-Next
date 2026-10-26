@@ -4,6 +4,7 @@ import { CompetitionFilters } from '../../../features/competition/components/Com
 import type { Competition } from '../../../features/competition/hooks/useCompetition.js';
 import { CrystalSeason } from '../../../features/crystal-ball/CrystalSeason.js';
 import { PageLayout } from '../../../shared/components/PageLayout/PageLayout.js';
+import { CrystalRules } from './CrystalRules.js';
 import './crystal-ball.css';
 
 export function CrystalBallPage({ competition }: { competition: Competition }) {
@@ -37,6 +38,7 @@ export function CrystalBallPage({ competition }: { competition: Competition }) {
           </button>
         </output>
       )}
+      <CrystalRules />
     </PageLayout>
   );
 }

@@ -21,7 +21,11 @@ export function CrystalSeason({
   const catalog = useGameCatalog();
   const champions = Object.entries(catalog)
     .filter(([key]) => key.startsWith('champion:'))
-    .map(([key, value]) => ({ id: key.slice(9).toLowerCase(), name: value.name }))
+    .map(([key, value]) => ({
+      id: key.slice(9).toLowerCase(),
+      name: value.name,
+      imageUrl: value.image ?? null
+    }))
     .sort((a, b) => a.name.localeCompare(b.name));
   if (model.error && (!model.data || !model.answers))
     return (
