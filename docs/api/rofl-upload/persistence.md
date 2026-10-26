@@ -15,7 +15,7 @@ La persistencia de repeticiones ROFL en la base de datos PostgreSQL está encaps
 Los invocadores pueden escribir su Riot ID combinando mayúsculas y minúsculas de manera heterogénea en diferentes entornos o herramientas. Para garantizar que la búsqueda sea determinista y libre de duplicidades:
 
 ```typescript
-// postgres-rofl-upload.repository.ts:43-72
+// postgres-rofl-upload.repository.ts:115-161
 export async function findPlayersByRiotIds(
   db: Database,
   riotIds: Array<{ gameName: string; riotTag: string }>
@@ -31,22 +31,22 @@ Esto permite resolver el `id` UUID de `players` y el `discordUserId` asociado si
 
 ## 3. Resolución de Partido y Ventana Semanal ($\pm 9$ Días)
 
-Para asociar una partida individual de una repetición a su serie oficial en la competición (`findMatchForTeams`, `postgres-rofl-upload.repository.ts:99-178`):
-1. **Búsqueda Directa por Estado:** Primero busca si existe un partido entre ambos equipos en estado `'scheduled'` o `'live'` (`postgres-rofl-upload.repository.ts:106-122`).
+Para asociar una partida individual de una repetición a su serie oficial en la competición (`findMatchForTeams`, `postgres-rofl-upload.repository.ts:207-286`):
+1. **Búsqueda Directa por Estado:** Primero busca si existe un partido entre ambos equipos en estado `'scheduled'` o `'live'` (`postgres-rofl-upload.repository.ts:214-230`).
 2. **Búsqueda por Ventana de Jornada Semanal:** Si no hay ningún partido abierto en curso pero se dispone de la fecha de la partida (`gameDate`):
-   - El sistema calcula el lunes de la semana de la jornada y evalúa un margen de tolerancia temporal de **$\pm 9$ días** (`postgres-rofl-upload.repository.ts:125-175`).
+   - El sistema calcula el lunes de la semana de la jornada y evalúa un margen de tolerancia temporal de **$\pm 9$ días** (`postgres-rofl-upload.repository.ts:233-283`).
    - Admite partidos que hayan sido disputados de forma anticipada o postergada por común acuerdo de los equipos, asociando automáticamente la repetición al partido oficial más cercano en el calendario.
 
 ---
 
 ## 4. Transacción Atómica y Bloqueo Pesimista de Filas
 
-Todas las partidas del lote se insertan dentro de una **única transacción de base de datos** (`await this.db.transaction(async (tx) => { ... })`, `postgres-rofl-upload.repository.ts:258`).
+Todas las partidas del lote se insertan dentro de una **única transacción de base de datos** (`await this.db.transaction(async (tx) => { ... })`, `postgres-rofl-upload.repository.ts:300`).
 
 ### 4.1 Bloqueo Pesimista (`SELECT ... FOR UPDATE`)
 En series al mejor de 3 (Bo3) o al mejor de 5 (Bo5), dos administradores o procesos podrían subir concurrentemente repeticiones de diferentes juegos de la misma serie. Para erradicar colisiones de clave única en `(matches_id, game_number)`:
 ```typescript
-// apps/api/src/modules/rofl-upload/persistence/postgres-rofl-upload.repository.ts:383-397
+// apps/api/src/modules/rofl-upload/persistence/postgres-rofl-upload.repository.ts:426-441
 const [matchRow] = await tx
   .select()
   .from(matches)
@@ -71,9 +71,9 @@ Una partida es duplicada si su `externalGameId` ya está registrado en `match_ga
 
 La detección se hace en tres puntos, todos dentro de la transacción:
 
-1. **Lectura inicial dentro de la transacción** (`postgres-rofl-upload.repository.ts:259-260`): `checkExternalGamesExist(externalIds, tx)` consulta todos los identificadores del lote con el ejecutor de la transacción. Una subida concurrente que ya confirmó la misma partida queda reflejada en esta lectura.
-2. **Inserción con `ON CONFLICT (external_game_id) DO NOTHING`** (`postgres-rofl-upload.repository.ts:422-441`): si otra subida confirma la misma partida después de la lectura inicial, la restricción única `match_games_external_game_id_key` (`packages/database/src/schema.ts:399`) resuelve la carrera. La inserción usa `.returning()`; si no devuelve filas, la partida se informa como duplicada y no se insertan sus filas hijas. El conflicto se limita a `external_game_id`: una colisión en `(matches_id, game_number)` sigue siendo un error.
-3. **Partido ya cerrado** (`postgres-rofl-upload.repository.ts:369-376` y `391-397`): si la otra subida completó el partido con esa misma partida, la resolución de la serie lo encuentra cerrado antes de llegar a la inserción. Antes de rechazar el lote por partido cerrado, `registeredMeanwhile` vuelve a consultar el `externalGameId` dentro de la transacción; si ya existe, la partida se trata como duplicada.
+1. **Lectura inicial dentro de la transacción** (`postgres-rofl-upload.repository.ts:302-306`): `checkExternalGamesExist(externalIds, tx)` consulta todos los identificadores del lote con el ejecutor de la transacción. Una subida concurrente que ya confirmó la misma partida queda reflejada en esta lectura.
+2. **Inserción con `ON CONFLICT (external_game_id) DO NOTHING`** (`postgres-rofl-upload.repository.ts:467-486`): si otra subida confirma la misma partida después de la lectura inicial, la restricción única `match_games_external_game_id_key` (`packages/database/src/schema.ts:399`) resuelve la carrera. La inserción usa `.returning()`; si no devuelve filas, la partida se informa como duplicada y no se insertan sus filas hijas. El conflicto se limita a `external_game_id`: una colisión en `(matches_id, game_number)` sigue siendo un error.
+3. **Partido ya cerrado** (`postgres-rofl-upload.repository.ts:413-421` y `435-441`): si la otra subida completó el partido con esa misma partida, la resolución de la serie lo encuentra cerrado antes de llegar a la inserción. Antes de rechazar el lote por partido cerrado, `registeredMeanwhile` vuelve a consultar el `externalGameId` dentro de la transacción; si ya existe, la partida se trata como duplicada.
 
 Antes de este diseño la comprobación se hacía fuera de la transacción: dos subidas simultáneas con una partida común pasaban ambas la comprobación y la segunda se revertía entera con un error de clave única.
 
@@ -81,7 +81,7 @@ Antes de este diseño la comprobación se hacía fuera de la transacción: dos s
 
 ## 5. Inserción Multi-Fila en las 5 Tablas Relacionales
 
-Para maximizar el rendimiento y reducir las idas y vueltas a la base de datos (*round-trips*), los datos se acumulan en matrices y se insertan en lote dentro de la transacción (`postgres-rofl-upload.repository.ts:339-421`):
+Para maximizar el rendimiento y reducir las idas y vueltas a la base de datos (*round-trips*), los datos se acumulan en matrices y se insertan en lote dentro de la transacción (`postgres-rofl-upload.repository.ts:467-559`):
 
 1. **`match_games`:** Inserción del encabezado de la partida (`id: matchGameId`, `gameNumber: nextGameNumber`, `blueTeamId`, `redTeamId`, `winnerTeamId`, `durationSeconds`, `externalGameId`).
 2. **`player_game_info` (10 filas):** Inserción de los 10 registros de participación vinculados a `matchGameId`. Cada fila recibe un identificador único generado `infoId = crypto.randomUUID()`.
@@ -115,7 +115,7 @@ EXECUTE FUNCTION require_complete_player_game();
 
 ## 7. Cierre Automático de Serie y Marcadores
 
-Tras insertar las partidas del lote, el repositorio evalúa la situación competitiva de la serie (`postgres-rofl-upload.repository.ts:424-453`):
+Tras insertar las partidas del lote, el repositorio evalúa la situación competitiva de la serie (`postgres-rofl-upload.repository.ts:561-601`):
 - Actualiza `team1Score` y `team2Score`.
 - Calcula el umbral matemático de victoria:
   $$\text{winThreshold} = \lfloor \text{bestOf} / 2 \rfloor + 1$$

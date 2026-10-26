@@ -8,10 +8,12 @@ import {
   playerGameRunes,
   playerGameStats,
   players,
-  teamMemberships
+  seasons,
+  teamMemberships,
+  teams
 } from '@rcl/database';
 import type * as schema from '@rcl/database/schema';
-import { and, asc, eq, inArray, isNull, or, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray, isNull, or, sql } from 'drizzle-orm';
 import type { PgDatabase, PgQueryResultHKT } from 'drizzle-orm/pg-core';
 import { loadMatchMvpRows } from '../../competition/match-mvp-data.js';
 import { matchMvps } from '../../competition/player-statistics.js';
@@ -22,6 +24,8 @@ import type {
   PlayerLookupResult
 } from '../types/rofl-upload.types.js';
 import type { RoflUploadRepository } from './rofl-upload.repository.js';
+
+const PLAYABLE_ROSTER_ROLES = ['top', 'jungle', 'mid', 'adc', 'support', 'substitute'] as const;
 
 interface MatchTrackingState {
   team1Id: string;
@@ -177,9 +181,25 @@ export class PostgresRoflUploadRepository implements RoflUploadRepository {
         teamId: teamMemberships.teamId
       })
       .from(teamMemberships)
-      .where(inArray(teamMemberships.discordUserId, discordUserIds));
+      .innerJoin(teams, eq(teamMemberships.teamId, teams.id))
+      .innerJoin(seasons, eq(teamMemberships.seasonName, seasons.name))
+      .where(
+        and(
+          inArray(teamMemberships.discordUserId, discordUserIds),
+          inArray(teamMemberships.role, PLAYABLE_ROSTER_ROLES)
+        )
+      )
+      .orderBy(
+        desc(teams.isActive),
+        sql`${seasons.startsOn} DESC NULLS LAST`,
+        desc(teamMemberships.updatedAt),
+        asc(seasons.name),
+        asc(teams.id)
+      );
     for (const r of rows) {
-      map.set(r.discordUserId, r.teamId);
+      if (!map.has(r.discordUserId)) {
+        map.set(r.discordUserId, r.teamId);
+      }
     }
     return map;
   }
