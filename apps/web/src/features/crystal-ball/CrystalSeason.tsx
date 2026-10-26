@@ -2,7 +2,6 @@ import type { CrystalAnswers, CrystalBallData } from '@rcl/contracts';
 import React, { useState } from 'react';
 import { useGameCatalog } from '../../shared/riot/useGameCatalog.js';
 import { discordLoginUrl } from '../auth/api/auth-api.js';
-import { CrystalAdmin } from './CrystalAdmin.js';
 import { CrystalFields } from './CrystalFields.js';
 import { useCrystalBall } from './useCrystalBall.js';
 
@@ -13,11 +12,7 @@ const statuses = {
   closed: 'Predicciones cerradas',
   resolved: 'Resultados publicados'
 };
-export function CrystalSeason({
-  season,
-  userId,
-  admin
-}: { season: string; userId: string | undefined; admin: boolean }) {
+export function CrystalSeason({ season, userId }: { season: string; userId: string | undefined }) {
   const model = useCrystalBall(season, userId);
   const catalog = useGameCatalog();
   const champions = Object.entries(catalog)
@@ -43,21 +38,34 @@ export function CrystalSeason({
   return (
     <>
       {model.error && <p role="alert">{model.error}</p>}
-      <div className="crystal-status">
-        <strong>{statuses[data.status]}</strong>
-        <span>{data.opensAt && `Apertura: ${new Date(data.opensAt).toLocaleString('es-ES')}`}</span>
-        <span>{data.closesAt && `Cierre: ${new Date(data.closesAt).toLocaleString('es-ES')}`}</span>
+      <div className="crystal-status" data-status={data.status}>
+        <div>
+          <span className="eyebrow">Tu pronóstico, antes del primer mapa</span>
+          <h2>{statuses[data.status]}</h2>
+          <p>
+            {data.status === 'unconfigured'
+              ? 'La próxima corona todavía no tiene dueño. El periodo de participación se anunciará aquí.'
+              : 'Cada elección cuenta. Guarda tu boleto antes del cierre para entrar en el ranking de videntes.'}
+          </p>
+          <div className="crystal-dates">
+            <span>
+              {data.opensAt && `Abre · ${new Date(data.opensAt).toLocaleString('es-ES')}`}
+            </span>
+            <span>
+              {data.closesAt && `Cierra · ${new Date(data.closesAt).toLocaleString('es-ES')}`}
+            </span>
+          </div>
+        </div>
+        <div className="crystal-scoring">
+          <strong>01</strong>
+          <span>punto por acierto</span>
+        </div>
       </div>
       {!userId && (
-        <p>
+        <p className="crystal-login">
           <a href={discordLoginUrl}>Inicia sesión con Discord</a> para guardar tus predicciones.
         </p>
       )}
-      <p>
-        Selecciona 4 equipos para winner bracket y 2 para loser bracket en cada división. Las
-        predicciones de jugadores y meta abarcan todos los playoffs de la temporada. Podrás
-        modificar tu boleto hasta el cierre.
-      </p>
       {!champions.length && (
         <output>
           El catálogo de campeones no está disponible. Recarga la página para volver a intentarlo.
@@ -70,7 +78,10 @@ export function CrystalSeason({
         save={model.save}
       />
       <section className="crystal-ranking">
-        <h2>Ranking de videntes</h2>
+        <div className="crystal-ranking-heading">
+          <span className="eyebrow">La comunidad decide</span>
+          <h2>Ranking de videntes</h2>
+        </div>
         {data.ranking.length ? (
           <ol>
             {data.ranking.map((row) => (
@@ -84,13 +95,16 @@ export function CrystalSeason({
             ))}
           </ol>
         ) : (
-          <p>La clasificación aparecerá cuando se publiquen resultados.</p>
+          <p className="crystal-ranking-empty">
+            La corona espera a su vidente.
+            <br />
+            <span>El ranking se abrirá con los primeros resultados.</span>
+          </p>
         )}
         <p>
           {Object.keys(data.results).length} de {data.questions.length} predicciones resueltas.
         </p>
       </section>
-      {admin && <CrystalAdmin data={data} configure={model.configure} resolve={model.resolve} />}
     </>
   );
 }
@@ -108,10 +122,44 @@ function Ballot({
   const [answers, setAnswers] = useState(initial);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
+  const [category, setCategory] = useState('qualification');
+  const [division, setDivision] = useState(
+    data.questions.find((q) => q.category === 'qualification')?.divisionId ?? ''
+  );
+  const categories = [
+    [
+      'qualification',
+      'Clasificados',
+      'Elige quién sigue en la lucha',
+      'Cuatro equipos en winner bracket y dos en loser bracket por división. No importa el orden dentro de cada rama.'
+    ],
+    [
+      'classification',
+      'Clasificación',
+      '¿Quién se lleva la corona?',
+      'Campeones, revelaciones y sorpresas. Tus apuestas por los equipos que marcarán estos playoffs.'
+    ],
+    [
+      'players',
+      'Jugadores',
+      'Los nombres que harán historia',
+      'Elige a los protagonistas de los playoffs de ambas divisiones. Busca a cada jugador por su nombre.'
+    ],
+    [
+      'meta',
+      'Meta',
+      'Anticípate al próximo mapa',
+      'Picks, récords y tendencias de ambas divisiones. Winrate: mínimo tres partidas. Oro: diferencia final exacta entre equipos.'
+    ]
+  ] as const;
+  const selected = categories.find(([id]) => id === category) ?? categories[0];
+  const answered = data.questions.filter((q) => answers[q.id]?.length === q.count).length;
+  const divisions = data.questions.filter((q) => q.id.startsWith('winner:'));
   const editable = authenticated && data.status === 'open';
   const complete = data.questions.every((q) => answers[q.id]?.length === q.count);
   return (
     <form
+      className="crystal-ballot"
       onSubmit={async (e) => {
         e.preventDefault();
         setBusy(true);
@@ -126,38 +174,74 @@ function Ballot({
         }
       }}
     >
-      {(
-        [
-          ['qualification', '01 · Clasificados para playoffs'],
-          ['classification', '🏆 Clasificación'],
-          ['players', '⭐ Jugadores'],
-          ['meta', '🧪 Meta']
-        ] as const
-      ).map(([category, title]) => (
-        <section className="crystal-section" key={category}>
-          <h2>{title}</h2>
-          {category === 'meta' && (
-            <p>
-              Oro: diferencia final exacta entre equipos. Duración: intervalos de cinco minutos
-              (menos de 20 y 45 o más en los extremos). Las medias se calculan por partida; winrate
-              exige al menos tres.
-            </p>
+      <div className="crystal-ballot-heading">
+        <span className="eyebrow">Tu bola de cristal</span>
+        <span>
+          {answered} / {data.questions.length} completadas
+        </span>
+      </div>
+      <progress
+        className="crystal-progress"
+        value={answered}
+        max={data.questions.length}
+        aria-label="Predicciones completadas"
+      />
+      <nav className="crystal-categories" aria-label="Categorías de predicciones">
+        {categories.map(([id, label], index) => (
+          <button
+            type="button"
+            key={id}
+            aria-pressed={id === category}
+            onClick={() => setCategory(id)}
+          >
+            <span>0{index + 1}</span>
+            {label}
+            <small>
+              {
+                data.questions.filter((q) => q.category === id && answers[q.id]?.length === q.count)
+                  .length
+              }
+              /{data.questions.filter((q) => q.category === id).length}
+            </small>
+          </button>
+        ))}
+      </nav>
+      <section className="crystal-section" aria-label={selected[1]}>
+        <div className="crystal-section-heading">
+          <h2>{selected[2]}</h2>
+          <p>{selected[3]}</p>
+        </div>
+        {category === 'qualification' && (
+          <div className="crystal-divisions" aria-label="División de clasificados">
+            {divisions.map((q) => (
+              <button
+                key={q.id}
+                type="button"
+                aria-pressed={division === q.divisionId}
+                onClick={() => setDivision(q.divisionId ?? '')}
+              >
+                {q.label.split(' · ')[0]}
+              </button>
+            ))}
+          </div>
+        )}
+        <CrystalFields
+          questions={data.questions.filter(
+            (q) =>
+              q.category === category && (category !== 'qualification' || q.divisionId === division)
           )}
-          <CrystalFields
-            questions={data.questions.filter((q) => q.category === category)}
-            answers={answers}
-            onChange={(next) => {
-              setAnswers(next);
-              setMessage('Cambios sin guardar');
-            }}
-            disabled={!editable || busy}
-            results={data.results}
-          />
-        </section>
-      ))}
+          answers={answers}
+          onChange={(next) => {
+            setAnswers(next);
+            setMessage('Cambios sin guardar');
+          }}
+          disabled={!editable || busy}
+          results={data.results}
+        />
+      </section>
       <div className="crystal-actions">
         <button type="submit" disabled={!editable || busy || !complete}>
-          {busy ? 'Guardando…' : 'Guardar predicciones'}
+          {busy ? 'Guardando…' : 'Guardar mi bola de cristal →'}
         </button>
         <output>
           {message || (editable && !complete ? 'Completa todas las selecciones para guardar.' : '')}

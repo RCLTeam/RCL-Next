@@ -2,6 +2,7 @@ import React from 'react';
 import { useAuth } from '../../../features/auth/components/AuthProvider.js';
 import { RequireAdmin } from '../../../features/auth/components/RequireAdmin.js';
 import { CrudOperationsPanel } from '../../../features/crud-operations/components/CrudOperationsPanel.js';
+import { CrystalAdminPanel } from '../../../features/crystal-ball/CrystalAdminPanel.js';
 import { DatabaseTransferPanel } from '../../../features/database-transfer/components/DatabaseTransferPanel.js';
 import { HomeContentPanel } from '../../../features/home-content/components/HomeContentPanel.js';
 import { MemberRolesPanel } from '../../../features/member-roles/components/MemberRolesPanel.js';
@@ -36,6 +37,12 @@ export function AdminPage({
           </SiteLink>
           {!editorOnly && (
             <>
+          <SiteLink
+            href="/admin/crystal-ball"
+            aria-current={path === '/admin/crystal-ball' ? 'page' : undefined}
+          >
+            Bola de cristal
+          </SiteLink>
               <SiteLink
                 href="/admin/rofl/upload"
                 aria-current={path === '/admin/rofl/upload' ? 'page' : undefined}
@@ -77,6 +84,8 @@ export function AdminPage({
               No tienes permisos para acceder a esta sección.
             </p>
           )
+        ) : path === '/admin/crystal-ball' ? (
+          <CrystalAdminPanel />
         ) : path === '/admin/team-logos' ? (
           <TeamLogosPanel />
         ) : path === '/admin/home-content' ? (
@@ -91,6 +100,12 @@ export function AdminPage({
           <DatabaseTransferPanel />
         ) : (
           <div className="admin-overview">
+            <SiteLink href="/admin/crystal-ball">
+              <span className="eyebrow">Predicciones</span>
+              <h2>Bola de cristal</h2>
+              <p>Configura las fechas de participación y resuelve los pronósticos de playoffs.</p>
+              <span>Gestionar predicciones →</span>
+            </SiteLink>
             <SiteLink href="/admin/home-content">
               <span className="eyebrow">Publicación</span>
               <h2>Home content</h2>

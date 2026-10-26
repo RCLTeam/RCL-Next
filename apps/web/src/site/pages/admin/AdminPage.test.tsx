@@ -33,6 +33,25 @@ function renderSession(state: AuthState, signingOut = false, path = '/admin') {
 }
 
 describe('administration access', () => {
+  it.each(['admin', 'owner'] as const)('mounts crystal ball management for %s', (role) => {
+    const html = renderSession(
+      { status: 'authenticated', user: { ...admin, role } },
+      false,
+      '/admin/crystal-ball'
+    );
+    expect(html).toContain('Configura la participación');
+    expect(html).toContain('href="/admin/crystal-ball"');
+    expect(html).toContain('Cargando temporadas');
+  });
+  it.each(['anonymous', 'viewer'] as const)('protects crystal ball management from %s', (role) => {
+    const state: AuthState =
+      role === 'anonymous'
+        ? { status: 'anonymous' }
+        : { status: 'authenticated', user: { ...admin, role } };
+    const html = renderSession(state, false, '/admin/crystal-ball');
+    expect(html).not.toContain('Configura la participación');
+    expect(html).toContain(role === 'anonymous' ? 'Inicia sesión' : 'No tienes permisos');
+  });
   it('mounts logo management for administrators', () => {
     const html = renderSession(
       { status: 'authenticated', user: admin },

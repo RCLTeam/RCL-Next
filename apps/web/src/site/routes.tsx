@@ -137,6 +137,7 @@ const detailRoutes = [
 ] satisfies RouteDefinition[];
 
 export const adminRoutes = [
+  { path: '/admin/crystal-ball', title: 'Bola de cristal' },
   { path: '/admin/home-content', title: 'Contenido de la home' },
   { path: '/admin', title: 'Admin' },
   { path: '/admin/rofl/upload', title: 'ROFL Upload' },

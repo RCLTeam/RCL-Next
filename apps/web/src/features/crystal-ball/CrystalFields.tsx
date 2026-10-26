@@ -1,5 +1,6 @@
 import type { CrystalAnswers, CrystalQuestion } from '@rcl/contracts';
 import React from 'react';
+import { Select } from '../../shared/components/Selector/Selector.js';
 
 export function CrystalFields({
   questions,
@@ -34,7 +35,11 @@ export function CrystalFields({
             : [];
         const result = results[q.id];
         return (
-          <fieldset key={q.id} className="crystal-card" disabled={disabled}>
+          <fieldset
+            key={q.id}
+            className={`crystal-card${q.count > 1 ? ' crystal-bracket' : ''}`}
+            disabled={disabled}
+          >
             <legend>{q.label}</legend>
             <p className="crystal-hint">
               {q.count > 1
@@ -46,7 +51,10 @@ export function CrystalFields({
             {multi ? (
               <div className="crystal-options">
                 {q.options.map((option) => (
-                  <label key={option.id}>
+                  <label
+                    key={option.id}
+                    className={values.includes(option.id) ? 'is-selected' : undefined}
+                  >
                     <input
                       type="checkbox"
                       checked={values.includes(option.id)}
@@ -64,6 +72,14 @@ export function CrystalFields({
                         )
                       }
                     />
+                    {q.kind === 'team' && (
+                      <span className="crystal-team-mark" aria-hidden="true">
+                        {option.name
+                          .replace(/[^\p{L}\p{N}]/gu, '')
+                          .slice(0, 3)
+                          .toUpperCase()}
+                      </span>
+                    )}
                     <span>{option.name}</span>
                   </label>
                 ))}
@@ -82,24 +98,23 @@ export function CrystalFields({
                 />
               </label>
             ) : (
-              <label>
-                <span className="sr-only">{q.label}</span>
-                <select
-                  required={!manual}
-                  value={values[0] ?? ''}
-                  onChange={(e) => choose(q.id, e.target.value ? [e.target.value] : [])}
-                >
-                  <option value="">Seleccionar…</option>
-                  {values[0] && !q.options.some((o) => o.id === values[0]) && (
-                    <option value={values[0]}>{values[0]}</option>
-                  )}
-                  {q.options.map((o) => (
-                    <option key={o.id} value={o.id}>
-                      {o.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              <Select
+                aria-label={q.label}
+                variant="form"
+                required={!manual}
+                value={values[0] ?? ''}
+                onChange={(e) => choose(q.id, e.target.value ? [e.target.value] : [])}
+              >
+                <option value="">Seleccionar…</option>
+                {values[0] && !q.options.some((o) => o.id === values[0]) && (
+                  <option value={values[0]}>{values[0]}</option>
+                )}
+                {q.options.map((o) => (
+                  <option key={o.id} value={o.id}>
+                    {o.name}
+                  </option>
+                ))}
+              </Select>
             )}
             {result && (
               <p className="crystal-result">

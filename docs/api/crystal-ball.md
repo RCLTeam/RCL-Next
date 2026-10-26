@@ -4,7 +4,7 @@ Una campaña por temporada; un boleto por usuario de Discord. Cada división tie
 
 ## Operación
 
-En `/bola-cristal`, un administrador configura apertura y cierre con fecha y hora. El servidor cierra también al llegar al primer inicio de jornada/serie de playoffs o al detectar una serie iniciada. No permite reabrir una campaña cerrada. Los participantes pueden reemplazar su boleto completo mientras esté abierto; no se publican boletos ajenos.
+En `/admin/crystal-ball`, un administrador configura apertura y cierre con fecha y hora. La página pública `/bola-cristal` contiene el boleto por categorías y el ranking. El servidor cierra también al llegar al primer inicio de jornada/serie de playoffs o al detectar una serie iniciada. No permite reabrir una campaña cerrada. Los participantes pueden reemplazar su boleto completo mientras esté abierto; no se publican boletos ajenos.
 
 Tras el cierre, el panel permite publicar o corregir resultados manuales, incluidos varios ganadores por empate. Los clasificados, campeones de división y finalista invicto son manuales: el calendario no codifica las ramas ni la final. Revelaciones, decepciones y mejor jugada también son manuales.
 

@@ -1,0 +1,85 @@
+import React, { useState } from 'react';
+import { Select } from '../../shared/components/Selector/Selector.js';
+import { useCompetitionSelection } from '../competition/hooks/useCompetitionSelection.js';
+import { CrystalAdmin } from './CrystalAdmin.js';
+import { useCrystalBall } from './useCrystalBall.js';
+import './crystal-form.css';
+
+export function CrystalAdminPanel() {
+  const competition = useCompetitionSelection();
+  const [dirty, setDirty] = useState(false);
+  const [busy, setBusy] = useState(false);
+  return (
+    <div className="crystal-admin-panel">
+      <header className="crystal-section-heading">
+        <span className="eyebrow">Predicciones de playoffs</span>
+        <h2>Bola de cristal</h2>
+        <p>
+          Configura la participación, publica los resultados y calcula los puntos de cada temporada.
+        </p>
+      </header>
+      <div className="page-toolbar">
+        <Select
+          label="Temporada"
+          value={competition.season?.id ?? ''}
+          disabled={busy}
+          onChange={(e) => {
+            if (dirty && !window.confirm('Hay cambios sin guardar. ¿Quieres descartarlos?')) return;
+            setDirty(false);
+            competition.selectSeason(e.target.value);
+          }}
+        >
+          {competition.seasons.data.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.name}
+            </option>
+          ))}
+        </Select>
+      </div>
+      {competition.season ? (
+        <AdminSeason
+          key={competition.season.name}
+          season={competition.season.name}
+          onDirty={setDirty}
+          onBusy={setBusy}
+        />
+      ) : (
+        <output>
+          {competition.seasons.status === 'error'
+            ? 'No se pudieron cargar las temporadas.'
+            : 'Cargando temporadas…'}
+          <button type="button" onClick={competition.retry}>
+            Reintentar
+          </button>
+        </output>
+      )}
+    </div>
+  );
+}
+function AdminSeason({
+  season,
+  onDirty,
+  onBusy
+}: { season: string; onDirty: (dirty: boolean) => void; onBusy: (busy: boolean) => void }) {
+  const model = useCrystalBall(season, undefined);
+  if (!model.data)
+    return model.error ? (
+      <div role="alert">
+        {model.error}
+        <button type="button" onClick={model.retry}>
+          Reintentar
+        </button>
+      </div>
+    ) : (
+      <output>Cargando campaña…</output>
+    );
+  return (
+    <CrystalAdmin
+      data={model.data}
+      configure={model.configure}
+      resolve={model.resolve}
+      onDirty={onDirty}
+      onBusy={onBusy}
+    />
+  );
+}
