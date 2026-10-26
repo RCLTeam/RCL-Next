@@ -44,3 +44,9 @@
 }
 .rcl-site .crystal-ballot :focus-visible,
 .rcl-site .crystal-admin-panel :focus-visible { outline: 2px solid var(--lime); outline-offset: 3px; }
+/* Compact manual results: searchable dropdown and only the chosen winners. */
+.rcl-site .crystal-winner-list { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 0; padding: 0; list-style: none; }
+.rcl-site .crystal-winner-list li { display: flex; align-items: center; max-width: 100%; border: 1px solid var(--purple); background: var(--void); font: 12px/1.4 var(--body-f); }
+.rcl-site .crystal-winner-list li > span { min-width: 0; padding: 8px 12px; overflow-wrap: anywhere; }
+.rcl-site .crystal-winner-list button { flex-shrink: 0; width: 44px; min-height: 44px; border: 0; border-left: 1px solid var(--line); color: var(--lime); background: transparent; font-size: 22px; cursor: pointer; }
+.rcl-site .crystal-winner-list button:disabled { color: var(--muted); cursor: not-allowed; }
