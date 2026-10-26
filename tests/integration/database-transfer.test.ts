@@ -157,7 +157,7 @@ describe('database transfer permissions and atomic restoration', () => {
   });
   it('validates by restoring and rolling back, leaving rows and sessions intact', async () => {
     const response = await preview().expect(200);
-    expect(response.body.data.tables).toHaveLength(23);
+    expect(response.body.data.tables).toHaveLength(25);
     expect(response.body.data.confirmation).toMatch(/^[a-f0-9]{64}$/);
     expect(await db.select().from(schema.authSessions)).toHaveLength(3);
     expect(
@@ -176,7 +176,7 @@ describe('database transfer permissions and atomic restoration', () => {
     expect(withoutSessions).not.toContain('COPY public.oauth_states');
     const response = await preview(withoutSessions).expect(200);
     const tables = response.body.data.tables as { table: string; importedRows: number }[];
-    expect(tables).toHaveLength(23);
+    expect(tables).toHaveLength(25);
     expect(tables.find((table) => table.table === 'auth_sessions')?.importedRows).toBe(0);
     expect(tables.find((table) => table.table === 'seasons')?.importedRows).toBe(1);
   });

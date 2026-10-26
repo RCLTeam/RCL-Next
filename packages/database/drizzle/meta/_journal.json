@@ -43,6 +43,13 @@
       "when": 1792777038023,
       "tag": "0005_crystal_ball",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1792981825447,
+      "tag": "0006_crystal_ball_leagues",
+      "breakpoints": true
     }
   ]
 }

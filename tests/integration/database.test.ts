@@ -29,7 +29,7 @@ test('PostgreSQL migrations, fixtures and relational constraints', async (t) => 
     const result = await client.query<{ total: number }>(
       'SELECT count(*)::int AS total FROM drizzle.__drizzle_migrations'
     );
-    expect(result.rows[0]?.total).toBe(5);
+    expect(result.rows[0]?.total).toBe(6);
   }
   // matches schema defines stream_url_live column
   expect(schema.matches.streamUrlLive).toBeTruthy();
@@ -56,7 +56,7 @@ test('PostgreSQL migrations, fixtures and relational constraints', async (t) => 
   // All ORM tables map to executable SQL.
   {
     const tables = Object.values(schema).filter((value) => is(value, Table));
-    expect(tables.length).toBe(23);
+    expect(tables.length).toBe(25);
     for (const table of tables) await db.select().from(table).limit(1);
   }
   // SQL columns, foreign keys, checks and indexes match Drizzle metadata

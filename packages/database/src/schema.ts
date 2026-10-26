@@ -775,3 +775,55 @@ export const editorialArticles = pgTable(
     check('editorial_order_check', sql`${t.homeOrder} >= 0`)
   ]
 );
+
+// League campaigns are independent; legacy season-wide ballots remain preserved above.
+export const crystalBallLeagueCampaigns = pgTable(
+  'crystal_ball_league_campaigns',
+  {
+    divisionId: uuid('division_id').primaryKey(),
+    opensAt: timestamp('opens_at', { withTimezone: true }).notNull(),
+    closesAt: timestamp('closes_at', { withTimezone: true }).notNull(),
+    finalizedAt: timestamp('finalized_at', { withTimezone: true }),
+    results: jsonb('results').$type<Record<string, string[]>>().notNull().default({}),
+    resolvedBy: varchar('resolved_by', { length: 32 }),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
+  },
+  (t) => [
+    foreignKey({
+      name: 'crystal_ball_league_campaigns_division_id_seasons_divisions_id_',
+      columns: [t.divisionId],
+      foreignColumns: [seasonsDivisions.id]
+    }).onDelete('cascade'),
+    foreignKey({
+      name: 'crystal_ball_league_campaigns_resolved_by_discord_users_discord',
+      columns: [t.resolvedBy],
+      foreignColumns: [discordUsers.discordId]
+    }).onDelete('set null'),
+    check('crystal_league_window_check', sql`${t.opensAt} < ${t.closesAt}`),
+    check('crystal_league_results_check', sql`jsonb_typeof(${t.results}) = 'object'`)
+  ]
+);
+export const crystalBallLeagueEntries = pgTable(
+  'crystal_ball_league_entries',
+  {
+    divisionId: uuid('division_id').notNull(),
+    discordUserId: varchar('discord_user_id', { length: 32 }).notNull(),
+    answers: jsonb('answers').$type<Record<string, string[]>>().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
+  },
+  (t) => [
+    foreignKey({
+      name: 'crystal_ball_league_entries_division_id_crystal_ball_league_cam',
+      columns: [t.divisionId],
+      foreignColumns: [crystalBallLeagueCampaigns.divisionId]
+    }).onDelete('cascade'),
+    foreignKey({
+      name: 'crystal_ball_league_entries_discord_user_id_discord_users_disco',
+      columns: [t.discordUserId],
+      foreignColumns: [discordUsers.discordId]
+    }).onDelete('cascade'),
+    primaryKey({ columns: [t.divisionId, t.discordUserId] }),
+    index('crystal_league_entries_user_idx').on(t.discordUserId),
+    check('crystal_league_answers_check', sql`jsonb_typeof(${t.answers}) = 'object'`)
+  ]
+);
