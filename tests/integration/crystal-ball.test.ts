@@ -68,6 +68,39 @@ test('crystal ballots persist, close exactly on time, score corrections idempote
     avatarHash: 'abcdef1234567890abcdef1234567890'
   });
 
+  const playerIds = async () =>
+    (await repo.overview(season)).questions
+      .find((q) => q.kind === 'player')
+      ?.options.map((o) => o.id);
+  await db
+    .update(schema.players)
+    .set({ isMain: false })
+    .where(eq(schema.players.id, playerOption.id));
+  expect(await playerIds()).not.toContain(playerOption.id);
+  await db
+    .update(schema.players)
+    .set({ isMain: true })
+    .where(eq(schema.players.id, playerOption.id));
+  const memberships = await db
+    .select()
+    .from(schema.teamMemberships)
+    .where(eq(schema.teamMemberships.discordUserId, playerOption.discordId));
+  await db
+    .update(schema.teamMemberships)
+    .set({ role: 'coach', isCaptain: false })
+    .where(eq(schema.teamMemberships.discordUserId, playerOption.discordId));
+  expect(await playerIds()).not.toContain(playerOption.id);
+  await db
+    .update(schema.teamMemberships)
+    .set({ role: 'substitute' })
+    .where(eq(schema.teamMemberships.discordUserId, playerOption.discordId));
+  expect(await playerIds()).toContain(playerOption.id);
+  for (const membership of memberships)
+    await db
+      .update(schema.teamMemberships)
+      .set({ role: membership.role, isCaptain: membership.isCaptain })
+      .where(eq(schema.teamMemberships.discordUserId, playerOption.discordId));
+
   const answers: CrystalAnswers = Object.fromEntries(
     data.questions.map((q) => [
       q.id,

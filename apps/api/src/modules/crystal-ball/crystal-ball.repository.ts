@@ -73,28 +73,16 @@ export class CrystalBallRepository {
       .where(
         and(
           eq(teamMemberships.seasonName, season),
+          eq(players.isMain, true),
+          gte(teams.discordRoleId, 0n),
           eq(teams.seasonDivisionId, this.divisionId),
           inArray(teamMemberships.role, ['top', 'jungle', 'mid', 'adc', 'support', 'substitute'])
         )
       );
-    const historical = await this.db
-      .selectDistinct({
-        id: players.id,
-        name: players.gameName,
-        discordId: players.discordUserId,
-        avatarHash: discordUsers.avatarHash
-      })
-      .from(players)
-      .leftJoin(discordUsers, eq(discordUsers.discordId, players.discordUserId))
-      .innerJoin(playerGameInfo, eq(players.id, playerGameInfo.playerId))
-      .innerJoin(teams, eq(teams.id, playerGameInfo.teamId))
-      .where(and(eq(teams.seasonName, season), eq(teams.seasonDivisionId, this.divisionId)));
     return crystalQuestions(
       divisions,
       candidates.sort((a, b) => a.name.localeCompare(b.name)),
-      [...new Map([...members, ...historical].map((p) => [p.id, p])).values()].sort((a, b) =>
-        a.name.localeCompare(b.name)
-      )
+      members.sort((a, b) => a.name.localeCompare(b.name))
     );
   }
 
