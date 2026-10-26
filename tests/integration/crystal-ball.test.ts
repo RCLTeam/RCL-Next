@@ -25,8 +25,14 @@ test('crystal ballots persist, close exactly on time, score corrections idempote
   );
   const season = 'Temporada DEMO — datos ficticios';
   const userId = '900000000000000001';
-  const repo = new CrystalBallRepository(db);
   const divisions = await db.select().from(schema.seasonsDivisions);
+  const [match] = await db.select().from(schema.matches);
+  if (!match) throw new Error('Missing match fixture');
+  const divisionId = match.idSeasonDivision;
+  const otherId = divisions.find((d) => d.id !== divisionId)?.id;
+  if (!otherId) throw new Error('Missing second league fixture');
+  const repo = new CrystalBallRepository(db, divisionId);
+  const other = new CrystalBallRepository(db, otherId);
   let role = 100;
   for (const division of divisions)
     for (let i = 0; i < 4; i++)
@@ -62,12 +68,39 @@ test('crystal ballots persist, close exactly on time, score corrections idempote
   await repo.save(season, userId, answers);
   await repo.save(season, userId, answers);
   expect((await repo.mine(season, userId))['champion-picks']).toEqual(['ahri']);
-  expect(await repo.mine('Other season', userId)).toEqual({});
-  expect(await db.select().from(schema.crystalBallEntries)).toHaveLength(1);
+  await expect(repo.mine('Other season', userId)).rejects.toMatchObject({ status: 404 });
+  expect(await other.mine(season, userId)).toEqual({});
+  expect((await other.overview(season)).status).toBe('unconfigured');
+  await other.configure(season, new Date('2050-01-01T00:00:00Z'), new Date('2050-02-01T00:00:00Z'));
+  const otherData = await other.overview(season);
+  const otherAnswers: CrystalAnswers = Object.fromEntries(
+    otherData.questions.map((q) => [
+      q.id,
+      q.kind === 'integer'
+        ? ['1']
+        : q.kind === 'champion'
+          ? ['Lux']
+          : q.options
+              .slice(q.id.startsWith('loser:') ? 4 : 0, q.id.startsWith('loser:') ? 6 : q.count)
+              .map((o) => o.id)
+    ])
+  );
+  await other.save(season, userId, otherAnswers);
+  expect((await other.mine(season, userId))['champion-picks']).toEqual(['lux']);
+  expect((await repo.mine(season, userId))['champion-picks']).toEqual(['ahri']);
+  await expect(other.save(season, userId, answers)).rejects.toMatchObject({
+    code: 'INVALID_ANSWER'
+  });
+  expect(data.questions).toHaveLength(24);
+  expect(data.questions.filter((q) => q.divisionId).every((q) => q.divisionId === divisionId)).toBe(
+    true
+  );
+  expect(await db.select().from(schema.crystalBallLeagueEntries)).toHaveLength(2);
   await expect(repo.resolve(season, userId, {}, false)).rejects.toMatchObject({
     code: 'CRYSTAL_NOT_CLOSED'
   });
   vi.setSystemTime(new Date('2050-01-03T00:00:00Z'));
+  expect((await other.overview(season)).status).toBe('open');
   await expect(repo.save(season, userId, answers)).rejects.toMatchObject({
     code: 'CRYSTAL_CLOSED'
   });
@@ -79,7 +112,7 @@ test('crystal ballots persist, close exactly on time, score corrections idempote
   );
   await repo.resolve(season, userId, manual, false);
   const points = (await repo.overview(season)).ranking[0]?.points;
-  expect(points).toBe(20);
+  expect(points).toBe(13);
   await repo.resolve(season, userId, manual, false);
   expect((await repo.overview(season)).ranking[0]?.points).toBe(points);
   await expect(repo.resolve(season, userId, {}, true)).rejects.toMatchObject({
@@ -89,9 +122,9 @@ test('crystal ballots persist, close exactly on time, score corrections idempote
   expect((await repo.overview(season)).ranking).toEqual([]);
   // An unexpectedly early playoff also blocks a campaign whose configured deadline is later.
   await db
-    .update(schema.crystalBallCampaigns)
+    .update(schema.crystalBallLeagueCampaigns)
     .set({ closesAt: new Date('2050-02-01T00:00:00Z') })
-    .where(eq(schema.crystalBallCampaigns.seasonName, season));
+    .where(eq(schema.crystalBallLeagueCampaigns.divisionId, divisionId));
   await client.exec("UPDATE rounds SET stage = 'playoff', starts_at = '2050-01-02T00:00:00Z';");
   expect((await repo.overview(season)).status).toBe('closed');
   await expect(repo.save(season, userId, answers)).rejects.toMatchObject({
@@ -112,4 +145,6 @@ test('crystal ballots persist, close exactly on time, score corrections idempote
   expect(resolved.results['player-kills']?.length).toBeGreaterThan(0);
   await repo.resolve(season, userId, manual, true);
   expect((await repo.overview(season)).ranking).toEqual(resolved.ranking);
+  expect((await other.overview(season)).results).toEqual({});
+  expect((await other.overview(season)).ranking).toEqual([]);
 });

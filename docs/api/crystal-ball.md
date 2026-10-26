@@ -1,10 +1,10 @@
 # Bola de cristal
 
-Una campaña por temporada; un boleto por usuario de Discord. Cada división tiene cuatro clasificados para winner bracket y dos para loser bracket, sin duplicados. Cada equipo en su rama correcta da un punto; las otras 23 predicciones (con dos divisiones) dan un punto cada una. El orden dentro de una rama no importa. Las estadísticas abarcan todas las divisiones de la temporada y únicamente jornadas `stage = playoff`.
+Una campaña por liga y temporada; un boleto por usuario de Discord en cada liga. Cada división tiene cuatro clasificados para winner bracket y dos para loser bracket, sin duplicados. Cada equipo en su rama correcta da un punto; las otras 22 predicciones dan un punto cada una. El orden dentro de una rama no importa. Las estadísticas abarcan exclusivamente la liga seleccionada y únicamente jornadas `stage = playoff`.
 
 ## Operación
 
-En `/admin/crystal-ball`, un administrador configura apertura y cierre con fecha y hora. La página pública `/bola-cristal` contiene el boleto por categorías y el ranking. El servidor cierra también al llegar al primer inicio de jornada/serie de playoffs o al detectar una serie iniciada. No permite reabrir una campaña cerrada. Los participantes pueden reemplazar su boleto completo mientras esté abierto; no se publican boletos ajenos.
+En `/admin/crystal-ball`, un administrador selecciona temporada y liga y configura apertura y cierre con fecha y hora independientes. La página pública `/bola-cristal` contiene el boleto por categorías y el ranking. El servidor cierra también al llegar al primer inicio de jornada/serie de playoffs o al detectar una serie iniciada. No permite reabrir una campaña cerrada. Los participantes pueden reemplazar su boleto completo mientras esté abierto; no se publican boletos ajenos.
 
 Tras el cierre, el panel permite publicar o corregir resultados manuales, incluidos varios ganadores por empate. Los clasificados, campeones de división y finalista invicto son manuales: el calendario no codifica las ramas ni la final. Revelaciones, decepciones y mejor jugada también son manuales.
 
@@ -14,7 +14,7 @@ Se calculan MVP de mapa, máximos individuales de K/D/A en un mapa, diversidad d
 
 ## HTTP
 
-Prefijo `/api/v1/crystal-ball/:season` (nombre de temporada codificado en URL):
+Prefijo `/api/v1/crystal-ball/:season/:division` (nombre de temporada codificado en URL y UUID de seasons_divisions; se valida que pertenezcan a la misma temporada):
 
 - `GET /`: preguntas, opciones, ventana, resultados y ranking públicos; sin votos ajenos.
 - `GET /mine`: boleto del usuario autenticado.
@@ -29,3 +29,9 @@ Todas las respuestas usan `no-store`; las escrituras exigen origen confiable. La
 Aplicar `0004_crystal_ball.sql` con `pnpm db:migrate` antes de iniciar la API. Se conserva el historial incremental existente (0000–0003), aunque la guía antigua aún menciona consolidar la base. No se modifica ninguna campaña o fecha al desplegar.
 
 Pruebas: `crystal-ball-policy.test.ts`, `tests/integration/crystal-ball.test.ts` y `tests/integration/crystal-ball-router.test.ts`. Cubren reglas, empates, límites temporales, permisos, origen, persistencia en PGlite y correcciones idempotentes.
+
+## Separación por liga
+
+Aplicar también `0005_glamorous_surge.sql`. Las nuevas tablas `crystal_ball_league_campaigns` y `crystal_ball_league_entries` almacenan fechas, respuestas y resultados independientes. Cada boleto tiene 24 preguntas (28 puntos posibles: seis equipos y 22 predicciones). El ranking y el cierre automático solo usan la liga seleccionada.
+
+Las tablas anteriores por temporada se conservan como histórico: sus predicciones globales no se convierten automáticamente en pronósticos de una liga, porque cambiaría su significado. Las nuevas campañas empiezan sin configurar. Se mantiene la secuencia incremental ya aplicada localmente para conservar el historial y los datos.

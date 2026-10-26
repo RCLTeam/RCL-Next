@@ -1,9 +1,9 @@
 import type { CrystalAnswers, CrystalBallData } from '@rcl/contracts';
 import {
-  crystalBallCampaigns as campaigns,
+  crystalBallLeagueCampaigns as campaigns,
   discordUsers,
   divisions as divisionDefinitions,
-  crystalBallEntries as entries,
+  crystalBallLeagueEntries as entries,
   matchGames,
   matches,
   playerGameInfo,
@@ -24,7 +24,14 @@ import { crystalQuestions } from './crystal-ball-questions.js';
 import { automaticResults } from './crystal-ball-results.js';
 
 export class CrystalBallRepository {
-  constructor(private readonly db: PgDatabase<PgQueryResultHKT, typeof schema>) {}
+  constructor(
+    private readonly db: PgDatabase<PgQueryResultHKT, typeof schema>,
+    private readonly divisionId = ''
+  ) {}
+
+  forDivision(divisionId: string) {
+    return new CrystalBallRepository(this.db, divisionId);
+  }
 
   private async context(season: string) {
     const [exists] = await this.db.select().from(seasons).where(eq(seasons.name, season));
@@ -33,19 +40,28 @@ export class CrystalBallRepository {
       .select({ id: seasonsDivisions.id, name: seasonsDivisions.divisionName })
       .from(seasonsDivisions)
       .innerJoin(divisionDefinitions, eq(divisionDefinitions.name, seasonsDivisions.divisionName))
-      .where(eq(seasonsDivisions.seasonName, season))
+      .where(and(eq(seasonsDivisions.seasonName, season), eq(seasonsDivisions.id, this.divisionId)))
       .orderBy(divisionDefinitions.sortOrder, seasonsDivisions.divisionName);
+    if (!divisions.length) throw notFound('Division');
     const candidates = await this.db
       .select({ id: teams.id, name: teams.name, divisionId: teams.seasonDivisionId })
       .from(teams)
-      .where(and(eq(teams.seasonName, season), gte(teams.discordRoleId, 0n)));
+      .where(
+        and(
+          eq(teams.seasonName, season),
+          eq(teams.seasonDivisionId, this.divisionId),
+          gte(teams.discordRoleId, 0n)
+        )
+      );
     const members = await this.db
       .selectDistinct({ id: players.id, name: players.gameName })
       .from(players)
       .innerJoin(teamMemberships, eq(players.discordUserId, teamMemberships.discordUserId))
+      .innerJoin(teams, eq(teams.id, teamMemberships.teamId))
       .where(
         and(
           eq(teamMemberships.seasonName, season),
+          eq(teams.seasonDivisionId, this.divisionId),
           inArray(teamMemberships.role, ['top', 'jungle', 'mid', 'adc', 'support', 'substitute'])
         )
       );
@@ -54,7 +70,7 @@ export class CrystalBallRepository {
       .from(players)
       .innerJoin(playerGameInfo, eq(players.id, playerGameInfo.playerId))
       .innerJoin(teams, eq(teams.id, playerGameInfo.teamId))
-      .where(eq(teams.seasonName, season));
+      .where(and(eq(teams.seasonName, season), eq(teams.seasonDivisionId, this.divisionId)));
     return crystalQuestions(
       divisions,
       candidates.sort((a, b) => a.name.localeCompare(b.name)),
@@ -81,7 +97,13 @@ export class CrystalBallRepository {
         and(eq(rounds.id, matches.idRound), eq(rounds.idSeasonDivision, matches.idSeasonDivision))
       )
       .innerJoin(seasonsDivisions, eq(seasonsDivisions.id, matches.idSeasonDivision))
-      .where(and(eq(seasonsDivisions.seasonName, season), eq(rounds.stage, 'playoff')));
+      .where(
+        and(
+          eq(seasonsDivisions.seasonName, season),
+          eq(rounds.stage, 'playoff'),
+          eq(matches.idSeasonDivision, this.divisionId)
+        )
+      );
   }
 
   private async window(season: string, campaign: typeof campaigns.$inferSelect | undefined) {
@@ -109,7 +131,7 @@ export class CrystalBallRepository {
     const [campaign] = await this.db
       .select()
       .from(campaigns)
-      .where(eq(campaigns.seasonName, season));
+      .where(eq(campaigns.divisionId, this.divisionId));
     const window = await this.window(season, campaign);
     const results = campaign?.results ?? {};
     const ballots = Object.keys(results).length
@@ -122,10 +144,11 @@ export class CrystalBallRepository {
           })
           .from(entries)
           .innerJoin(discordUsers, eq(discordUsers.discordId, entries.discordUserId))
-          .where(eq(entries.seasonName, season))
+          .where(eq(entries.divisionId, this.divisionId))
       : [];
     return {
       season,
+      divisionId: this.divisionId,
       ...window,
       opensAt: campaign?.opensAt.toISOString() ?? null,
       questions,
@@ -144,20 +167,22 @@ export class CrystalBallRepository {
   }
 
   async mine(season: string, userId: string): Promise<CrystalAnswers> {
+    await this.context(season);
     const [entry] = await this.db
       .select()
       .from(entries)
-      .where(and(eq(entries.seasonName, season), eq(entries.discordUserId, userId)));
+      .where(and(eq(entries.divisionId, this.divisionId), eq(entries.discordUserId, userId)));
     return entry?.answers ?? {};
   }
 
   async save(season: string, userId: string, answers: CrystalAnswers) {
     await this.db.transaction(async (tx) => {
-      const repository = new CrystalBallRepository(tx);
+      const repository = new CrystalBallRepository(tx, this.divisionId);
+      await repository.context(season);
       const [campaign] = await tx
         .select()
         .from(campaigns)
-        .where(eq(campaigns.seasonName, season))
+        .where(eq(campaigns.divisionId, this.divisionId))
         .for('update');
       if ((await repository.window(season, campaign)).status !== 'open')
         throw new AppError(409, 'CRYSTAL_CLOSED', 'Voting is closed.');
@@ -175,9 +200,9 @@ export class CrystalBallRepository {
       );
       await tx
         .insert(entries)
-        .values({ seasonName: season, discordUserId: userId, answers: normalized })
+        .values({ divisionId: this.divisionId, discordUserId: userId, answers: normalized })
         .onConflictDoUpdate({
-          target: [entries.seasonName, entries.discordUserId],
+          target: [entries.divisionId, entries.discordUserId],
           set: { answers: normalized, updatedAt: new Date() }
         });
     });
@@ -185,14 +210,14 @@ export class CrystalBallRepository {
 
   async configure(season: string, opensAt: Date, closesAt: Date) {
     await this.db.transaction(async (tx) => {
-      const repo = new CrystalBallRepository(tx);
+      const repo = new CrystalBallRepository(tx, this.divisionId);
       await repo.context(season);
       // A season row serializes the first configuration too.
       await tx.select().from(seasons).where(eq(seasons.name, season)).for('update');
       const [existing] = await tx
         .select()
         .from(campaigns)
-        .where(eq(campaigns.seasonName, season))
+        .where(eq(campaigns.divisionId, this.divisionId))
         .for('update');
       if (existing && ['closed', 'resolved'].includes((await repo.window(season, existing)).status))
         throw new AppError(409, 'CRYSTAL_CLOSED', 'A closed campaign cannot be reopened.');
@@ -203,7 +228,7 @@ export class CrystalBallRepository {
           'Closing time must follow opening time and be in the future.'
         );
       const upcoming = {
-        seasonName: season,
+        divisionId: this.divisionId,
         opensAt,
         closesAt,
         finalizedAt: null,
@@ -218,19 +243,20 @@ export class CrystalBallRepository {
         .insert(campaigns)
         .values(upcoming)
         .onConflictDoUpdate({
-          target: campaigns.seasonName,
+          target: campaigns.divisionId,
           set: { opensAt, closesAt, updatedAt: new Date() }
         });
     });
   }
 
   async resolve(season: string, actor: string, manual: CrystalAnswers, finalize: boolean) {
+    await this.context(season);
     await this.db.transaction(async (tx) => {
-      const repo = new CrystalBallRepository(tx);
+      const repo = new CrystalBallRepository(tx, this.divisionId);
       const [campaign] = await tx
         .select()
         .from(campaigns)
-        .where(eq(campaigns.seasonName, season))
+        .where(eq(campaigns.divisionId, this.divisionId))
         .for('update');
       if (
         !campaign ||
@@ -317,7 +343,7 @@ export class CrystalBallRepository {
           finalizedAt: finalize ? new Date() : campaign.finalizedAt,
           updatedAt: new Date()
         })
-        .where(eq(campaigns.seasonName, season));
+        .where(eq(campaigns.divisionId, this.divisionId));
     });
   }
 }

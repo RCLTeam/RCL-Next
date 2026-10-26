@@ -14,33 +14,38 @@ export function crystalBallRouter(repository: CrystalBallRepository, auth?: Auth
     res.set('Cache-Control', 'no-store');
     next();
   });
-  router.get('/:season', async (req, res) => {
-    res.json({ data: await repository.overview(seasonName.parse(req.params.season)) });
+  router.get('/:season/:division', async (req, res) => {
+    res.json({
+      data: await repository
+        .forDivision(z.string().uuid().parse(req.params.division))
+        .overview(seasonName.parse(req.params.season))
+    });
   });
   if (auth) {
-    router.get('/:season/mine', requireAuth(auth), async (req, res) => {
+    router.get('/:season/:division/mine', requireAuth(auth), async (req, res) => {
       res.json({
-        data: await repository.mine(
-          seasonName.parse(req.params.season),
-          String(res.locals.user.discordId)
-        )
+        data: await repository
+          .forDivision(z.string().uuid().parse(req.params.division))
+          .mine(seasonName.parse(req.params.season), String(res.locals.user.discordId))
       });
     });
     router.put(
-      '/:season/mine',
+      '/:season/:division/mine',
       requireAuth(auth),
       requireTrustedOrigin(auth.frontendOrigin),
       async (req, res) => {
-        await repository.save(
-          seasonName.parse(req.params.season),
-          String(res.locals.user.discordId),
-          answers.parse(req.body)
-        );
+        await repository
+          .forDivision(z.string().uuid().parse(req.params.division))
+          .save(
+            seasonName.parse(req.params.season),
+            String(res.locals.user.discordId),
+            answers.parse(req.body)
+          );
         res.json({ data: null });
       }
     );
     router.put(
-      '/:season/window',
+      '/:season/:division/window',
       requireAuth(auth, 'admin'),
       requireTrustedOrigin(auth.frontendOrigin),
       async (req, res) => {
@@ -48,26 +53,30 @@ export function crystalBallRouter(repository: CrystalBallRepository, auth?: Auth
           .object({ opensAt: z.string().datetime(), closesAt: z.string().datetime() })
           .strict()
           .parse(req.body);
-        await repository.configure(
-          seasonName.parse(req.params.season),
-          new Date(body.opensAt),
-          new Date(body.closesAt)
-        );
+        await repository
+          .forDivision(z.string().uuid().parse(req.params.division))
+          .configure(
+            seasonName.parse(req.params.season),
+            new Date(body.opensAt),
+            new Date(body.closesAt)
+          );
         res.json({ data: null });
       }
     );
     router.put(
-      '/:season/results',
+      '/:season/:division/results',
       requireAuth(auth, 'admin'),
       requireTrustedOrigin(auth.frontendOrigin),
       async (req, res) => {
         const body = z.object({ answers, finalize: z.boolean() }).strict().parse(req.body);
-        await repository.resolve(
-          seasonName.parse(req.params.season),
-          String(res.locals.user.discordId),
-          body.answers,
-          body.finalize
-        );
+        await repository
+          .forDivision(z.string().uuid().parse(req.params.division))
+          .resolve(
+            seasonName.parse(req.params.season),
+            String(res.locals.user.discordId),
+            body.answers,
+            body.finalize
+          );
         res.json({ data: null });
       }
     );

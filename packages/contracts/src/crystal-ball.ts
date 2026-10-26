@@ -11,6 +11,7 @@ export interface CrystalQuestion {
 export type CrystalAnswers = Record<string, string[]>;
 export interface CrystalBallData {
   season: string;
+  divisionId: string;
   opensAt: string | null;
   closesAt: string | null;
   status: 'unconfigured' | 'upcoming' | 'open' | 'closed' | 'resolved';
