@@ -59,8 +59,14 @@ export class CrystalBallRepository {
         )
       );
     const members = await this.db
-      .selectDistinct({ id: players.id, name: players.gameName })
+      .selectDistinct({
+        id: players.id,
+        name: players.gameName,
+        discordId: players.discordUserId,
+        avatarHash: discordUsers.avatarHash
+      })
       .from(players)
+      .leftJoin(discordUsers, eq(discordUsers.discordId, players.discordUserId))
       .innerJoin(teamMemberships, eq(players.discordUserId, teamMemberships.discordUserId))
       .innerJoin(teams, eq(teams.id, teamMemberships.teamId))
       .where(
@@ -71,8 +77,14 @@ export class CrystalBallRepository {
         )
       );
     const historical = await this.db
-      .selectDistinct({ id: players.id, name: players.gameName })
+      .selectDistinct({
+        id: players.id,
+        name: players.gameName,
+        discordId: players.discordUserId,
+        avatarHash: discordUsers.avatarHash
+      })
       .from(players)
+      .leftJoin(discordUsers, eq(discordUsers.discordId, players.discordUserId))
       .innerJoin(playerGameInfo, eq(players.id, playerGameInfo.playerId))
       .innerJoin(teams, eq(teams.id, playerGameInfo.teamId))
       .where(and(eq(teams.seasonName, season), eq(teams.seasonDivisionId, this.divisionId)));

@@ -52,6 +52,22 @@ test('crystal ballots persist, close exactly on time, score corrections idempote
   vi.setSystemTime(new Date('2050-01-02T00:00:00Z'));
   const data = await repo.overview(season);
   expect(data.status).toBe('open');
+  const playerOption = data.questions.find((q) => q.kind === 'player')?.options[0];
+  if (!playerOption?.discordId) throw new Error('Missing player Discord fixture');
+  await db
+    .update(schema.discordUsers)
+    .set({ avatarHash: 'abcdef1234567890abcdef1234567890' })
+    .where(eq(schema.discordUsers.discordId, playerOption.discordId));
+  const refreshed = await repo.overview(season);
+  expect(
+    refreshed.questions
+      .find((q) => q.kind === 'player')
+      ?.options.find((o) => o.id === playerOption.id)
+  ).toMatchObject({
+    discordId: playerOption.discordId,
+    avatarHash: 'abcdef1234567890abcdef1234567890'
+  });
+
   const answers: CrystalAnswers = Object.fromEntries(
     data.questions.map((q) => [
       q.id,
