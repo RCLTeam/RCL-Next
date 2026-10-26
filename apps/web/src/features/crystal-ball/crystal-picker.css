@@ -4,7 +4,7 @@
 .rcl-site .crystal-pick-choice { display: grid; justify-items: center; gap: 6px; max-width: 100px; text-align: center; overflow-wrap: anywhere; }
 .rcl-site .crystal-pick-action { color: var(--lime); font: 10px var(--mono); text-transform: uppercase; }
 .rcl-site .crystal-pick-empty { display: grid; place-items: center; width: 56px; height: 56px; border: 1px dashed var(--purple); color: var(--purple); font-size: 28px; }
-.rcl-site .crystal-answer-icon { display: grid; place-items: center; width: 56px; height: 56px; flex-shrink: 0; background: var(--panel); color: var(--lime); font: 20px var(--mono); }
+.rcl-site .crystal-answer-icon { display: grid; place-items: center; width: 56px; height: 56px; flex-shrink: 0; background: transparent; color: var(--lime); font: 20px var(--mono); }
 .rcl-site .crystal-answer-icon img { width: 100%; height: 100%; object-fit: contain; }
 .rcl-site .crystal-answer-icon.is-champion img { object-fit: cover; }
 .rcl-site .crystal-picker > p { color: var(--muted); font: 12px/1.6 var(--body-f); }
@@ -25,3 +25,9 @@
 .rcl-site .crystal-picker :focus-visible { outline: 2px solid var(--lime); outline-offset: 2px; }
 @media (min-width: 500px) { .rcl-site .crystal-picker-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 @media (min-width: 800px) { .rcl-site .crystal-picker-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
+
+.rcl-site .crystal-picker-title { display: block; font: 700 clamp(30px, 4vw, 44px)/1.05 var(--display2); }
+.rcl-site .crystal-answer-icon.is-player img { border-radius: 50%; object-fit: cover; }
+.rcl-site .crystal-answer-icon.is-player svg { width: 40px; height: 40px; color: var(--muted); }
+
+.rcl-site .crystal-answer-icon .team-badge { width: 56px; height: 56px; }

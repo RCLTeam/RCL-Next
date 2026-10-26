@@ -140,7 +140,7 @@ function Ballot({
     ],
     [
       'classification',
-      'Clasificación',
+      'Equipos',
       '¿Quién se lleva la corona?',
       'Campeones, revelaciones y sorpresas. Tus apuestas por los equipos que marcarán estos playoffs.'
     ],

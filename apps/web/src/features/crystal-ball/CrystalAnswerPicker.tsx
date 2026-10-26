@@ -1,7 +1,8 @@
 import type { CrystalQuestion } from '@rcl/contracts';
 import React, { useState } from 'react';
 import { Modal } from '../../shared/components/Modal/Modal.js';
-import { resolveTeamLogo } from '../../shared/resources/team-logos.js';
+import { discordAvatarUrl } from '../../shared/discord-avatar-url.js';
+import { TeamBadge } from '../competition/components/TeamBadge.js';
 import './crystal-picker.css';
 
 type Option = CrystalQuestion['options'][number];
@@ -10,11 +11,27 @@ const normalize = (value: string) =>
 
 function AnswerIcon({ option, kind }: { option: Option; kind: CrystalQuestion['kind'] }) {
   const [failed, setFailed] = useState(false);
-  const image = kind === 'team' ? resolveTeamLogo(option.imageUrl) : option.imageUrl;
+  const image =
+    kind === 'player' && option.discordId && option.avatarHash
+      ? discordAvatarUrl(option.discordId, option.avatarHash)
+      : option.imageUrl;
   return (
     <span className={`crystal-answer-icon is-${kind}`} aria-hidden="true">
-      {image && !failed ? (
+      {kind === 'team' ? (
+        <TeamBadge
+          team={{
+            name: option.name,
+            shortName: option.name.slice(0, 3),
+            logoUrl: option.imageUrl ?? null
+          }}
+        />
+      ) : image && !failed ? (
         <img src={image} alt="" loading="lazy" onError={() => setFailed(true)} />
+      ) : kind === 'player' ? (
+        <svg viewBox="0 0 48 48" fill="currentColor" aria-hidden="true">
+          <circle cx="24" cy="15" r="9" />
+          <path d="M7 44v-5a17 17 0 0 1 34 0v5Z" />
+        </svg>
       ) : (
         <span>{kind === 'duration' ? '◷' : option.name.slice(0, 2).toUpperCase()}</span>
       )}
@@ -83,7 +100,11 @@ export function CrystalAnswerPicker({
         <span className="crystal-pick-action">{disabled ? 'Ver opciones' : 'Elegir'} ↗</span>
       </button>
       {open && (
-        <Modal title={question.label} onClose={() => setOpen(false)} maxWidth="880px">
+        <Modal
+          title={<span className="crystal-picker-title">{question.label}</span>}
+          onClose={() => setOpen(false)}
+          maxWidth="880px"
+        >
           <div className="crystal-picker">
             <p>
               {disabled
