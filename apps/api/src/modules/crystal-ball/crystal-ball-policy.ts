@@ -44,15 +44,9 @@ export function crystalPoints(answers: CrystalAnswers, results: CrystalAnswers) 
   );
 }
 
-export const durationOptions = [
-  '0–19 min',
-  '20–24 min',
-  '25–29 min',
-  '30–34 min',
-  '35–39 min',
-  '40–44 min',
-  '45+ min'
-].map((name, index) => ({ id: String(index), name }));
+export const durationOptions = ['0–19', '20–24', '25–29', '30–34', '35–39', '40–44', '45+'].map(
+  (name, index) => ({ id: String(index), name })
+);
 export function durationBucket(seconds: number) {
   return String(Math.max(0, Math.min(6, Math.floor(seconds / 300) - 3)));
 }
