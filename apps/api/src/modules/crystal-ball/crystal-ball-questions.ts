@@ -53,7 +53,7 @@ export function crystalQuestions(
     );
     add(
       `champion:${division.id}`,
-      `Campeón de ${division.name}`,
+      `Campeon de ${division.name}`,
       'classification',
       'team',
       'manual',
@@ -63,30 +63,30 @@ export function crystalQuestions(
     );
   }
   for (const [id, label] of [
-    ['undefeated', 'Equipo que llegará a la final sin perder ninguna serie'],
-    ['surprise-team', 'Equipo revelación de playoffs'],
-    ['disappointing-team', 'Equipo decepción de playoffs']
+    ['undefeated', 'Equipo que llegara a la final sin perder ninguna serie'],
+    ['surprise-team', 'Equipo revelacion de playoffs'],
+    ['disappointing-team', 'Equipo decepcion de playoffs']
   ] as const)
     add(id, label, 'classification', 'team', 'manual', teams);
   for (const [id, label, mode] of [
-    ['player-mvp', 'Jugador con más MVP de mapa', 'automatic'],
-    ['player-kills', 'Jugador con más asesinatos en una sola partida', 'automatic'],
-    ['player-assists', 'Jugador con más asistencias en una sola partida', 'automatic'],
-    ['player-deaths', 'Jugador con más muertes en una sola partida', 'automatic'],
-    ['player-champions', 'Jugador con más campeones distintos utilizados', 'automatic'],
-    ['best-play', 'Jugador que protagonizará la mejor jugada', 'manual'],
-    ['surprise-player', 'Jugador revelación de playoffs', 'manual'],
-    ['disappointing-player', 'Jugador decepción de playoffs', 'manual']
+    ['player-mvp', 'Jugador con mas MVP de mapa', 'automatic'],
+    ['player-kills', 'Jugador con mas asesinatos en una sola partida', 'automatic'],
+    ['player-assists', 'Jugador con mas asistencias en una sola partida', 'automatic'],
+    ['player-deaths', 'Jugador con mas muertes en una sola partida', 'automatic'],
+    ['player-champions', 'Jugador con mas campeones distintos utilizados', 'automatic'],
+    ['best-play', 'Jugador que protagonizara la mejor jugada', 'manual'],
+    ['surprise-player', 'Jugador revelacion de playoffs', 'manual'],
+    ['disappointing-player', 'Jugador decepcion de playoffs', 'manual']
   ] as const)
     add(id, label, 'players', 'player', mode, players);
   for (const [id, label] of [
-    ['champion-picks', 'Campeón más elegido'],
-    ['champion-best-winrate', 'Campeón con mejor winrate (mínimo 3 partidas)'],
-    ['champion-worst-winrate', 'Campeón con peor winrate (mínimo 3 partidas)'],
-    ['champion-kills', 'Campeón con más asesinatos por partida'],
-    ['champion-assists', 'Campeón con más asistencias por partida'],
-    ['champion-deaths', 'Campeón con más muertes por partida'],
-    ['champion-positions', 'Campeón en más posiciones diferentes']
+    ['champion-picks', 'Campeon mas elegido'],
+    ['champion-best-winrate', 'Campeon con mejor winrate (minimo 3 partidas)'],
+    ['champion-worst-winrate', 'Campeon con peor winrate (minimo 3 partidas)'],
+    ['champion-kills', 'Campeon con mas asesinatos por partida'],
+    ['champion-assists', 'Campeon con mas asistencias por partida'],
+    ['champion-deaths', 'Campeon con mas muertes por partida'],
+    ['champion-positions', 'Campeon en mas posiciones diferentes']
   ] as const)
     add(id, label, 'meta', 'champion', 'automatic');
   add(
@@ -97,7 +97,7 @@ export function crystalQuestions(
     'automatic',
     goldOptions
   );
-  add('shortest-game', 'Partida más corta', 'meta', 'duration', 'automatic', durationOptions);
+  add('shortest-game', 'Partida mas corta', 'meta', 'duration', 'automatic', durationOptions);
   add('pentakills', 'Cantidad de pentakills', 'meta', 'choice', 'automatic', pentakillOptions);
   return questions;
 }

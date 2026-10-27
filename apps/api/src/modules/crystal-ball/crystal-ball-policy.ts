@@ -62,12 +62,12 @@ export const goldOptions = [
   { id: 'gold-1', name: '5.000–9.999' },
   { id: 'gold-2', name: '10.000–14.999' },
   { id: 'gold-3', name: '15.000–19.999' },
-  { id: 'gold-4', name: '20.000 o más' }
+  { id: 'gold-4', name: '20.000 o mas' }
 ];
 export function goldBucket(gold: number) {
   return `gold-${Math.min(4, Math.floor(gold / 5000))}`;
 }
-export const pentakillOptions = ['0', '1', '2', '3', '4', '5 o más'].map((name, index) => ({
+export const pentakillOptions = ['0', '1', '2', '3', '4', '5 o mas'].map((name, index) => ({
   id: index === 5 ? '5+' : String(index),
   name
 }));
