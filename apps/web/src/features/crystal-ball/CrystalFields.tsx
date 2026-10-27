@@ -1,6 +1,7 @@
 import type { CrystalAnswers, CrystalQuestion } from '@rcl/contracts';
 import React from 'react';
 import { CrystalAnswerPicker } from './CrystalAnswerPicker.js';
+import { crystalAnswerLabel } from './crystal-answer-label.js';
 
 export function CrystalFields({
   questions,
@@ -67,8 +68,7 @@ export function CrystalFields({
             )}
             {result && (
               <p className="crystal-result">
-                Resultado:{' '}
-                {result.map((id) => q.options.find((o) => o.id === id)?.name ?? id).join(', ')}
+                Resultado: {result.map((id) => crystalAnswerLabel(q, id)).join(', ')}
                 {values.length > 0 && (
                   <strong> · {values.filter((id) => result.includes(id)).length} acierto(s)</strong>
                 )}

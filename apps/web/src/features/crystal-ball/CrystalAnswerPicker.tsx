@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Modal } from '../../shared/components/Modal/Modal.js';
 import { discordAvatarUrl } from '../../shared/discord-avatar-url.js';
 import { TeamBadge } from '../competition/components/TeamBadge.js';
+import { crystalAnswerLabel } from './crystal-answer-label.js';
 import './crystal-picker.css';
 
 type Option = CrystalQuestion['options'][number];
@@ -91,11 +92,7 @@ export function CrystalAnswerPicker({
                 {question.kind !== 'choice' && (
                   <AnswerIcon option={optionFor(id)} kind={question.kind} />
                 )}
-                <span className="crystal-pick-name">
-                  {question.kind === 'team'
-                    ? optionFor(id).shortName || optionFor(id).name
-                    : optionFor(id).name}
-                </span>
+                <span className="crystal-pick-name">{crystalAnswerLabel(question, id)}</span>
               </span>
             ))
           ) : (
