@@ -1,5 +1,6 @@
 import type { CrystalAnswers, CrystalBallData } from '@rcl/contracts';
 import React, { useState } from 'react';
+import { CommunityRankingPanel } from '../../shared/components/CommunityRanking/CommunityRankingPanel.js';
 import { useGameCatalog } from '../../shared/riot/useGameCatalog.js';
 import { discordLoginUrl } from '../auth/api/auth-api.js';
 import { CrystalFields } from './CrystalFields.js';
@@ -56,34 +57,23 @@ export function CrystalSeason({
         authenticated={Boolean(userId)}
         save={model.save}
       />
-      <section className="crystal-ranking">
-        <div className="crystal-ranking-heading">
-          <span className="eyebrow">La comunidad decide</span>
-          <h2>Ranking de videntes</h2>
-        </div>
-        {data.ranking.length ? (
-          <ol>
-            {data.ranking.map((row) => (
-              <li key={row.userId}>
-                <span>
-                  {row.name}
-                  {row.userId === userId ? ' (tu)' : ''}
-                </span>
-                <strong>{row.points} puntos</strong>
-              </li>
-            ))}
-          </ol>
-        ) : (
-          <p className="crystal-ranking-empty">
-            La corona espera a su vidente.
-            <br />
-            <span>El ranking se abrira con los primeros resultados.</span>
-          </p>
-        )}
-        <p>
-          {Object.keys(data.results).length} de {data.questions.length} predicciones resueltas.
-        </p>
-      </section>
+      <CommunityRankingPanel
+        title="Ranking de videntes"
+        headingId="seer-ranking"
+        participant="Vidente"
+        ownLabel="tu"
+        userId={userId}
+        ranking={data.ranking.map((row) => ({
+          ...row,
+          avatarHash: row.avatarHash ?? null,
+          position: data.ranking.findIndex((other) => other.points === row.points) + 1,
+          correct: row.points,
+          total: data.questions.reduce(
+            (total, question) => total + (data.results[question.id] ? question.count : 0),
+            0
+          )
+        }))}
+      />
       <CrystalRules campaign={data} />
     </>
   );

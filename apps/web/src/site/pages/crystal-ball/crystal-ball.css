@@ -26,14 +26,3 @@
 @media (min-width: 751px) {
   .rcl-site .crystal-categories { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 }
-.rcl-site .crystal-ranking { display: grid; gap: 24px; padding-block: 32px; border-top: 1px solid var(--line); margin-top: 24px; }
-.rcl-site .crystal-ranking h2 { font: 700 38px/1 var(--display2); text-transform: uppercase; margin: 12px 0; }
-.rcl-site .crystal-ranking ol { margin: 0; padding-left: 24px; }
-.rcl-site .crystal-ranking li { padding: 12px; border-bottom: 1px solid var(--line); font: 12px var(--body-f); }
-.rcl-site .crystal-ranking li strong { margin-left: 16px; color: var(--lime); font: 11px var(--mono); }
-.rcl-site .crystal-ranking-empty { color: var(--text); font: 700 24px/1.5 var(--display2); margin: 0; }
-.rcl-site .crystal-ranking-empty span,
-.rcl-site .crystal-ranking > p:last-child { color: var(--muted); font: 11px/1.7 var(--mono); }
-@media (min-width: 951px) {
-  .rcl-site .crystal-ranking { grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); }
-}
