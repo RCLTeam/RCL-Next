@@ -267,7 +267,6 @@
   flex: 1;
   min-width: 0;
   color: inherit;
-  text-decoration: none;
 }
 
 .rcl-site .player-profile-membership .team-badge {
@@ -291,7 +290,7 @@
   font: 11px/1.6 var(--mono);
 }
 
-.rcl-site .player-profile-membership:hover {
+.rcl-site a.player-profile-membership:hover {
   border-color: var(--profile-color);
 }
 

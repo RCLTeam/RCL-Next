@@ -221,7 +221,7 @@ Orquesta la vista del perfil institucional y deportivo de un club, integrando la
 ---
 
 ### 3.9 `PlayerDetailPage` (Ficha de Detalle de Jugador)
-**Archivo**: `site/pages/player-details/PlayerDetailPage.tsx:1-252`
+**Archivo**: `site/pages/player-details/PlayerDetailPage.tsx:1-292`
 
 Orquesta la ficha de perfil de un competidor, centralizando su identidad en Riot Games, sus estadísticas acumuladas en el torneo, la vinculación de cuentas secundarias (*smurfs* / secundarias) y su historial cronológico de inscripciones.
 
@@ -242,8 +242,7 @@ Orquesta la ficha de perfil de un competidor, centralizando su identidad en Riot
   - Itera sobre el listado `player.linkedAccounts` (cuentas adicionales asociadas a la misma identidad deportiva):
     - Presenta la tarjeta de membresía vinculada (`player-profile-membership player-linked-account`).
     - Etiqueta de relación clara: `{account.isMain ? 'Cuenta principal' : 'Cuenta secundaria'}`.
-    - Enlace interno mediante `SiteLink` hacia la ficha de la cuenta:
-      `/jugadores/${encodeURIComponent(account.slug ?? account.id)}`
+    - Información de la cuenta en un contenedor no interactivo, sin navegación a otra ficha de jugador.
     - Nombre del invocador y Riot ID formateado (`${account.gameName}#${accountTag}`).
     - Enlace individual a la herramienta externa OP.GG (`https://op.gg/es/lol/summoners/euw/...`) con apertura en nueva pestaña (`target="_blank"`, `rel="noopener noreferrer"`) y accesibilidad (`aria-label={`Ver OP.GG de ${account.gameName} (nueva pestaña)`}`).
   - **Estado Vacío Semántico**: Cuando el arreglo `linkedAccounts` no contiene elementos o es indefinido, renderiza un mensaje informativo limpio:
@@ -252,7 +251,7 @@ Orquesta la ficha de perfil de un competidor, centralizando su identidad en Riot
     ```
 
 - **Sección de Rendimiento Deportivo (`player-performance`)**:
-  - Definición de métricas: `PlayerDetailPage.tsx:26-43`; representación y estado vacío: `PlayerDetailPage.tsx:159-188`. La cuadrícula aparece si hay partidas o MVPs; los premios se muestran incluso sin estadísticas.
+  - Definición de métricas: `PlayerDetailPage.tsx:81-94`; representación y estado vacío: `PlayerDetailPage.tsx:215-254`. La cuadrícula aparece si hay partidas o MVPs; los premios se muestran incluso sin estadísticas.
   - Cuadrícula con 8 métricas de rendimiento (`player-performance-grid`): Partidas, KDA, % Victorias, MVPs conseguidos (`player.competition?.mvpMatchIds.length`), CS/minuto, Participación en kills %, Daño/minuto y Puntuación de visión. Formateo en español (`'es'`) con un máximo de 2 dígitos fraccionarios.
   - Campeón insignia (`player-signature-champion`): Muestra el campeón más jugado por el usuario en la competición (`player.competition?.champion`).
   - Estado vacío de rendimiento (`player-performance-empty`): «Sin partidas registradas». El contexto procede de `statisticsSeasonName`; sin temporada ni resultados se indica «No hay partidas ni premios registrados para este jugador». Los MVPs persistidos se conservan aunque falten estadísticas.
