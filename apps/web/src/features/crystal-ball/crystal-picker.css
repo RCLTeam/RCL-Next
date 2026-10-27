@@ -8,7 +8,7 @@
 .rcl-site .crystal-pick-trigger[data-kind='choice'] .crystal-pick-name { font-size: clamp(26px, 3vw, 36px); white-space: normal; overflow-wrap: anywhere; }
 .rcl-site .crystal-pick-trigger[data-multiple='true'] .crystal-pick-preview { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); flex-basis: 100%; }
 .rcl-site .crystal-pick-trigger[data-multiple='true'] .crystal-pick-choice { flex-direction: column; gap: 8px; text-align: center; }
-.rcl-site .crystal-pick-trigger[data-multiple='true'] .crystal-pick-name { max-width: 100%; font: 700 12px/1.4 var(--mono); }
+.rcl-site .crystal-pick-trigger[data-multiple='true'] .crystal-pick-name { max-width: 100%; }
 .rcl-site .crystal-pick-action { margin-left: auto; flex-shrink: 0; color: var(--muted); font: 10px var(--mono); text-transform: uppercase; }
 .rcl-site .crystal-pick-trigger:hover .crystal-pick-action { color: var(--lime); }
 @media (min-width: 651px) {
