@@ -59,7 +59,7 @@ export function CrystalAdmin({
   }
   return (
     <section className="crystal-admin" aria-label="Gestionar bola de cristal">
-      <nav className="crystal-divisions" aria-label="Gestión de campaña">
+      <nav className="crystal-divisions" aria-label="Gestion de campaña">
         <button type="button" aria-pressed={tab === 'window'} onClick={() => setTab('window')}>
           Apertura y cierre
         </button>
@@ -80,7 +80,7 @@ export function CrystalAdmin({
           <h2>Apertura y cierre</h2>
           <p>
             Fechas en tu zona horaria ({Intl.DateTimeFormat().resolvedOptions().timeZone}). El
-            cierre no puede superar el inicio de playoffs. Una votación cerrada no se puede reabrir.
+            cierre no puede superar el inicio de playoffs. Una votacion cerrada no se puede reabrir.
           </p>
           <div className="crystal-window">
             <label>
@@ -120,8 +120,8 @@ export function CrystalAdmin({
       <div hidden={tab !== 'results'}>
         <h2>Resolver predicciones</h2>
         <p>
-          Publica los clasificados y los premios manuales después del cierre. Deja sin seleccionar
-          las preguntas pendientes. Para corregir un resultado, modifica la selección y vuelve a
+          Publica los clasificados y los premios manuales despues del cierre. Deja sin seleccionar
+          las preguntas pendientes. Para corregir un resultado, modifica la seleccion y vuelve a
           publicar.
         </p>
         <CrystalFields
@@ -148,11 +148,11 @@ export function CrystalAdmin({
             disabled={busy || !closed}
             onClick={() => void perform(() => resolve(answers, true), 'results')}
           >
-            Calcular resultados automáticos
+            Calcular resultados automaticos
           </button>
         </div>
         <p>
-          Calcula las estadísticas cuando todas las series hayan terminado y todos los mapas estén
+          Calcula las estadisticas cuando todas las series hayan terminado y todos los mapas esten
           importados. Los empates aceptan cualquiera de los ganadores. Las preguntas sin datos
           suficientes quedan pendientes.
         </p>

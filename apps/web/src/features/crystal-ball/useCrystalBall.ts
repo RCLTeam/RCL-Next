@@ -18,19 +18,19 @@ async function request<T>(
   if (!response.ok) {
     const body = await response.json().catch(() => null);
     const errors: Record<string, string> = {
-      CRYSTAL_CLOSED: 'La votación está cerrada. No se puede guardar ni reabrir.',
+      CRYSTAL_CLOSED: 'La votacion esta cerrada. No se puede guardar ni reabrir.',
       CRYSTAL_NOT_CLOSED: 'Espera al cierre para publicar resultados.',
       INVALID_WINDOW:
         'Revisa las fechas: el cierre debe ser futuro y anterior o igual al inicio de playoffs.',
       INCOMPLETE_BALLOT: 'Completa todas las predicciones antes de guardar.',
-      INVALID_ANSWER: 'Revisa las selecciones y el número de equipos.',
+      INVALID_ANSWER: 'Revisa las selecciones y el numero de equipos.',
       DUPLICATE_TEAM: 'Un equipo no puede estar en ambas ramas.',
       PLAYOFFS_UNFINISHED: 'Todas las series de playoffs deben haber terminado.',
       MISSING_MAPS: 'Faltan mapas de playoffs por importar.'
     };
     throw new Error(
       errors[String(body?.error?.code)] ??
-        'No se ha podido completar la operación. Inténtalo de nuevo.'
+        'No se ha podido completar la operacion. Intentalo de nuevo.'
     );
   }
   return (await response.json()).data as T;

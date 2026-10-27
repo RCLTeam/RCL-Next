@@ -111,12 +111,12 @@ export function CrystalAnswerPicker({
           <div className="crystal-picker">
             <p>
               {disabled
-                ? 'Consulta las opciones. La edición está bloqueada.'
+                ? 'Consulta las opciones. La edicion esta bloqueada.'
                 : multiple
                   ? question.count > 1
-                    ? `Elige ${question.count} equipos. Los de la otra rama no están disponibles.`
+                    ? `Elige ${question.count} equipos. Los de la otra rama no estan disponibles.`
                     : 'Selecciona los ganadores. Puedes marcar varios en caso de empate.'
-                  : 'Selecciona una respuesta y confirma tu elección.'}
+                  : 'Selecciona una respuesta y confirma tu eleccion.'}
             </p>
             <label className="crystal-picker-search">
               Buscar
@@ -166,7 +166,7 @@ export function CrystalAnswerPicker({
                 );
               })}
             </fieldset>
-            {!options.length && <output>No hay opciones que coincidan con la búsqueda.</output>}
+            {!options.length && <output>No hay opciones que coincidan con la busqueda.</output>}
             <div className="crystal-picker-footer">
               <output>
                 {draft.length} {Number.isFinite(limit) ? `/ ${limit}` : ''} seleccionados
@@ -185,7 +185,7 @@ export function CrystalAnswerPicker({
                   setOpen(false);
                 }}
               >
-                {disabled ? 'Cerrar' : 'Confirmar selección'}
+                {disabled ? 'Cerrar' : 'Confirmar seleccion'}
               </button>
             </div>
           </div>

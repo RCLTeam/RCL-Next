@@ -13,7 +13,7 @@ export function CrystalCard({
       <p>{description}</p>
       <div className="crystal-pending">
         <span aria-hidden="true">◇</span>
-        <span>Pronósticos por abrir</span>
+        <span>Pronosticos por abrir</span>
       </div>
     </article>
   );

@@ -42,12 +42,12 @@ export function CrystalSeason({
       {model.error && <p role="alert">{model.error}</p>}
       {!userId && (
         <p className="crystal-login">
-          <a href={discordLoginUrl}>Inicia sesión con Discord</a> para guardar tus predicciones.
+          <a href={discordLoginUrl}>Inicia sesion con Discord</a> para guardar tus predicciones.
         </p>
       )}
       {!champions.length && (
         <output>
-          El catálogo de campeones no está disponible. Recarga la página para volver a intentarlo.
+          El catalogo de campeones no esta disponible. Recarga la pagina para volver a intentarlo.
         </output>
       )}
       <Ballot
@@ -67,7 +67,7 @@ export function CrystalSeason({
               <li key={row.userId}>
                 <span>
                   {row.name}
-                  {row.userId === userId ? ' (tú)' : ''}
+                  {row.userId === userId ? ' (tu)' : ''}
                 </span>
                 <strong>{row.points} puntos</strong>
               </li>
@@ -77,7 +77,7 @@ export function CrystalSeason({
           <p className="crystal-ranking-empty">
             La corona espera a su vidente.
             <br />
-            <span>El ranking se abrirá con los primeros resultados.</span>
+            <span>El ranking se abrira con los primeros resultados.</span>
           </p>
         )}
         <p>
@@ -142,7 +142,7 @@ function Ballot({
         max={data.questions.length}
         aria-label="Predicciones completadas"
       />
-      <nav className="crystal-categories" aria-label="Categorías de predicciones">
+      <nav className="crystal-categories" aria-label="Categorias de predicciones">
         {categories.map(([id, label], index) => (
           <button
             type="button"

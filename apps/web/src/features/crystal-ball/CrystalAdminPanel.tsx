@@ -15,7 +15,7 @@ export function CrystalAdminPanel() {
         <span className="eyebrow">Predicciones de playoffs</span>
         <h2>Bola de cristal</h2>
         <p>
-          Configura la participación, publica los resultados y calcula los puntos de cada liga y
+          Configura la participacion, publica los resultados y calcula los puntos de cada liga y
           temporada.
         </p>
       </header>

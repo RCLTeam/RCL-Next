@@ -1,13 +1,6 @@
 import type { CrystalBallData } from '@rcl/contracts';
 import React from 'react';
 
-const statuses = {
-  unconfigured: 'Próximamente',
-  upcoming: 'Apertura programada',
-  open: 'Predicciones abiertas',
-  closed: 'Predicciones cerradas',
-  resolved: 'Resultados publicados'
-};
 const formatDate = (value: string) =>
   new Date(value).toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'short' });
 export function CrystalRules({ campaign }: { campaign?: CrystalBallData }) {
@@ -22,12 +15,11 @@ export function CrystalRules({ campaign }: { campaign?: CrystalBallData }) {
         <article className="format-card">
           <span>02</span>
           <h3>Cada acierto cuenta</h3>
-          <p>1 punto por acierto; los empates son válidos.</p>
+          <p>1 punto por acierto; los empates son validos.</p>
         </article>
-        <article className="format-card" data-status={campaign?.status}>
+        <article className="format-card">
           <span>03</span>
-          <h3>{campaign ? statuses[campaign.status] : 'Antes de los playoffs'}</h3>
-          <p>Guarda y edita hasta el cierre.</p>
+          <h3>Horarios</h3>
           {campaign && (campaign.opensAt || campaign.closesAt) ? (
             <div className="crystal-rules-dates">
               {campaign.opensAt && (
