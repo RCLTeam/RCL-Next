@@ -39,7 +39,7 @@ describe('administration access', () => {
       false,
       '/admin/crystal-ball'
     );
-    expect(html).toContain('Configura la participación');
+    expect(html).toContain('Configura la participacion');
     expect(html).toContain('href="/admin/crystal-ball"');
     expect(html).toContain('Cargando temporadas');
   });
@@ -49,7 +49,7 @@ describe('administration access', () => {
         ? { status: 'anonymous' }
         : { status: 'authenticated', user: { ...admin, role } };
     const html = renderSession(state, false, '/admin/crystal-ball');
-    expect(html).not.toContain('Configura la participación');
+    expect(html).not.toContain('Configura la participacion');
     expect(html).toContain(role === 'anonymous' ? 'Inicia sesión' : 'No tienes permisos');
   });
   it('mounts logo management for administrators', () => {
