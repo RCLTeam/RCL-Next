@@ -204,13 +204,15 @@
   gap: 12px;
   padding: 20px;
   text-align: center;
+  border-top: 1px solid var(--line);
 }
 .rcl-site .player-profile-initials { align-self: center; text-align: center; font: 900 80px/1 var(--display); color: var(--muted); opacity: 0.3; }
 
 @media (min-width: 701px) {
   .rcl-site .player-profile-header-body { grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr); }
   .rcl-site .player-profile-details { border-top: 0; border-left: 1px solid var(--line); }
-  .rcl-site .player-profile-team { grid-column: 1 / -1; }
+  .rcl-site .player-profile-team,
+  .rcl-site .player-profile-unregistered { grid-column: 1 / -1; }
 }
 
 @media (min-width: 1101px) {
@@ -220,6 +222,7 @@
   .rcl-site .player-profile-champion { min-height: 190px; }
   .rcl-site .player-profile-identity { padding: 20px; }
   .rcl-site .player-profile-details { margin-block: 18px; }
+  .rcl-site .player-profile-unregistered { grid-column: auto; border-top: 0; }
   .rcl-site .player-profile-team { grid-column: auto; border-top: 0; background: none; isolation: isolate; }
   .rcl-site .player-profile-team::before {
     content: ''; position: absolute; left: 0; right: -50%; top: 0; bottom: 0;
