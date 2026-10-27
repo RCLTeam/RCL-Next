@@ -1,4 +1,5 @@
 .rcl-site .crystal-pick-trigger { box-sizing: border-box; width: 100%; min-height: 96px; padding: 16px; display: flex; align-items: center; flex-wrap: wrap; gap: 16px; border: 1px solid var(--line); background: var(--void); color: var(--text); cursor: pointer; text-align: left; }
+.rcl-site .crystal-bracket .crystal-pick-trigger { min-height: 80px; padding: 10px 12px; gap: 10px; }
 .rcl-site .crystal-pick-trigger:hover { border-color: var(--purple); }
 .rcl-site .crystal-pick-trigger[data-selected='true'] { background: transparent; border-left: 3px solid var(--purple); }
 .rcl-site .crystal-pick-preview { display: flex; min-width: 0; width: 100%; flex: 1 1 160px; flex-wrap: wrap; align-items: center; gap: 16px; font: 12px var(--body-f); }
@@ -11,6 +12,10 @@
 .rcl-site .crystal-pick-action { margin-left: auto; flex-shrink: 0; color: var(--muted); font: 10px var(--mono); text-transform: uppercase; }
 .rcl-site .crystal-pick-trigger:hover .crystal-pick-action { color: var(--lime); }
 @media (min-width: 651px) {
+  .rcl-site .crystal-bracket .crystal-pick-trigger { flex-wrap: nowrap; }
+  .rcl-site .crystal-bracket .crystal-pick-trigger .crystal-pick-preview { flex-basis: 0; }
+  .rcl-site .crystal-bracket .crystal-pick-trigger .crystal-pick-choice { flex-direction: row; justify-content: center; gap: 8px; }
+
   .rcl-site .crystal-pick-trigger[data-multiple='true'] .crystal-pick-preview:has(> :nth-child(3)) { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 }
 .rcl-site .crystal-pick-empty { display: grid; place-items: center; width: 56px; height: 56px; border: 1px dashed var(--purple); color: var(--purple); font-size: 28px; }
