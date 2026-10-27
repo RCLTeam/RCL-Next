@@ -1,5 +1,11 @@
 import { expect, test } from 'vitest';
-import { crystalPoints, durationBucket, validateAnswers } from './crystal-ball-policy.js';
+import {
+  crystalPoints,
+  durationBucket,
+  goldBucket,
+  pentakillBucket,
+  validateAnswers
+} from './crystal-ball-policy.js';
 import { crystalQuestions } from './crystal-ball-questions.js';
 import { type CrystalStat, automaticResults } from './crystal-ball-results.js';
 
@@ -69,7 +75,7 @@ test('statistics accept ties, require three champion appearances for winrate, an
   expect(result['player-assists']).toEqual(['p0']);
   expect(result['champion-best-winrate']).toHaveLength(5);
   expect(result['champion-worst-winrate']).toHaveLength(5);
-  expect(result['gold-difference']).toEqual(['5000']);
+  expect(result['gold-difference']).toEqual(['gold-1']);
   expect(result.pentakills).toEqual(['0']);
   expect(result['shortest-game']).toEqual(['1']);
   expect(
@@ -87,4 +93,41 @@ test('statistics accept ties, require three champion appearances for winrate, an
   expect(incomplete['player-mvp']).toBeUndefined();
   expect(incomplete['champion-positions']).toBeUndefined();
   expect(automaticResults(games, stats.slice(1))).toEqual({});
+});
+
+test('numeric choices cover boundaries and reject arbitrary answers', () => {
+  expect([0, 4999, 5000, 9999, 10000, 14999, 15000, 19999, 20000, 99999].map(goldBucket)).toEqual([
+    'gold-0',
+    'gold-0',
+    'gold-1',
+    'gold-1',
+    'gold-2',
+    'gold-2',
+    'gold-3',
+    'gold-3',
+    'gold-4',
+    'gold-4'
+  ]);
+  expect([0, 1, 2, 3, 4, 5, 6, 99].map(pentakillBucket)).toEqual([
+    '0',
+    '1',
+    '2',
+    '3',
+    '4',
+    '5+',
+    '5+',
+    '5+'
+  ]);
+  const questions = crystalQuestions([], [], []);
+  expect(() =>
+    validateAnswers({ 'gold-difference': ['gold-1'], pentakills: ['5+'] }, questions)
+  ).not.toThrow();
+  expect(() => validateAnswers({ 'gold-difference': ['5000'] }, questions)).toThrow();
+  expect(() => validateAnswers({ pentakills: ['6'] }, questions)).toThrow();
+  expect(
+    crystalPoints(
+      { 'gold-difference': ['6500'], pentakills: ['7'] },
+      { 'gold-difference': ['gold-1'], pentakills: ['5+'] }
+    )
+  ).toBe(2);
 });

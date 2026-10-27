@@ -1,5 +1,5 @@
 import type { CrystalAnswers } from '@rcl/contracts';
-import { durationBucket } from './crystal-ball-policy.js';
+import { durationBucket, goldBucket, pentakillBucket } from './crystal-ball-policy.js';
 
 export interface CrystalGame {
   id: string;
@@ -93,7 +93,7 @@ export function automaticResults(games: CrystalGame[], stats: CrystalStat[]): Cr
       durationBucket(Math.min(...games.map((g) => g.durationSeconds ?? 0)))
     ];
   if (stats.every((s) => s.pentaKills !== null))
-    results.pentakills = [String(stats.reduce((n, s) => n + (s.pentaKills ?? 0), 0))];
+    results.pentakills = [pentakillBucket(stats.reduce((n, s) => n + (s.pentaKills ?? 0), 0))];
   if (stats.every((s) => s.goldEarned !== null)) {
     const differences = games.map((g) => {
       const totals = new Map<string, number>();
@@ -101,7 +101,7 @@ export function automaticResults(games: CrystalGame[], stats: CrystalStat[]): Cr
         totals.set(s.teamId, (totals.get(s.teamId) ?? 0) + (s.goldEarned ?? 0));
       return Math.max(...totals.values()) - Math.min(...totals.values());
     });
-    results['gold-difference'] = [String(Math.max(...differences))];
+    results['gold-difference'] = [goldBucket(Math.max(...differences))];
   }
   return results;
 }

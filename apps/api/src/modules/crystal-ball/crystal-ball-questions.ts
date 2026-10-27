@@ -1,5 +1,5 @@
 import type { CrystalQuestion } from '@rcl/contracts';
-import { durationOptions } from './crystal-ball-policy.js';
+import { durationOptions, goldOptions, pentakillOptions } from './crystal-ball-policy.js';
 
 type Option = { id: string; name: string };
 export function crystalQuestions(
@@ -93,10 +93,11 @@ export function crystalQuestions(
     'gold-difference',
     'Mayor diferencia de oro final en una partida',
     'meta',
-    'integer',
-    'automatic'
+    'choice',
+    'automatic',
+    goldOptions
   );
   add('shortest-game', 'Partida más corta', 'meta', 'duration', 'automatic', durationOptions);
-  add('pentakills', 'Cantidad de pentakills', 'meta', 'integer', 'automatic');
+  add('pentakills', 'Cantidad de pentakills', 'meta', 'choice', 'automatic', pentakillOptions);
   return questions;
 }

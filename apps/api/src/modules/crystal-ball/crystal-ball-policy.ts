@@ -33,12 +33,13 @@ export function validateAnswers(
 }
 
 export function crystalPoints(answers: CrystalAnswers, results: CrystalAnswers) {
-  return Object.entries(answers).reduce(
+  const normalizedResults = normalizeNumericAnswers(results);
+  return Object.entries(normalizeNumericAnswers(answers)).reduce(
     (total, [id, values]) =>
       total +
       (id.startsWith('winner:') || id.startsWith('loser:')
-        ? values.filter((value) => results[id]?.includes(value)).length
-        : Number(values.some((value) => results[id]?.includes(value)))),
+        ? values.filter((value) => normalizedResults[id]?.includes(value)).length
+        : Number(values.some((value) => normalizedResults[id]?.includes(value)))),
     0
   );
 }
@@ -54,4 +55,37 @@ export const durationOptions = [
 ].map((name, index) => ({ id: String(index), name }));
 export function durationBucket(seconds: number) {
   return String(Math.max(0, Math.min(6, Math.floor(seconds / 300) - 3)));
+}
+
+export const goldOptions = [
+  { id: 'gold-0', name: 'Menos de 5.000' },
+  { id: 'gold-1', name: '5.000–9.999' },
+  { id: 'gold-2', name: '10.000–14.999' },
+  { id: 'gold-3', name: '15.000–19.999' },
+  { id: 'gold-4', name: '20.000 o más' }
+];
+export function goldBucket(gold: number) {
+  return `gold-${Math.min(4, Math.floor(gold / 5000))}`;
+}
+export const pentakillOptions = ['0', '1', '2', '3', '4', '5 o más'].map((name, index) => ({
+  id: index === 5 ? '5+' : String(index),
+  name
+}));
+export function pentakillBucket(count: number) {
+  return count >= 5 ? '5+' : String(count);
+}
+
+// Keep ballots and results saved before the switch to ranges usable.
+export function normalizeNumericAnswers(answers: CrystalAnswers): CrystalAnswers {
+  return Object.fromEntries(
+    Object.entries(answers).map(([id, values]) => [
+      id,
+      values.map((value) => {
+        if (!/^\d+$/.test(value)) return value;
+        if (id === 'gold-difference') return goldBucket(Number(value));
+        if (id === 'pentakills') return pentakillBucket(Number(value));
+        return value;
+      })
+    ])
+  );
 }

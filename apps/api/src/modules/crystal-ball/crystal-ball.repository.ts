@@ -19,7 +19,7 @@ import type * as schema from '@rcl/database/schema';
 import { and, eq, gte, inArray } from 'drizzle-orm';
 import type { PgDatabase, PgQueryResultHKT } from 'drizzle-orm/pg-core';
 import { AppError, notFound } from '../../shared/app-error.js';
-import { crystalPoints, validateAnswers } from './crystal-ball-policy.js';
+import { crystalPoints, normalizeNumericAnswers, validateAnswers } from './crystal-ball-policy.js';
 import { crystalQuestions } from './crystal-ball-questions.js';
 import { automaticResults } from './crystal-ball-results.js';
 
@@ -139,7 +139,7 @@ export class CrystalBallRepository {
       .from(campaigns)
       .where(eq(campaigns.divisionId, this.divisionId));
     const window = await this.window(season, campaign);
-    const results = campaign?.results ?? {};
+    const results = normalizeNumericAnswers(campaign?.results ?? {});
     const ballots = Object.keys(results).length
       ? await this.db
           .select({
@@ -178,7 +178,7 @@ export class CrystalBallRepository {
       .select()
       .from(entries)
       .where(and(eq(entries.divisionId, this.divisionId), eq(entries.discordUserId, userId)));
-    return entry?.answers ?? {};
+    return normalizeNumericAnswers(entry?.answers ?? {});
   }
 
   async save(season: string, userId: string, answers: CrystalAnswers) {

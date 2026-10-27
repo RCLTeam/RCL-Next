@@ -2,7 +2,7 @@ export interface CrystalQuestion {
   id: string;
   label: string;
   category: 'qualification' | 'classification' | 'players' | 'meta';
-  kind: 'team' | 'player' | 'champion' | 'integer' | 'duration';
+  kind: 'team' | 'player' | 'champion' | 'integer' | 'duration' | 'choice';
   mode: 'manual' | 'automatic';
   count: number;
   divisionId?: string;
