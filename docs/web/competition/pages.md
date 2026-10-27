@@ -104,14 +104,15 @@ El campo de mapa `isMvp` se conserva temporalmente por compatibilidad, pero no r
 ---
 
 ### 3.4 `PlayersPage` (Directorio de Jugadores y Ficha Destacada)
-**Archivo**: `site/pages/players/PlayersPage.tsx`
+**Archivo**: `site/pages/players/PlayersPage.tsx:1-379`
 
-- **Jugador Destacado (`FeaturedPlayer`)**:
-  Se monta en `PlayersPage.tsx:97-100` con el jugador que tenga `player.competition?.featured`. El componente (`PlayersPage.tsx:261-313`) muestra `featured.roundName`, identidad, equipo y campeón, además de las siete métricas de `playerSortOptions.filter(([key]) => key !== 'mvps')` (`PlayersPage.tsx:294-303`). Sus valores proceden de `featured.stats`, correspondientes a la jornada destacada.
-- **Diseño integrado**: jornada y nombre comparten cabecera; las siete métricas de jornada se completan con los MVPs acumulados de temporada. Las tarjetas del directorio muestran únicamente la métrica seleccionada debajo del nombre, con número antes de etiqueta. Nombres largos se truncan antes de la diagonal; el espacio del escudo se reserva solo cuando existe y no se duplica sin campeón. `ChampionArt` centra el arte y conserva el fallback. El filtro Suplente sigue accesible.
+- **Jugador Destacado (`FeaturedPlayer`, `PlayersPage.tsx:255-323`)**:
+  Muestra al jugador con `player.competition?.featured`. Jornada, nombre, tag y equipo comparten la cabecera; las siete métricas de `featured.stats` corresponden a la jornada y se completan con los «MVPs de temporada», calculados desde `mvpMatchIds`. `PlayerArt` utiliza `ChampionArt` con variante `centered` y conserva iniciales como fallback. `.player-identity-emblem` reserva la zona diagonal del escudo solo si existe un logo válido y un campeón, evitando duplicarlo cuando el escudo ya aparece en el estado sin campeón.
+- **Tarjetas del Directorio (`PlayerGrid`, `PlayersPage.tsx:325-379`)**:
+  Integran nombre y `.player-card-selected-stat` en una misma celda. Solo muestran la métrica seleccionada, debajo del nombre, con la cifra del color del equipo antes de la etiqueta. Los nombres largos se truncan con puntos suspensivos antes de la diagonal y conservan el texto completo en `title`. El escudo sigue la misma condición que en la tarjeta destacada; sin resultados se muestra un estado vacío.
 - **Filtrado Multicriterio (`filterPlayers`)**:
   Combina filtros de rol y texto con la ordenación seleccionada:
-  1. Posición / Rol (`role`): Soporta `all`, `top`, `jungle`, `mid`, `adc`, `support` y `substitute`. Para `all`, admite un rol incluido en `VALID_PLAYER_ROLES`, estadísticas o MVPs guardados: `VALID_PLAYER_ROLES.includes(playerRole ?? '') || hasStats || hasAwards` (`PlayersPage.tsx:165-167`).
+  1. Posición / Rol (`role`): Soporta `all`, `top`, `jungle`, `mid`, `adc`, `support` y `substitute`. Para `all`, admite un rol competitivo, estadísticas o MVPs guardados mediante `isCompetitiveRole(playerRole) || hasStats || hasAwards`; para una posición concreta usa `isCompetitiveRole(role) && playerRole === role` (`PlayersPage.tsx:167-169`).
   2. Consulta de texto (`query`): Coincidencia en `gameName`, `riotTag` y `displayName`.
   3. Ordenación (`sort`): Ocho opciones (`PlayersPage.tsx:19-29`): `kda`, `mvps`, `csPerMinute`, `killParticipation`, `winRate`, `damagePerMinute`, `visionScore` y `damageMitigated`. `mvps` utiliza el número de identificadores en `mvpMatchIds`, con fallback a `0`, sin depender de estadísticas.
 - **Ordenación y Desempates (`PlayersPage.tsx:178-203`)**:
@@ -225,17 +226,18 @@ Orquesta la vista del perfil institucional y deportivo de un club, integrando la
 ---
 
 ### 3.9 `PlayerDetailPage` (Ficha de Detalle de Jugador)
-**Archivo**: `site/pages/player-details/PlayerDetailPage.tsx`
+**Archivo**: `site/pages/player-details/PlayerDetailPage.tsx:1-318`
 
-- `useCompetitionDetail` gestiona carga, recurso ausente, error con reintento y perfil disponible.
-- La cabecera integra el campeón más jugado, nombre y tag, tipo de cuenta, rol explícito y país. Usa `ChampionArt` con variante `centered`; debajo conserva iniciales y nombre del campeón si el catálogo o todas las fuentes de imagen fallan.
-- El equipo, color, rol y capitanía proceden exclusivamente de `registrationTeam`, nunca de la primera vinculación. Sin inscripción competitiva se muestra un estado neutral; las inscripciones inactivas se identifican.
-- Cuatro celdas muestran Riot ID, comunidad, inscripciones competitivas y otras vinculaciones, con OP.GG al final. La rejilla pasa de una columna a dos desde 481 px y a cuatro desde 1501 px.
-- Las cuentas vinculadas son informativas, sin enlace interno ni diagonales; únicamente OP.GG es interactivo.
-- Rendimiento muestra ocho métricas con un fondo uniforme y cifras del color del equipo, en dos columnas y cuatro desde 701 px. La temporada procede de `statisticsSeasonName`. Los MVPs históricos se mantienen aunque falten estadísticas, con su aviso; el campeón no se repite aquí.
-- Equipos y vinculaciones conserva una lista única en el orden de la API y contadores separados por tipo de rol. Cada tarjeta enlaza al equipo y muestra temporada, división, rol, capitanía y estado inactivo; su diagonal queda detrás del contenido.
+Presenta la identidad del jugador, sus cuentas vinculadas, el rendimiento de la temporada estadística y las vinculaciones a equipos. La identidad competitiva y el contexto de estadísticas se resuelven de forma independiente.
 
-
-### Integración del rediseño de jugadores
-
-El rediseño incorpora los contratos de #104 (`registrationTeam`, `statisticsSeasonName` y clasificación de roles), el componente `ChampionArt` de #107 y la semántica de cuentas secundarias de #102. Se mantiene la lista unificada de vinculaciones de `feat/details-page`, con sus contadores competitivos y no competitivos. No quedan adaptaciones pendientes a esos tres PRs.
+- **Ciclo de Vida y Estados Asíncronos**:
+  `useCompetitionDetail('players', playerId)` gestiona carga, recurso ausente, error con reintento y perfil disponible. Al recibir el perfil se actualiza el título del documento; `PlayerProfile` presenta los datos dentro de `PageLayout`.
+- **Cabecera de Identidad (`player-profile-header`)**:
+  Integra nombre y tag, país, rol, capitanía y `.player-profile-account-type`, que distingue cuenta principal y secundaria. Equipo, color y rol proceden exclusivamente de `registrationTeam`, nunca de la primera vinculación. Las inscripciones inactivas se identifican; sin equipo competitivo aparece `.player-profile-unregistered`, con iniciales y estilo neutral.
+  El campeón más jugado utiliza `ChampionArt` con variante `centered`; `.player-profile-champion-fallback` conserva iniciales y nombre del campeón si el catálogo o las fuentes de imagen fallan. Las cuatro celdas de `.player-profile-info` muestran Riot ID, comunidad, inscripciones competitivas y otras vinculaciones; pasan de una columna a dos desde `481px` y a cuatro desde `1501px`. OP.GG se sitúa al final. Tanto el equipo como el estado sin inscripción ocupan toda la fila entre `701px` y `1100px`; desde `1101px` pasan a la última columna.
+- **Sección de Cuentas Secundarias Vinculadas (`player-linked-accounts`)**:
+  Las tarjetas muestran tipo de cuenta, nombre y Riot ID, sin enlace interno ni decoración diagonal. Solo OP.GG es interactivo y aparece cuando hay tag, abriendo una nueva pestaña con etiqueta accesible. Si no hay otras cuentas vinculadas se muestra el estado vacío correspondiente.
+- **Sección de Rendimiento Deportivo (`player-performance`)**:
+  La temporada procede de `statisticsSeasonName`. Ocho métricas muestran partidas, KDA, victorias, MVPs, CS/min, participación en kills, daño/min y visión, con fondo uniforme y cifras del color del equipo. La rejilla tiene dos columnas y cuatro desde `701px`; el campeón no se repite aquí. Los MVPs históricos se mantienen aunque falten estadísticas, acompañados de un aviso y valores ausentes representados con «—». Sin partidas ni premios aparece un mensaje adaptado a la existencia de temporada estadística.
+- **Equipos y vinculaciones (`player-teams`)**:
+  `PlayerMembershipSection` mantiene una lista única en el orden de la API. Los contadores de cabecera distinguen roles competitivos y otras vinculaciones mediante `isCompetitiveRole` e `isNonCompetitiveRole`. Cada tarjeta enlaza al equipo y muestra temporada, división, rol, capitanía y estado inactivo; la decoración diagonal queda detrás del contenido. La sección incluye el total de vinculaciones y un estado vacío cuando no existen.
