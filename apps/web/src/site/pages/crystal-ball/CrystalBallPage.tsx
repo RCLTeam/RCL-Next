@@ -2,10 +2,11 @@ import React from 'react';
 import { useAuth } from '../../../features/auth/components/AuthProvider.js';
 import { CompetitionFilters } from '../../../features/competition/components/CompetitionFilters.js';
 import type { Competition } from '../../../features/competition/hooks/useCompetition.js';
+import { CrystalRules } from '../../../features/crystal-ball/CrystalRules.js';
 import { CrystalSeason } from '../../../features/crystal-ball/CrystalSeason.js';
 import { PageLayout } from '../../../shared/components/PageLayout/PageLayout.js';
-import { CrystalRules } from './CrystalRules.js';
 import './crystal-ball.css';
+import '../leagues/leagues.css';
 
 export function CrystalBallPage({ competition }: { competition: Competition }) {
   const { state } = useAuth();
@@ -38,7 +39,7 @@ export function CrystalBallPage({ competition }: { competition: Competition }) {
           </button>
         </output>
       )}
-      <CrystalRules />
+      {(!competition.season || !competition.division) && <CrystalRules />}
     </PageLayout>
   );
 }

@@ -3,15 +3,9 @@ import React, { useState } from 'react';
 import { useGameCatalog } from '../../shared/riot/useGameCatalog.js';
 import { discordLoginUrl } from '../auth/api/auth-api.js';
 import { CrystalFields } from './CrystalFields.js';
+import { CrystalRules } from './CrystalRules.js';
 import { useCrystalBall } from './useCrystalBall.js';
 
-const statuses = {
-  unconfigured: 'Próximamente',
-  upcoming: 'Apertura programada',
-  open: 'Predicciones abiertas',
-  closed: 'Predicciones cerradas',
-  resolved: 'Resultados publicados'
-};
 export function CrystalSeason({
   season,
   divisionId,
@@ -46,29 +40,6 @@ export function CrystalSeason({
   return (
     <>
       {model.error && <p role="alert">{model.error}</p>}
-      <div className="crystal-status" data-status={data.status}>
-        <div>
-          <span className="eyebrow">Tu pronóstico, antes del primer mapa</span>
-          <h2>{statuses[data.status]}</h2>
-          <p>
-            {data.status === 'unconfigured'
-              ? 'La próxima corona todavía no tiene dueño. El periodo de participación se anunciará aquí.'
-              : 'Cada elección cuenta. Guarda tu boleto antes del cierre para entrar en el ranking de videntes.'}
-          </p>
-          <div className="crystal-dates">
-            <span>
-              {data.opensAt && `Abre · ${new Date(data.opensAt).toLocaleString('es-ES')}`}
-            </span>
-            <span>
-              {data.closesAt && `Cierra · ${new Date(data.closesAt).toLocaleString('es-ES')}`}
-            </span>
-          </div>
-        </div>
-        <div className="crystal-scoring">
-          <strong>01</strong>
-          <span>punto por acierto</span>
-        </div>
-      </div>
       {!userId && (
         <p className="crystal-login">
           <a href={discordLoginUrl}>Inicia sesión con Discord</a> para guardar tus predicciones.
@@ -113,6 +84,7 @@ export function CrystalSeason({
           {Object.keys(data.results).length} de {data.questions.length} predicciones resueltas.
         </p>
       </section>
+      <CrystalRules campaign={data} />
     </>
   );
 }
