@@ -3,9 +3,11 @@
 .rcl-site #bola-cristal { background: radial-gradient(ellipse at 95% 0%,color-mix(in srgb, var(--lime) 5%, transparent),transparent 55%),var(--void); }
 .rcl-site #bola-cristal .section-cross { border: 3px solid var(--lime); border-radius: 50%; font-size: 0; width: 60px; height: 60px; flex-shrink: 0; }
 .rcl-site .crystal-toolbar-note { color: var(--muted); font: 10px var(--mono); text-transform: uppercase; }
- .rcl-site .crystal-rules-status { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 24px; margin-top: 12px; padding: 14px 18px; border: 1px solid var(--line); background: var(--panel); color: var(--muted); font: 11px/1.6 var(--mono); }
-.rcl-site .crystal-rules-status strong { color: var(--text); font: inherit; font-weight: 700; }
-.rcl-site .crystal-rules-status[data-status='open'] strong { color: var(--lime); }
+.rcl-site .crystal-rules .format-card { padding: 20px 24px; row-gap: 8px; align-content: start; }
+.rcl-site .crystal-rules .format-card p { margin: 0; }
+.rcl-site .crystal-rules-dates { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 4px 16px; color: var(--muted); font: 10px/1.5 var(--mono); }
+.rcl-site .crystal-rules-dates > span { white-space: nowrap; }
+.rcl-site .crystal-rules .format-card[data-status='open'] h3 { color: var(--lime); }
 .rcl-site .crystal-login { padding-block: 8px; color: var(--muted); font: 12px/1.6 var(--body-f); }
 .rcl-site .crystal-login a { color: var(--lime); text-underline-offset: 4px; }
 .rcl-site .crystal-ballot { margin-top: 40px; }
