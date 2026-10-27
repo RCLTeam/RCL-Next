@@ -146,6 +146,7 @@ export class CrystalBallRepository {
             userId: entries.discordUserId,
             username: discordUsers.username,
             globalName: discordUsers.globalName,
+            avatarHash: discordUsers.avatarHash,
             answers: entries.answers
           })
           .from(entries)
@@ -163,6 +164,7 @@ export class CrystalBallRepository {
         .map((b) => ({
           userId: b.userId,
           name: b.globalName ?? b.username,
+          avatarHash: b.avatarHash,
           points: crystalPoints(b.answers, results)
         }))
         .sort(

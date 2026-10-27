@@ -24,5 +24,5 @@ export interface CrystalBallData {
   status: 'unconfigured' | 'upcoming' | 'open' | 'closed' | 'resolved';
   questions: CrystalQuestion[];
   results: CrystalAnswers;
-  ranking: { userId: string; name: string; points: number }[];
+  ranking: { userId: string; name: string; avatarHash?: string | null; points: number }[];
 }
