@@ -73,7 +73,10 @@ export function CrystalAnswerPicker({
       <button
         type="button"
         className="crystal-pick-trigger"
-        aria-label={`${disabled ? 'Ver' : 'Elegir'}: ${question.label}`}
+        data-selected={values.length > 0}
+        data-multiple={values.length > 1}
+        data-kind={question.kind}
+        aria-label={`${disabled ? 'Ver' : values.length ? 'Cambiar' : 'Elegir'}: ${question.label}`}
         aria-haspopup="dialog"
         onClick={() => {
           setDraft(values);
@@ -88,7 +91,11 @@ export function CrystalAnswerPicker({
                 {question.kind !== 'choice' && (
                   <AnswerIcon option={optionFor(id)} kind={question.kind} />
                 )}
-                <span>{optionFor(id).name}</span>
+                <span className="crystal-pick-name">
+                  {question.kind === 'team'
+                    ? optionFor(id).shortName || optionFor(id).name
+                    : optionFor(id).name}
+                </span>
               </span>
             ))
           ) : (
@@ -100,7 +107,9 @@ export function CrystalAnswerPicker({
             </>
           )}
         </span>
-        <span className="crystal-pick-action">{disabled ? 'Ver opciones' : 'Elegir'} ↗</span>
+        <span className="crystal-pick-action">
+          {disabled ? 'Ver opciones' : values.length ? 'Cambiar' : 'Elegir'} ↗
+        </span>
       </button>
       {open && (
         <Modal
