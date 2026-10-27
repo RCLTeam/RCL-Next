@@ -4,7 +4,7 @@
   .rcl-site .crystal-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 .rcl-site fieldset.crystal-card { min-width: 0; margin: 0; padding: 20px; border: 1px solid var(--line); border-top: 2px solid var(--purple); background: var(--panel); }
-.rcl-site .crystal-card legend { max-width: 100%; padding: 0 8px; color: var(--text); font: 700 21px/1.2 var(--display2); overflow-wrap: anywhere; }
+.rcl-site .crystal-card legend { max-width: 100%; padding: 0 8px; color: var(--text); font: 700 21px/1.2 var(--display2); overflow-wrap: anywhere; text-transform: uppercase; }
 .rcl-site .crystal-card .crystal-hint { margin: 0 0 18px; color: var(--muted); font: 10px/1.6 var(--mono); }
 .rcl-site .crystal-card .rcl-select { min-height: 48px; font: 12px var(--body-f); }
 .rcl-site .crystal-card input[type='number'],
@@ -20,9 +20,7 @@
 .rcl-site fieldset.crystal-bracket { border-top-color: var(--lime); }
 .rcl-site .crystal-bracket legend { font-size: 28px; }
 .rcl-site .crystal-result { padding-top: 12px; border-top: 1px solid var(--line); color: var(--lime); font: 11px/1.6 var(--mono); overflow-wrap: anywhere; }
-.rcl-site .crystal-section-heading { margin: 28px 0 20px; }
-.rcl-site .crystal-section-heading h2 { margin: 8px 0; font: 700 clamp(32px, 4vw, 44px)/1 var(--display2); text-transform: uppercase; }
-.rcl-site .crystal-section-heading p { max-width: 680px; margin: 12px 0; color: var(--muted); font: 13px/1.7 var(--body-f); }
+.rcl-site .crystal-section { margin-top: 28px; }
 .rcl-site .crystal-divisions { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
 .rcl-site .crystal-divisions button { min-height: 44px; padding: 12px 20px; border: 1px solid var(--line); background: var(--panel); color: var(--muted); font: 11px var(--mono); text-transform: uppercase; cursor: pointer; }
 .rcl-site .crystal-divisions button[aria-pressed='true'] { border-color: var(--purple); color: var(--text); background: var(--purple); }

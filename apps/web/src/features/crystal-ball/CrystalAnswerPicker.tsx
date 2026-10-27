@@ -57,7 +57,8 @@ export function CrystalAnswerPicker({
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState(values);
   const [query, setQuery] = useState('');
-  const multiple = question.count > 1 || (manual && question.kind !== 'duration');
+  const multiple =
+    question.count > 1 || (manual && question.kind !== 'duration' && question.kind !== 'choice');
   const limit = question.count > 1 ? question.count : multiple ? Number.POSITIVE_INFINITY : 1;
   const options = question.options.filter((option) =>
     normalize(`${option.name} ${option.shortName ?? ''}`).includes(normalize(query))
@@ -84,7 +85,9 @@ export function CrystalAnswerPicker({
           {values.length ? (
             values.map((id) => (
               <span key={id} className="crystal-pick-choice" title={optionFor(id).name}>
-                <AnswerIcon option={optionFor(id)} kind={question.kind} />
+                {question.kind !== 'choice' && (
+                  <AnswerIcon option={optionFor(id)} kind={question.kind} />
+                )}
                 <span>{optionFor(id).name}</span>
               </span>
             ))
@@ -148,7 +151,9 @@ export function CrystalAnswerPicker({
                       )
                     }
                   >
-                    <AnswerIcon option={option} kind={question.kind} />
+                    {question.kind !== 'choice' && (
+                      <AnswerIcon option={option} kind={question.kind} />
+                    )}
                     <span className={`crystal-option-name is-${question.kind}`}>
                       {question.kind === 'team' ? option.shortName || option.name : option.name}
                     </span>

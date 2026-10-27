@@ -104,30 +104,10 @@ function Ballot({
   const [message, setMessage] = useState('');
   const [category, setCategory] = useState('qualification');
   const categories = [
-    [
-      'qualification',
-      'Clasificados',
-      'Elige quién sigue en la lucha',
-      'Cuatro equipos en winner bracket y dos en loser bracket en esta liga. No importa el orden dentro de cada rama.'
-    ],
-    [
-      'classification',
-      'Equipos',
-      '¿Quién se lleva la corona?',
-      'Campeones, revelaciones y sorpresas. Tus apuestas por los equipos que marcarán estos playoffs.'
-    ],
-    [
-      'players',
-      'Jugadores',
-      'Los nombres que harán historia',
-      'Elige a los protagonistas de los playoffs de esta liga. Busca a cada jugador por su nombre.'
-    ],
-    [
-      'meta',
-      'Meta',
-      'Anticípate al próximo mapa',
-      'Picks, récords y tendencias de esta liga. Winrate: mínimo tres partidas. Oro: diferencia final exacta entre equipos.'
-    ]
+    ['qualification', 'Clasificados'],
+    ['classification', 'Equipos'],
+    ['players', 'Jugadores'],
+    ['meta', 'Meta']
   ] as const;
   const selected = categories.find(([id]) => id === category) ?? categories[0];
   const answered = data.questions.filter((q) => answers[q.id]?.length === q.count).length;
@@ -183,10 +163,6 @@ function Ballot({
         ))}
       </nav>
       <section className="crystal-section" aria-label={selected[1]}>
-        <div className="crystal-section-heading">
-          <h2>{selected[2]}</h2>
-          <p>{selected[3]}</p>
-        </div>
         <CrystalFields
           questions={data.questions.filter((q) => q.category === category)}
           answers={answers}
