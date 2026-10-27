@@ -29,7 +29,7 @@ test('PostgreSQL migrations, fixtures and relational constraints', async (t) => 
     const result = await client.query<{ total: number }>(
       'SELECT count(*)::int AS total FROM drizzle.__drizzle_migrations'
     );
-    expect(result.rows[0]?.total).toBe(4);
+    expect(result.rows[0]?.total).toBe(5);
   }
   // matches schema defines stream_url_live column
   expect(schema.matches.streamUrlLive).toBeTruthy();

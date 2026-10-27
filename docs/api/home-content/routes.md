@@ -40,16 +40,16 @@ A continuación se detalla la matriz completa de las 15 rutas gestionadas por el
 | 3 | `GET` | `/articles/:id` | Público | `service.article(req.params.id)` | `home-content.router.ts:24-26` |
 | 4 | `GET` | `/weekly-teams/:id/rounds` | Público | `service.listWeeklyTeams(req.params.id)` | `home-content.router.ts:27-29` |
 | 5 | `GET` | `/weekly-teams/:id` | Público | `service.weeklyTeam(req.params.id)` | `home-content.router.ts:30-32` |
-| 6 | `GET` | `/admin/articles` | Admin (`admin` / `owner`) | `service.listArticles(true)` | `home-content.router.ts:35-37` |
-| 7 | `GET` | `/admin/weekly-teams/:id/rounds` | Admin (`admin` / `owner`) | `service.listWeeklyTeams(req.params.id, true)` | `home-content.router.ts:38-40` |
-| 8 | `GET` | `/admin/weekly-teams/:id/candidates/:roundId` | Admin (`admin` / `owner`) | `service.weeklyCandidates(req.params.id, req.params.roundId)` | `home-content.router.ts:41-43` |
-| 9 | `GET` | `/admin/weekly-teams/:id` | Admin (`admin` / `owner`) | `service.weeklyTeam(req.params.id, true)` | `home-content.router.ts:44-46` |
-| 10 | `POST` | `/admin/images/discard` | Admin + Trusted Origin | `service.discardImages(req.body)` | `home-content.router.ts:48-51` |
-| 11 | `POST` | `/admin/images` | Admin + Trusted Origin | `images.save(req.body, req.get('Content-Type'))` | `home-content.router.ts:52-58` |
-| 12 | `POST` | `/admin/articles` | Admin + Trusted Origin | `service.saveArticle(actor, null, req.body)` | `home-content.router.ts:59-63` |
-| 13 | `PUT` | `/admin/articles/:id` | Admin + Trusted Origin | `service.saveArticle(actor, req.params.id, req.body)` | `home-content.router.ts:64-68` |
-| 14 | `DELETE` | `/admin/articles/:id` | Admin + Trusted Origin | `service.deleteArticle(actor, req.params.id)` | `home-content.router.ts:69-72` |
-| 15 | `PUT` | `/admin/weekly-teams/:id` | Admin + Trusted Origin | `service.saveWeeklyTeam(actor, req.params.id, req.body)` | `home-content.router.ts:73-81` |
+| 6 | `GET` | `/admin/articles` | Editor / Admin / Owner | `service.listArticles(true)` | `home-content.router.ts:35-37` |
+| 7 | `GET` | `/admin/weekly-teams/:id/rounds` | Editor / Admin / Owner | `service.listWeeklyTeams(req.params.id, true)` | `home-content.router.ts:38-40` |
+| 8 | `GET` | `/admin/weekly-teams/:id/candidates/:roundId` | Editor / Admin / Owner | `service.weeklyCandidates(req.params.id, req.params.roundId)` | `home-content.router.ts:41-43` |
+| 9 | `GET` | `/admin/weekly-teams/:id` | Editor / Admin / Owner | `service.weeklyTeam(req.params.id, true)` | `home-content.router.ts:44-46` |
+| 10 | `POST` | `/admin/images/discard` | Editor / Admin / Owner + Trusted Origin | `service.discardImages(req.body)` | `home-content.router.ts:48-51` |
+| 11 | `POST` | `/admin/images` | Editor / Admin / Owner + Trusted Origin | `images.save(req.body, req.get('Content-Type'))` | `home-content.router.ts:52-58` |
+| 12 | `POST` | `/admin/articles` | Editor / Admin / Owner + Trusted Origin | `service.saveArticle(actor, null, req.body)` | `home-content.router.ts:59-63` |
+| 13 | `PUT` | `/admin/articles/:id` | Editor / Admin / Owner + Trusted Origin | `service.saveArticle(actor, req.params.id, req.body)` | `home-content.router.ts:64-68` |
+| 14 | `DELETE` | `/admin/articles/:id` | Editor / Admin / Owner + Trusted Origin | `service.deleteArticle(actor, req.params.id)` | `home-content.router.ts:69-72` |
+| 15 | `PUT` | `/admin/weekly-teams/:id` | Editor / Admin / Owner + Trusted Origin | `service.saveWeeklyTeam(actor, req.params.id, req.body)` | `home-content.router.ts:73-81` |
 
 > *Nota sobre la numeración:* La ruta `/admin/weekly-teams/:id` actualiza el quinteto de la división identificada por `:id` (UUID).
 
@@ -99,11 +99,11 @@ A continuación se detalla la matriz completa de las 15 rutas gestionadas por el
 
 ## 4. Endpoints de Administración
 
-Todas las rutas bajo `/admin` requieren una sesión autenticada válida (`requireAuth(auth, 'admin')`, `home-content.router.ts:34`). 
+Todas las rutas bajo `/admin` requieren una sesión autenticada válida (`requireAuth(auth, ['editor', 'admin'])`, `home-content.router.ts:34`).
 
 ### Autorización y Restricción de Roles Administrativos
-- **Delimitación de Roles**: Podría presumirse la existencia de roles intermedios de redactor, cronista o `editor` que permitan publicar artículos sin privilegios de administración global.
-- **Código vivo**: En `packages/database/src/schema.ts:24`, el enumerado `app_role` está compuesto exclusivamente por `'viewer'`, `'admin'` y `'owner'`. En `auth.router.ts:18`, la verificación `requireAuth(auth, 'admin')` autoriza únicamente cuando `['admin', 'owner'].includes(user.role)`. **No existe ningún rol `editor` en todo el sistema.**
+- **Roles permitidos:** `requireAuth(auth, ['editor', 'admin'])` admite `editor` y `admin`; `owner` también satisface el permiso `admin`. `viewer` recibe HTTP 403.
+- **Ámbito:** Este permiso se aplica únicamente a `/api/v1/home-content/admin`. No concede acceso a CRUD, logos, miembros, transferencias de base de datos ni al WebSocket de subida ROFL. Las mutaciones siguen exigiendo un `Origin` válido.
 
 ### 4.1 `GET /api/v1/home-content/admin/articles`
 - **Propósito**: Lista la totalidad de artículos registrados en el sistema para el panel de administración, incluyendo borradores y artículos con `showOnHome: false`.
@@ -127,7 +127,7 @@ Todas las rutas bajo `/admin` requieren una sesión autenticada válida (`requir
 
 ### 4.5 `POST /api/v1/home-content/admin/images/discard`
 - **Propósito**: Descarta y elimina físicamente del disco imágenes temporales subidas durante una sesión de edición no guardada o cancelada.
-- **Seguridad**: Custodiado por `requireAuth(auth, 'admin')` (`home-content.router.ts:34`) y `requireTrustedOrigin(auth.frontendOrigin)` (`home-content.router.ts:47`).
+- **Seguridad**: Custodiado por `requireAuth(auth, ['editor', 'admin'])` (`home-content.router.ts:34`) y `requireTrustedOrigin(auth.frontendOrigin)` (`home-content.router.ts:47`).
 - **Cuerpo (JSON)**:
   Objeto estrictamente validado con Zod (`home-content.service.ts:97-106`):
   ```json
@@ -195,7 +195,7 @@ Todas las rutas bajo `/admin` requieren una sesión autenticada válida (`requir
 | **`201 Created`** | Recurso creado con éxito (nuevo artículo o imagen subida). | `{"data": ...}` |
 | **`400 Bad Request`** | Parámetros de consulta no conformes o incompatibilidad de formato JSON. | `{"error": "BAD_REQUEST", "message": "..."}` |
 | **`401 Unauthorized`** | Petición a ruta protegida sin sesión o token caducado (`requireAuth`). | `{"error": "UNAUTHORIZED", "message": "Authentication required."}` |
-| **`403 Forbidden`** | Usuario autenticado carece de rol `admin` u `owner`, o encabezado `Origin` no coincide con `frontendOrigin`. | `{"error": "FORBIDDEN", "message": "Forbidden."}` |
+| **`403 Forbidden`** | Usuario autenticado carece de rol `editor`, `admin` u `owner`, o encabezado `Origin` no coincide con `frontendOrigin`. | `{"error": "FORBIDDEN", "message": "Forbidden."}` |
 | **`404 Not Found`** | Artículo, división, jornada o imagen no encontrada en la base de datos o en disco (`notFound`). | `{"error": "NOT_FOUND", "message": "<Resource> not found"}` |
 | **`413 Payload Too Large`** | Archivo de imagen subido excede el límite estricto de 5 MiB (`5242880` bytes). | Mensaje de error de carga Express |
 | **`422 Unprocessable Entity`** | Fallo de validación Zod en cuerpo de petición (incluyendo descarte con más de 100 URLs), firma de imagen incorrecta (`INVALID_IMAGE`), jugador no elegible (`INVALID_WEEKLY_PLAYER`) o jugador duplicado (`DUPLICATE_WEEKLY_PLAYER`). | `{"error": "VALIDATION_ERROR" \| "INVALID_...", "message": "..."}` |

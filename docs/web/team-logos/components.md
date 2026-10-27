@@ -368,10 +368,10 @@ En `apps/web/src/site/pages/admin/AdminPage.tsx:22-118`, toda la vista se encuen
 
 La integración y correcto renderizado del panel se valida en la suite de pruebas unitarias de renderizado del cliente:
 
-### Caso de Prueba en `tests/unit/render/AdminPage.test.tsx:35-45`
+### Caso de Prueba en `apps/web/src/site/pages/admin/AdminPage.test.tsx:35-45`
 
 ```typescript
-// tests/unit/render/AdminPage.test.tsx:35-45
+// apps/web/src/site/pages/admin/AdminPage.test.tsx:35-45
 it('mounts logo management for administrators', () => {
   const html = renderSession(
     { status: 'authenticated', user: admin },

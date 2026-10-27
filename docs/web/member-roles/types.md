@@ -10,7 +10,7 @@ El módulo web importa y utiliza los contratos de membresía de `@rcl/contracts`
 
 ### 1.1 `MemberRole`
 ```typescript
-export type MemberRole = 'viewer' | 'admin' | 'owner';
+export type MemberRole = 'viewer' | 'editor' | 'admin' | 'owner';
 ```
 Unión de literales de cadena que restringe los roles de acceso admisibles en el sistema.
 

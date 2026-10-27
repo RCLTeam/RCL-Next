@@ -85,7 +85,7 @@ Conforme al diseño de la suite de pruebas del monorepo, se documentan de forma 
    - *Cobertura real:* Se prueban exhaustivamente en la capa de integración relacional contra PGlite:
      - `tests/integration/crud-operations.test.ts`: prueba bloqueos de borrado en cascada, auditoría de transacciones y operaciones CRUD relacionales completas.
      - `tests/integration/home-content.test.ts`: prueba la persistencia de artículos editoriales y selección del quinteto ideal.
-     - `tests/integration/member-roles.test.ts`: prueba la promoción y degradación de roles de sistema (`viewer`, `admin`, `owner`).
+     - `tests/integration/member-roles.test.ts`: prueba la promoción y degradación de roles de sistema (`viewer`, `editor`, `admin`, `owner`).
    - *Razón de diseño:* Estos módulos están fuertemente acoplados a la semántica transaccional de PostgreSQL y a restricciones de clave foránea; simular la base de datos con mocks unitarios crearía aserciones falsamente optimistas (*self-certification trap*), por lo que se priorizó su prueba directa contra el motor relacional real.
 
 2. **Funcionalidades Web sin pruebas unitarias en su carpeta de feature:**

@@ -34,7 +34,7 @@ list(query: unknown) {
 
 En `member-roles.service.ts:4, 17-24`:
 ```typescript
-const role = z.enum(['viewer', 'admin', 'owner']);
+const role = z.enum(['viewer', 'editor', 'admin', 'owner']);
 
 changeRole(actorId: string, memberId: unknown, body: unknown) {
   const id = z
@@ -47,7 +47,7 @@ changeRole(actorId: string, memberId: unknown, body: unknown) {
 ```
 
 - `memberId` (Parámetro de Ruta): Se valida como cadena que cumpla con el formato Snowflake de Discord (`/^\d{17,20}$/`). Impide que valores arbitrarios, alfanuméricos o UUIDs alcancen la consulta SQL.
-- `body.role`: Debe ser exactamente uno de los tres valores permitidos: `'viewer'`, `'admin'` u `'owner'`.
+- `body.role`: Debe ser exactamente uno de los cuatro valores permitidos: `'viewer'`, `'editor'`, `'admin'` u `'owner'`.
 - `body.expectedRole`: Debe pertenecer al mismo enum de roles, exigiendo que el cliente declare explícitamente el rol que el miembro ostentaba en la última lectura.
 - `.strict()`: Prohíbe propiedades adicionales en el cuerpo JSON de la petición.
 
@@ -60,7 +60,7 @@ El enrutador y repositorio traducen las anomalías a instancias de `AppError` fo
 | Código HTTP | Código Canónico (`error.code`) | Mensaje Emitido | Causa y Condición |
 |:---:|---|---|---|
 | `401 Unauthorized` | `UNAUTHENTICATED` | `"Sign-in is required."` | Petición sin cookie de sesión activa o con sesión caducada. |
-| `403 Forbidden` | `FORBIDDEN` | `"Only an owner can manage member roles."` o `"Insufficient permissions."` | El usuario solicitante posee rol `'viewer'` (en lectura) o rol `'admin'` (en mutación). |
+| `403 Forbidden` | `FORBIDDEN` | `"Only an owner can manage member roles."` o `"Insufficient permissions."` | El usuario solicitante posee rol `'viewer'` o `'editor'` (en lectura), o cualquier rol distinto de `'owner'` (en mutación). |
 | `403 Forbidden` | `INVALID_ORIGIN` | `"Request origin is not allowed."` | La cabecera `Origin` en peticiones PATCH difiere de `frontendOrigin`. |
 | `404 Not Found` | `NOT_FOUND` | `"Member was not found."` | No existe ningún registro en `discord_users` con el `discordId` indicado. |
 | `409 Conflict` | `ROLE_CHANGED` | `"This role changed. Reload the member list."` | Violación de concurrencia optimista: `before.role !== change.expectedRole`. |

@@ -83,6 +83,6 @@ Todas las anomalías de autenticación devuelven una instancia de `AppError` (`a
 | `400 Bad Request` | `DISCORD_ACCESS_DENIED` | `"Discord authorization was not completed."` | Parámetro `error` presente en la query de redirección de Discord (usuario canceló la autorización). |
 | `400 Bad Request` | `INVALID_OAUTH_CODE` | `"Discord authorization code is missing or invalid."` | Parámetro `code` ausente, no string o de longitud superior a 2048 caracteres. |
 | `401 Unauthorized` | `UNAUTHENTICATED` | `"Sign-in is required."` | Cookie de sesión ausente, token corrupto, o sesión inexistente/caducada en `auth_sessions`. |
-| `403 Forbidden` | `FORBIDDEN` | `"Insufficient permissions."` | El usuario autenticado posee un rol inferior al requerido (`viewer` intentando acceder a ruta de `admin`). |
+| `403 Forbidden` | `FORBIDDEN` | `"Insufficient permissions."` | El rol autenticado no está permitido por el literal o array solicitado (por ejemplo, `editor` o `viewer` ante un permiso `admin`); `owner` satisface `admin`. |
 | `403 Forbidden` | `INVALID_ORIGIN` | `"Request origin is not allowed."` | Mutación de sesión (ej. `/logout`) con cabecera `Origin` distinta de `frontendOrigin`. |
 | `502 Bad Gateway` | `DISCORD_UNAVAILABLE` | `"Discord sign-in failed. Please try again."` | Fallo de red, timeout (>10s) o respuesta HTTP 4xx/5xx de la API de Discord al solicitar token o perfil. |

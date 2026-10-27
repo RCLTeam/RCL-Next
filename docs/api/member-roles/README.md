@@ -6,7 +6,7 @@
 
 ## 1. Resumen Ejecutivo
 
-El módulo `apps/api/src/modules/member-roles/` implementa el subsistema de gobernanza de miembros, autorización y administración de privilegios de acceso al sistema en RCL-Next. Proporciona a los administradores y propietarios herramientas seguras para auditar la base de usuarios registrados y modificar quirúrgicamente los roles de aplicación (`appRole`: `'viewer'`, `'admin'`, `'owner'`) sobre la tabla relacional `discord_users`.
+El módulo `apps/api/src/modules/member-roles/` implementa el subsistema de gobernanza de miembros, autorización y administración de privilegios de acceso al sistema en RCL-Next. Proporciona a los administradores y propietarios herramientas seguras para auditar la base de usuarios registrados y modificar quirúrgicamente los roles de aplicación (`appRole`: `'viewer'`, `'editor'`, `'admin'`, `'owner'`) sobre la tabla relacional `discord_users`.
 
 El módulo opera bajo cinco pilares arquitectónicos y de integridad:
 1. **Disociación Estricta de Dominios de Roles:** El módulo gestiona **exclusivamente los roles de permisos del sistema** (`appRole`) en `discord_users`. No administra ni muta roles de plantilla deportiva (`rosterRole`: top, jungle, mid, adc, support, substitute, coach, staff, partners), capitanías en `team_memberships`, ni movimientos en `roster_movements`, los cuales son gestionados por el módulo CRUD (`apps/api/src/modules/crud-operations/postgres-crud-operations.repository.ts:182-204`).

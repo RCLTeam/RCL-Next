@@ -2,14 +2,15 @@ import type { AuthUser } from '@rcl/contracts';
 import React from 'react';
 import { renderToString } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
-import { AuthControls } from '../../../apps/web/src/features/auth/components/AuthControls.js';
+import { AuthControls } from '../../../features/auth/components/AuthControls.js';
 import {
   AuthContext,
-  type AuthState
-} from '../../../apps/web/src/features/auth/components/AuthProvider.js';
-import { MemberRolesTable } from '../../../apps/web/src/features/member-roles/components/MemberRolesPanel.js';
-import { SiteLayout } from '../../../apps/web/src/site/layout/SiteLayout.js';
-import { AdminPage } from '../../../apps/web/src/site/pages/admin/AdminPage.js';
+  type AuthState,
+  canAccessAdmin
+} from '../../../features/auth/components/AuthProvider.js';
+import { MemberRolesTable } from '../../../features/member-roles/components/MemberRolesPanel.js';
+import { SiteLayout } from '../../layout/SiteLayout.js';
+import { AdminPage } from './AdminPage.js';
 
 const admin: AuthUser = {
   discordId: '123',
@@ -139,5 +140,63 @@ describe('administration access', () => {
     });
     expect(html).toContain('No tienes permisos');
     expect(html).not.toContain('Dropzone for ROFL and ZIP files');
+  });
+});
+
+describe('editor administration access', () => {
+  it.each(['/admin', '/admin/home-content'])('shows only Home Content at %s', (path) => {
+    const html = renderSession(
+      { status: 'authenticated', user: { ...admin, role: 'editor' } },
+      false,
+      path
+    );
+    expect(html).toContain('Team of the Week');
+    const homeLink = html.match(/<a\b[^>]*href="\/admin\/home-content"[^>]*>/)?.[0];
+    expect(homeLink).toContain('aria-current="page"');
+    expect(html).toContain('href="/admin"');
+    expect(html).toContain('href="/admin/home-content"');
+    for (const section of [
+      'rofl/upload',
+      'crud',
+      'member-roles',
+      'team-logos',
+      'database-transfer'
+    ]) {
+      expect(html).not.toContain(`href="/admin/${section}"`);
+    }
+  });
+  it.each(['rofl/upload', 'crud', 'member-roles', 'team-logos', 'database-transfer'])(
+    'blocks direct editor navigation to %s',
+    (section) => {
+      const html = renderSession(
+        { status: 'authenticated', user: { ...admin, role: 'editor' } },
+        false,
+        `/admin/${section}`
+      );
+      expect(html).toContain('No tienes permisos para acceder a esta sección.');
+      expect(html).not.toContain('Team of the Week');
+    }
+  );
+  it.each(['admin', 'owner'] as const)('preserves all sections for %s', (role) => {
+    const html = renderSession({ status: 'authenticated', user: { ...admin, role } });
+    expect(html).toContain('href="/admin/member-roles"');
+    expect(html).toContain('href="/admin/database-transfer"');
+  });
+  it('denies viewers and enables the admin navigation entry for editors', () => {
+    expect(
+      renderSession({ status: 'authenticated', user: { ...admin, role: 'viewer' } })
+    ).toContain('No tienes permisos de administración.');
+    expect(
+      canAccessAdmin({
+        status: 'authenticated',
+        user: {
+          discordId: '123',
+          username: 'editor',
+          globalName: null,
+          avatarHash: null,
+          role: 'editor'
+        }
+      })
+    ).toBe(true);
   });
 });
