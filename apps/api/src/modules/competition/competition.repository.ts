@@ -68,6 +68,7 @@ export interface CompetitionRepository {
     { id: string; name: string; seasonName: string; divisionName: string }[]
   >;
   players(divisionId?: string): Promise<Player[]>;
+  playerSeasonChampions(playerIds: string[], seasonName: string): Promise<Map<string, string>>;
   playerSeasonGames(
     playerId: string,
     seasonName: string

@@ -179,6 +179,7 @@ function countingRepository(completedMatches: number, statuses: Match['status'][
     matchGamesByMatch: async (ids) => new Map(ids.map((id) => [id, []])),
     teamDirectory: async () => directory,
     players: async () => [player],
+    playerSeasonChampions: async () => new Map(),
     playerSeasonGames: async () => ({ playerGames: [], allMatchGames: [], mvpMatchIds: [] }),
     playerDetail: async (id) =>
       id === playerId ? { ...player, linkedAccounts: [], teams: [] } : undefined,

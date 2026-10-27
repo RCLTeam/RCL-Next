@@ -187,7 +187,9 @@ Orquesta la vista del perfil institucional y deportivo de un club, integrando la
   - Presenta estados dedicados en `PageLayout`: `'loading'`, `'missing'` ("Equipo no encontrado. Puede que ya no esté disponible."), `'error'` con reintento y `'ready'` renderizando `TeamProfile`.
 
 - **Cabecera y Estado Competitivo (`team-profile-header`)**:
-  - Inyecta la variable CSS `--team-color` con el color corporativo del equipo (`team.color || 'var(--panel)'`), tiñendo bordes, sombras y acentos visuales de la ficha.
+  - `.team-profile-champions` resuelve los cinco roles mediante `featuredLineup ?? players`, usando `useGameCatalog` y `getGameAsset`. Indica «Sin titular» cuando falta el rol y «Sin partidas» cuando no hay campeón. El nombre largo se trunca con su texto completo en `title`.
+  - La rejilla comienza apilada desde 320 px, pasa a dos columnas desde 481 px, tres desde 701 px y cinco con diagonales desde 901 px. Desde 1501 px comparte fila con identidad y acciones. No aplica contención vertical: el contenido determina su altura.
+  - Inyecta la variable CSS `--team-color` con el color corporativo del equipo (`team.color || 'var(--purple)'`), tiñendo bordes, sombras y acentos visuales de la ficha.
   - Renderiza el emblema oficial (`TeamBadge`), el acrónimo distintivo (`team.shortName ?? team.name`), la división y la temporada.
   - **Indicador de Estado de Actividad (`team-profile-status`)**: Muestra explícitamente si el club participa activamente en el torneo o si se encuentra dado de baja:
     ```tsx
@@ -211,10 +213,11 @@ Orquesta la vista del perfil institucional y deportivo de un club, integrando la
   - **Botón Interactivo de Marca (`team-profile-opgg`)**: Renderiza el logotipo oficial de OP.GG envuelto en un enlace seguro con atributos `target="_blank"`, `rel="noopener noreferrer"` y etiqueta descriptiva `aria-label={`Ver Multi OP.GG de ${team.name} (nueva pestaña)`}`.
 
 - **Información Institucional y Clasificación de Miembros (`MemberSection`)**:
-  - **Panel Descriptivo (`team-profile-info`)**: Lista de cuatro dimensiones institucionales (`<dl>`): nombre de la entidad, división, temporada y recuento total de jugadores.
+  - **Panel Descriptivo (`team-profile-info`)**: Lista de dos celdas (`<dl>`): Temporada y Jugadores (incluidos suplentes).
   - **Sección `Jugadores`**: Filtra integrantes clasificados bajo `playerRoles` (`'top'`, `'jungle'`, `'mid'`, `'adc'`, `'support'`, `'substitute'`). Aplica ordenación canónica por posición de juego y desempate alfabético en locale `'es'`.
+    - El DOM sigue el orden visual y de lectura: rol, identidad y estadísticas, sin propiedades CSS `order`. El nombre de comunidad solo aparece como segunda línea si existe gameName y ambos nombres normalizados difieren.
     - Cada tarjeta (`team-member-card team-player-card`) expone las estadísticas del jugador en la plantilla (`rosterStats`: partidas jugadas, galardones de MVP y campeones únicos utilizados).
-    - Distintivo visual para el capitán (`member.isCaptain`, clase `is-captain` y etiqueta `team-player-captain`).
+    - Distintivo visual para el capitán (`member.isCaptain`, clase `is-captain` y etiqueta `team-tag`).
     - Enlace al perfil individual del jugador (`/jugadores/:playerSlugOrId`) mediante `SiteLink` y botón directo a su perfil individual en OP.GG (`team-member-opgg`).
   - **Secciones de Cuerpo Técnico y Colaboradores**: Bloques independientes para `Coach` (`role === 'coach'`), `Staff` (`role === 'staff'`) y `Partners` (`role === 'partners'`), garantizando la representación completa de la estructura del club.
 

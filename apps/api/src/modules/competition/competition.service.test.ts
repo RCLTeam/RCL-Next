@@ -1,8 +1,8 @@
 import type { MatchMap, MatchPlayerStats, PlayerDetail, PlayerTeam } from '@rcl/contracts';
-import { expect, test, vi } from 'vitest';
+import { assert, expect, test, vi } from 'vitest';
 import type { CompetitionRepository, Match } from './competition.repository.js';
 import { CompetitionService } from './competition.service.js';
-import type { PlayerGameRow } from './player-statistics.js';
+import { type PlayerGameRow, mostPlayedChampion } from './player-statistics.js';
 
 const divisionId = '20000000-0000-4000-8000-000000000001';
 const homeId = '30000000-0000-4000-8000-000000000001';
@@ -211,6 +211,7 @@ function repository(matches: Match[]) {
       { id: homeId, name: 'Rebels', seasonName: '2026', divisionName: 'Primera' }
     ],
     players: async () => [],
+    playerSeasonChampions: async () => new Map(),
     playerSeasonGames: async () => ({ playerGames: [], allMatchGames: [], mvpMatchIds: [] }),
     playerDetail: async () => undefined,
     teamDetail: async () => ({
@@ -256,6 +257,51 @@ test('Team detail loads the games of every completed match with one lookup', asy
   expect(matchGamesByMatch).toHaveBeenCalledTimes(1);
   expect(matchGamesByMatch).toHaveBeenCalledWith(matches.slice(0, 20).map((match) => match.id));
   expect(detail.members[0]?.rosterStats).toEqual({ games: 20, mvps: 0, champions: 2 });
+  expect(detail.members[0]?.champion).toBeNull();
+});
+
+test('Team champion uses the player season history rather than only current-team games', async () => {
+  const { source } = repository([completedMatch(0)]);
+  const seasonGames = ['Orianna', 'Ahri', 'Orianna'].map(
+    (champion, index): PlayerGameRow => ({
+      playerId,
+      gameId: `g${index}`,
+      matchId: `m${index}`,
+      divisionId,
+      roundId: 1,
+      teamId: awayId,
+      team: { id: awayId, name: 'Previous team', shortName: null, logoUrl: null },
+      position: 'mid',
+      champion,
+      durationSeconds: 1800,
+      winnerTeamId: awayId,
+      kills: 0,
+      deaths: 0,
+      assists: 0,
+      cs: 0,
+      damageToChampions: 0,
+      goldEarned: null,
+      visionScore: null,
+      damageMitigated: null
+    })
+  );
+  source.playerSeasonGames = vi.fn(async () => ({
+    playerGames: [],
+    allMatchGames: [],
+    mvpMatchIds: []
+  }));
+  source.playerSeasonChampions = vi.fn(
+    async () => new Map([[playerId, mostPlayedChampion(seasonGames) ?? '']])
+  );
+  expect((await new CompetitionService(source).teamDetail('rebels')).members[0]?.champion).toBe(
+    'Orianna'
+  );
+  expect(source.playerSeasonChampions).toHaveBeenCalledExactlyOnceWith([playerId], '2026');
+  expect(source.playerSeasonGames).not.toHaveBeenCalled();
+  const empty = repository([]);
+  expect(
+    (await new CompetitionService(empty.source).teamDetail('rebels')).members[0]?.champion
+  ).toBeNull();
 });
 
 test('Player detail displays season-wide statistics and MVPs across transfers while showing active team', async () => {
@@ -332,6 +378,7 @@ test('Player detail displays season-wide statistics and MVPs across transfers wh
         isMain: true
       }
     ],
+    playerSeasonChampions: async () => new Map(),
     playerSeasonGames: async (pId, season) => {
       expect(pId).toBe(transferredPlayerId);
       expect(season).toBe('2026');
@@ -497,6 +544,7 @@ test('Team detail only counts MVPs won while playing for that specific team', as
       { id: teamBId, name: 'Team B', seasonName: '2026', divisionName: 'Primera' }
     ],
     players: async () => [],
+    playerSeasonChampions: async () => new Map(),
     playerSeasonGames: async () => ({ playerGames: [], allMatchGames: [], mvpMatchIds: [] }),
     playerDetail: async () => undefined,
     teamDetail: async (id) => ({
@@ -558,6 +606,7 @@ test('Player detail gracefully handles player with active team membership but ze
       { id: teamId, name: 'Bench Team', seasonName: '2026', divisionName: 'Primera' }
     ],
     players: async () => [],
+    playerSeasonChampions: async () => new Map(),
     playerSeasonGames: async () => ({ playerGames: [], allMatchGames: [], mvpMatchIds: ['m1'] }),
     playerDetail: async (id) => ({
       id,
@@ -603,3 +652,143 @@ test('Player detail gracefully handles player with active team membership but ze
   expect(detail.competition?.champion).toBeNull();
   expect(detail.competition?.mvpMatchIds).toEqual(['m1']);
 });
+
+test('Featured lineup prefers a played starter and otherwise the most used player in that team position', async () => {
+  const { source, matchGamesByMatch } = repository([completedMatch(0)]);
+  const match = completedMatch(0);
+  const substituteGame = (id: string, position: string) => {
+    const map = game(match.id, 'Ahri');
+    map.participants = map.participants.map((entry) => ({
+      ...entry,
+      playerId: id,
+      gameName: id,
+      position
+    }));
+    return map;
+  };
+  const maps = [
+    substituteGame('sub', 'mid'),
+    substituteGame('sub', 'mid'),
+    substituteGame('other', 'mid'),
+    substituteGame('jungler', 'jungle')
+  ];
+  matchGamesByMatch.mockResolvedValue(new Map([[match.id, maps]]));
+  let detail = await new CompetitionService(source).teamDetail('rebels');
+  expect(detail.featuredLineup?.find((member) => member.role === 'mid')?.playerId).toBe('sub');
+  expect(detail.members[0]?.playerId).toBe(playerId);
+  maps.push(game(match.id, 'Ahri'));
+  detail = await new CompetitionService(source).teamDetail('rebels');
+  expect(detail.featuredLineup?.find((member) => member.role === 'mid')?.playerId).toBe(playerId);
+  const empty = repository([]);
+  expect(
+    (await new CompetitionService(empty.source).teamDetail('rebels')).featuredLineup?.find(
+      (member) => member.role === 'mid'
+    )?.playerId
+  ).toBe(playerId);
+});
+
+test('lineup reserves played starters, checks every member and never repeats an account', async () => {
+  const match = completedMatch(0);
+  const { source, matchGamesByMatch } = repository([match]);
+  const team = await source.teamDetail(homeId);
+  assert.ok(team);
+  const templateMember = team.members[0];
+  assert.ok(templateMember);
+  const member = (id: string, role: 'top' | 'mid' | 'substitute') => ({
+    ...templateMember,
+    id,
+    playerId: id,
+    name: id,
+    gameName: id,
+    role
+  });
+  source.teamDetail = async () => ({
+    ...team,
+    members: [
+      member('unplayed', 'mid'),
+      member('starter', 'mid'),
+      member('wrong-lane', 'top'),
+      member('sub', 'substitute')
+    ]
+  });
+  const templateAppearance = game(match.id, 'Ahri').participants[0];
+  assert.ok(templateAppearance);
+  const appearance = (id: string, position: string) => ({
+    ...templateAppearance,
+    playerId: id,
+    position,
+    gameName: id
+  });
+  const map = game(match.id, 'Ahri');
+  map.participants = [
+    appearance('starter', 'middle'),
+    appearance('starter', 'top'),
+    appearance('wrong-lane', 'mid'),
+    appearance('sub', 'top'),
+    appearance('sub', 'top'),
+    appearance('sub', 'jg'),
+    appearance('other', 'jungla')
+  ];
+  matchGamesByMatch.mockResolvedValue(new Map([[match.id, [map]]]));
+  source.playerSeasonChampions = vi.fn(
+    async () =>
+      new Map([
+        ['unplayed', 'Garen'],
+        ['sub', 'Ahri']
+      ])
+  );
+  const detail = await new CompetitionService(source).teamDetail('rebels');
+  expect(detail.featuredLineup?.find((entry) => entry.role === 'mid')?.playerId).toBe('starter');
+  expect(detail.featuredLineup?.find((entry) => entry.role === 'top')?.playerId).toBe('sub');
+  expect(detail.featuredLineup?.find((entry) => entry.role === 'jungle')?.playerId).toBe('other');
+  const ids = detail.featuredLineup?.map((entry) => entry.playerId) ?? [];
+  expect(new Set(ids).size).toBe(ids.length);
+  expect(source.playerSeasonChampions).toHaveBeenCalledTimes(1);
+  expect(detail.members.find((entry) => entry.playerId === 'unplayed')?.champion).toBe('Garen');
+});
+
+test.each(['bottom', 'bot', 'utility', 'sup', 'jg', 'jungla'])(
+  'lineup normalizes %s and enriches non-featured substitutes',
+  async (position) => {
+    const match = completedMatch(0);
+    const { source, matchGamesByMatch } = repository([match]);
+    const team = await source.teamDetail(homeId);
+    assert.ok(team);
+    const templateMember = team.members[0];
+    assert.ok(templateMember);
+    source.teamDetail = async () => ({
+      ...team,
+      members: [
+        ...team.members,
+        {
+          ...templateMember,
+          id: 'bench',
+          playerId: 'bench',
+          role: 'substitute'
+        }
+      ]
+    });
+    const map = game(match.id, 'Ahri');
+    map.participants = map.participants.map((entry) => ({
+      ...entry,
+      playerId: 'historical',
+      position
+    }));
+    matchGamesByMatch.mockResolvedValue(new Map([[match.id, [map]]]));
+    source.playerSeasonChampions = vi.fn(async () => new Map([['bench', 'Lulu']]));
+    const detail = await new CompetitionService(source).teamDetail('rebels');
+    const expectedRole = ['bottom', 'bot'].includes(position)
+      ? 'adc'
+      : ['utility', 'sup'].includes(position)
+        ? 'support'
+        : 'jungle';
+    expect(detail.featuredLineup?.find((entry) => entry.playerId === 'historical')?.role).toBe(
+      expectedRole
+    );
+    expect(detail.members.find((entry) => entry.playerId === 'bench')?.champion).toBe('Lulu');
+    expect(source.playerSeasonChampions).toHaveBeenCalledExactlyOnceWith(
+      expect.arrayContaining(['bench', 'historical', playerId]),
+      '2026'
+    );
+  }
+);

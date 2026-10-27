@@ -25,6 +25,7 @@ import {
   type PlayerGameRow,
   compareMvpRanking,
   enrichPlayers,
+  mostPlayedChampion,
   playerMvpRanking
 } from './player-statistics.js';
 
@@ -379,6 +380,46 @@ export class PostgresCompetitionRepository implements CompetitionRepository {
         };
       });
   }
+  async playerSeasonChampions(
+    playerIds: string[],
+    seasonName: string
+  ): Promise<Map<string, string>> {
+    if (!playerIds.length) return new Map();
+    // One narrow query across the season, including previous teams and substitute accounts.
+    const picks = await this.db
+      .select({ playerId: playerGameInfo.playerId, champion: playerGameInfo.champion })
+      .from(playerGameInfo)
+      .innerJoin(matchGames, eq(matchGames.id, playerGameInfo.matchGameId))
+      .innerJoin(matches, eq(matches.id, matchGames.matchesId))
+      .innerJoin(seasonsDivisions, eq(seasonsDivisions.id, matches.idSeasonDivision))
+      .where(
+        and(
+          inArray(playerGameInfo.playerId, playerIds),
+          eq(seasonsDivisions.seasonName, seasonName),
+          eq(matches.status, 'completed'),
+          isNotNull(matchGames.winnerTeamId)
+        )
+      )
+      .orderBy(
+        asc(matches.finishedAt),
+        asc(matches.scheduledAt),
+        asc(matches.id),
+        asc(matchGames.gameNumber)
+      );
+    const byPlayer = new Map<string, { champion: string }[]>();
+    for (const pick of picks) {
+      const games = byPlayer.get(pick.playerId) ?? [];
+      games.push(pick);
+      byPlayer.set(pick.playerId, games);
+    }
+    const champions = new Map<string, string>();
+    for (const [id, games] of byPlayer) {
+      const champion = mostPlayedChampion(games);
+      if (champion) champions.set(id, champion);
+    }
+    return champions;
+  }
+
   async playerSeasonGames(
     playerId: string,
     seasonName: string

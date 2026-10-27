@@ -274,7 +274,7 @@ test('Centralized tournament components render correctly', () => {
 
   const teamCardHtml = renderToStaticMarkup(<TeamCard team={home} divisionName="Premier" />);
   expect(teamCardHtml).toContain('Lobos');
-  expect(teamCardHtml).not.toContain('Premier');
+  expect(teamCardHtml).toContain('Premier');
   expect(teamCardHtml).toContain('team-card-abbreviation');
   expect(teamCardHtml).not.toContain('Ver equipo →');
   expect(teamCardHtml).toContain('LOB');
@@ -436,4 +436,84 @@ test('PlayoffBracket handles missing teams and scores gracefully', () => {
   expect(html).toContain('Por definir');
   expect(html).toContain('—');
   expect(html).not.toContain('undefined');
+});
+
+test('team champion header honors featured lineup and empty lane states', () => {
+  const member = {
+    id: 'starter',
+    playerId: 'starter',
+    name: 'Starter',
+    gameName: 'Starter',
+    role: 'top' as const,
+    isCaptain: false,
+    riotTag: null,
+    countryCode: null,
+    champion: 'Garen'
+  };
+  const team = {
+    id: 'team',
+    name: 'Team',
+    shortName: null,
+    logoUrl: null,
+    color: null,
+    seasonName: '2026',
+    divisionName: 'Premier',
+    isActive: true,
+    members: [member]
+  };
+  const html = renderToStaticMarkup(
+    <TeamProfile
+      team={{
+        ...team,
+        featuredLineup: [{ ...member, id: 'replacement', gameName: 'Replacement', champion: null }]
+      }}
+    />
+  );
+  const header = html.split('</header>')[0] ?? '';
+  expect(header).toContain('team-profile-champions');
+  expect(header).toContain('Replacement');
+  expect(header).not.toContain('Starter');
+  expect(header.match(/Sin titular<\/strong>/g)).toHaveLength(4);
+  expect(header).toContain('Sin partidas');
+  expect(header).toContain('--team-color:var(--purple)');
+  const legacy = renderToStaticMarkup(<TeamProfile team={team} />).split('</header>')[0];
+  expect(legacy).toContain('Starter');
+  expect(legacy).toContain('Garen');
+  const empty = renderToStaticMarkup(<TeamProfile team={{ ...team, featuredLineup: [] }} />).split(
+    '</header>'
+  )[0];
+  expect(empty?.match(/Sin titular<\/strong>/g)).toHaveLength(5);
+});
+
+test('roster announces role and identity before statistics and avoids duplicate display names', () => {
+  for (const gameName of [null, 'Coach', '𝑪𝒐𝒂𝒄𝒉', 'Riot Name']) {
+    const html = renderToStaticMarkup(
+      <TeamProfile
+        team={{
+          id: 'team',
+          name: 'Team',
+          shortName: null,
+          logoUrl: null,
+          seasonName: '2026',
+          divisionName: 'Premier',
+          isActive: true,
+          members: [
+            {
+              id: 'member',
+              name: 'Coach',
+              gameName,
+              role: 'top',
+              isCaptain: false,
+              riotTag: null,
+              countryCode: null
+            }
+          ]
+        }}
+      />
+    );
+    const card = html.split('<article')[1] ?? '';
+    expect(card.indexOf('team-member-role')).toBeLessThan(card.indexOf('team-member-identity'));
+    expect(card.indexOf('team-member-identity')).toBeLessThan(card.indexOf('team-player-overview'));
+    expect(card.includes('<p>Coach</p>')).toBe(gameName === 'Riot Name');
+  }
 });
