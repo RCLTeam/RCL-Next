@@ -37,12 +37,12 @@ export function AdminPage({
           </SiteLink>
           {!editorOnly && (
             <>
-          <SiteLink
-            href="/admin/crystal-ball"
-            aria-current={path === '/admin/crystal-ball' ? 'page' : undefined}
-          >
-            Bola de cristal
-          </SiteLink>
+              <SiteLink
+                href="/admin/crystal-ball"
+                aria-current={path === '/admin/crystal-ball' ? 'page' : undefined}
+              >
+                Bola de cristal
+              </SiteLink>
               <SiteLink
                 href="/admin/rofl/upload"
                 aria-current={path === '/admin/rofl/upload' ? 'page' : undefined}

@@ -26,12 +26,12 @@ Todas las respuestas usan `no-store`; las escrituras exigen origen confiable. La
 
 ## Despliegue y pruebas
 
-Aplicar `0004_crystal_ball.sql` con `pnpm db:migrate` antes de iniciar la API. Se conserva el historial incremental existente (0000–0003), aunque la guía antigua aún menciona consolidar la base. No se modifica ninguna campaña o fecha al desplegar.
+Aplicar `0005_crystal_ball.sql` con `pnpm db:migrate` antes de iniciar la API. Se conserva el historial incremental existente (0000–0004), aunque la guía antigua aún menciona consolidar la base. No se modifica ninguna campaña o fecha al desplegar.
 
 Pruebas: `crystal-ball-policy.test.ts`, `tests/integration/crystal-ball.test.ts` y `tests/integration/crystal-ball-router.test.ts`. Cubren reglas, empates, límites temporales, permisos, origen, persistencia en PGlite y correcciones idempotentes.
 
 ## Separación por liga
 
-Aplicar también `0005_glamorous_surge.sql`. Las nuevas tablas `crystal_ball_league_campaigns` y `crystal_ball_league_entries` almacenan fechas, respuestas y resultados independientes. Cada boleto tiene 24 preguntas (28 puntos posibles: seis equipos y 22 predicciones). El ranking y el cierre automático solo usan la liga seleccionada.
+Aplicar también `0006_crystal_ball_leagues.sql`. Las nuevas tablas `crystal_ball_league_campaigns` y `crystal_ball_league_entries` almacenan fechas, respuestas y resultados independientes. Cada boleto tiene 24 preguntas (28 puntos posibles: seis equipos y 22 predicciones). El ranking y el cierre automático solo usan la liga seleccionada.
 
 Las tablas anteriores por temporada se conservan como histórico: sus predicciones globales no se convierten automáticamente en pronósticos de una liga, porque cambiaría su significado. Las nuevas campañas empiezan sin configurar. Se mantiene la secuencia incremental ya aplicada localmente para conservar el historial y los datos.

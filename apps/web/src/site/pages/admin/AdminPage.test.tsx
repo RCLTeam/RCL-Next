@@ -175,6 +175,7 @@ describe('editor administration access', () => {
     expect(html).toContain('href="/admin"');
     expect(html).toContain('href="/admin/home-content"');
     for (const section of [
+      'crystal-ball',
       'rofl/upload',
       'crud',
       'member-roles',
@@ -184,18 +185,22 @@ describe('editor administration access', () => {
       expect(html).not.toContain(`href="/admin/${section}"`);
     }
   });
-  it.each(['rofl/upload', 'crud', 'member-roles', 'team-logos', 'database-transfer'])(
-    'blocks direct editor navigation to %s',
-    (section) => {
-      const html = renderSession(
-        { status: 'authenticated', user: { ...admin, role: 'editor' } },
-        false,
-        `/admin/${section}`
-      );
-      expect(html).toContain('No tienes permisos para acceder a esta sección.');
-      expect(html).not.toContain('Team of the Week');
-    }
-  );
+  it.each([
+    'crystal-ball',
+    'rofl/upload',
+    'crud',
+    'member-roles',
+    'team-logos',
+    'database-transfer'
+  ])('blocks direct editor navigation to %s', (section) => {
+    const html = renderSession(
+      { status: 'authenticated', user: { ...admin, role: 'editor' } },
+      false,
+      `/admin/${section}`
+    );
+    expect(html).toContain('No tienes permisos para acceder a esta sección.');
+    expect(html).not.toContain('Team of the Week');
+  });
   it.each(['admin', 'owner'] as const)('preserves all sections for %s', (role) => {
     const html = renderSession({ status: 'authenticated', user: { ...admin, role } });
     expect(html).toContain('href="/admin/member-roles"');
