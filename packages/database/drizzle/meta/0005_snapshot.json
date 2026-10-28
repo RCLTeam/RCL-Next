@@ -1,5 +1,5 @@
 {
-  "id": "de6d619f-a2be-43d9-9be0-b6bd7d97cdda",
+  "id": "0d69d34b-b55d-4200-8956-8da56c40d039",
   "prevId": "d3e58ffb-7f13-41af-8217-745a7c683cca",
   "version": "7",
   "dialect": "postgresql",
@@ -191,6 +191,206 @@
       "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.crystal_ball_league_campaigns": {
+      "name": "crystal_ball_league_campaigns",
+      "schema": "",
+      "columns": {
+        "division_id": {
+          "name": "division_id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "opens_at": {
+          "name": "opens_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "closes_at": {
+          "name": "closes_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "finalized_at": {
+          "name": "finalized_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "results": {
+          "name": "results",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::jsonb"
+        },
+        "automatic_results": {
+          "name": "automatic_results",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::jsonb"
+        },
+        "calculated_at": {
+          "name": "calculated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "resolved_by": {
+          "name": "resolved_by",
+          "type": "varchar(32)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "crystal_campaign_division_fk": {
+          "name": "crystal_campaign_division_fk",
+          "tableFrom": "crystal_ball_league_campaigns",
+          "tableTo": "seasons_divisions",
+          "columnsFrom": [
+            "division_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "crystal_campaign_resolver_fk": {
+          "name": "crystal_campaign_resolver_fk",
+          "tableFrom": "crystal_ball_league_campaigns",
+          "tableTo": "discord_users",
+          "columnsFrom": [
+            "resolved_by"
+          ],
+          "columnsTo": [
+            "discord_id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "crystal_league_window_check": {
+          "name": "crystal_league_window_check",
+          "value": "\"crystal_ball_league_campaigns\".\"opens_at\" < \"crystal_ball_league_campaigns\".\"closes_at\""
+        },
+        "crystal_league_results_check": {
+          "name": "crystal_league_results_check",
+          "value": "jsonb_typeof(\"crystal_ball_league_campaigns\".\"results\") = 'object'"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.crystal_ball_league_entries": {
+      "name": "crystal_ball_league_entries",
+      "schema": "",
+      "columns": {
+        "division_id": {
+          "name": "division_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "discord_user_id": {
+          "name": "discord_user_id",
+          "type": "varchar(32)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "answers": {
+          "name": "answers",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "crystal_league_entries_user_idx": {
+          "name": "crystal_league_entries_user_idx",
+          "columns": [
+            {
+              "expression": "discord_user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "crystal_entry_campaign_fk": {
+          "name": "crystal_entry_campaign_fk",
+          "tableFrom": "crystal_ball_league_entries",
+          "tableTo": "crystal_ball_league_campaigns",
+          "columnsFrom": [
+            "division_id"
+          ],
+          "columnsTo": [
+            "division_id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "crystal_entry_user_fk": {
+          "name": "crystal_entry_user_fk",
+          "tableFrom": "crystal_ball_league_entries",
+          "tableTo": "discord_users",
+          "columnsFrom": [
+            "discord_user_id"
+          ],
+          "columnsTo": [
+            "discord_id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "crystal_ball_league_entries_division_id_discord_user_id_pk": {
+          "name": "crystal_ball_league_entries_division_id_discord_user_id_pk",
+          "columns": [
+            "division_id",
+            "discord_user_id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "crystal_league_answers_check": {
+          "name": "crystal_league_answers_check",
+          "value": "jsonb_typeof(\"crystal_ball_league_entries\".\"answers\") = 'object'"
+        }
+      },
       "isRLSEnabled": false
     },
     "public.discord_users": {
@@ -2837,193 +3037,6 @@
       },
       "policies": {},
       "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.crystal_ball_campaigns": {
-      "name": "crystal_ball_campaigns",
-      "schema": "",
-      "columns": {
-        "season_name": {
-          "name": "season_name",
-          "type": "varchar(120)",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "opens_at": {
-          "name": "opens_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "closes_at": {
-          "name": "closes_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "finalized_at": {
-          "name": "finalized_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "results": {
-          "name": "results",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'{}'::jsonb"
-        },
-        "resolved_by": {
-          "name": "resolved_by",
-          "type": "varchar(32)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "crystal_ball_campaigns_season_name_seasons_name_fk": {
-          "name": "crystal_ball_campaigns_season_name_seasons_name_fk",
-          "tableFrom": "crystal_ball_campaigns",
-          "tableTo": "seasons",
-          "columnsFrom": [
-            "season_name"
-          ],
-          "columnsTo": [
-            "name"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "cascade"
-        },
-        "crystal_ball_campaigns_resolved_by_discord_users_discord_id_fk": {
-          "name": "crystal_ball_campaigns_resolved_by_discord_users_discord_id_fk",
-          "tableFrom": "crystal_ball_campaigns",
-          "tableTo": "discord_users",
-          "columnsFrom": [
-            "resolved_by"
-          ],
-          "columnsTo": [
-            "discord_id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {
-        "crystal_ball_window_check": {
-          "name": "crystal_ball_window_check",
-          "value": "\"crystal_ball_campaigns\".\"opens_at\" < \"crystal_ball_campaigns\".\"closes_at\""
-        },
-        "crystal_ball_results_object_check": {
-          "name": "crystal_ball_results_object_check",
-          "value": "jsonb_typeof(\"crystal_ball_campaigns\".\"results\") = 'object'"
-        }
-      },
-      "isRLSEnabled": false
-    },
-    "public.crystal_ball_entries": {
-      "name": "crystal_ball_entries",
-      "schema": "",
-      "columns": {
-        "season_name": {
-          "name": "season_name",
-          "type": "varchar(120)",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "discord_user_id": {
-          "name": "discord_user_id",
-          "type": "varchar(32)",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "answers": {
-          "name": "answers",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {
-        "crystal_ball_entries_user_idx": {
-          "name": "crystal_ball_entries_user_idx",
-          "columns": [
-            {
-              "expression": "discord_user_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "crystal_ball_entries_season_name_crystal_ball_campaigns_season_": {
-          "name": "crystal_ball_entries_season_name_crystal_ball_campaigns_season_",
-          "tableFrom": "crystal_ball_entries",
-          "tableTo": "crystal_ball_campaigns",
-          "columnsFrom": [
-            "season_name"
-          ],
-          "columnsTo": [
-            "season_name"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "cascade"
-        },
-        "crystal_ball_entries_discord_user_id_discord_users_discord_id_f": {
-          "name": "crystal_ball_entries_discord_user_id_discord_users_discord_id_f",
-          "tableFrom": "crystal_ball_entries",
-          "tableTo": "discord_users",
-          "columnsFrom": [
-            "discord_user_id"
-          ],
-          "columnsTo": [
-            "discord_id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {
-        "crystal_ball_entries_season_name_discord_user_id_pk": {
-          "name": "crystal_ball_entries_season_name_discord_user_id_pk",
-          "columns": [
-            "season_name",
-            "discord_user_id"
-          ]
-        }
-      },
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {
-        "crystal_ball_answers_object_check": {
-          "name": "crystal_ball_answers_object_check",
-          "value": "jsonb_typeof(\"crystal_ball_entries\".\"answers\") = 'object'"
-        }
-      },
       "isRLSEnabled": false
     }
   },
