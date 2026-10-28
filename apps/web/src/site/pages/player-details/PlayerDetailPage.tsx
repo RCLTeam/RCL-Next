@@ -10,6 +10,9 @@ import type {
 import { PageLayout } from '../../../shared/components/PageLayout/PageLayout.js';
 import { SiteLink } from '../../../shared/components/SiteLink.js';
 import { displayName } from '../../../shared/display-name.js';
+import { ChampionArt } from '../../../shared/riot/ChampionArt.js';
+import { getGameAsset } from '../../../shared/riot/riot-assets.service.js';
+import { useGameCatalog } from '../../../shared/riot/useGameCatalog.js';
 import './player-details.css';
 
 const roleLabels: Record<TeamMember['role'], string> = {
@@ -47,19 +50,21 @@ function PlayerMembershipSection({
         <div className="player-profile-team-grid">
           {teams.map((team) => (
             <SiteLink
-              className="player-profile-membership player-affiliation-card"
+              className="player-profile-membership"
+              style={{ '--profile-color': team.color || 'var(--purple)' } as React.CSSProperties}
               key={team.id}
               href={`/equipos/${encodeURIComponent(team.slug ?? team.id)}`}
             >
-              <div className="player-affiliation-body">
-                <span className="player-affiliation-context">
+              <div className="player-membership-body">
+                <span className="meta">
                   {team.seasonName} · {team.divisionName}
                 </span>
                 <h3 title={team.name}>{team.name}</h3>
-                <span className="player-affiliation-role">
+                <p>
                   {roleLabels[team.role]}
                   {team.isCaptain ? ' · Capitán' : ''}
-                </span>
+                </p>
+                {!team.isActive && <span className="meta">Equipo inactivo</span>}
               </div>
               <TeamBadge team={team} />
             </SiteLink>
@@ -73,6 +78,9 @@ function PlayerMembershipSection({
 }
 
 export function PlayerProfile({ player }: { player: PlayerDetail }) {
+  const catalog = useGameCatalog();
+  const championName = player.competition?.champion;
+  const champion = getGameAsset('champion', championName ?? null, catalog);
   const tag = player.riotTag?.replace(/^#/, '').trim();
   const riotId = `${player.gameName}${tag ? `#${tag}` : ''}`;
   const registrationTeam = player.registrationTeam ?? null;
@@ -99,79 +107,103 @@ export function PlayerProfile({ player }: { player: PlayerDetail }) {
         { '--profile-color': registrationTeam?.color || 'var(--purple)' } as React.CSSProperties
       }
     >
-      <header className="player-profile-header">
-        <div className="player-profile-identity">
-          <span className="eyebrow">
-            {player.isMain ? 'Cuenta principal' : 'Cuenta registrada'}
-          </span>
-          <h2>{player.gameName}</h2>
-          <div className="player-profile-account">
-            <div className="player-profile-account-names">
-              <p className="player-profile-riot">{riotId}</p>
-              <p>{displayName(player.displayName ?? 'Jugador RCL')}</p>
+      <header
+        className={`player-profile-header${championName ? ' player-profile-header-featured' : ''}`}
+      >
+        {championName && (
+          <div className="player-profile-champion">
+            <div
+              className="player-profile-champion-fallback"
+              role="img"
+              aria-label={champion?.name ?? championName}
+            >
+              <span aria-hidden="true">{player.gameName.slice(0, 2).toUpperCase()}</span>
+              <span aria-hidden="true">{champion?.name ?? championName}</span>
             </div>
-            {tag && (
-              <a
-                className="player-profile-opgg"
-                href={`https://op.gg/es/lol/summoners/euw/${encodeURIComponent(player.gameName)}-${encodeURIComponent(tag)}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label={`Ver OP.GG de ${player.gameName} (nueva pestaña)`}
-              >
-                <img src="/images/brand/opgg.webp" alt="OP.GG" />
-              </a>
+            {champion?.splashImage && <ChampionArt asset={champion} variant="centered" alt="" />}
+          </div>
+        )}
+        <div className="player-profile-header-body">
+          <div className="player-profile-identity">
+            {(registrationTeam || player.countryCode) && (
+              <div className="player-profile-labels">
+                {registrationTeam && (
+                  <span className="player-role-label">{roleLabels[registrationTeam.role]}</span>
+                )}
+                {registrationTeam?.isCaptain && (
+                  <span className="player-captain-label">Capitán</span>
+                )}
+                {player.countryCode && <span>{player.countryCode.toUpperCase()}</span>}
+              </div>
             )}
+            <p className="player-profile-account-type">
+              {player.isMain ? 'Cuenta principal' : 'Cuenta secundaria'}
+            </p>
+            <div className="player-profile-name">
+              <h2>{player.gameName}</h2>
+              {tag && <span className="player-profile-tag">#{tag}</span>}
+            </div>
           </div>
-          <div className="player-profile-labels">
-            {registrationTeam && <span>{roleLabels[registrationTeam.role]}</span>}
-            {!registrationTeam && <span>Sin equipo competitivo</span>}
-            {registrationTeam?.isCaptain && <span className="player-captain-label">Capitán</span>}
-            {player.countryCode && <span>{player.countryCode.toUpperCase()}</span>}
+          <div className="player-profile-details">
+            <div className="player-profile-champion-summary">
+              <span className="meta">Campeón más jugado</span>
+              <strong>{champion?.name ?? championName ?? 'Sin partidas registradas'}</strong>
+            </div>
+            <div className="player-profile-info-row">
+              <dl className="player-profile-info">
+                <div>
+                  <dt>Riot ID</dt>
+                  <dd>{riotId}</dd>
+                </div>
+                <div>
+                  <dt>Comunidad</dt>
+                  <dd>{displayName(player.displayName ?? 'Sin cuenta vinculada')}</dd>
+                </div>
+                <div>
+                  <dt>Inscripciones competitivas</dt>
+                  <dd>{competitiveTeams.length}</dd>
+                </div>
+                <div>
+                  <dt>Otras vinculaciones</dt>
+                  <dd>{otherTeams.length}</dd>
+                </div>
+              </dl>
+              {tag && (
+                <a
+                  className="player-profile-opgg"
+                  href={`https://op.gg/es/lol/summoners/euw/${encodeURIComponent(player.gameName)}-${encodeURIComponent(tag)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={`Ver OP.GG de ${player.gameName} (nueva pestaña)`}
+                >
+                  <img src="/images/brand/opgg.webp" alt="OP.GG" />
+                </a>
+              )}
+            </div>
           </div>
+          {registrationTeam ? (
+            <SiteLink
+              className="player-profile-team"
+              href={`/equipos/${encodeURIComponent(registrationTeam.slug ?? registrationTeam.id)}`}
+            >
+              <span className="meta">Equipo competitivo</span>
+              <TeamBadge team={registrationTeam} />
+              <strong>{registrationTeam.name}</strong>
+              <span className="meta">
+                {registrationTeam.seasonName} · {registrationTeam.divisionName}
+              </span>
+              {!registrationTeam.isActive && <span className="meta">Equipo inactivo</span>}
+            </SiteLink>
+          ) : (
+            <div className="player-profile-unregistered">
+              <span className="player-profile-initials" aria-hidden="true">
+                {player.gameName.slice(0, 2).toUpperCase()}
+              </span>
+              <span className="meta">Sin equipo competitivo</span>
+            </div>
+          )}
         </div>
-        {registrationTeam ? (
-          <SiteLink
-            className="player-profile-team"
-            href={`/equipos/${encodeURIComponent(registrationTeam.slug ?? registrationTeam.id)}`}
-          >
-            <span className="meta">Equipo competitivo</span>
-            <TeamBadge team={registrationTeam} />
-            <strong>{registrationTeam.name}</strong>
-            <span className="meta">
-              {registrationTeam.seasonName} · {registrationTeam.divisionName}
-            </span>
-            {!registrationTeam.isActive && <span className="meta">Equipo inactivo</span>}
-          </SiteLink>
-        ) : (
-          <span className="player-profile-initials" aria-hidden="true">
-            {player.gameName.slice(0, 2).toUpperCase()}
-          </span>
-        )}
       </header>
-      <dl className="player-profile-info">
-        <div>
-          <dt>Riot ID</dt>
-          <dd>{riotId}</dd>
-        </div>
-        {player.countryCode && (
-          <div>
-            <dt>País</dt>
-            <dd>{player.countryCode.toUpperCase()}</dd>
-          </div>
-        )}
-        <div>
-          <dt>Comunidad</dt>
-          <dd>{displayName(player.displayName ?? 'Sin cuenta vinculada')}</dd>
-        </div>
-        <div>
-          <dt>Inscripciones competitivas</dt>
-          <dd>{competitiveTeams.length}</dd>
-        </div>
-        <div>
-          <dt>Otras vinculaciones</dt>
-          <dd>{otherTeams.length}</dd>
-        </div>
-      </dl>
       <section className="player-linked-accounts" aria-labelledby="player-accounts-title">
         <div className="player-detail-section-heading">
           <h2 id="player-accounts-title">Cuentas secundarias</h2>
@@ -187,7 +219,7 @@ export function PlayerProfile({ player }: { player: PlayerDetail }) {
                     <span className="meta">
                       {account.isMain ? 'Cuenta principal' : 'Cuenta secundaria'}
                     </span>
-                    <h3>{account.gameName}</h3>
+                    <h3 title={account.gameName}>{account.gameName}</h3>
                     <p>
                       {account.gameName}
                       {accountTag ? `#${accountTag}` : ''}
@@ -234,12 +266,6 @@ export function PlayerProfile({ player }: { player: PlayerDetail }) {
                 </div>
               ))}
             </dl>
-            {player.competition?.champion && (
-              <p className="player-signature-champion">
-                <span className="meta">Campeón más jugado</span>
-                <strong>{player.competition.champion}</strong>
-              </p>
-            )}
           </>
         ) : (
           <div className="player-performance-empty">
