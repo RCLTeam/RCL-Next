@@ -44,7 +44,7 @@ Nivel 1: Pruebas Unitarias de Módulo (Co-ubicadas en apps/api y apps/web)
 
 ### Nivel 3 — Pruebas de Integración Relacional (PGlite)
 - **Ubicación:** `tests/integration/`.
-- **Alcance:** Flujos completos entre rutas HTTP/WebSocket, repositorios Drizzle y la base de datos PostgreSQL en memoria. Las suites que usan base de datos instancian un cliente `new PGlite()`, ejecutan `migrate(db, { migrationsFolder })` aplicando las 21 tablas relacionales y prueban transacciones ACID reales; el resto monta la aplicación o el componente con repositorios, sockets o procesos simulados (lista en [suites/integration.md](suites/integration.md)).
+- **Alcance:** Flujos completos entre rutas HTTP/WebSocket, repositorios Drizzle y la base de datos PostgreSQL en memoria. Las suites que usan base de datos instancian un cliente `new PGlite()`, ejecutan `migrate(db, { migrationsFolder })` aplicando las 23 tablas relacionales y prueban transacciones ACID reales; el resto monta la aplicación o el componente con repositorios, sockets o procesos simulados (lista en [suites/integration.md](suites/integration.md)).
 - **Garantía:** Verificación de restricciones `CHECK`, índices únicos parciales, claves foráneas en cascada y disparadores PL/pgSQL diferidos (`complete_player_game`).
 
 ### Nivel 4 — Pruebas del Motor Binario ROFL (Python)
@@ -72,7 +72,7 @@ Todas las pruebas del monorepo se ejecutan con la siguiente matriz de comandos. 
 | `pnpm check` | `pnpm typecheck`<br>`biome check .`<br>`vitest run` | Tipado limpio en todos los workspaces, 0 errores de linter/formateador y todas las suites de Vitest en verde. | **0** |
 | `pnpm test` | `vitest run` | Ejecuta todos los archivos de prueba de TypeScript en paralelo acotado (4 workers) e imprime el resumen de archivos y pruebas. | **0** |
 | `python3 -m unittest discover apps/parser/tests` | `test_roflParser.py` | Ejecuta las pruebas del motor de parsing binario ROFL e imprime cuántas se ejecutaron. | **0** |
-| `pnpm db:generate` | `drizzle-kit generate` | Lee `packages/database/drizzle.config.ts` y compara el esquema de las 21 tablas con las migraciones. Confirma 0 cambios pendientes de migración. | **0** |
+| `pnpm db:generate` | `drizzle-kit generate` | Lee `packages/database/drizzle.config.ts` y compara el esquema de las 23 tablas con las migraciones. Confirma 0 cambios pendientes de migración. | **0** |
 
 ---
 

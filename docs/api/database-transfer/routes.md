@@ -44,7 +44,7 @@ El enrutador de transferencias de base de datos (`apps/api/src/modules/database-
   - Verifica los bytes mágicos `PGDMP`.
   - Desempaqueta y parsea los bloques `COPY`.
   - Inicia una transacción con `SAVEPOINT validate_backup`, inserta los datos para validar integridad referencial y restricciones diferidas, y ejecuta `ROLLBACK TO SAVEPOINT`.
-  - Computa y devuelve un token criptográfico SHA-256 de confirmación junto con el desglose de filas actuales vs. importadas para cada una de las 21 tablas relacionales.
+  - Computa y devuelve un token criptográfico SHA-256 de confirmación junto con el desglose de filas actuales vs. importadas para cada una de las 23 tablas relacionales.
 - **Respuesta exitosa (HTTP 200 OK):**
   ```json
   {
