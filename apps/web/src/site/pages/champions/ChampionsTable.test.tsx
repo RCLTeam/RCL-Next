@@ -52,5 +52,5 @@ test('Renders recorded statistics and provider icons without a bans column', () 
 test('Empty statistics span all seven table columns', () => {
   const html = renderToStaticMarkup(<ChampionsTable />);
   expect(html).toContain('colSpan="7"');
-  expect(html).toContain('Las estadísticas de campeones todavía no están disponibles.');
+  expect(html).toContain('Las estadisticas de campeones todavia no estan disponibles.');
 });

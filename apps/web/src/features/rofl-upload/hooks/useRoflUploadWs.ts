@@ -314,7 +314,7 @@ export function useRoflUploadWs(options?: UseRoflUploadWsOptions): UseRoflUpload
         if (!terminalStateReached) {
           dispatch({
             type: 'connection_lost',
-            message: 'Conexión interrumpida, por favor reintente'
+            message: 'Conexion interrumpida, por favor reintente'
           });
         }
       };

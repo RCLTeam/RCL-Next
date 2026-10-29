@@ -4,7 +4,7 @@ const formatCards = [
   [
     '01',
     'Fase regular',
-    'Cada serie cuenta. Sigue las jornadas y la evolución de la clasificación.'
+    'Cada serie cuenta. Sigue las jornadas y la evolucion de la clasificacion.'
   ],
   [
     '02',

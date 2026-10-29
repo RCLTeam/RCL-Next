@@ -22,14 +22,14 @@ export function PlayoffsPage({ competition }: { competition: Competition }) {
       id="playoffs"
       number="10"
       title="Playoffs"
-      subtitle="La corona vacía"
-      description="El último paso hacia el trono. Sigue las eliminatorias de tu división."
+      subtitle="La corona vacia"
+      description="El ultimo paso hacia el trono. Sigue las eliminatorias de tu division."
       toolbar={<CompetitionFilters competition={competition} />}
     >
       <DataState
         state={state ? { status: state.status, data: [] } : { status: 'ready', data: rounds }}
         retry={competition.retry}
-        empty="Los cruces aparecerán cuando se publiquen las jornadas de playoffs."
+        empty="Los cruces apareceran cuando se publiquen las jornadas de playoffs."
       >
         <PlayoffBracket rounds={rounds} matches={competition.calendar.data} />
       </DataState>

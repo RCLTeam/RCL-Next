@@ -57,7 +57,7 @@ export const siteRoutes = [
   {
     path: '/clasificacion',
     id: 'clasificacion',
-    title: 'Clasificación',
+    title: 'Clasificacion',
     competition: ['calendar', 'standings'],
     render: ({ competition }) => <StandingsPage competition={competition} />
   },
@@ -141,7 +141,7 @@ export const adminRoutes = [
   { path: '/admin', title: 'Admin' },
   { path: '/admin/rofl/upload', title: 'ROFL Upload' },
   { path: '/admin/crud', title: 'CRUD Operations' },
-  { path: '/admin/member-roles', title: 'Gestión de roles' },
+  { path: '/admin/member-roles', title: 'Gestion de roles' },
   { path: '/admin/team-logos', title: 'Team Logos' },
   { path: '/admin/database-transfer', title: 'Database Transfer' }
 ];

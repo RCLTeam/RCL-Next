@@ -45,7 +45,7 @@ async function fetchGameCatalog(): Promise<{ catalog: GameCatalog; complete: boo
   if (runes?.status === 'fulfilled' && Array.isArray(runes.value)) {
     const trees = runes.value as RuneTree[];
     catalog['rune:trees'] = {
-      name: 'Árboles de Runas',
+      name: 'Arboles de Runas',
       trees
     };
     for (const tree of trees) {

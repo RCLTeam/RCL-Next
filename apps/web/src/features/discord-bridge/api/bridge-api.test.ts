@@ -21,7 +21,7 @@ describe('fetchBridgeHealth API client', () => {
 
     expect(result.healthy).toBe(true);
     expect(result.status).toBe('connected');
-    expect(result.message).toBe('Conexión correcta');
+    expect(result.message).toBe('Conexion correcta');
     expect(fetchMock).toHaveBeenCalledWith('/api/v1/bridge/health', {
       method: 'GET',
       credentials: 'include',
@@ -56,7 +56,7 @@ describe('fetchBridgeHealth API client', () => {
         {
           status: 'unreachable',
           healthy: false,
-          message: 'No se puede llegar a él',
+          message: 'No se puede llegar a el',
           details:
             'El websocket no pudo iniciarse, comprobar variables env para asegurar la url correcta'
         },
@@ -69,7 +69,7 @@ describe('fetchBridgeHealth API client', () => {
 
     expect(result.healthy).toBe(false);
     expect(result.status).toBe('unreachable');
-    expect(result.message).toBe('No se puede llegar a él');
+    expect(result.message).toBe('No se puede llegar a el');
     expect(result.details).toContain('El websocket no pudo iniciarse');
   });
 
@@ -109,7 +109,7 @@ describe('fetchBridgeHealth API client', () => {
 
     expect(result.healthy).toBe(false);
     expect(result.status).toBe('unreachable');
-    expect(result.message).toBe('No se puede llegar a él');
+    expect(result.message).toBe('No se puede llegar a el');
     expect(result.details).toContain('500');
   });
 
@@ -120,7 +120,7 @@ describe('fetchBridgeHealth API client', () => {
 
     expect(result.healthy).toBe(false);
     expect(result.status).toBe('unreachable');
-    expect(result.message).toBe('No se puede llegar a él');
+    expect(result.message).toBe('No se puede llegar a el');
     expect(result.details).toContain('Failed to fetch');
   });
 

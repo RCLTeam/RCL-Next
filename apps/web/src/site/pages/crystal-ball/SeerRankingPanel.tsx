@@ -7,7 +7,7 @@ export function SeerRankingPanel() {
         Ranking de videntes
       </h2>
       <p className="section-intro">
-        Los resultados y la clasificación se publicarán cuando haya pronósticos resueltos.
+        Los resultados y la clasificacion se publicaran cuando haya pronosticos resueltos.
       </p>
     </section>
   );

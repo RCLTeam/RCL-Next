@@ -66,7 +66,7 @@ export function MemberRolesPanel() {
     }
   }
   return (
-    <section className="member-roles" aria-label="Gestión de roles">
+    <section className="member-roles" aria-label="Gestion de roles">
       <div className="content-manager-heading">
         <div>
           <span className="eyebrow">Gestion de roles</span>
@@ -161,8 +161,8 @@ export function MemberRolesPanel() {
             {page.members.length === 0 ? (
               <p className="empty-state">
                 {search
-                  ? 'No hay miembros que coincidan con la búsqueda.'
-                  : 'Todavía no hay miembros registrados.'}
+                  ? 'No hay miembros que coincidan con la busqueda.'
+                  : 'Todavia no hay miembros registrados.'}
               </p>
             ) : (
               <MemberRolesTable
@@ -187,7 +187,7 @@ export function MemberRolesPanel() {
               >
                 Anterior
               </button>
-              <span>Página {offset / 50 + 1}</span>
+              <span>Pagina {offset / 50 + 1}</span>
               <button
                 type="button"
                 className="btn-ghost"

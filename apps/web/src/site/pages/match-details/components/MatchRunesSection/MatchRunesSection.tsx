@@ -71,7 +71,7 @@ export function MatchRunesDialog({
                   </div>
                 ))
               ) : (
-                <p className="empty-state">Cargando árbol principal...</p>
+                <p className="empty-state">Cargando arbol principal...</p>
               )}
             </div>
             <div className="match-rune-branch">
@@ -92,7 +92,7 @@ export function MatchRunesDialog({
                   </div>
                 ))
               ) : (
-                <p className="empty-state">Cargando árbol secundario...</p>
+                <p className="empty-state">Cargando arbol secundario...</p>
               )}
               <div className="shards-container">
                 {STAT_SHARD_SLOTS.map((slot, rowIdx) => (

@@ -25,7 +25,7 @@ export const playerSortOptions = [
   ['killParticipation', 'Kill participation'],
   ['winRate', '% de victorias'],
   ['damagePerMinute', 'Daño a campeones/min'],
-  ['visionScore', 'Puntuación de visión'],
+  ['visionScore', 'Puntuacion de vision'],
   ['damageMitigated', 'Daño mitigado']
 ] as const;
 export type PlayerSort = (typeof playerSortOptions)[number][0];
@@ -36,7 +36,7 @@ const playerCardStats: Record<PlayerSort, string> = {
   killParticipation: 'KP',
   winRate: 'WR',
   damagePerMinute: 'Daño/min',
-  visionScore: 'Visión',
+  visionScore: 'Vision',
   damageMitigated: 'Mitigado'
 };
 const roles = [
@@ -49,7 +49,7 @@ const roles = [
   ['substitute', 'Suplente']
 ] as const;
 const roleLabel = (role: string | null | undefined) =>
-  roles.find(([key]) => key === role)?.[1] ?? 'Sin posición';
+  roles.find(([key]) => key === role)?.[1] ?? 'Sin posicion';
 const playerHref = (player: Player) => `/jugadores/${encodeURIComponent(player.slug ?? player.id)}`;
 
 export function formatPlayerStat(
@@ -82,15 +82,15 @@ export function PlayersPage({ competition }: { competition: Competition }) {
       id="jugadores"
       number="06"
       title="Jugadores"
-      subtitle="Protagonistas de la rebelión"
-      description="El MVP de la jornada y todos los protagonistas de RCL, con sus estadísticas de temporada."
+      subtitle="Protagonistas de la rebelion"
+      description="El MVP de la jornada y todos los protagonistas de RCL, con sus estadisticas de temporada."
       toolbar={<CompetitionFilters competition={competition} />}
     >
       <DataState
         state={resolveCompetitionState(competition, players)}
         loadingMessage="Cargando jugadores…"
         errorMessage="No se han podido cargar los jugadores."
-        empty="Todavía no hay jugadores registrados en esta temporada y división."
+        empty="Todavia no hay jugadores registrados en esta temporada y division."
         retry={() => {
           competition.retry();
           setRevision((value) => value + 1);
@@ -108,7 +108,7 @@ export function PlayersPage({ competition }: { competition: Competition }) {
             <span className="meta">{filtered.length} jugadores</span>
           </div>
           <div className="players-controls">
-            <fieldset className="players-roles" aria-label="Filtrar por posición">
+            <fieldset className="players-roles" aria-label="Filtrar por posicion">
               {roles.map(([value, label]) => (
                 <button
                   key={value}
@@ -227,7 +227,7 @@ function PlayerArt({ player, catalog }: { player: Player; catalog: GameCatalog }
               <TeamBadge team={player.competition?.team} />
             </span>
           )}
-          <span className="player-unplayed-label">Sin campeón registrado</span>
+          <span className="player-unplayed-label">Sin campeon registrado</span>
         </>
       )}
       {champion?.splashImage && (
@@ -236,7 +236,7 @@ function PlayerArt({ player, catalog }: { player: Player; catalog: GameCatalog }
       <div className="player-art-labels">
         <span className="role-chip">{roleLabel(player.competition?.role)}</span>
         {player.competition?.isCaptain && (
-          <span className="role-chip player-captain-chip">Capitán</span>
+          <span className="role-chip player-captain-chip">Capitan</span>
         )}
       </div>
     </div>
@@ -299,7 +299,7 @@ export function FeaturedPlayer({
         </SiteLink>
       ) : (
         <div className="empty-state">
-          Todavía no hay un MVP de jornada disponible en esta división.
+          Todavia no hay un MVP de jornada disponible en esta division.
         </div>
       )}
     </section>
@@ -312,7 +312,7 @@ export function PlayerGrid({
   catalog = {}
 }: { players: Player[]; sort?: PlayerSort; catalog?: GameCatalog }) {
   if (!players.length)
-    return <div className="empty-state">No hay jugadores que coincidan con la búsqueda.</div>;
+    return <div className="empty-state">No hay jugadores que coincidan con la busqueda.</div>;
   return (
     <div className="player-grid players-cards">
       {players.map((player) => (
@@ -342,7 +342,7 @@ export function PlayerGrid({
             !player.competition?.champion &&
             !player.competition?.stats &&
             !player.competition?.mvpMatchIds.length ? (
-              <p className="player-pending-stats">Estadísticas pendientes.</p>
+              <p className="player-pending-stats">Estadisticas pendientes.</p>
             ) : (
               <dl className="player-card-stats">
                 <div>

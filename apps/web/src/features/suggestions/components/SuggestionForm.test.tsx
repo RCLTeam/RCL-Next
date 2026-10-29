@@ -29,7 +29,7 @@ describe('SuggestionForm', () => {
     const html = renderToString(<SuggestionForm {...baseProps} suggestion="Hola mundo!" />);
     expect(html).toContain('Tu sugerencia');
     expect(html).toContain('11 / 1000');
-    expect(html).toContain('Enviar de forma anónima');
+    expect(html).toContain('Enviar de forma anonima');
     expect(html).toContain('Enviar sugerencia');
   });
 
@@ -39,7 +39,7 @@ describe('SuggestionForm', () => {
 
     const htmlShort = renderToString(<SuggestionForm {...baseProps} suggestion="Corto" />);
     expect(htmlShort).toMatch(/disabled=""[^>]*>Enviar sugerencia/);
-    expect(htmlShort).toContain('Mínimo 10 caracteres');
+    expect(htmlShort).toContain('Minimo 10 caracteres');
   });
 
   it('disables submit button when length exceeds 1000 characters', () => {
@@ -59,13 +59,13 @@ describe('SuggestionForm', () => {
       <SuggestionForm
         {...baseProps}
         isHealthy={false}
-        bridgeMessage="No se puede llegar a él"
+        bridgeMessage="No se puede llegar a el"
         bridgeDetails="El websocket no pudo iniciarse, comprobar variables env para asegurar la url correcta"
         suggestion="Sugerencia con suficiente longitud para ser válida"
       />
     );
     expect(html).toContain('role="alert"');
-    expect(html).toContain('No se puede llegar a él');
+    expect(html).toContain('No se puede llegar a el');
     expect(html).toContain('El websocket no pudo iniciarse');
     expect(html).toMatch(/disabled=""[^>]*>Enviar sugerencia/);
   });

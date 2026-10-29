@@ -1,6 +1,12 @@
-import type { BridgeHealthMessage, BridgeHealthResponse, BridgeHealthStatus } from '@rcl/contracts';
+import type {
+  BridgeHealthResponse as ApiBridgeHealthResponse,
+  BridgeHealthMessage,
+  BridgeHealthStatus
+} from '@rcl/contracts';
 
-export type { BridgeHealthMessage, BridgeHealthResponse, BridgeHealthStatus };
+export type { BridgeHealthMessage, BridgeHealthStatus };
+
+export type BridgeHealthResponse = Omit<ApiBridgeHealthResponse, 'message'> & { message: string };
 
 export interface UseBridgeHealthReturn {
   data: BridgeHealthResponse | null;

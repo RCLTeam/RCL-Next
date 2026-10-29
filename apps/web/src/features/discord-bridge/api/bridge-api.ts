@@ -1,4 +1,4 @@
-import type { BridgeHealthResponse } from '@rcl/contracts';
+import type { BridgeHealthResponse } from '../types/bridge.types.js';
 
 /**
  * Consulta la sonda de salud del WebSocket Bridge expuesta por apps/api.
@@ -20,13 +20,18 @@ export async function fetchBridgeHealth(
 
     if (response.status === 200 || response.status === 503) {
       const data = (await response.json()) as BridgeHealthResponse;
-      return data;
+      return {
+        ...data,
+        message: data.message.replace(/[áéíóúÁÉÍÓÚ]/g, (letter) =>
+          letter.normalize('NFD').slice(0, 1)
+        )
+      };
     }
 
     return {
       status: 'unreachable',
       healthy: false,
-      message: 'No se puede llegar a él',
+      message: 'No se puede llegar a el',
       details: `Respuesta inesperada del servidor de bridge (${response.status})`
     };
   } catch (err: unknown) {
@@ -36,8 +41,8 @@ export async function fetchBridgeHealth(
     return {
       status: 'unreachable',
       healthy: false,
-      message: 'No se puede llegar a él',
-      details: err instanceof Error ? err.message : 'Error de conexión de red'
+      message: 'No se puede llegar a el',
+      details: err instanceof Error ? err.message : 'Error de conexion de red'
     };
   }
 }

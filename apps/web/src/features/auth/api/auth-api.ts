@@ -10,7 +10,7 @@ export async function getSession(signal?: AbortSignal): Promise<AuthUser | null>
     ...(signal ? { signal } : {})
   });
   if (response.status === 401) return null;
-  if (!response.ok) throw new Error('No se pudo comprobar la sesión. Inténtalo de nuevo.');
+  if (!response.ok) throw new Error('No se pudo comprobar la sesion. Intentalo de nuevo.');
   const body: unknown = await response.json();
   const user = typeof body === 'object' && body !== null && 'data' in body ? body.data : null;
   if (
@@ -27,7 +27,7 @@ export async function getSession(signal?: AbortSignal): Promise<AuthUser | null>
     !('role' in user) ||
     (user.role !== 'viewer' && user.role !== 'admin' && user.role !== 'owner')
   )
-    throw new Error('La respuesta de sesión no es válida.');
+    throw new Error('La respuesta de sesion no es valida.');
   return user as AuthUser;
 }
 
@@ -36,5 +36,5 @@ export async function endSession(): Promise<void> {
     method: 'POST',
     credentials: 'include'
   });
-  if (response.status !== 204) throw new Error('No se pudo cerrar la sesión. Inténtalo de nuevo.');
+  if (response.status !== 204) throw new Error('No se pudo cerrar la sesion. Intentalo de nuevo.');
 }

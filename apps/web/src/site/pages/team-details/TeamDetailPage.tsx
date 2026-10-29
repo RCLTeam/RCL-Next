@@ -69,7 +69,7 @@ function MemberSection({
                     <TeamBadge team={team} />
                   </div>
                   {member.isCaptain && (
-                    <span className="team-tag team-player-captain">Capitán</span>
+                    <span className="team-tag team-player-captain">Capitan</span>
                   )}
                 </div>
               )}
@@ -81,7 +81,7 @@ function MemberSection({
               </div>
               <div className="team-member-identity">
                 {(!team || !isCompetitiveRole(member.role)) && member.isCaptain && (
-                  <span className="team-tag">Capitán</span>
+                  <span className="team-tag">Capitan</span>
                 )}
                 <h3>
                   {member.playerId ? (
@@ -171,7 +171,7 @@ export function TeamProfile({ team }: { team: TeamDetail }) {
           <dd>{team.name}</dd>
         </div>
         <div>
-          <dt>División</dt>
+          <dt>Division</dt>
           <dd>{team.divisionName}</dd>
         </div>
         <div>
@@ -187,7 +187,7 @@ export function TeamProfile({ team }: { team: TeamDetail }) {
         title="Jugadores"
         team={team}
         members={players}
-        empty="Todavía no hay jugadores inscritos en este equipo."
+        empty="Todavia no hay jugadores inscritos en este equipo."
       />
       <MemberSection
         title="Coach"
@@ -199,7 +199,7 @@ export function TeamProfile({ team }: { team: TeamDetail }) {
         title="Staff"
         team={team}
         members={team.members.filter((member) => member.role === 'staff')}
-        empty="Todavía no hay staff registrado."
+        empty="Todavia no hay staff registrado."
       />
       {team.members.some((member) => member.role === 'partners') && (
         <MemberSection
@@ -222,12 +222,12 @@ export function TeamDetailPage({ teamId }: { teamId: string }) {
       id="equipo"
       number="05"
       title={state.status === 'ready' ? state.data.name : 'Ficha del equipo'}
-      subtitle="Una identidad. Una rebelión."
-      description="Conoce a los jugadores y al equipo que hay detrás de la competición."
+      subtitle="Una identidad. Una rebelion."
+      description="Conoce a los jugadores y al equipo que hay detras de la competicion."
     >
       {state.status === 'loading' && <output className="empty-state">Cargando equipo…</output>}
       {state.status === 'missing' && (
-        <div className="empty-state">Equipo no encontrado. Puede que ya no esté disponible.</div>
+        <div className="empty-state">Equipo no encontrado. Puede que ya no este disponible.</div>
       )}
       {state.status === 'error' && (
         <div className="empty-state" role="alert">

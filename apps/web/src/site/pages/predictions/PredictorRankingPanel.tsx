@@ -27,7 +27,7 @@ export function PredictorRankingPanel({
               <div>
                 <strong>
                   {displayName(row.name)}
-                  {row.userId === userId && <span className="sr-only"> (tú)</span>}
+                  {row.userId === userId && <span className="sr-only"> (tu)</span>}
                 </strong>
                 <small>
                   {row.correct} de {row.total} aciertos
