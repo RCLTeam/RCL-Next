@@ -1,8 +1,7 @@
-@import '../../../features/crystal-ball/crystal-form.css';
+@import '../../../features/crystal-ball/components/crystal-form.css';
 
 .rcl-site #bola-cristal { background: radial-gradient(ellipse at 95% 0%,color-mix(in srgb, var(--lime) 5%, transparent),transparent 55%),var(--void); }
 .rcl-site #bola-cristal .section-cross { border: 3px solid var(--lime); border-radius: 50%; font-size: 0; width: 60px; height: 60px; flex-shrink: 0; }
-.rcl-site .crystal-toolbar-note { color: var(--muted); font: 10px var(--mono); text-transform: uppercase; }
 .rcl-site .crystal-rules .format-card { padding: 20px 24px; row-gap: 8px; align-content: start; }
 .rcl-site .crystal-rules .format-card h3 { color: var(--text); }
 .rcl-site .crystal-rules .format-card p { margin: 0; }

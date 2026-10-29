@@ -1,11 +1,12 @@
 import type { CrystalAnswers, CrystalBallData } from '@rcl/contracts';
 import React, { useState } from 'react';
-import { CommunityRankingPanel } from '../../shared/components/CommunityRanking/CommunityRankingPanel.js';
-import { useGameCatalog } from '../../shared/riot/useGameCatalog.js';
-import { discordLoginUrl } from '../auth/api/auth-api.js';
+import { CommunityRankingPanel } from '../../../shared/components/CommunityRanking/CommunityRankingPanel.js';
+import { useGameCatalogState } from '../../../shared/riot/useGameCatalog.js';
+import { discordLoginUrl } from '../../auth/api/auth-api.js';
+import { useEditorLeaveGuard } from '../../home-content/useEditorLeaveGuard.js';
+import { useCrystalBall } from '../hooks/useCrystalBall.js';
 import { CrystalFields } from './CrystalFields.js';
 import { CrystalRules } from './CrystalRules.js';
-import { useCrystalBall } from './useCrystalBall.js';
 
 export function CrystalSeason({
   season,
@@ -13,7 +14,7 @@ export function CrystalSeason({
   userId
 }: { season: string; divisionId: string; userId: string | undefined }) {
   const model = useCrystalBall(season, divisionId, userId);
-  const catalog = useGameCatalog();
+  const { catalog, status: catalogStatus } = useGameCatalogState();
   const champions = Object.entries(catalog)
     .filter(([key]) => key.startsWith('champion:'))
     .map(([key, value]) => ({
@@ -46,12 +47,14 @@ export function CrystalSeason({
           <a href={discordLoginUrl}>Inicia sesion con Discord</a> para guardar tus predicciones.
         </p>
       )}
-      {!champions.length && (
+      {catalogStatus === 'loading' && <output>Cargando campeones…</output>}
+      {catalogStatus === 'error' && (
         <output>
           El catalogo de campeones no esta disponible. Recarga la pagina para volver a intentarlo.
         </output>
       )}
       <Ballot
+        key={`${season}/${divisionId}/${userId ?? ''}`}
         data={data}
         initial={model.answers}
         authenticated={Boolean(userId)}
@@ -89,8 +92,11 @@ function Ballot({
   authenticated: boolean;
   save: (answers: CrystalAnswers) => Promise<void>;
 }) {
-  const [answers, setAnswers] = useState(initial);
+  const [draftAnswers, setAnswers] = useState(initial);
   const [busy, setBusy] = useState(false);
+  const [dirty, setDirty] = useState(false);
+  const answers = dirty ? draftAnswers : initial;
+  useEditorLeaveGuard(dirty, busy);
   const [message, setMessage] = useState('');
   const [category, setCategory] = useState('qualification');
   const categories = [
@@ -112,6 +118,7 @@ function Ballot({
         setMessage('');
         try {
           await save(answers);
+          setDirty(false);
           setMessage('Predicciones guardadas. Puedes modificarlas hasta el cierre.');
         } catch (error) {
           setMessage(error instanceof Error ? error.message : 'No se pudo guardar.');
@@ -158,6 +165,7 @@ function Ballot({
           answers={answers}
           onChange={(next) => {
             setAnswers(next);
+            setDirty(true);
             setMessage('Cambios sin guardar');
           }}
           disabled={!editable || busy}

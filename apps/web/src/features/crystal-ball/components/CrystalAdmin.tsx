@@ -1,6 +1,8 @@
-import type { CrystalAnswers, CrystalBallData } from '@rcl/contracts';
+import type { CrystalAnswers } from '@rcl/contracts';
 import React, { useState } from 'react';
-import { useEditorLeaveGuard } from '../home-content/useEditorLeaveGuard.js';
+import { useGameCatalogState } from '../../../shared/riot/useGameCatalog.js';
+import { useEditorLeaveGuard } from '../../home-content/useEditorLeaveGuard.js';
+import type { CrystalAdminProps } from '../types/crystal-ball.types.js';
 import { CrystalFields } from './CrystalFields.js';
 
 function localDate(iso: string | null) {
@@ -8,23 +10,27 @@ function localDate(iso: string | null) {
   const date = new Date(iso);
   return new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
 }
-export function CrystalAdmin({
-  data,
-  configure,
-  resolve,
-  onDirty,
-  onBusy
-}: {
-  data: CrystalBallData;
-  configure: (open: string, close: string) => Promise<void>;
-  resolve: (answers: CrystalAnswers, finalize: boolean) => Promise<void>;
-  onDirty: (dirty: boolean) => void;
-  onBusy: (busy: boolean) => void;
-}) {
-  const [opensAt, setOpen] = useState(localDate(data.opensAt));
-  const [closesAt, setClose] = useState(localDate(data.closesAt));
-  const manual = data.questions.filter((q) => q.mode === 'manual');
-  const [answers, setAnswers] = useState<CrystalAnswers>(() =>
+export function CrystalAdmin({ data, configure, resolve, onDirty, onBusy }: CrystalAdminProps) {
+  const [draftOpen, setOpen] = useState(localDate(data.opensAt));
+  const [draftClose, setClose] = useState(localDate(data.closesAt));
+  const { catalog, status: catalogStatus } = useGameCatalogState();
+  const manual = data.questions
+    .filter((q) => q.mode === 'manual' || (data.calculatedAt && !data.automaticResults?.[q.id]))
+    .map((q) =>
+      q.kind === 'champion'
+        ? {
+            ...q,
+            options: Object.entries(catalog)
+              .filter(([key]) => key.startsWith('champion:'))
+              .map(([key, asset]) => ({
+                id: key.slice(9).toLowerCase(),
+                name: asset.name,
+                imageUrl: asset.image ?? null
+              }))
+          }
+        : q
+    );
+  const [draftAnswers, setAnswers] = useState<CrystalAnswers>(() =>
     Object.fromEntries(
       Object.entries(data.results).filter(([id]) => manual.some((q) => q.id === id))
     )
@@ -33,6 +39,13 @@ export function CrystalAdmin({
   const [message, setMessage] = useState('');
   const [datesDirty, setDatesDirty] = useState(false);
   const [resultsDirty, setResultsDirty] = useState(false);
+  const opensAt = datesDirty ? draftOpen : localDate(data.opensAt);
+  const closesAt = datesDirty ? draftClose : localDate(data.closesAt);
+  const answers = resultsDirty
+    ? draftAnswers
+    : Object.fromEntries(
+        Object.entries(data.results).filter(([id]) => manual.some((q) => q.id === id))
+      );
   const [tab, setTab] = useState<'window' | 'results'>('window');
   useEditorLeaveGuard(datesDirty || resultsDirty, busy);
   const closed = ['closed', 'resolved'].includes(data.status);
@@ -91,6 +104,7 @@ export function CrystalAdmin({
                 value={opensAt}
                 disabled={busy || closed}
                 onChange={(e) => {
+                  setClose(closesAt);
                   setOpen(e.target.value);
                   setDatesDirty(true);
                   onDirty(true);
@@ -105,6 +119,7 @@ export function CrystalAdmin({
                 value={closesAt}
                 disabled={busy || closed}
                 onChange={(e) => {
+                  setOpen(opensAt);
                   setClose(e.target.value);
                   setDatesDirty(true);
                   onDirty(true);
@@ -124,6 +139,12 @@ export function CrystalAdmin({
           las preguntas pendientes. Para corregir un resultado, modifica la seleccion y vuelve a
           publicar.
         </p>
+        {manual.some((q) => q.kind === 'champion') && catalogStatus === 'loading' && (
+          <output>Cargando campeones…</output>
+        )}
+        {manual.some((q) => q.kind === 'champion') && catalogStatus === 'error' && (
+          <output>No se pudo cargar el catalogo de campeones.</output>
+        )}
         <CrystalFields
           questions={manual}
           answers={answers}
@@ -154,7 +175,8 @@ export function CrystalAdmin({
         <p>
           Calcula las estadisticas cuando todas las series hayan terminado y todos los mapas esten
           importados. Los empates aceptan cualquiera de los ganadores. Las preguntas sin datos
-          suficientes quedan pendientes.
+          suficientes quedan pendientes y se pueden completar manualmente. El minimo de winrate
+          sigue siendo tres partidas.
         </p>
       </div>
       <output>{busy ? 'Guardando…' : message}</output>

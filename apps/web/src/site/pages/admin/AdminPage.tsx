@@ -2,7 +2,7 @@ import React from 'react';
 import { useAuth } from '../../../features/auth/components/AuthProvider.js';
 import { RequireAdmin } from '../../../features/auth/components/RequireAdmin.js';
 import { CrudOperationsPanel } from '../../../features/crud-operations/components/CrudOperationsPanel.js';
-import { CrystalAdminPanel } from '../../../features/crystal-ball/CrystalAdminPanel.js';
+import { CrystalAdminPanel } from '../../../features/crystal-ball/components/CrystalAdminPanel.js';
 import { DatabaseTransferPanel } from '../../../features/database-transfer/components/DatabaseTransferPanel.js';
 import { HomeContentPanel } from '../../../features/home-content/components/HomeContentPanel.js';
 import { MemberRolesPanel } from '../../../features/member-roles/components/MemberRolesPanel.js';

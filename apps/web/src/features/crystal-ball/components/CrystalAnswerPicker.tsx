@@ -1,8 +1,8 @@
 import type { CrystalQuestion } from '@rcl/contracts';
 import React, { useState } from 'react';
-import { Modal } from '../../shared/components/Modal/Modal.js';
-import { discordAvatarUrl } from '../../shared/discord-avatar-url.js';
-import { TeamBadge } from '../competition/components/TeamBadge.js';
+import { Modal } from '../../../shared/components/Modal/Modal.js';
+import { discordAvatarUrl } from '../../../shared/discord-avatar-url.js';
+import { TeamBadge } from '../../competition/components/TeamBadge.js';
 import { crystalAnswerLabel } from './crystal-answer-label.js';
 import './crystal-picker.css';
 
@@ -67,7 +67,7 @@ export function CrystalAnswerPicker({
   const optionFor = (id: string) =>
     question.options.find((option) => option.id === id) ?? { id, name: id };
   const valid =
-    (manual && draft.length === 0) ||
+    draft.length === 0 ||
     (multiple && question.count === 1 ? draft.length > 0 : draft.length === question.count);
   return (
     <>

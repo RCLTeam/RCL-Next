@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { Select } from '../../shared/components/Selector/Selector.js';
-import { useCompetitionSelection } from '../competition/hooks/useCompetitionSelection.js';
+import { Select } from '../../../shared/components/Selector/Selector.js';
+import { useCompetitionSelection } from '../../competition/hooks/useCompetitionSelection.js';
+import { crystalSelectionStatus } from '../hooks/crystal-selection-status.js';
+import { useCrystalBall } from '../hooks/useCrystalBall.js';
 import { CrystalAdmin } from './CrystalAdmin.js';
-import { useCrystalBall } from './useCrystalBall.js';
 import './crystal-form.css';
 
 export function CrystalAdminPanel() {
@@ -53,7 +54,7 @@ export function CrystalAdminPanel() {
           ))}
         </Select>
       </div>
-      {competition.season && competition.division ? (
+      {!crystalSelectionStatus(competition) && competition.season && competition.division ? (
         <AdminSeason
           key={competition.division.id}
           divisionId={competition.division.id}
@@ -63,9 +64,7 @@ export function CrystalAdminPanel() {
         />
       ) : (
         <output>
-          {competition.seasons.status === 'error'
-            ? 'No se pudieron cargar las temporadas.'
-            : 'Cargando temporadas…'}
+          {crystalSelectionStatus(competition)}
           <button type="button" onClick={competition.retry}>
             Reintentar
           </button>

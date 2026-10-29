@@ -2,8 +2,9 @@ import React from 'react';
 import { useAuth } from '../../../features/auth/components/AuthProvider.js';
 import { CompetitionFilters } from '../../../features/competition/components/CompetitionFilters.js';
 import type { Competition } from '../../../features/competition/hooks/useCompetition.js';
-import { CrystalRules } from '../../../features/crystal-ball/CrystalRules.js';
-import { CrystalSeason } from '../../../features/crystal-ball/CrystalSeason.js';
+import { CrystalRules } from '../../../features/crystal-ball/components/CrystalRules.js';
+import { CrystalSeason } from '../../../features/crystal-ball/components/CrystalSeason.js';
+import { crystalSelectionStatus } from '../../../features/crystal-ball/hooks/crystal-selection-status.js';
 import { PageLayout } from '../../../shared/components/PageLayout/PageLayout.js';
 import './crystal-ball.css';
 import '../leagues/leagues.css';
@@ -22,7 +23,7 @@ export function CrystalBallPage({ competition }: { competition: Competition }) {
       <div className="page-toolbar">
         <CompetitionFilters competition={competition} />
       </div>
-      {competition.season && competition.division ? (
+      {!crystalSelectionStatus(competition) && competition.season && competition.division ? (
         <CrystalSeason
           key={`${competition.division.id}/${userId}`}
           divisionId={competition.division.id}
@@ -31,9 +32,7 @@ export function CrystalBallPage({ competition }: { competition: Competition }) {
         />
       ) : (
         <output>
-          {competition.seasons.status === 'error'
-            ? 'No se pudieron cargar las temporadas.'
-            : 'Selecciona una temporada y liga para ver sus predicciones.'}
+          {crystalSelectionStatus(competition)}
           <button type="button" onClick={competition.retry}>
             Reintentar
           </button>
