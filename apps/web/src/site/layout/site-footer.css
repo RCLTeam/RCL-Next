@@ -84,17 +84,33 @@
 }
 
 .rcl-site .footer-bottom {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 20px;
   margin-top: 24px;
   font: 10px/1.7 var(--mono);
   color: var(--muted);
-  flex-direction: column;
+  text-align: center;
+}
+
+.rcl-site .footer-disclaimer {
+  justify-self: center;
+  max-width: 110ch;
+  text-wrap: pretty;
 }
 
 @media (min-width: 651px) {
   .rcl-site .footer-bottom {
-    flex-direction: row;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) minmax(0, 1fr);
+    align-items: center;
+    column-gap: clamp(20px, 3vw, 60px);
+  }
+
+  .rcl-site .footer-bottom > :first-child {
+    text-align: left;
+  }
+
+  .rcl-site .footer-bottom > :last-child {
+    text-align: right;
   }
 }
