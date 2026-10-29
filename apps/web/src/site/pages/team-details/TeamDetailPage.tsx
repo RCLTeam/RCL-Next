@@ -10,6 +10,7 @@ import type {
 import { PageLayout } from '../../../shared/components/PageLayout/PageLayout.js';
 import { SiteLink } from '../../../shared/components/SiteLink.js';
 import { displayName } from '../../../shared/display-name.js';
+import { ChampionArt } from '../../../shared/riot/ChampionArt.js';
 import { getGameAsset } from '../../../shared/riot/riot-assets.service.js';
 import { useGameCatalog } from '../../../shared/riot/useGameCatalog.js';
 import './team-details.css';
@@ -157,13 +158,7 @@ export function TeamProfile({ team }: { team: TeamDetail }) {
                 <div className="team-profile-champion" key={role}>
                   <div className="team-profile-champion-art">
                     {champion?.splashImage && (
-                      <img
-                        src={champion.splashImage}
-                        alt=""
-                        onError={(event) => {
-                          event.currentTarget.hidden = true;
-                        }}
-                      />
+                      <ChampionArt asset={champion} variant="centered" alt="" />
                     )}
                   </div>
                   <div className="team-profile-champion-label">
