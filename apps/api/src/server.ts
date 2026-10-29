@@ -7,7 +7,7 @@ import { DiscordOAuthClient } from './modules/auth/discord.client.js';
 import { PostgresAuthRepository } from './modules/auth/postgres-auth.repository.js';
 import { PostgresCompetitionRepository } from './modules/competition/postgres-competition.repository.js';
 import { PostgresCrudOperationsRepository } from './modules/crud-operations/postgres-crud-operations.repository.js';
-import { CrystalBallRepository } from './modules/crystal-ball/crystal-ball.repository.js';
+import { CrystalBallRepository } from './modules/crystal-ball/persistence/crystal-ball.repository.js';
 import { NativePostgresBackupTools } from './modules/database-transfer/postgres-backup-tools.js';
 import { PostgresDatabaseTransferRepository } from './modules/database-transfer/postgres-database-transfer.repository.js';
 import { DiscordBridgeClient } from './modules/discord-bridge/discord-bridge.client.js';

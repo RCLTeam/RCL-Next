@@ -3,7 +3,7 @@ import { expect, test, vi } from 'vitest';
 import { createApp } from '../../apps/api/src/app.js';
 import type { AuthOptions } from '../../apps/api/src/modules/auth/auth.router.js';
 import type { CompetitionRepository } from '../../apps/api/src/modules/competition/competition.repository.js';
-import type { CrystalBallRepository } from '../../apps/api/src/modules/crystal-ball/crystal-ball.repository.js';
+import type { CrystalBallRepository } from '../../apps/api/src/modules/crystal-ball/persistence/crystal-ball.repository.js';
 import { AppError } from '../../apps/api/src/shared/app-error.js';
 
 test('crystal API protects personal ballots, administrator mutations and trusted origin', async () => {

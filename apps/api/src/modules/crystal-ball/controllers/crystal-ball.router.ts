@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { type AuthOptions, requireAuth, requireTrustedOrigin } from '../auth/auth.router.js';
-import type { CrystalBallRepository } from './crystal-ball.repository.js';
+import { type AuthOptions, requireAuth, requireTrustedOrigin } from '../../auth/auth.router.js';
+import type { CrystalBallRepository } from '../persistence/crystal-ball.repository.js';
 
 const answers = z.record(
   z.string().min(1).max(100),

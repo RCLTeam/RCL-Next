@@ -1,4 +1,6 @@
 import { expect, test } from 'vitest';
+import { crystalQuestions } from '../processing/crystal-ball-questions.js';
+import { type CrystalStat, automaticResults } from '../processing/crystal-ball-results.js';
 import {
   crystalPoints,
   durationBucket,
@@ -6,8 +8,6 @@ import {
   pentakillBucket,
   validateAnswers
 } from './crystal-ball-policy.js';
-import { crystalQuestions } from './crystal-ball-questions.js';
-import { type CrystalStat, automaticResults } from './crystal-ball-results.js';
 
 test('brackets require four and two distinct eligible teams; ordinary answers cannot select multiple winners', () => {
   const questions = crystalQuestions(
@@ -64,12 +64,11 @@ test('statistics accept ties, require three champion appearances for winrate, an
       kills: i,
       deaths: i,
       assists: 10 - i,
-      isMvp: i === 0,
       pentaKills: 0,
       goldEarned: i < 5 ? 10000 : 9000
     }))
   );
-  const result = automaticResults(games, stats);
+  const result = automaticResults(games, stats, ['p0', 'p0', 'p1']);
   expect(result['player-mvp']).toEqual(['p0']);
   expect(result['player-kills']).toEqual(['p9']);
   expect(result['player-assists']).toEqual(['p0']);
@@ -130,4 +129,9 @@ test('numeric choices cover boundaries and reject arbitrary answers', () => {
       { 'gold-difference': ['gold-1'], pentakills: ['5+'] }
     )
   ).toBe(2);
+});
+
+test('series MVPs accept ties and do not depend on obsolete map flags or map imports', () => {
+  expect(automaticResults([], [], ['a', 'b', 'a', 'b'])['player-mvp']).toEqual(['a', 'b']);
+  expect(automaticResults([], [], ['a', null])['player-mvp']).toBeUndefined();
 });

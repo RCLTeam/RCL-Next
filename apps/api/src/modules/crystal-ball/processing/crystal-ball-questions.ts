@@ -1,5 +1,9 @@
 import type { CrystalQuestion } from '@rcl/contracts';
-import { durationOptions, goldOptions, pentakillOptions } from './crystal-ball-policy.js';
+import {
+  durationOptions,
+  goldOptions,
+  pentakillOptions
+} from '../validation/crystal-ball-policy.js';
 
 type Option = { id: string; name: string };
 export function crystalQuestions(
@@ -69,7 +73,7 @@ export function crystalQuestions(
   ] as const)
     add(id, label, 'classification', 'team', 'manual', teams);
   for (const [id, label, mode] of [
-    ['player-mvp', 'Jugador con mas MVP de mapa', 'automatic'],
+    ['player-mvp', 'Jugador con mas MVP de serie', 'automatic'],
     ['player-kills', 'Jugador con mas asesinatos en una sola partida', 'automatic'],
     ['player-assists', 'Jugador con mas asistencias en una sola partida', 'automatic'],
     ['player-deaths', 'Jugador con mas muertes en una sola partida', 'automatic'],

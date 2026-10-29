@@ -10,8 +10,8 @@ import { CompetitionService } from './modules/competition/competition.service.js
 import type { CrudOperationsRepository } from './modules/crud-operations/crud-operations.repository.js';
 import { crudOperationsRouter } from './modules/crud-operations/crud-operations.router.js';
 import { CrudOperationsService } from './modules/crud-operations/crud-operations.service.js';
-import type { CrystalBallRepository } from './modules/crystal-ball/crystal-ball.repository.js';
-import { crystalBallRouter } from './modules/crystal-ball/crystal-ball.router.js';
+import { crystalBallRouter } from './modules/crystal-ball/controllers/crystal-ball.router.js';
+import type { CrystalBallRepository } from './modules/crystal-ball/persistence/crystal-ball.repository.js';
 import type { DatabaseTransferRepository } from './modules/database-transfer/database-transfer.repository.js';
 import { databaseTransferRouter } from './modules/database-transfer/database-transfer.router.js';
 import { DatabaseTransferService } from './modules/database-transfer/database-transfer.service.js';

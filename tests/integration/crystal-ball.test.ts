@@ -7,7 +7,7 @@ import { eq } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/pglite';
 import { migrate } from 'drizzle-orm/pglite/migrator';
 import { expect, test, vi } from 'vitest';
-import { CrystalBallRepository } from '../../apps/api/src/modules/crystal-ball/crystal-ball.repository.js';
+import { CrystalBallRepository } from '../../apps/api/src/modules/crystal-ball/persistence/crystal-ball.repository.js';
 import * as schema from '../../packages/database/src/schema.js';
 
 test('crystal ballots persist, close exactly on time, score corrections idempotently and isolate seasons', async (t) => {
@@ -58,6 +58,13 @@ test('crystal ballots persist, close exactly on time, score corrections idempote
     .update(schema.discordUsers)
     .set({ avatarHash: 'abcdef1234567890abcdef1234567890' })
     .where(eq(schema.discordUsers.discordId, playerOption.discordId));
+  const duplicateId = 'ffffffff-ffff-4fff-8fff-fffffffffff1';
+  await db.insert(schema.players).values({
+    id: duplicateId,
+    discordUserId: playerOption.discordId,
+    gameName: 'Duplicate main',
+    isMain: true
+  });
   const refreshed = await repo.overview(season);
   expect(
     refreshed.questions
@@ -68,6 +75,12 @@ test('crystal ballots persist, close exactly on time, score corrections idempote
     avatarHash: 'abcdef1234567890abcdef1234567890'
   });
 
+  expect(
+    refreshed.questions
+      .find((q) => q.kind === 'player')
+      ?.options.filter((o) => o.discordId === playerOption.discordId)
+  ).toHaveLength(1);
+  await db.delete(schema.players).where(eq(schema.players.id, duplicateId));
   const playerIds = async () =>
     (await repo.overview(season)).questions
       .find((q) => q.kind === 'player')
@@ -169,6 +182,17 @@ test('crystal ballots persist, close exactly on time, score corrections idempote
   });
   await repo.resolve(season, userId, {}, false);
   expect((await repo.overview(season)).ranking).toEqual([]);
+  // A scheduled playoff round without matches still closes voting.
+  await db.insert(schema.rounds).values({
+    id: 30000,
+    idSeasonDivision: otherId,
+    stage: 'playoff',
+    startsAt: new Date('2050-01-03T00:00:00Z')
+  });
+  expect((await other.overview(season)).status).toBe('closed');
+  await expect(other.save(season, userId, otherAnswers)).rejects.toMatchObject({
+    code: 'CRYSTAL_CLOSED'
+  });
   // An unexpectedly early playoff also blocks a campaign whose configured deadline is later.
   await db
     .update(schema.crystalBallLeagueCampaigns)
@@ -188,12 +212,76 @@ test('crystal ballots persist, close exactly on time, score corrections idempote
     .update(schema.matches)
     .set({ status: 'completed', team1Score: mapCount, team2Score: 0 })
     .where(eq(schema.matches.id, matchId));
-  await repo.resolve(season, userId, manual, true);
+  // Production telemetry has no map MVP; both series MVP and secondary accounts resolve to the main account.
+  const info = (
+    await db
+      .select()
+      .from(schema.playerGameInfo)
+      .where(
+        eq(schema.playerGameInfo.matchGameId, games.find((g) => g.matchesId === matchId)?.id ?? '')
+      )
+  )[0];
+  if (!info) throw new Error('Missing player map');
+  const [mainAccount] = await db
+    .select()
+    .from(schema.players)
+    .where(eq(schema.players.id, info.playerId));
+  if (!mainAccount?.discordUserId) throw new Error('Missing main account');
+  const altId = 'ffffffff-ffff-4fff-8fff-fffffffffff2';
+  await db.insert(schema.players).values({
+    id: altId,
+    discordUserId: mainAccount.discordUserId,
+    gameName: 'Secondary account',
+    isMain: false
+  });
+  await db
+    .update(schema.playerGameInfo)
+    .set({ playerId: altId })
+    .where(eq(schema.playerGameInfo.id, info.id));
+  await db.update(schema.playerGameStats).set({ isMvp: false });
+  await db
+    .update(schema.playerGameStats)
+    .set({ kills: 100 })
+    .where(eq(schema.playerGameStats.id, info.id));
+  await db
+    .update(schema.matches)
+    .set({ mvpPlayerId: altId, mvpScore: '10.0' })
+    .where(eq(schema.matches.id, matchId));
+  await repo.resolve(season, userId, manual, false);
+  await repo.resolve(season, userId, {}, true);
   const resolved = await repo.overview(season);
-  expect(resolved.status).toBe('resolved');
+  expect(resolved.status).toBe('closed');
+  expect(resolved.results['player-mvp']).toEqual([mainAccount.id]);
+  expect(resolved.results['player-kills']).toEqual([mainAccount.id]);
+  expect(resolved.results['surprise-team']).toEqual(manual['surprise-team']);
+  expect(resolved.calculatedAt).not.toBeNull();
   expect(resolved.results['player-kills']?.length).toBeGreaterThan(0);
   await repo.resolve(season, userId, manual, true);
   expect((await repo.overview(season)).ranking).toEqual(resolved.ranking);
+  const fallback = Object.fromEntries(
+    data.questions
+      .filter((q) => q.mode === 'manual' || !resolved.automaticResults?.[q.id])
+      .map((q) => [q.id, answers[q.id] ?? []])
+  );
+  await repo.resolve(season, userId, fallback, false);
+  expect((await repo.overview(season)).status).toBe('resolved');
+  // Recalculation preserves fallback results; removing a fallback reopens resolution, never voting.
+  await repo.resolve(season, userId, {}, true);
+  expect((await repo.overview(season)).status).toBe('resolved');
+  await repo.resolve(
+    season,
+    userId,
+    Object.fromEntries(Object.entries(fallback).filter(([id]) => id !== 'champion-best-winrate')),
+    false
+  );
+  expect((await repo.overview(season)).status).toBe('closed');
+  // Finished series without imported maps leave questions available for manual fallback.
+  await db
+    .update(schema.matches)
+    .set({ team1Score: mapCount + 1 })
+    .where(eq(schema.matches.id, matchId));
+  await repo.resolve(season, userId, {}, true);
+  expect((await repo.overview(season)).automaticResults?.['player-kills']).toBeUndefined();
   expect((await other.overview(season)).results).toEqual({});
   expect((await other.overview(season)).ranking).toEqual([]);
 });

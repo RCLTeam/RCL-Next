@@ -18,10 +18,14 @@ import {
 import type * as schema from '@rcl/database/schema';
 import { and, eq, gte, inArray } from 'drizzle-orm';
 import type { PgDatabase, PgQueryResultHKT } from 'drizzle-orm/pg-core';
-import { AppError, notFound } from '../../shared/app-error.js';
-import { crystalPoints, normalizeNumericAnswers, validateAnswers } from './crystal-ball-policy.js';
-import { crystalQuestions } from './crystal-ball-questions.js';
-import { automaticResults } from './crystal-ball-results.js';
+import { AppError, notFound } from '../../../shared/app-error.js';
+import { crystalQuestions } from '../processing/crystal-ball-questions.js';
+import { automaticResults } from '../processing/crystal-ball-results.js';
+import {
+  crystalPoints,
+  normalizeNumericAnswers,
+  validateAnswers
+} from '../validation/crystal-ball-policy.js';
 
 export class CrystalBallRepository {
   constructor(
@@ -60,7 +64,7 @@ export class CrystalBallRepository {
         )
       );
     const members = await this.db
-      .selectDistinct({
+      .selectDistinctOn([teamMemberships.discordUserId], {
         id: players.id,
         name: players.gameName,
         discordId: players.discordUserId,
@@ -78,7 +82,8 @@ export class CrystalBallRepository {
           eq(teams.seasonDivisionId, this.divisionId),
           inArray(teamMemberships.role, ['top', 'jungle', 'mid', 'adc', 'support', 'substitute'])
         )
-      );
+      )
+      .orderBy(teamMemberships.discordUserId, players.id);
     return crystalQuestions(
       divisions,
       candidates.sort((a, b) => a.name.localeCompare(b.name)),
@@ -87,38 +92,54 @@ export class CrystalBallRepository {
   }
 
   private async playoffs(season: string) {
-    return this.db
-      .select({
-        id: matches.id,
-        status: matches.status,
-        scheduledAt: matches.scheduledAt,
-        roundStart: rounds.startsAt,
-        bestOf: matches.bestOf,
-        homeScore: matches.team1Score,
-        awayScore: matches.team2Score
-      })
-      .from(matches)
-      .innerJoin(
-        rounds,
-        and(eq(rounds.id, matches.idRound), eq(rounds.idSeasonDivision, matches.idSeasonDivision))
-      )
-      .innerJoin(seasonsDivisions, eq(seasonsDivisions.id, matches.idSeasonDivision))
+    const playoffRounds = await this.db
+      .select({ id: rounds.id, startsAt: rounds.startsAt })
+      .from(rounds)
+      .innerJoin(seasonsDivisions, eq(seasonsDivisions.id, rounds.idSeasonDivision))
       .where(
         and(
           eq(seasonsDivisions.seasonName, season),
           eq(rounds.stage, 'playoff'),
-          eq(matches.idSeasonDivision, this.divisionId)
+          eq(rounds.idSeasonDivision, this.divisionId)
         )
       );
+    const series = playoffRounds.length
+      ? await this.db
+          .select({
+            id: matches.id,
+            status: matches.status,
+            scheduledAt: matches.scheduledAt,
+            homeScore: matches.team1Score,
+            awayScore: matches.team2Score,
+            mvpPlayerId: matches.mvpPlayerId
+          })
+          .from(matches)
+          .where(
+            and(
+              eq(matches.idSeasonDivision, this.divisionId),
+              inArray(
+                matches.idRound,
+                playoffRounds.map((r) => r.id)
+              )
+            )
+          )
+      : [];
+    return {
+      series: series.filter((m) => m.status !== 'cancelled'),
+      starts: playoffRounds.flatMap((r) => (r.startsAt ? [r.startsAt] : []))
+    };
   }
 
-  private async window(season: string, campaign: typeof campaigns.$inferSelect | undefined) {
-    const playoffMatches = (await this.playoffs(season)).filter((m) => m.status !== 'cancelled');
-    const starts = playoffMatches.flatMap((m) =>
-      [m.scheduledAt, m.roundStart].filter((d): d is Date => d !== null)
-    );
+  private window(
+    campaign: typeof campaigns.$inferSelect | undefined,
+    playoffs: Awaited<ReturnType<CrystalBallRepository['playoffs']>>
+  ) {
+    const starts = [
+      ...playoffs.starts,
+      ...playoffs.series.flatMap((m) => (m.scheduledAt ? [m.scheduledAt] : []))
+    ];
     const deadline = campaign ? Math.min(campaign.closesAt.getTime(), ...starts.map(Number)) : null;
-    const started = playoffMatches.some((m) => m.status !== 'scheduled');
+    const started = playoffs.series.some((m) => m.status !== 'scheduled');
     const now = Date.now();
     const status: CrystalBallData['status'] = !campaign
       ? 'unconfigured'
@@ -138,7 +159,7 @@ export class CrystalBallRepository {
       .select()
       .from(campaigns)
       .where(eq(campaigns.divisionId, this.divisionId));
-    const window = await this.window(season, campaign);
+    const window = this.window(campaign, await this.playoffs(season));
     const results = normalizeNumericAnswers(campaign?.results ?? {});
     const ballots = Object.keys(results).length
       ? await this.db
@@ -160,6 +181,8 @@ export class CrystalBallRepository {
       opensAt: campaign?.opensAt.toISOString() ?? null,
       questions,
       results,
+      automaticResults: campaign?.automaticResults ?? {},
+      calculatedAt: campaign?.calculatedAt?.toISOString() ?? null,
       ranking: ballots
         .map((b) => ({
           userId: b.userId,
@@ -186,15 +209,14 @@ export class CrystalBallRepository {
   async save(season: string, userId: string, answers: CrystalAnswers) {
     await this.db.transaction(async (tx) => {
       const repository = new CrystalBallRepository(tx, this.divisionId);
-      await repository.context(season);
+      const questions = await repository.context(season);
       const [campaign] = await tx
         .select()
         .from(campaigns)
         .where(eq(campaigns.divisionId, this.divisionId))
         .for('update');
-      if ((await repository.window(season, campaign)).status !== 'open')
+      if (repository.window(campaign, await repository.playoffs(season)).status !== 'open')
         throw new AppError(409, 'CRYSTAL_CLOSED', 'Voting is closed.');
-      const questions = await repository.context(season);
       validateAnswers(answers, questions);
       if (questions.some((q) => !answers[q.id]))
         throw new AppError(400, 'INCOMPLETE_BALLOT', 'Answer every question before saving.');
@@ -227,7 +249,8 @@ export class CrystalBallRepository {
         .from(campaigns)
         .where(eq(campaigns.divisionId, this.divisionId))
         .for('update');
-      if (existing && ['closed', 'resolved'].includes((await repo.window(season, existing)).status))
+      const playoffs = await repo.playoffs(season);
+      if (existing && ['closed', 'resolved'].includes(repo.window(existing, playoffs).status))
         throw new AppError(409, 'CRYSTAL_CLOSED', 'A closed campaign cannot be reopened.');
       if (opensAt >= closesAt || closesAt.getTime() <= Date.now())
         throw new AppError(
@@ -240,11 +263,13 @@ export class CrystalBallRepository {
         opensAt,
         closesAt,
         finalizedAt: null,
+        calculatedAt: null,
+        automaticResults: {},
         results: {},
         resolvedBy: null,
         updatedAt: new Date()
       };
-      const window = await repo.window(season, upcoming);
+      const window = repo.window(upcoming, playoffs);
       if (window.status === 'closed' || window.closesAt !== closesAt.toISOString())
         throw new AppError(400, 'INVALID_WINDOW', 'Close voting no later than the first playoff.');
       await tx
@@ -258,7 +283,6 @@ export class CrystalBallRepository {
   }
 
   async resolve(season: string, actor: string, manual: CrystalAnswers, finalize: boolean) {
-    await this.context(season);
     await this.db.transaction(async (tx) => {
       const repo = new CrystalBallRepository(tx, this.divisionId);
       const [campaign] = await tx
@@ -266,16 +290,12 @@ export class CrystalBallRepository {
         .from(campaigns)
         .where(eq(campaigns.divisionId, this.divisionId))
         .for('update');
-      if (
-        !campaign ||
-        !['closed', 'resolved'].includes((await repo.window(season, campaign)).status)
-      )
-        throw new AppError(409, 'CRYSTAL_NOT_CLOSED', 'Close voting before resolving results.');
       const questions = await repo.context(season);
-      const manualQuestions = questions.filter((q) => q.mode === 'manual');
-      validateAnswers(manual, manualQuestions, true);
-      const playoffMatches = (await repo.playoffs(season)).filter((m) => m.status !== 'cancelled');
-      let automatic: CrystalAnswers = {};
+      const playoffs = await repo.playoffs(season);
+      if (!campaign || !['closed', 'resolved'].includes(repo.window(campaign, playoffs).status))
+        throw new AppError(409, 'CRYSTAL_NOT_CLOSED', 'Close voting before resolving results.');
+      const playoffMatches = playoffs.series;
+      let automatic: CrystalAnswers = campaign.automaticResults;
       if (finalize) {
         if (
           !playoffMatches.length ||
@@ -294,18 +314,11 @@ export class CrystalBallRepository {
                 )
               )
           : [];
-        if (
-          completed.some(
-            (m) =>
-              m.homeScore + m.awayScore === 0 ||
-              games.filter((g) => g.matchesId === m.id).length !== m.homeScore + m.awayScore
-          )
-        )
-          throw new AppError(
-            409,
-            'MISSING_MAPS',
-            'Import every completed playoff map before finalizing.'
-          );
+        const mapsComplete = completed.every(
+          (m) =>
+            m.homeScore + m.awayScore > 0 &&
+            games.filter((g) => g.matchesId === m.id).length === m.homeScore + m.awayScore
+        );
         const stats = games.length
           ? await tx
               .select({
@@ -317,7 +330,7 @@ export class CrystalBallRepository {
                 kills: playerGameStats.kills,
                 assists: playerGameStats.assists,
                 deaths: playerGameStats.deaths,
-                isMvp: playerGameStats.isMvp,
+
                 pentaKills: playerGameStats.pentaKills,
                 goldEarned: playerGameStats.goldEarned
               })
@@ -330,25 +343,64 @@ export class CrystalBallRepository {
                 )
               )
           : [];
-        automatic = automaticResults(games, stats);
+        // Use the same deterministic main account as the voting candidates.
+        const accounts = await tx
+          .select({ id: players.id, discordId: players.discordUserId, isMain: players.isMain })
+          .from(players)
+          .orderBy(players.id);
+        const mains = new Map<string, string>();
+        for (const account of accounts)
+          if (account.isMain && account.discordId && !mains.has(account.discordId))
+            mains.set(account.discordId, account.id);
+        const canonical = new Map(
+          accounts.map((account) => [
+            account.id,
+            (account.discordId ? mains.get(account.discordId) : undefined) ?? account.id
+          ])
+        );
+        automatic = automaticResults(
+          mapsComplete ? games : [],
+          stats.map((stat) => ({
+            ...stat,
+            playerId: canonical.get(stat.playerId) ?? stat.playerId
+          })),
+          completed.map((match) =>
+            match.mvpPlayerId ? (canonical.get(match.mvpPlayerId) ?? match.mvpPlayerId) : null
+          )
+        );
       }
-      // Recalculation replaces previous automatic results; it never adds points twice.
+      const calculated = finalize || Boolean(campaign.calculatedAt);
+      validateAnswers(manual, questions, true);
+      if (
+        !calculated &&
+        Object.keys(manual).some((id) =>
+          questions.some((q) => q.id === id && q.mode === 'automatic')
+        )
+      )
+        throw new AppError(
+          400,
+          'INVALID_ANSWER',
+          'Calculate automatic results before resolving missing answers.'
+        );
+      // Calculation never discards existing manual results. Explicit publication replaces the manual draft.
       const results = {
         ...(finalize
-          ? automatic
-          : Object.fromEntries(
-              Object.entries(campaign.results).filter(([id]) =>
-                questions.some((q) => q.id === id && q.mode === 'automatic')
-              )
-            )),
-        ...manual
+          ? Object.fromEntries(
+              Object.entries(campaign.results).filter(([id]) => !campaign.automaticResults[id])
+            )
+          : {}),
+        ...manual,
+        ...automatic
       };
+      const complete = questions.every((q) => results[q.id]?.length);
       await tx
         .update(campaigns)
         .set({
           results,
           resolvedBy: actor,
-          finalizedAt: finalize ? new Date() : campaign.finalizedAt,
+          automaticResults: automatic,
+          calculatedAt: finalize ? new Date() : campaign.calculatedAt,
+          finalizedAt: calculated && complete ? new Date() : null,
           updatedAt: new Date()
         })
         .where(eq(campaigns.divisionId, this.divisionId));

@@ -1,5 +1,5 @@
 import type { CrystalAnswers, CrystalQuestion } from '@rcl/contracts';
-import { AppError } from '../../shared/app-error.js';
+import { AppError } from '../../../shared/app-error.js';
 
 export function validateAnswers(
   answers: CrystalAnswers,

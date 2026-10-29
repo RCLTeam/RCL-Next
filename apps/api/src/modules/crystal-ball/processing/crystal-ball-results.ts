@@ -1,5 +1,5 @@
 import type { CrystalAnswers } from '@rcl/contracts';
-import { durationBucket, goldBucket, pentakillBucket } from './crystal-ball-policy.js';
+import { durationBucket, goldBucket, pentakillBucket } from '../validation/crystal-ball-policy.js';
 
 export interface CrystalGame {
   id: string;
@@ -15,24 +15,32 @@ export interface CrystalStat {
   kills: number;
   assists: number;
   deaths: number;
-  isMvp: boolean;
   pentaKills: number | null;
   goldEarned: number | null;
 }
 
 // Only complete maps count. Missing optional telemetry leaves its question unresolved.
-export function automaticResults(games: CrystalGame[], stats: CrystalStat[]): CrystalAnswers {
+export function automaticResults(
+  games: CrystalGame[],
+  stats: CrystalStat[],
+  seriesMvps: (string | null)[] = []
+): CrystalAnswers {
   const results: CrystalAnswers = {};
-  if (
-    !games.length ||
-    games.some((g) => !g.winnerTeamId || stats.filter((s) => s.gameId === g.id).length !== 10)
-  )
-    return results;
   const extreme = (key: string, rows: [string, number][], minimum = false) => {
     if (!rows.length) return;
     const best = (minimum ? Math.min : Math.max)(...rows.map(([, value]) => value));
     results[key] = rows.filter(([, value]) => Math.abs(value - best) < 1e-9).map(([id]) => id);
   };
+  if (seriesMvps.length && seriesMvps.every((id) => id !== null)) {
+    const counts = new Map<string, number>();
+    for (const id of seriesMvps) if (id) counts.set(id, (counts.get(id) ?? 0) + 1);
+    extreme('player-mvp', [...counts]);
+  }
+  if (
+    !games.length ||
+    games.some((g) => !g.winnerTeamId || stats.filter((s) => s.gameId === g.id).length !== 10)
+  )
+    return results;
   const players = [...new Set(stats.map((s) => s.playerId))];
   for (const field of ['kills', 'assists', 'deaths'] as const)
     extreme(
@@ -49,11 +57,6 @@ export function automaticResults(games: CrystalGame[], stats: CrystalStat[]): Cr
       new Set(stats.filter((s) => s.playerId === id).map((s) => s.champion.toLowerCase())).size
     ])
   );
-  if (games.every((g) => stats.some((s) => s.gameId === g.id && s.isMvp)))
-    extreme(
-      'player-mvp',
-      players.map((id) => [id, stats.filter((s) => s.playerId === id && s.isMvp).length])
-    );
   const champions = [...new Set(stats.map((s) => s.champion.toLowerCase()))];
   const championRows = champions.map((id) => ({
     id,
