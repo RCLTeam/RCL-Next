@@ -145,7 +145,12 @@ export class CrystalBallRepository {
       ? 'unconfigured'
       : campaign.finalizedAt
         ? 'resolved'
-        : started || now >= (deadline ?? 0)
+        : campaign.resolvedBy ||
+            campaign.calculatedAt ||
+            Object.keys(campaign.results).length > 0 ||
+            Object.keys(campaign.automaticResults).length > 0 ||
+            started ||
+            now >= (deadline ?? 0)
           ? 'closed'
           : now < campaign.opensAt.getTime()
             ? 'upcoming'

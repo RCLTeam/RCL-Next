@@ -130,6 +130,35 @@ test('crystal ballots persist, close exactly on time, score corrections idempote
   await repo.save(season, userId, answers);
   await repo.save(season, userId, answers);
   expect((await repo.mine(season, userId))['champion-picks']).toEqual(['ahri']);
+  // Imported/demo results must close voting even with future dates and no playoff matches.
+  const originalBallot = await repo.mine(season, userId);
+  for (const published of [
+    { results: { pentakills: ['0'] } },
+    { automaticResults: { pentakills: ['0'] } },
+    { calculatedAt: new Date() },
+    { resolvedBy: userId }
+  ]) {
+    await db
+      .update(schema.crystalBallLeagueCampaigns)
+      .set(published)
+      .where(eq(schema.crystalBallLeagueCampaigns.divisionId, divisionId));
+    expect((await repo.overview(season)).status).toBe('closed');
+    await expect(
+      repo.save(season, userId, { ...answers, pentakills: ['1'] })
+    ).rejects.toMatchObject({ code: 'CRYSTAL_CLOSED' });
+    await expect(repo.save(season, '900000000000000002', answers)).rejects.toMatchObject({
+      code: 'CRYSTAL_CLOSED'
+    });
+    await expect(
+      repo.configure(season, new Date('2050-01-01'), new Date('2050-02-01'))
+    ).rejects.toMatchObject({ code: 'CRYSTAL_CLOSED' });
+    expect(await repo.mine(season, userId)).toEqual(originalBallot);
+    // Restore only this fixture between independent legacy-state cases.
+    await db
+      .update(schema.crystalBallLeagueCampaigns)
+      .set({ results: {}, automaticResults: {}, calculatedAt: null, resolvedBy: null })
+      .where(eq(schema.crystalBallLeagueCampaigns.divisionId, divisionId));
+  }
   await expect(repo.mine('Other season', userId)).rejects.toMatchObject({ status: 404 });
   expect(await other.mine(season, userId)).toEqual({});
   expect((await other.overview(season)).status).toBe('unconfigured');

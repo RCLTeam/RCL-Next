@@ -14,7 +14,7 @@ Prefijo `/api/v1/crystal-ball/:season/:division`: nombre de temporada codificado
 
 Las respuestas no se cachean (`no-store`). Las escrituras requieren origen confiable y bloquean la campaña dentro de una transacción. Editor no tiene permiso administrativo sobre esta función.
 
-El voto cierra al llegar al cierre configurado, al primer inicio de ronda o serie de playoffs, o al detectar una serie iniciada. Se consultan las rondas por separado: su `starts_at` cuenta aunque aún no tengan cruces. Una campaña cerrada no se puede reabrir.
+El voto cierra al llegar al cierre configurado, al primer inicio de ronda o serie de playoffs, o al detectar una serie iniciada. Se consultan las rondas por separado: su `starts_at` cuenta aunque aún no tengan cruces. Una campaña cerrada no se puede reabrir. La existencia de resultados manuales o automáticos, un cálculo registrado o un administrador que ya haya resuelto también cierra la votación, incluso si un import o datos de prueba conservan fechas futuras. Esta regla se aplica tanto al estado público como al guardado de boletos y la configuración de horarios.
 
 Los candidatos incluyen únicamente titulares y suplentes con cuenta principal. `DISTINCT ON` por usuario Discord y orden por ID de jugador garantizan una sola opción determinista aunque existan varias cuentas marcadas principales. Contexto y calendario se reutilizan en cada operación.
 
