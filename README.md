@@ -225,3 +225,7 @@ Para más detalles sobre la pirámide de pruebas, arneses y límites de concurre
 - **Fuentes Tipográficas:** La jerarquía visual utiliza *Manuka* para titulares y cifras, *PP Fraktion Sans* para controles y cuerpo, y *PP Fraktion Mono* para metadatos y estadísticas. Los archivos de fuentes se sirven localmente desde `apps/web/src/shared/assets/fonts/` junto a sus respectivas licencias. Vite las incluye en la compilación sin depender de CDNs externas.
 - **Activos Deportivos:** Los logotipos oficiales de la liga se ubican en `apps/web/public/images/brand/` y los escudos de los equipos en `apps/web/public/images/teams_logo/`, directorio por defecto del almacén de logos (configurable con `TEAM_LOGO_DIR`); el repositorio solo versiona `placeholder.webp` y el resto se gestiona desde `/admin/team-logos`.
 - **Esquema Histórico:** Se conserva el archivo arqueológico preliminar en `docs/reference/0000_initial_schema.original.sql` junto a su análisis comparativo en [docs/reference/README.md](docs/reference/README.md).
+
+## Bola de cristal
+
+Pronósticos de playoffs por liga y resolución de resultados: [API](docs/api/crystal-ball/README.md) · [Web](docs/web/crystal-ball/README.md).

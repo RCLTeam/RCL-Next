@@ -24,10 +24,11 @@ La arquitectura sigue el patrón de **Rebanadas Verticales (*Vertical Slice Arch
 
 ## 3. Catálogo de Módulos de la API
 
-La API de RCL-Next se compone de trece módulos funcionales, cada uno documentado exhaustivamente en su respectiva subcarpeta atómica:
+La API de RCL-Next se compone de catorce módulos funcionales, cada uno documentado exhaustivamente en su respectiva subcarpeta atómica:
 
 | Módulo | Enlace | Resumen Funcional |
 |---|---|---|
+| **Bola de cristal** | [crystal-ball/README.md](crystal-ball/README.md) | Pronósticos de playoffs por liga, ranking de videntes y resolución automática con alternativas manuales. |
 | **Subida y Procesamiento ROFL** | [rofl-upload/README.md](rofl-upload/README.md) | Pasarela WebSocket bidireccional (`/ws/rofl-upload`), spooling en disco bajo contrapresión, orquestación del parser binario Python y persistencia atómica en 5 tablas Drizzle. |
 | **Puente con Bot de Discord** | [discord-bridge/README.md](discord-bridge/README.md) | Cliente de transporte WebSocket hacia el bot comunitario de Discord, conexión perezosa (*lazy connection*), cola de incidentes y reconexión exponencial. |
 | **Buzón de Sugerencias** | [suggestions/README.md](suggestions/README.md) | Ingesta asíncrona de propuestas ciudadanas con HTTP 202 Accepted, máquina de estados reactiva en memoria con TTL de 2 horas y logger de incidentes. |
@@ -52,6 +53,6 @@ Las variables de entorno de la API, sus valores por defecto y sus reglas de vali
 
 ## 5. Enlaces Cruzados con Otras Áreas
 
-- **Base de Datos y Esquema Relacional:** Para consultar las 21 tablas relacionales, 6 tipos enumerados y restricciones de PostgreSQL, ver [docs/database/README.md](../database/README.md).
+- **Base de Datos y Esquema Relacional:** Para consultar las 23 tablas relacionales, 6 tipos enumerados y restricciones de PostgreSQL, ver [docs/database/README.md](../database/README.md).
 - **Frontend y Clientes Web:** Para la integración de estos endpoints con la interfaz React 19, ver [docs/web/README.md](../web/README.md).
 - **Suites de Pruebas Automatizadas:** Para auditar los casos de prueba unitarios e integrados de la API, ver [docs/testing/suites/api.md](../testing/suites/api.md) y [docs/testing/suites/integration.md](../testing/suites/integration.md).
