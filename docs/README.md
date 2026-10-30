@@ -21,7 +21,7 @@ docs/
 ├── README.md                                    # Portal principal y sitemap maestro del monorepo
 ├── database/                                    # Capa de base de datos y arquitectura relacional
 │   ├── README.md                                # Índice y principios de persistencia en PostgreSQL / Drizzle
-│   ├── schema.md                                # Especificación de las 21 tablas relacionales y 6 enums
+│   ├── schema.md                                # Especificación de las 23 tablas relacionales y 6 enums
 │   ├── constraints.md                           # Claves foráneas, índices parciales y triggers PL/pgSQL
 │   ├── migrations.md                            # Ciclo de migraciones, advisory lock 72160419 y hashes SHA-256
 │   ├── mvp-backfill.md                          # Recálculo histórico de MVP: simulación, aplicación y verificación
@@ -210,7 +210,7 @@ A continuación se indexan las 6 áreas primarias de documentación técnica con
 Gestiona el esquema de persistencia en PostgreSQL 16+ / PGlite 0.3+, modelado con Drizzle ORM en `packages/database/`:
 
 - [docs/database/README.md](database/README.md): Introducción y principios de arquitectura relacional.
-- [docs/database/schema.md](database/schema.md): Catálogo exhaustivo de las 21 tablas y 6 enums.
+- [docs/database/schema.md](database/schema.md): Catálogo exhaustivo de las 23 tablas y 6 enums.
 - [docs/database/constraints.md](database/constraints.md): Claves foráneas, checks, índices únicos parciales y triggers.
 - [docs/database/migrations.md](database/migrations.md): Flujo de migraciones, advisory lock `72160419` y verificación de integridad.
 - [docs/database/mvp-backfill.md](database/mvp-backfill.md): Recálculo histórico mediante `backfill-match-mvps.ts`, con datos de `match-mvp-data.ts` y CLI en `apps/api/src/scripts/backfill-match-mvps.ts`.
@@ -280,3 +280,7 @@ Aseguramiento de la calidad sin dependencias externas, sustentado en PostgreSQL 
 - [docs/testing/suites/parser.md](testing/suites/parser.md): Suite de pruebas unitarias del extractor ROFL en Python.
 - [docs/testing/suites/integration.md](testing/suites/integration.md): Suites de integración relacional (`tests/integration/`) y de `tests/unit/`.
 
+
+## Bola de cristal
+
+Pronósticos de playoffs por liga y resolución de resultados: [API](api/crystal-ball/README.md) · [Web](web/crystal-ball/README.md).

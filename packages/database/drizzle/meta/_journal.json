@@ -36,6 +36,13 @@
       "when": 1792764394548,
       "tag": "0004_editor_role",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1792777038023,
+      "tag": "0005_crystal_ball",
+      "breakpoints": true
     }
   ]
 }

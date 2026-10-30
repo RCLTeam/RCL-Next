@@ -33,6 +33,25 @@ function renderSession(state: AuthState, signingOut = false, path = '/admin') {
 }
 
 describe('administration access', () => {
+  it.each(['admin', 'owner'] as const)('mounts crystal ball management for %s', (role) => {
+    const html = renderSession(
+      { status: 'authenticated', user: { ...admin, role } },
+      false,
+      '/admin/crystal-ball'
+    );
+    expect(html).toContain('Configura la participacion');
+    expect(html).toContain('href="/admin/crystal-ball"');
+    expect(html).toContain('Cargando temporadas');
+  });
+  it.each(['anonymous', 'viewer'] as const)('protects crystal ball management from %s', (role) => {
+    const state: AuthState =
+      role === 'anonymous'
+        ? { status: 'anonymous' }
+        : { status: 'authenticated', user: { ...admin, role } };
+    const html = renderSession(state, false, '/admin/crystal-ball');
+    expect(html).not.toContain('Configura la participacion');
+    expect(html).toContain(role === 'anonymous' ? 'Inicia sesión' : 'No tienes permisos');
+  });
   it('mounts logo management for administrators', () => {
     const html = renderSession(
       { status: 'authenticated', user: admin },
@@ -156,6 +175,7 @@ describe('editor administration access', () => {
     expect(html).toContain('href="/admin"');
     expect(html).toContain('href="/admin/home-content"');
     for (const section of [
+      'crystal-ball',
       'rofl/upload',
       'crud',
       'member-roles',
@@ -165,18 +185,22 @@ describe('editor administration access', () => {
       expect(html).not.toContain(`href="/admin/${section}"`);
     }
   });
-  it.each(['rofl/upload', 'crud', 'member-roles', 'team-logos', 'database-transfer'])(
-    'blocks direct editor navigation to %s',
-    (section) => {
-      const html = renderSession(
-        { status: 'authenticated', user: { ...admin, role: 'editor' } },
-        false,
-        `/admin/${section}`
-      );
-      expect(html).toContain('No tienes permisos para acceder a esta sección.');
-      expect(html).not.toContain('Team of the Week');
-    }
-  );
+  it.each([
+    'crystal-ball',
+    'rofl/upload',
+    'crud',
+    'member-roles',
+    'team-logos',
+    'database-transfer'
+  ])('blocks direct editor navigation to %s', (section) => {
+    const html = renderSession(
+      { status: 'authenticated', user: { ...admin, role: 'editor' } },
+      false,
+      `/admin/${section}`
+    );
+    expect(html).toContain('No tienes permisos para acceder a esta sección.');
+    expect(html).not.toContain('Team of the Week');
+  });
   it.each(['admin', 'owner'] as const)('preserves all sections for %s', (role) => {
     const html = renderSession({ status: 'authenticated', user: { ...admin, role } });
     expect(html).toContain('href="/admin/member-roles"');

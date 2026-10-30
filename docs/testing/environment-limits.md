@@ -19,7 +19,7 @@ Las pruebas de integración en `tests/integration/` no se conectan a un servidor
 ### 2.1 Techo de Trabajadores Concurrentes (`maxWorkers: 4`)
 - **Configuración:** `vitest.config.ts:18`.
 - **Límite:** Máximo de **4 procesos de trabajo concurrentes**.
-- **Justificación de Ingeniería:** Durante el inicio de la suite completa, cada trabajador de Vitest crea una instancia independiente de PGlite y compila/aplica la totalidad de las 21 tablas relacionales y disparadores PL/pgSQL (`packages/database/drizzle/0000_initial_schema.sql`). La inicialización masiva simultánea genera una intensa contención de CPU en la compilación JIT de WebAssembly. Limitar la concurrencia a 4 núcleos mantiene la latencia de inicialización acotada y previene la saturación del planificador de hilos del sistema operativo.
+- **Justificación de Ingeniería:** Durante el inicio de la suite completa, cada trabajador de Vitest crea una instancia independiente de PGlite y compila/aplica la totalidad de las 23 tablas relacionales y disparadores PL/pgSQL (`packages/database/drizzle/0000_initial_schema.sql`). La inicialización masiva simultánea genera una intensa contención de CPU en la compilación JIT de WebAssembly. Limitar la concurrencia a 4 núcleos mantiene la latencia de inicialización acotada y previene la saturación del planificador de hilos del sistema operativo.
 
 ### 2.2 Tiempo Límite de Ejecución (`testTimeout: 30_000`)
 - **Configuración:** `vitest.config.ts:19`.
