@@ -156,8 +156,12 @@ function SiteFooter() {
       </div>
       <div className="footer-bottom">
         <span> {new Date().getFullYear()} REBEL CROWN LEGACY</span>
+        <span className="footer-disclaimer">
+          REBEL CROWN LEGACY ES UNA COMPETICION COMUNITARIA INDEPENDIENTE, NO ORGANIZADA,
+          PATROCINADA NI RESPALDADA POR RIOT GAMES, INC. NI POR LOL ESPORTS. LEAGUE OF LEGENDS Y SUS
+          ELEMENTOS SON MARCAS Y PROPIEDAD DE RIOT GAMES, INC.
+        </span>
         <span>© GUILLERMO-JAVIER MARTINEZ NAVARRO TIENE LOS DERECHOS RESERVADOS.</span>
-        <span>RCL NO ESTA AFILIADA A RIOT GAMES.</span>
       </div>
       {suggestionModalOpen && <SuggestionModal onClose={() => setSuggestionModalOpen(false)} />}
     </footer>

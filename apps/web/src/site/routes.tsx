@@ -94,7 +94,7 @@ export const siteRoutes = [
     id: 'bola-cristal',
     title: 'Bola de Cristal',
     competition: ['calendar'],
-    render: () => <CrystalBallPage />
+    render: ({ competition }) => <CrystalBallPage competition={competition} />
   },
   {
     path: '/playoffs',
@@ -137,6 +137,7 @@ const detailRoutes = [
 ] satisfies RouteDefinition[];
 
 export const adminRoutes = [
+  { path: '/admin/crystal-ball', title: 'Bola de cristal' },
   { path: '/admin/home-content', title: 'Contenido de la home' },
   { path: '/admin', title: 'Admin' },
   { path: '/admin/rofl/upload', title: 'ROFL Upload' },

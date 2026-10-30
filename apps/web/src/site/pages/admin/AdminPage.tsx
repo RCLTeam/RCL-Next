@@ -1,6 +1,8 @@
 import React from 'react';
+import { useAuth } from '../../../features/auth/components/AuthProvider.js';
 import { RequireAdmin } from '../../../features/auth/components/RequireAdmin.js';
 import { CrudOperationsPanel } from '../../../features/crud-operations/components/CrudOperationsPanel.js';
+import { CrystalAdminPanel } from '../../../features/crystal-ball/components/CrystalAdminPanel.js';
 import { DatabaseTransferPanel } from '../../../features/database-transfer/components/DatabaseTransferPanel.js';
 import { HomeContentPanel } from '../../../features/home-content/components/HomeContentPanel.js';
 import { MemberRolesPanel } from '../../../features/member-roles/components/MemberRolesPanel.js';
@@ -13,6 +15,8 @@ export function AdminPage({
   wsUrl,
   path = '/admin'
 }: { wsUrl?: string | undefined; path?: string }) {
+  const { state } = useAuth();
+  const editorOnly = state.status === 'authenticated' && state.user.role === 'editor';
   return (
     <section id="admin" className="admin-content" aria-label="Administracion">
       <div className="admin-heading">
@@ -23,39 +27,66 @@ export function AdminPage({
         <nav className="admin-navigation" aria-label="Funciones de administracion">
           <SiteLink
             href="/admin/home-content"
-            aria-current={path === '/admin/home-content' ? 'page' : undefined}
+            aria-current={
+              path === '/admin/home-content' || (editorOnly && path === '/admin')
+                ? 'page'
+                : undefined
+            }
           >
             Home content
           </SiteLink>
-          <SiteLink
-            href="/admin/rofl/upload"
-            aria-current={path === '/admin/rofl/upload' ? 'page' : undefined}
-          >
-            ROFL Upload
-          </SiteLink>
-          <SiteLink href="/admin/crud" aria-current={path === '/admin/crud' ? 'page' : undefined}>
-            CRUD Operations
-          </SiteLink>
-          <SiteLink
-            href="/admin/member-roles"
-            aria-current={path === '/admin/member-roles' ? 'page' : undefined}
-          >
-            Roles Management
-          </SiteLink>
-          <SiteLink
-            href="/admin/team-logos"
-            aria-current={path === '/admin/team-logos' ? 'page' : undefined}
-          >
-            Team Logos
-          </SiteLink>
-          <SiteLink
-            href="/admin/database-transfer"
-            aria-current={path === '/admin/database-transfer' ? 'page' : undefined}
-          >
-            Database Transfer
-          </SiteLink>
+          {!editorOnly && (
+            <>
+              <SiteLink
+                href="/admin/crystal-ball"
+                aria-current={path === '/admin/crystal-ball' ? 'page' : undefined}
+              >
+                Bola de cristal
+              </SiteLink>
+              <SiteLink
+                href="/admin/rofl/upload"
+                aria-current={path === '/admin/rofl/upload' ? 'page' : undefined}
+              >
+                ROFL Upload
+              </SiteLink>
+              <SiteLink
+                href="/admin/crud"
+                aria-current={path === '/admin/crud' ? 'page' : undefined}
+              >
+                CRUD Operations
+              </SiteLink>
+              <SiteLink
+                href="/admin/member-roles"
+                aria-current={path === '/admin/member-roles' ? 'page' : undefined}
+              >
+                Roles Management
+              </SiteLink>
+              <SiteLink
+                href="/admin/team-logos"
+                aria-current={path === '/admin/team-logos' ? 'page' : undefined}
+              >
+                Team Logos
+              </SiteLink>
+              <SiteLink
+                href="/admin/database-transfer"
+                aria-current={path === '/admin/database-transfer' ? 'page' : undefined}
+              >
+                Database Transfer
+              </SiteLink>
+            </>
+          )}
         </nav>
-        {path === '/admin/team-logos' ? (
+        {editorOnly ? (
+          path === '/admin' || path === '/admin/home-content' ? (
+            <HomeContentPanel />
+          ) : (
+            <p className="empty-state error-state" role="alert">
+              No tienes permisos para acceder a esta seccion.
+            </p>
+          )
+        ) : path === '/admin/crystal-ball' ? (
+          <CrystalAdminPanel />
+        ) : path === '/admin/team-logos' ? (
           <TeamLogosPanel />
         ) : path === '/admin/home-content' ? (
           <HomeContentPanel />
@@ -69,6 +100,12 @@ export function AdminPage({
           <DatabaseTransferPanel />
         ) : (
           <div className="admin-overview">
+            <SiteLink href="/admin/crystal-ball">
+              <span className="eyebrow">Predicciones</span>
+              <h2>Bola de cristal</h2>
+              <p>Configura las fechas de participacion y resuelve los pronosticos de playoffs.</p>
+              <span>Gestionar predicciones →</span>
+            </SiteLink>
             <SiteLink href="/admin/home-content">
               <span className="eyebrow">Publicacion</span>
               <h2>Home content</h2>

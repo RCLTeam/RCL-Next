@@ -73,7 +73,7 @@ export function MemberRolesPanel() {
           <h2>Roles Management</h2>
           <p>
             {canManage
-              ? 'Gestiona el acceso de los miembros: viewer, admin u owner.'
+              ? 'Gestiona el acceso de los miembros: viewer, editor, admin u owner.'
               : 'Consulta los miembros y sus roles.'}
           </p>
         </div>
@@ -250,11 +250,17 @@ export function MemberRolesTable({
                     disabled={disabled}
                     onChange={(event) => {
                       const role = event.target.value;
-                      if (role === 'viewer' || role === 'admin' || role === 'owner')
+                      if (
+                        role === 'viewer' ||
+                        role === 'editor' ||
+                        role === 'admin' ||
+                        role === 'owner'
+                      )
                         onChange(member, role);
                     }}
                   >
                     <option value="viewer">viewer</option>
+                    <option value="editor">editor</option>
                     <option value="admin">admin</option>
                     <option value="owner">owner</option>
                   </Select>

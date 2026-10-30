@@ -10,12 +10,20 @@ export interface AuthOptions {
   frontendOrigin: string;
 }
 
-export function requireAuth(options: AuthOptions, role?: AuthUser['role']): RequestHandler {
+export function requireAuth(
+  options: AuthOptions,
+  role?: AuthUser['role'] | readonly AuthUser['role'][]
+): RequestHandler {
   return async (req, res, next) => {
     const user = await options.service.currentUser(
       readSessionCookie(req.headers.cookie, options.secureCookies)
     );
-    if (role && user.role !== role && !(role === 'admin' && user.role === 'owner'))
+    const allowedRoles = typeof role === 'string' ? [role] : role;
+    if (
+      allowedRoles &&
+      !allowedRoles.includes(user.role) &&
+      !(allowedRoles.includes('admin') && user.role === 'owner')
+    )
       throw new AppError(403, 'FORBIDDEN', 'Insufficient permissions.');
     res.locals.user = user;
     next();

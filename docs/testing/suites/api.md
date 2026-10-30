@@ -59,8 +59,8 @@ Conforme al diseño de la infraestructura de pruebas del monorepo, se señala ex
 
 3. **Módulo `member-roles` (`apps/api/src/modules/member-roles/`):**
    - *Ausencia:* Cero archivos `*.test.ts` en el directorio.
-   - *Dónde se prueba:* En `tests/integration/member-roles.test.ts` (6 pruebas, 169 LoC brutas).
-   - *Justificación:* Valida las restricciones relacionales sobre los roles del sistema (`appRole`: `'viewer'`, `'admin'`, `'owner'`) en la tabla `discord_users`.
+   - *Dónde se prueba:* En `tests/integration/member-roles.test.ts` (7 pruebas con estado aislado por caso).
+   - *Justificación:* Valida las restricciones relacionales sobre los roles del sistema (`appRole`: `'viewer'`, `'editor'`, `'admin'`, `'owner'`) en la tabla `discord_users`.
 
 4. **Módulo `team-logos` (`apps/api/src/modules/team-logos/`):**
    - *Ausencia:* Cero archivos `*.test.ts` en el directorio.

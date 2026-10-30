@@ -262,19 +262,29 @@ export function FeaturedPlayer({
         MVP de la jornada
       </h2>
       {player?.competition?.featured ? (
-        <SiteLink className="featured-player-card" href={playerHref(player)}>
+        <SiteLink
+          className="featured-player-card"
+          href={playerHref(player)}
+          style={
+            {
+              '--player-team-color': player.competition.team?.color || 'var(--purple)'
+            } as React.CSSProperties
+          }
+        >
           <div className="featured-player-portrait">
             <PlayerArt player={player} catalog={catalog} />
           </div>
           <div className="featured-player-body">
-            <div className="featured-player-header">
-              <span className="featured-player-award">MVP</span>
-              <span className="featured-player-round">{player.competition.featured.roundName}</span>
-            </div>
             <div className="featured-player-identity">
               <div className="featured-player-identity-text">
+                <div className="featured-player-header">
+                  <span className="featured-player-award">MVP</span>
+                  <span className="featured-player-round">
+                    {player.competition.featured.roundName}
+                  </span>
+                </div>
                 <div className="featured-player-name">
-                  <h3>{player.gameName}</h3>
+                  <h3 title={player.gameName}>{player.gameName}</h3>
                   {player.riotTag && <span className="featured-player-tag">#{player.riotTag}</span>}
                 </div>
                 <div className="featured-player-meta">
@@ -282,7 +292,9 @@ export function FeaturedPlayer({
                 </div>
               </div>
               {player.competition.champion && resolveTeamLogo(player.competition.team?.logoUrl) && (
-                <TeamBadge team={player.competition.team} />
+                <div className="player-identity-emblem">
+                  <TeamBadge team={player.competition.team} />
+                </div>
               )}
             </div>
             <dl className="featured-player-stats">
@@ -294,6 +306,10 @@ export function FeaturedPlayer({
                     <dd>{formatPlayerStat(player.competition?.featured?.stats, key)}</dd>
                   </div>
                 ))}
+              <div>
+                <dt>MVPs de temporada</dt>
+                <dd>{player.competition.mvpMatchIds.length}</dd>
+              </div>
             </dl>
           </div>
         </SiteLink>
@@ -334,35 +350,27 @@ export function PlayerGrid({
                 <span className="player-team">
                   {player.competition?.team?.name ?? 'Sin equipo'}
                 </span>
-                <h3>{player.gameName}</h3>
-              </div>
-              {player.competition?.team && <TeamBadge team={player.competition.team} />}
-            </div>
-            {sort !== 'mvps' &&
-            !player.competition?.champion &&
-            !player.competition?.stats &&
-            !player.competition?.mvpMatchIds.length ? (
-              <p className="player-pending-stats">Estadisticas pendientes.</p>
-            ) : (
-              <dl className="player-card-stats">
-                <div>
-                  <dt>{playerCardStats[sort]}</dt>
-                  <dd>
-                    {formatPlayerStat(
-                      player.competition?.stats,
-                      sort,
-                      player.competition?.mvpMatchIds.length ?? 0
-                    )}
-                  </dd>
-                </div>
-                {sort !== 'mvps' && (
+                <h3 title={player.gameName}>{player.gameName}</h3>
+                <dl className="player-card-selected-stat">
                   <div>
-                    <dt>MVPs</dt>
-                    <dd>{player.competition?.mvpMatchIds.length ?? '—'}</dd>
+                    <dt>{playerCardStats[sort]}</dt>
+                    <dd>
+                      {formatPlayerStat(
+                        player.competition?.stats,
+                        sort,
+                        player.competition?.mvpMatchIds.length ?? 0
+                      )}
+                    </dd>
+                  </div>
+                </dl>
+              </div>
+              {player.competition?.champion &&
+                resolveTeamLogo(player.competition.team?.logoUrl) && (
+                  <div className="player-identity-emblem">
+                    <TeamBadge team={player.competition.team} />
                   </div>
                 )}
-              </dl>
-            )}
+            </div>
           </div>
         </SiteLink>
       ))}

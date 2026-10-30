@@ -22,7 +22,7 @@ import {
   varchar
 } from 'drizzle-orm/pg-core';
 
-export const appRole = pgEnum('app_role', ['viewer', 'admin', 'owner']);
+export const appRole = pgEnum('app_role', ['viewer', 'editor', 'admin', 'owner']);
 export const gameSide = pgEnum('game_side', ['blue', 'red']);
 export const stage = pgEnum('stage', ['regular', 'playoff']);
 export const matchStatus = pgEnum('match_status', [
@@ -724,5 +724,62 @@ export const editorialArticles = pgTable(
     index('editorial_home_idx').on(t.published, t.showOnHome, t.homeOrder),
     check('editorial_kind_check', sql`${t.kind} in ('noticia', 'reportaje', 'entrevista', 'otro')`),
     check('editorial_order_check', sql`${t.homeOrder} >= 0`)
+  ]
+);
+
+// Each league has its own voting window and results.
+export const crystalBallLeagueCampaigns = pgTable(
+  'crystal_ball_league_campaigns',
+  {
+    divisionId: uuid('division_id').primaryKey(),
+    opensAt: timestamp('opens_at', { withTimezone: true }).notNull(),
+    closesAt: timestamp('closes_at', { withTimezone: true }).notNull(),
+    finalizedAt: timestamp('finalized_at', { withTimezone: true }),
+    results: jsonb('results').$type<Record<string, string[]>>().notNull().default({}),
+    automaticResults: jsonb('automatic_results')
+      .$type<Record<string, string[]>>()
+      .notNull()
+      .default({}),
+    calculatedAt: timestamp('calculated_at', { withTimezone: true }),
+    resolvedBy: varchar('resolved_by', { length: 32 }),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
+  },
+  (t) => [
+    foreignKey({
+      name: 'crystal_campaign_division_fk',
+      columns: [t.divisionId],
+      foreignColumns: [seasonsDivisions.id]
+    }).onDelete('cascade'),
+    foreignKey({
+      name: 'crystal_campaign_resolver_fk',
+      columns: [t.resolvedBy],
+      foreignColumns: [discordUsers.discordId]
+    }).onDelete('set null'),
+    check('crystal_league_window_check', sql`${t.opensAt} < ${t.closesAt}`),
+    check('crystal_league_results_check', sql`jsonb_typeof(${t.results}) = 'object'`)
+  ]
+);
+export const crystalBallLeagueEntries = pgTable(
+  'crystal_ball_league_entries',
+  {
+    divisionId: uuid('division_id').notNull(),
+    discordUserId: varchar('discord_user_id', { length: 32 }).notNull(),
+    answers: jsonb('answers').$type<Record<string, string[]>>().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
+  },
+  (t) => [
+    foreignKey({
+      name: 'crystal_entry_campaign_fk',
+      columns: [t.divisionId],
+      foreignColumns: [crystalBallLeagueCampaigns.divisionId]
+    }).onDelete('cascade'),
+    foreignKey({
+      name: 'crystal_entry_user_fk',
+      columns: [t.discordUserId],
+      foreignColumns: [discordUsers.discordId]
+    }).onDelete('cascade'),
+    primaryKey({ columns: [t.divisionId, t.discordUserId] }),
+    index('crystal_league_entries_user_idx').on(t.discordUserId),
+    check('crystal_league_answers_check', sql`jsonb_typeof(${t.answers}) = 'object'`)
   ]
 );

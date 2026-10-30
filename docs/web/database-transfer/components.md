@@ -33,7 +33,7 @@ Se certifica que los componentes visuales de este directorio respetan estrictame
 ### 2.2 Modal de Previsualización y Confirmación Tipada (`DatabaseImportDialog`)
 - **Cita:** `DatabaseTransferPanel.tsx:196-270`
 - **Mecanismo:** Utiliza el componente compartido `<Modal>` (`../../../shared/components/Modal/Modal.js`):
-  - **Tabla Comparativa de Filas:** Muestra una cuadrícula detallando el estado de las 21 tablas relacionales del esquema:
+  - **Tabla Comparativa de Filas:** Muestra una cuadrícula detallando el estado de las 23 tablas relacionales del esquema:
     - Nombre de la tabla (`table`).
     - Filas actuales en la base de datos viva (`currentRows`).
     - Filas presentes en el volcado que sustituirán a las actuales (`importedRows`).

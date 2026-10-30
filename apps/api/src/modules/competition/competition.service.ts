@@ -3,7 +3,7 @@ import { competitiveTeamForSeason } from '@rcl/contracts';
 import { notFound } from '../../shared/app-error.js';
 import { calculateChampionStats } from './champion-stats.js';
 import type { CompetitionRepository, Match, Team } from './competition.repository.js';
-import { aggregatePlayerStats, mostPlayedChampion } from './player-statistics.js';
+import { aggregatePlayerStats, mostPlayedChampion, playerRole } from './player-statistics.js';
 import {
   playerProfileSlugs,
   profileSlugs,
@@ -276,11 +276,95 @@ export class CompetitionService {
       .filter((game) => game.winnerTeamId)
       .flatMap((game) => game.participants.filter((player) => player.teamId === id));
     const { slugs: playerSlugs } = await this.playerDirectory();
+    const roles = ['top', 'jungle', 'mid', 'adc', 'support'] as const;
+    const countsByRole = new Map(roles.map((role) => [role, new Map<string, number>()]));
+    for (const appearance of appearances) {
+      const counts = countsByRole.get(playerRole(appearance.position) as (typeof roles)[number]);
+      if (counts && appearance.playerId)
+        counts.set(appearance.playerId, (counts.get(appearance.playerId) ?? 0) + 1);
+    }
+    const selected = new Map<(typeof roles)[number], TeamDetail['members'][number]>();
+    const used = new Set<string>();
+    const rankedMembers = (role: (typeof roles)[number]) =>
+      team.members
+        .filter((member) => member.role === role)
+        .sort(
+          (a, b) =>
+            (countsByRole.get(role)?.get(b.playerId ?? '') ?? 0) -
+              (countsByRole.get(role)?.get(a.playerId ?? '') ?? 0) ||
+            (a.playerId ?? a.id).localeCompare(b.playerId ?? b.id)
+        );
+    // Reserve every played starter first so an earlier lane cannot steal another lane's starter.
+    for (const role of roles) {
+      const starter = rankedMembers(role).find(
+        (member) =>
+          member.playerId &&
+          !used.has(member.playerId) &&
+          (countsByRole.get(role)?.get(member.playerId) ?? 0) > 0
+      );
+      if (starter?.playerId) {
+        selected.set(role, starter);
+        used.add(starter.playerId);
+      }
+    }
+    for (const role of roles) {
+      if (selected.has(role)) continue;
+      const replacementId = [...(countsByRole.get(role) ?? [])]
+        .filter(([id]) => !used.has(id))
+        .sort(([a, ac], [b, bc]) => bc - ac || a.localeCompare(b))[0]?.[0];
+      if (!replacementId) continue;
+      const member = team.members.find((entry) => entry.playerId === replacementId);
+      const appearance = appearances.find((entry) => entry.playerId === replacementId);
+      if (!appearance) continue;
+      selected.set(
+        role,
+        member
+          ? { ...member, role }
+          : {
+              id: replacementId,
+              playerId: replacementId,
+              name: appearance.gameName,
+              gameName: appearance.gameName,
+              riotTag: appearance.riotTag,
+              countryCode: null,
+              role,
+              isCaptain: false
+            }
+      );
+      used.add(replacementId);
+    }
+    // Keep an unplayed registered starter only when no eligible replacement exists.
+    for (const role of roles) {
+      if (selected.has(role)) continue;
+      const starter = rankedMembers(role).find(
+        (member) => !member.playerId || !used.has(member.playerId)
+      );
+      if (starter) {
+        selected.set(role, starter);
+        if (starter.playerId) used.add(starter.playerId);
+      }
+    }
+    const lineup = roles.flatMap((role) => {
+      const member = selected.get(role);
+      return member ? [member] : [];
+    });
+    const playerIds = [
+      ...new Set(
+        [...team.members, ...lineup].flatMap((member) => (member.playerId ? [member.playerId] : []))
+      )
+    ];
+    const champions = await this.repository.playerSeasonChampions(playerIds, team.seasonName);
     return {
       ...team,
       slug: slugs.get(id),
+      featuredLineup: lineup.map((member) => ({
+        ...member,
+        champion: member.playerId ? (champions.get(member.playerId) ?? null) : null,
+        playerSlug: member.playerId ? playerSlugs.get(member.playerId) : undefined
+      })),
       members: team.members.map((member) => ({
         ...member,
+        champion: member.playerId ? (champions.get(member.playerId) ?? null) : null,
         rosterStats: {
           games: appearances.filter((player) => player.playerId === member.playerId).length,
           mvps: member.playerId

@@ -83,7 +83,9 @@ export function AuthControlsView({
                   ? 'Owner'
                   : state.user.role === 'admin'
                     ? 'Administrador'
-                    : 'Miembro'}
+                    : state.user.role === 'editor'
+                      ? 'Editor'
+                      : 'Miembro'}
               </span>
             </div>
           </div>

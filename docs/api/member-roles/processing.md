@@ -6,37 +6,24 @@
 
 ## 1. Ciclo de Vida y Jerarquía de `appRole`
 
-El sistema de roles de acceso a la plataforma está modelado en PostgreSQL mediante el enum `app_role` (`packages/database/src/schema.ts:24`): `'viewer'`, `'admin'`, `'owner'`.
+El sistema de roles de acceso a la plataforma está modelado en PostgreSQL mediante el enum `app_role` (`packages/database/src/schema.ts:24`): `'viewer'`, `'editor'`, `'admin'`, `'owner'`.
 
-```
-                    +--------------------+
-                    |       viewer       |  (Rol por defecto al registrarse)
-                    +--------------------+
-                              |
-                   (Promovido por un owner)
-                              v
-                    +--------------------+
-                    |       admin        |  (Acceso a panel de gestión y lectura)
-                    +--------------------+
-                              |
-                   (Promovido por un owner)
-                              v
-                    +--------------------+
-                    |       owner        |  (Control total y gestión de roles)
-                    +--------------------+
-```
+Los owners pueden asignar directamente cualquiera de los cuatro roles; no se requiere pasar por niveles intermedios.
 
 ### Definición de Privilegios por Nivel:
 1. **`viewer` (Miembro / Lector):**
    - Asignado automáticamente a todo usuario que inicie sesión por primera vez con Discord (`discordUsers.role.default('viewer')`).
    - Acceso público a clasificaciones, calendarios, partidos, estadísticas de jugadores y predicciones.
    - Denegación estricta (HTTP 403) a cualquier ruta administrativa.
-2. **`admin` (Administrador de Competición):**
+2. **`editor` (Editor de Contenido):**
+   - Acceso a `/admin` y `/admin/home-content` para gestionar artículos, imágenes y quintetos.
+   - Sin acceso al censo de miembros, cambios de rol, CRUD, logos, transferencias ni subida ROFL.
+3. **`admin` (Administrador de Competición):**
    - Capacidad para acceder al panel de administración general (`/admin`).
    - Permiso de lectura sobre el censo de miembros (`GET /api/v1/member-roles`).
    - Gestión de contenidos editoriales (`home-content`), subida de repeticiones (`rofl-upload`) y operaciones CRUD sobre datos de la liga (`crud-operations`).
    - **Restricción:** No puede modificar roles de usuarios ni degradar a otros miembros.
-3. **`owner` (Propietario del Sistema):**
+4. **`owner` (Propietario del Sistema):**
    - Máximo nivel de autorización en RCL-Next.
    - Satisface todas las comprobaciones de `admin` implícitamente (`auth.router.ts:18-19`).
    - Autoridad exclusiva para ejecutar mutaciones de rol (`PATCH /api/v1/member-roles/:discordId`).
@@ -111,7 +98,7 @@ if (before.role === 'owner' && change.role !== 'owner') {
 
 ## 5. Gestión de Auto-Degradación
 
-Un propietario tiene permitido auto-degradarse a `admin` o `viewer` siempre y cuando exista al menos otro propietario en el sistema.
+Un propietario tiene permitido auto-degradarse a `admin`, `editor` o `viewer` siempre y cuando exista al menos otro propietario en el sistema.
 
 Cuando esta mutación prospera:
 1. El cambio se registra en `discord_users` y en `audit_logs` con `actorDiscordUserId` igual al propio miembro.

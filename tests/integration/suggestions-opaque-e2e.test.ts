@@ -1745,7 +1745,7 @@ describe('Dual Track Opaque-Box E2E Testing Suite', () => {
       const html = renderToString(
         React.createElement(SuggestionModal, { isOpen: true, onClose: () => {} })
       );
-      expect(html).toContain('Buzón de Sugerencias');
+      expect(html).toContain('Buzon de Sugerencias');
       expect(html).toContain('suggestion-dialog');
       recordTest('tier1', true);
     });
@@ -3083,7 +3083,7 @@ describe('Dual Track Opaque-Box E2E Testing Suite', () => {
     it('T2-F25-01: Textarea at 9 characters disables submit button on UI contract', () => {
       const html = renderToString(React.createElement(SuggestionForm, { suggestion: '123456789' }));
       expect(html).toContain('disabled');
-      expect(html).toContain('Mínimo 10 caracteres');
+      expect(html).toContain('Minimo 10 caracteres');
       recordTest('tier2', true);
     });
     it('T2-F25-02: Textarea at 1000 characters displays counter 1000/1000 with limit indicator', () => {
@@ -3189,7 +3189,7 @@ describe('Dual Track Opaque-Box E2E Testing Suite', () => {
       const html = renderToString(
         React.createElement(SuggestionModal, { isOpen: true, onClose: () => {} })
       );
-      expect(html).toContain('Buzón de Sugerencias');
+      expect(html).toContain('Buzon de Sugerencias');
       recordTest('tier2', true);
     });
     it('T2-F27-04: Click detection differentiates backdrop clicks from clicks inside modal container', () => {
@@ -3473,7 +3473,7 @@ describe('Dual Track Opaque-Box E2E Testing Suite', () => {
         React.createElement(SuggestionModal, { isOpen: true, onClose: () => {} })
       );
       expect(modalHtml).toContain('<dialog');
-      expect(modalHtml).toContain('Buzón de Sugerencias');
+      expect(modalHtml).toContain('Buzon de Sugerencias');
       recordTest('tier3', true);
     });
 

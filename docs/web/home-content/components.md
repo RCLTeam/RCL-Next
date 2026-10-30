@@ -232,3 +232,14 @@ Carrusel rotativo de fondos de campeones utilizados por el jugador en esa jornad
 - **Respeto a Accesibilidad de Movimiento:** Escucha la consulta de medios `window.matchMedia('(prefers-reduced-motion: reduce)')`. Si el usuario tiene habilitada la reducción de movimiento en su sistema operativo, el temporizador se detiene por completo (`lines 25-37`), manteniendo estática la primera imagen.
 - **Arte original:** Usa `ChampionArt` de `shared/riot/` con `variant="original"`, sin `skinId`. El hook `useChampionArt` utiliza directamente el splash base de Data Dragon, sin consultar metadatos de CommunityDragon. La imagen rellena la celda con `object-fit: cover` y `object-position: center`.
 - **Fallos de imagen:** `ChampionArt` gestiona los errores de sus fuentes y devuelve `null` cuando se agotan, dejando visible el fondo de la tarjeta. Conserva el nodo `<img>` al cambiar de fuente, sin reiniciar la transición de opacidad por una clave basada en URLs.
+
+
+### 3.4 `FeaturedMatch.tsx` (`FeaturedMatch/FeaturedMatch.tsx:6-130`)
+`HomeFeaturedMatch` recibe `featured?: Match` y `liveMatches?: Match[]` (por defecto `[]`).
+- Con cero o un partido en directo muestra una única `MatchCard` de `featured ?? liveMatches[0]`, incluido un encuentro programado. El encabezado refleja el estado del partido seleccionado. Sin ninguno de los dos muestra un enlace al calendario.
+- Con varios partidos en directo muestra un carrusel y el contador «N partidos en directo». Las diapositivas inactivas tienen `inert` y `aria-hidden` para excluir sus controles de la navegación y de los lectores de pantalla.
+- Avanza cíclicamente cada 10 segundos. El temporizador se detiene mientras el cursor o el foco estén dentro del componente y reinicia el plazo completo al salir de ambos.
+- Consulta `prefers-reduced-motion: reduce` al montar y escucha sus cambios: con movimiento reducido no hay rotación automática. El intervalo y el listener se eliminan al desmontar.
+- Incluye botones de partido anterior/siguiente y un control persistente de pausa con `aria-pressed`. La navegación manual permite consultar todos los partidos incluso con movimiento reducido.
+- Los controles miden al menos 44 × 44 px desde las reglas base, independientemente del tipo de puntero.
+- Las pruebas de `tests/unit/render/home-featured-match.test.tsx` usan Node y `react-dom/server`, con dobles de hooks y `window` para comprobar callbacks, temporizadores y limpieza; no simulan un DOM ni verifican el foco real del navegador.

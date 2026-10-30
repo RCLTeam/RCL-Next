@@ -49,7 +49,10 @@ test('persisted affiliations flow through HTTP into the profile while historical
   });
   const mixed = await getProfile();
   expect(mixed.detail.teams[0]?.role).toBe('coach');
-  expect(mixed.html.split('</header>')[0]).toBe(before.html.split('</header>')[0]);
+  // Counts now live in the header; only membership totals may change here.
+  const headerIdentity = (html: string) =>
+    html.split('</header>')[0]?.replace(/<dl class="player-profile-info">.*?<\/dl>/s, '');
+  expect(headerIdentity(mixed.html)).toBe(headerIdentity(before.html));
   expect(mixed.html).toContain('<dt>Inscripciones competitivas</dt><dd>1</dd>');
   expect(mixed.html).toContain('<dt>Otras vinculaciones</dt><dd>1</dd>');
   await db

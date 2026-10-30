@@ -83,9 +83,11 @@ En estricta conformidad con el **Golden Standard Arquitectónico**, la totalidad
 **Archivo**: `TeamCard.tsx:1-24`  
 **Props**: `{ team: Team; divisionName?: string }`
 
-- Inyecta la variable CSS `--team-color` con el color corporativo del equipo (`team.color || 'var(--panel)'`).
+- Inyecta la variable CSS `--team-color` con el color corporativo del equipo (`team.color || 'var(--purple)'`).
 - Renderiza el `TeamBadge`, el acrónimo `shortName` (fallback a `'RCL'`) y el nombre completo.
 - Enlace semántico accesible con `aria-label="Ver equipo <nombre>"`.
+- `.team-card-footer` reúne la división (o Rebel Crown Legacy) y la acción «Ver equipo», sin flecha.
+- La tarjeta no define `--team-logo-scale`: la compensación óptica pertenece a `TeamBadge`, junto a la normalización `teamLogoBounds`, y solo se activa tras cargar correctamente el logo oficial. Placeholder e iniciales mantienen escala 1, también tras cambiar de equipo.
 
 ### 3.4 `TeamBadge`
 **Archivo**: `TeamBadge.tsx:1-51`  

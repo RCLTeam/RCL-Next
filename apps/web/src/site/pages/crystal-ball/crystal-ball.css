@@ -1,69 +1,27 @@
-/* Page-specific styles: crystal-ball. Base styles, states and responsive rules stay with their component. */
+@import '../../../features/crystal-ball/components/crystal-form.css';
 
-/* crystal-ball page and components */
-.rcl-site #bola-cristal {
-  background: radial-gradient(ellipse at 95% 0%,color-mix(in srgb, var(--lime) 6%, transparent),transparent 60%),radial-gradient(ellipse at 0% 100%,color-mix(in srgb, var(--purple) 6%, transparent),transparent 60%),var(--void);
-}
-
-.rcl-site #bola-cristal .section-cross {
-  border: 3px solid var(--lime);
-  border-radius: 47% 53% 43% 57%;
-  font-size: 0;
-  width: 60px;
-  height: 60px;
-  flex-shrink: 0;
-  transform: rotate(12deg);
-}
-
-.rcl-site .crystal-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit,minmax(min(100%,300px),1fr));
-  gap: 18px;
-}
-
-.rcl-site .crystal-card {
-  position: relative;
-  overflow: hidden;
-  background: var(--panel);
-  border: 1px solid var(--line);
-  padding: 24px;
-}
-
-.rcl-site .crystal-card h2 {
-  font: 700 24px var(--display2);
-  text-transform: uppercase;
-  padding: 0 36px 16px 0;
-  border-bottom: 1px solid var(--line);
-}
-
-.rcl-site .crystal-card p {
-  color: var(--muted);
-  font-size: 14px;
-  line-height: 1.7;
-}
-
-.rcl-site .seer-badge {
-  position: absolute;
-  width: 34px;
-  height: 34px;
-  object-fit: contain;
-  top: 18px;
-  right: 18px;
-  opacity: 0.5;
-}
-
-.rcl-site .crystal-pending {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-  border-top: 1px solid var(--line);
-  padding-top: 18px;
-  color: var(--muted);
-  font: 11px var(--mono);
-  text-transform: uppercase;
-}
-
-.rcl-site .crystal-pending > span:first-child {
-  font-size: 28px;
-  color: var(--lime);
+.rcl-site #bola-cristal { background: radial-gradient(ellipse at 95% 0%,color-mix(in srgb, var(--lime) 5%, transparent),transparent 55%),var(--void); }
+.rcl-site #bola-cristal .section-cross { border: 3px solid var(--lime); border-radius: 50%; font-size: 0; width: 60px; height: 60px; flex-shrink: 0; }
+.rcl-site .crystal-rules .format-card { padding: 20px 24px; row-gap: 8px; align-content: start; }
+.rcl-site .crystal-rules .format-card h3 { color: var(--text); }
+.rcl-site .crystal-rules .format-card p { margin: 0; }
+.rcl-site .crystal-rules-dates { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 4px 16px; color: var(--muted); font: 10px/1.5 var(--mono); }
+.rcl-site .crystal-rules-dates > span { white-space: nowrap; }
+.rcl-site .crystal-login { padding-block: 8px; color: var(--muted); font: 12px/1.6 var(--body-f); }
+.rcl-site .crystal-login a { color: var(--lime); text-underline-offset: 4px; }
+.rcl-site .crystal-ballot { margin-top: 40px; }
+.rcl-site .crystal-ballot-heading { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+.rcl-site .crystal-ballot-heading > span:last-child { color: var(--muted); font: 10px var(--mono); }
+.rcl-site .crystal-progress { display: block; width: 100%; height: 3px; border: 0; background: var(--line); accent-color: var(--lime); }
+.rcl-site .crystal-progress::-webkit-progress-bar { background: var(--line); }
+.rcl-site .crystal-progress::-webkit-progress-value { background: var(--lime); }
+.rcl-site .crystal-progress::-moz-progress-bar { background: var(--lime); }
+.rcl-site .crystal-categories { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 16px; gap: 8px; }
+.rcl-site .crystal-categories button { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; min-height: 56px; padding: 12px; border: 1px solid var(--line); background: var(--panel); color: var(--muted); font: 11px var(--mono); cursor: pointer; }
+.rcl-site .crystal-categories button > span { color: var(--purple); font: 700 24px var(--display2); }
+.rcl-site .crystal-categories button small { margin-left: auto; font: 9px var(--mono); }
+.rcl-site .crystal-categories button[aria-pressed='true'] { color: var(--text); border-bottom: 2px solid var(--lime); }
+.rcl-site .crystal-categories button[aria-pressed='true'] > span { color: var(--lime); }
+@media (min-width: 751px) {
+  .rcl-site .crystal-categories { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 }

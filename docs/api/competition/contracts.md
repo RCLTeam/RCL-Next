@@ -184,6 +184,7 @@ export interface TeamDetail extends TeamSummary {
   seasonName: string;
   divisionName: string;
   members: TeamMember[];
+    featuredLineup?: TeamMember[];
 }
 
 export interface TeamMember {
@@ -196,6 +197,7 @@ export interface TeamMember {
   countryCode: string | null;
   playerId?: string | null;
   playerSlug?: string;
+  champion?: string | null;
   rosterStats?: {
     games: number;
     mvps: number;

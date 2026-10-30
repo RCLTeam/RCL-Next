@@ -46,6 +46,7 @@ function repository(): CompetitionRepository {
   const division = { id: divisionId, seasonId, code: 'premier', name: 'Premier', sortOrder: 1 };
   return {
     players: async () => [],
+    playerSeasonChampions: async () => new Map(),
     playerSeasonGames: async () => ({ playerGames: [], allMatchGames: [], mvpMatchIds: [] }),
     playerDetail: async () => undefined,
     matchDirectory: async () => [],

@@ -57,6 +57,7 @@ El componente utiliza la unión discriminada de `state` para renderizar el fragm
    - **Etiqueta de Rol:** Traduce los valores técnicos del enum a etiquetas de interfaz:
      - `'owner'` -> `"Owner"`
      - `'admin'` -> `"Administrador"`
+     - `'editor'` -> `"Editor"`
      - `'viewer'` -> `"Miembro"`
    - **Botón de Logout:** Botón con estado deshabilitado durante el tránsito (`disabled={signingOut}`).
    - **Alerta de Error de Logout:** Si `logoutError === true`, muestra un mensaje con `role="alert"`.
@@ -97,7 +98,7 @@ export function AuthControls() {
 
 ## 3. Guardia Perimetral de Acceso (`RequireAdmin`)
 
-El componente `RequireAdmin` (`apps/web/src/features/auth/components/RequireAdmin.tsx:5-34`) protege rutas y vistas restringidas a usuarios con roles administrativos (`'admin'` u `'owner'`):
+El componente `RequireAdmin` (`apps/web/src/features/auth/components/RequireAdmin.tsx:5-34`) protege rutas y vistas restringidas a usuarios con roles `'editor'`, `'admin'` u `'owner'`. `AdminPage` limita al editor a Home Content:
 
 ```tsx
 export function RequireAdmin({ children }: { children: ReactNode }) {

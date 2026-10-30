@@ -6,11 +6,11 @@
 
 ## 1. Tipos Enumerados (`pgEnum`)
 
-La base de datos define exactamente **6 tipos enumerados (`pgEnum`)** en `packages/database/src/schema.ts:24-51` y en el DDL baseline `packages/database/drizzle/0000_initial_schema.sql:1-6`:
+La base de datos define exactamente **6 tipos enumerados (`pgEnum`)** en `packages/database/src/schema.ts:24-51` y en el DDL baseline `packages/database/drizzle/0000_initial_schema.sql:1-6`. La migración `0004_editor_role.sql` amplía `app_role`:
 
 | Nombre TypeScript | Nombre PostgreSQL | Valores Permitidos | Ubicación `schema.ts` | Ubicación `0000_initial_schema.sql` |
 |---|---|---|---|---|
-| `appRole` | `app_role` | `'viewer'`, `'admin'`, `'owner'` | `schema.ts:24` | `0000_initial_schema.sql:1` |
+| `appRole` | `app_role` | `'viewer'`, `'editor'`, `'admin'`, `'owner'` | `schema.ts:24` | `0000_initial_schema.sql:1` y `0004_editor_role.sql` |
 | `gameSide` | `game_side` | `'blue'`, `'red'` | `schema.ts:25` | `0000_initial_schema.sql:2` |
 | `stage` | `stage` | `'regular'`, `'playoff'` | `schema.ts:26` | `0000_initial_schema.sql:3` |
 | `matchStatus` | `match_status` | `'scheduled'`, `'live'`, `'completed'`, `'cancelled'`, `'forfeit'` | `schema.ts:27-33` | `0000_initial_schema.sql:4` |
@@ -18,7 +18,7 @@ La base de datos define exactamente **6 tipos enumerados (`pgEnum`)** en `packag
 | `rosterMovementAction` | `roster_movement_action` | `'joined'`, `'left'`, `'promoted_to_captain'`, `'demoted_from_captain'`, `'role_changed'` | `schema.ts:45-51` | `0000_initial_schema.sql:6` |
 
 ### Especificaciones de Comportamiento:
-- **`app_role`:** Incorpora el valor `'owner'` para distinguir la jerarquía superior del propietario del servidor de Discord frente a los administradores convencionales (`'admin'`) y espectadores (`'viewer'`). La inserción de cualquier valor no registrado es rechazada a nivel de motor de tipos de PostgreSQL.
+- **`app_role`:** La migración `0004_editor_role.sql` añade `editor` para gestionar únicamente Home Content. Incorpora el valor `'owner'` para distinguir la jerarquía superior del propietario del servidor de Discord frente a los administradores convencionales (`'admin'`) y espectadores (`'viewer'`). La inserción de cualquier valor no registrado es rechazada a nivel de motor de tipos de PostgreSQL.
 - **`roster_role`:** Contiene 9 roles, pero solo las 5 posiciones competitivas (`'top'`, `'jungle'`, `'mid'`, `'adc'`, `'support'`) están autorizadas para ostentar la capitanía (`is_captain = true`) según la restricción `team_memberships_captain_role_check` (`schema.ts:230-233`). Los roles `'substitute'`, `'coach'`, `'staff'` y `'partners'` tienen prohibido ser capitanes de equipo.
 - **`roster_movement_action`:** Audita las cinco transiciones de ciclo de vida de un miembro en una plantilla.
 
@@ -26,7 +26,7 @@ La base de datos define exactamente **6 tipos enumerados (`pgEnum`)** en `packag
 
 ## 2. Catálogo Detallado de Tablas Relacionales
 
-El modelo cuenta con exactamente **21 tablas** definidas con Drizzle ORM en `packages/database/src/schema.ts:53-692`.
+El modelo cuenta con exactamente **23 tablas** definidas con Drizzle ORM en `packages/database/src/schema.ts:53-692`.
 
 ---
 
@@ -40,7 +40,7 @@ El modelo cuenta con exactamente **21 tablas** definidas con Drizzle ORM en `pac
   | `username` | `varchar(64)` | No | — | Nombre de usuario de Discord. |
   | `global_name` | `varchar(64)` | Sí | `NULL` | Nombre global o de visualización configurado en Discord. |
   | `avatar_hash` | `varchar(128)` | Sí | `NULL` | Hash del avatar proporcionado por el CDN de Discord. |
-  | `role` | `public.app_role` | No | `'viewer'` | Nivel de permisos (`'viewer'`, `'admin'`, `'owner'`). |
+  | `role` | `public.app_role` | No | `'viewer'` | Nivel de permisos (`'viewer'`, `'editor'`, `'admin'`, `'owner'`). |
   | `created_at` | `timestamptz` | No | `now()` | Fecha y hora de registro. |
   | `updated_at` | `timestamptz` | No | `now()` | Fecha y hora de última modificación (actualizada por disparador). |
 - **Disparadores:** `set_updated_at` (`0000_initial_schema.sql:390,395`).
@@ -517,3 +517,31 @@ El modelo cuenta con exactamente **21 tablas** definidas con Drizzle ORM en `pac
   - `editorial_order_check`: `"home_order" >= 0`.
 - **Índices:** `editorial_home_idx` en `(published, show_on_home, home_order)` (`schema.ts:688`, `0000_initial_schema.sql:378`).
 - **Comportamiento Específico:** Carece de columna `created_at` y no forma parte del disparador `set_updated_at`. `cover_url` y `cover_alt` utilizan cadenas vacías `''` por defecto en lugar de `NULL` para evitar validaciones condicionales nulas en los componentes frontend.
+
+### 2.22 `crystal_ball_league_campaigns`
+
+Migración: `0005_crystal_ball.sql`. Una campaña por `seasons_divisions` (liga/temporada).
+
+| Columna | Tipo | Función |
+|---|---|---|
+| `division_id` | uuid, PK/FK | División; eliminación en cascada. |
+| `opens_at`, `closes_at` | timestamptz, obligatorios | Ventana de voto, apertura menor que cierre. |
+| `results` | jsonb, `{}` | Respuestas finales combinadas; debe ser objeto. |
+| `automatic_results` | jsonb, `{}` | Resultados obtenidos en el último cálculo. |
+| `calculated_at` | timestamptz, nullable | Último intento de cálculo; habilita fallback manual. |
+| `finalized_at` | timestamptz, nullable | Resolución completa de todas las preguntas. |
+| `resolved_by` | varchar(32), FK nullable | Administrador; `ON DELETE SET NULL`. |
+| `updated_at` | timestamptz, `now()` | Mantenido por trigger `set_updated_at`. |
+
+FK: `crystal_campaign_division_fk`, `crystal_campaign_resolver_fk`.
+
+### 2.23 `crystal_ball_league_entries`
+
+| Columna | Tipo | Función |
+|---|---|---|
+| `division_id` | uuid, FK | Campaña de liga; eliminación en cascada. |
+| `discord_user_id` | varchar(32), FK | Participante; eliminación en cascada. |
+| `answers` | jsonb, obligatorio | Boleto; debe ser objeto. |
+| `updated_at` | timestamptz, `now()` | Mantenido por trigger `set_updated_at`. |
+
+PK compuesta `(division_id, discord_user_id)`, índice `crystal_league_entries_user_idx`. FK: `crystal_entry_campaign_fk`, `crystal_entry_user_fk`. No se crean las tablas obsoletas `crystal_ball_campaigns` ni `crystal_ball_entries`. Véase [Bola de cristal](../api/crystal-ball/README.md).
