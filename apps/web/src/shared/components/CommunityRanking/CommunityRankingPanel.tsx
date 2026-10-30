@@ -11,7 +11,7 @@ export function CommunityRankingPanel({
   title = 'Ranking de predictores',
   headingId = 'predictor-ranking',
   participant = 'Predictor',
-  ownLabel = 'tú'
+  ownLabel = 'tu'
 }: {
   ranking: PredictorStanding[];
   season?: string | undefined;

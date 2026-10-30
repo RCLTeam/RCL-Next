@@ -18,13 +18,13 @@ export function AdminPage({
   const { state } = useAuth();
   const editorOnly = state.status === 'authenticated' && state.user.role === 'editor';
   return (
-    <section id="admin" className="admin-content" aria-label="Administración">
+    <section id="admin" className="admin-content" aria-label="Administracion">
       <div className="admin-heading">
-        <span className="eyebrow">Gestión de la competición</span>
+        <span className="eyebrow">Gestion de la competicion</span>
         <h1>Admin</h1>
       </div>
       <RequireAdmin>
-        <nav className="admin-navigation" aria-label="Funciones de administración">
+        <nav className="admin-navigation" aria-label="Funciones de administracion">
           <SiteLink
             href="/admin/home-content"
             aria-current={
@@ -81,7 +81,7 @@ export function AdminPage({
             <HomeContentPanel />
           ) : (
             <p className="empty-state error-state" role="alert">
-              No tienes permisos para acceder a esta sección.
+              No tienes permisos para acceder a esta seccion.
             </p>
           )
         ) : path === '/admin/crystal-ball' ? (
@@ -103,29 +103,29 @@ export function AdminPage({
             <SiteLink href="/admin/crystal-ball">
               <span className="eyebrow">Predicciones</span>
               <h2>Bola de cristal</h2>
-              <p>Configura las fechas de participación y resuelve los pronósticos de playoffs.</p>
+              <p>Configura las fechas de participacion y resuelve los pronosticos de playoffs.</p>
               <span>Gestionar predicciones →</span>
             </SiteLink>
             <SiteLink href="/admin/home-content">
-              <span className="eyebrow">Publicación</span>
+              <span className="eyebrow">Publicacion</span>
               <h2>Home content</h2>
               <p>
-                Edita los quintetos por división y publica noticias, reportajes y entrevistas en la
+                Edita los quintetos por division y publica noticias, reportajes y entrevistas en la
                 editorial.
               </p>
               <span>Gestionar contenido →</span>
             </SiteLink>
             <SiteLink href="/admin/rofl/upload">
-              <span className="eyebrow">Estadísticas</span>
+              <span className="eyebrow">Estadisticas</span>
               <h2>ROFL Upload</h2>
-              <p>Sube repeticiones de partidas para importar sus estadísticas automáticamente.</p>
+              <p>Sube repeticiones de partidas para importar sus estadisticas automaticamente.</p>
               <span>Subir partidas →</span>
             </SiteLink>
             <SiteLink href="/admin/crud">
               <span className="eyebrow">Base de datos</span>
               <h2>CRUD Operations</h2>
               <p>
-                Consulta, crea, edita y elimina los datos de la competición desde un único lugar.
+                Consulta, crea, edita y elimina los datos de la competicion desde un unico lugar.
               </p>
               <span>Gestionar datos →</span>
             </SiteLink>
@@ -147,7 +147,7 @@ export function AdminPage({
             <SiteLink href="/admin/database-transfer">
               <span className="eyebrow">Copias de seguridad</span>
               <h2>Database Transfer</h2>
-              <p>Exporta un backup PostgreSQL. Los owners también pueden importar una copia.</p>
+              <p>Exporta un backup PostgreSQL. Los owners tambien pueden importar una copia.</p>
               <span>Importar o exportar →</span>
             </SiteLink>
           </div>

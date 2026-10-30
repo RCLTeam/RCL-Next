@@ -11,7 +11,7 @@ import type {
 export class CrudDependenciesError extends Error {
   constructor(public readonly dependencies: CrudDeleteDependency[]) {
     super(
-      'Existen entidades relacionadas que impiden esta operación. Elimina o reasigna esas referencias antes de intentarlo de nuevo.'
+      'Existen entidades relacionadas que impiden esta operacion. Elimina o reasigna esas referencias antes de intentarlo de nuevo.'
     );
   }
 }
@@ -25,18 +25,18 @@ async function crudRequest<T>(path: string, init: RequestInit = {}): Promise<T> 
   if (response.status === 204) return undefined as T;
   const body = await response.json();
   if (!response.ok) {
-    if (response.status === 401) throw new Error('La sesión ha caducado. Vuelve a iniciar sesión.');
-    if (response.status === 403) throw new Error('No tienes permiso para realizar esta operación.');
+    if (response.status === 401) throw new Error('La sesion ha caducado. Vuelve a iniciar sesion.');
+    if (response.status === 403) throw new Error('No tienes permiso para realizar esta operacion.');
     if (body.error?.code === 'RELATED_RECORDS' && Array.isArray(body.error?.details?.dependencies))
       throw new CrudDependenciesError(body.error.details.dependencies as CrudDeleteDependency[]);
     if (body.error?.code === 'DELETE_PREVIEW_CHANGED')
       throw new Error(
-        'Los datos afectados han cambiado. Cancela y vuelve a revisar la eliminación.'
+        'Los datos afectados han cambiado. Cancela y vuelve a revisar la eliminacion.'
       );
     const details = body.error?.details?.fieldErrors as Record<string, string[]> | undefined;
     const fields = details ? Object.keys(details).join(', ') : '';
     throw new Error(
-      `${body.error?.message ?? 'No se pudo completar la operación.'}${fields ? ` (${fields})` : ''}`
+      `${body.error?.message ?? 'No se pudo completar la operacion.'}${fields ? ` (${fields})` : ''}`
     );
   }
   return body.data as T;

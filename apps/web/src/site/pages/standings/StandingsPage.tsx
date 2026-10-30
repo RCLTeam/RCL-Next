@@ -14,20 +14,20 @@ export function StandingsPage({ competition }: { competition: Competition }) {
     <PageLayout
       id="clasificacion"
       number="04"
-      title="Clasificación"
+      title="Clasificacion"
       subtitle="El camino a la corona"
-      description="Sigue las victorias, los mapas y la posición de cada equipo en la fase regular."
+      description="Sigue las victorias, los mapas y la posicion de cada equipo en la fase regular."
       toolbar={
         <CompetitionFilters competition={competition}>
           <span className="meta">
-            Fase regular · {competition.division?.name ?? 'Competición RCL'}
+            Fase regular · {competition.division?.name ?? 'Competicion RCL'}
           </span>
         </CompetitionFilters>
       }
     >
       <DataState
         state={resolveCompetitionState(competition, competition.standings)}
-        empty="La clasificación se publicará cuando haya equipos inscritos."
+        empty="La clasificacion se publicara cuando haya equipos inscritos."
         retry={competition.retry}
       >
         <StandingsTable rows={competition.standings.data} />

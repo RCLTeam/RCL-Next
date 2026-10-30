@@ -32,7 +32,7 @@ export function App({ initialPath, wsUrl }: AppProps) {
   const path = requestedPath;
   const route = resolveSiteRoute(path);
   const metadata = React.useMemo(() => getPageMetadata(path), [path]);
-  const title = route?.title ?? 'Página no encontrada';
+  const title = route?.title ?? 'Pagina no encontrada';
   // biome-ignore lint/correctness/useExhaustiveDependencies: A new detail URL must reset the previous record's title even when both routes share a title.
   React.useEffect(() => {
     document.title = `${title} · Rebel Crown Legacy`;

@@ -31,14 +31,14 @@ export function CompetitionFilters({
       </Select>
       {divisionControl === 'select' ? (
         <Select
-          label="División"
+          label="Division"
           id={`${selectId}-2`}
           value={competition.division?.id ?? ''}
           onChange={(event) => competition.selectDivision(event.target.value)}
           disabled={!competition.divisions.data.length}
         >
           <option value="" disabled>
-            Seleccionar división
+            Seleccionar division
           </option>
           {competition.divisions.data.map((division) => (
             <option key={division.id} value={division.id}>
@@ -49,7 +49,7 @@ export function CompetitionFilters({
       ) : (
         competition.divisions.data.length > 0 && (
           <div className="division-field">
-            <span className="field-label">División</span>
+            <span className="field-label">Division</span>
             <DivisionSwitch competition={competition} />
           </div>
         )

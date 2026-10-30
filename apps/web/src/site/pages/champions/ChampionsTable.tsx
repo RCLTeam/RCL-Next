@@ -41,11 +41,11 @@ export function ChampionsTable({
     <div className="paper champion-panel">
       <div className="champion-controls">
         <label className="select-field">
-          Buscar campeón
+          Buscar campeon
           <input
             type="search"
             value={query}
-            placeholder="Nombre del campeón"
+            placeholder="Nombre del campeon"
             onChange={(event) => setQuery(event.target.value)}
           />
         </label>
@@ -55,7 +55,7 @@ export function ChampionsTable({
           value={order}
           onChange={(event) => setOrder(event.target.value as ChampionOrder)}
         >
-          <option value="games">Más jugados</option>
+          <option value="games">Mas jugados</option>
           <option value="winRate">Porcentaje de victorias</option>
           <option value="name">Nombre</option>
         </Select>
@@ -64,12 +64,12 @@ export function ChampionsTable({
         </output>
       </div>
       {/* biome-ignore lint/a11y/noNoninteractiveTabindex: Enable keyboard scrolling. */}
-      <section className="table-scroll" aria-label="Estadísticas de campeones" tabIndex={0}>
+      <section className="table-scroll" aria-label="Estadisticas de campeones" tabIndex={0}>
         <table className="standings-table champion-table">
-          <caption className="sr-only">Estadísticas de campeones de la competición</caption>
+          <caption className="sr-only">Estadisticas de campeones de la competicion</caption>
           <thead>
             <tr>
-              {['#', 'Campeón', 'Pick %', 'Win %', 'Partidas', 'Victorias', 'Derrotas'].map(
+              {['#', 'Campeon', 'Pick %', 'Win %', 'Partidas', 'Victorias', 'Derrotas'].map(
                 (label) => (
                   <th scope="col" key={label}>
                     {label}
@@ -96,8 +96,8 @@ export function ChampionsTable({
               <tr>
                 <td colSpan={7} className="table-empty">
                   {rows.length
-                    ? 'No hay campeones que coincidan con la búsqueda.'
-                    : 'Las estadísticas de campeones todavía no están disponibles.'}
+                    ? 'No hay campeones que coincidan con la busqueda.'
+                    : 'Las estadisticas de campeones todavia no estan disponibles.'}
                 </td>
               </tr>
             )}

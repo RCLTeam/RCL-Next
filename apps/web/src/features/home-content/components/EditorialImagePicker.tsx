@@ -24,7 +24,7 @@ export function EditorialImagePicker({
   const [uploading, setUploading] = useState(false);
   return (
     <div className="content-field">
-      <label htmlFor={`${id}-description`}>Descripción · {label}</label>
+      <label htmlFor={`${id}-description`}>Descripcion · {label}</label>
       <input
         id={`${id}-description`}
         value={description}
@@ -44,7 +44,7 @@ export function EditorialImagePicker({
           if (!file) return;
           setError('');
           if (!description.trim()) {
-            setError('Escribe una descripción antes de seleccionar la imagen.');
+            setError('Escribe una descripcion antes de seleccionar la imagen.');
             return;
           }
           if (
@@ -74,8 +74,8 @@ export function EditorialImagePicker({
       />
       <small>{uploading ? 'Subiendo imagen…' : 'PNG, JPEG o WebP · Hasta 5 MB.'}</small>
       <small>
-        Guarda el artículo para conservar las imágenes. Las subidas sin guardar caducan a los 7
-        días.
+        Guarda el articulo para conservar las imagenes. Las subidas sin guardar caducan a los 7
+        dias.
       </small>
       {error && <p role="alert">{error}</p>}
     </div>

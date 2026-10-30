@@ -198,8 +198,8 @@ export function CrudDataPanel({ resource }: { resource: CrudResource }) {
             {data.records.length === 0 ? (
               <p className="empty-state">
                 {search
-                  ? 'No hay registros que coincidan con la búsqueda.'
-                  : 'Todavía no hay registros.'}
+                  ? 'No hay registros que coincidan con la busqueda.'
+                  : 'Todavia no hay registros.'}
               </p>
             ) : (
               <div className="crud-operations-table-scroll">
@@ -222,7 +222,7 @@ export function CrudDataPanel({ resource }: { resource: CrudResource }) {
                           <td key={field.name}>
                             {typeof record[field.name] === 'boolean'
                               ? record[field.name]
-                                ? 'Sí'
+                                ? 'Si'
                                 : 'No'
                               : String(record[`${field.name}Label`] ?? record[field.name] ?? '—')}
                           </td>
@@ -272,7 +272,7 @@ export function CrudDataPanel({ resource }: { resource: CrudResource }) {
                 Anterior
               </button>
               <span>
-                Página {offset / 50 + 1} · {data.records.length} registros
+                Pagina {offset / 50 + 1} · {data.records.length} registros
               </span>
               <button
                 type="button"

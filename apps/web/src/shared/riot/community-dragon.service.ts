@@ -23,5 +23,5 @@ export const positionAssets: GameCatalog = Object.fromEntries(
 );
 
 export function getPositionAsset(position: string | null): GameAsset {
-  return positionAssets[`position:${position?.trim().toUpperCase()}`] ?? { name: 'Sin posición' };
+  return positionAssets[`position:${position?.trim().toUpperCase()}`] ?? { name: 'Sin posicion' };
 }

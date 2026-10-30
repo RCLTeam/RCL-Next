@@ -47,7 +47,7 @@ export function HomeFeaturedMatch({
     >
       <div className="featured-match-heading">
         <span className="eyebrow">
-          {isCarousel || singleMatch?.status === 'live' ? 'En directo' : 'Próximo encuentro'}
+          {isCarousel || singleMatch?.status === 'live' ? 'En directo' : 'Proximo encuentro'}
         </span>
         {isCarousel && (
           <div className="featured-match-count">
@@ -93,9 +93,9 @@ export function HomeFeaturedMatch({
               <button
                 className="featured-match-control featured-match-pause"
                 type="button"
-                aria-label="Pausar rotación automática"
+                aria-label="Pausar rotacion automatica"
                 aria-pressed={paused}
-                title={paused ? 'Reanudar rotación automática' : 'Pausar rotación automática'}
+                title={paused ? 'Reanudar rotacion automatica' : 'Pausar rotacion automatica'}
                 onClick={() => setPaused(!paused)}
               >
                 <span
@@ -119,7 +119,7 @@ export function HomeFeaturedMatch({
         <MatchCard match={singleMatch} />
       ) : (
         <div className="featured-empty">
-          <span>Consulta las jornadas y los resultados de la competición.</span>
+          <span>Consulta las jornadas y los resultados de la competicion.</span>
           <SiteLink href="/calendario" className="text-link">
             Ir al calendario →
           </SiteLink>

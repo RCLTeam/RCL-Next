@@ -14,7 +14,7 @@ export function EditorialPage({ articleId }: { articleId: string }) {
     navigate('/');
   };
   const modalTitle = (
-    <span className="editorial-dialog-label">Editorial · Crónica de la Rebelión</span>
+    <span className="editorial-dialog-label">Editorial · Cronica de la Rebelion</span>
   );
 
   return (
