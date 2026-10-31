@@ -5,7 +5,7 @@
 .rcl-site .playoff-format-intro { color:var(--muted); font-size:13px; margin:10px 0 24px; }
 .rcl-site .bracket-scroll { overflow-x:auto; padding:8px 0 18px; scrollbar-color:var(--lime) var(--panel); scrollbar-width:thin; }
 .rcl-site .bracket-scroll:focus-visible { outline:2px solid var(--lime); outline-offset:4px; }
-.rcl-site .playoff-map { zoom:1.5; width:1240px; height:680px; position:relative; margin:0 auto; }
+.rcl-site .playoff-map { width:1240px; height:680px; position:relative; margin:0 auto; }
 .rcl-site .playoff-connections { position:absolute; width:1240px; height:650px; inset:0; }
 .rcl-site .playoff-connections path { stroke-width:2; }
 .rcl-site .upper-path { stroke:var(--lime); }

@@ -10,6 +10,7 @@ const teams: Team[] = Array.from({ length: 6 }, (_, i) => ({
   id: `${i + 1}`,
   name: `Equipo ${i + 1}`,
   shortName: null,
+  discordRoleId: '0',
   logoUrl: null
 }));
 const standings: Standing[] = teams.map((team, i) => ({
@@ -134,4 +135,48 @@ test('ignores regular season matches and keeps scheduled playoff scores attached
   );
   expect(bracket.a.match?.id).toBe('a');
   expect(bracket.u.teams).toEqual([undefined, undefined]);
+});
+
+test.each(['-10', '-11', null, undefined])(
+  'excludes inactive seed %s and renumbers active qualifiers',
+  (discordRoleId) => {
+    const firstRow = standings[0];
+    if (!firstRow) throw new Error('Missing fixture');
+    const inactive = {
+      ...firstRow,
+      position: 1,
+      team: { ...firstRow.team, id: 'inactive', discordRoleId: discordRoleId ?? null }
+    };
+    if (discordRoleId === undefined) Reflect.deleteProperty(inactive.team, 'discordRoleId');
+    const rows = [inactive, ...standings.map((row) => ({ ...row, position: row.position + 1 }))];
+    const snapshot = JSON.stringify(rows);
+    const bracket = buildPlayoff([], rows);
+    expect(bracket.a.teams[0]?.id).toBe('1');
+    expect(bracket.c.teams[0]?.id).toBe('5');
+    expect(bracket.d.teams[0]?.id).toBe('6');
+    expect(JSON.stringify(rows)).toBe(snapshot);
+  }
+);
+
+test('ignores published games involving inactive teams, including stale calendar activity', () => {
+  const row = standings[0];
+  if (!row) throw new Error('Missing fixture');
+  const inactive = {
+    ...row,
+    position: 0,
+    team: { ...row.team, id: 'inactive', discordRoleId: '-10' }
+  };
+  const staleTeam = { ...inactive.team, discordRoleId: '0' };
+  const games = [
+    { ...game('old-home', 9, 1, 4), homeTeam: staleTeam },
+    { ...game('old-away', 9, 1, 4), awayTeam: staleTeam },
+    game('a', 10, 1, 4),
+    game('b', 10, 2, 3)
+  ];
+  const bracket = buildPlayoff(games, [inactive, ...standings]);
+  expect(bracket.a.match?.id).toBe('a');
+  expect(bracket.b.match?.id).toBe('b');
+  expect(
+    buildPlayoff([{ ...game('old', 9, 1, 4), homeTeam: inactive.team }], []).a.match
+  ).toBeUndefined();
 });
