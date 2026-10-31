@@ -100,7 +100,7 @@ export const siteRoutes = [
     path: '/playoffs',
     id: 'playoffs',
     title: 'Playoffs',
-    competition: ['calendar', 'rounds'],
+    competition: ['calendar', 'rounds', 'standings'],
     render: ({ competition }) => <PlayoffsPage competition={competition} />
   }
 ] satisfies RouteDefinition[];

@@ -1,59 +1,48 @@
-/* Bracket rounds remain side by side; only the bracket container scrolls on small screens. */
+.rcl-site .playoff-section-heading { display:flex; justify-content:space-between; align-items:center; gap:20px; flex-wrap:wrap; }
+.rcl-site .playoff-section-heading h2 { font: clamp(32px, 4vw, 52px)/1 var(--display); text-transform:uppercase; margin:10px 0; }
+.rcl-site .playoff-format-tag { font:10px var(--mono); letter-spacing:1px; padding:10px 12px; border:1px solid var(--line); color:var(--lime); }
+.rcl-site .playoff-format-intro { color:var(--muted); font-size:13px; margin:10px 0 24px; }
+.rcl-site .bracket-scroll { overflow-x:auto; padding:8px 0 18px; scrollbar-color:var(--lime) var(--panel); scrollbar-width:thin; }
+.rcl-site .bracket-scroll:focus-visible { outline:2px solid var(--lime); outline-offset:4px; }
+.rcl-site .playoff-map { zoom:1.5; width:1240px; height:680px; position:relative; margin:0 auto; }
+.rcl-site .playoff-connections { position:absolute; width:1240px; height:650px; inset:0; }
+.rcl-site .playoff-connections path { stroke-width:2; }
+.rcl-site .upper-path { stroke:var(--lime); }
+.rcl-site .lower-path, .rcl-site .drop-path { stroke:#b58aff; }
+.rcl-site .drop-path { stroke-dasharray:5 6; }
+.rcl-site .playoff-slot { position:absolute; width:260px; --lane:var(--lime); }
+.rcl-site .playoff-lane-lower { --lane:#b58aff; }
+.rcl-site .playoff-slot-a { left:0; top:20px; }
+.rcl-site .playoff-slot-b { left:0; top:190px; }
+.rcl-site .playoff-slot-u { left:640px; top:105px; }
+.rcl-site .playoff-slot-c { left:0; top:360px; }
+.rcl-site .playoff-slot-d { left:0; top:530px; }
+.rcl-site .playoff-slot-l { left:310px; top:445px; }
+.rcl-site .playoff-slot-lf { left:640px; top:445px; }
+.rcl-site .playoff-slot-f { left:970px; top:275px; }
+.rcl-site .playoff-slot header { box-sizing:border-box; height:38px; display:flex; align-items:center; justify-content:space-between; background:var(--panel); border-top:2px solid var(--lane); padding:10px 12px; }
+.rcl-site .playoff-slot h3 { font:11px var(--mono); text-transform:uppercase; letter-spacing:1px; color:var(--lane); margin:0; }
+.rcl-site .playoff-slot header > span { font:10px var(--mono); color:var(--muted); }
+.rcl-site .playoff-slot-teams { border:1px solid var(--line); margin-top:6px; background:var(--panel); }
+.rcl-site .playoff-slot-teams > div { box-sizing:border-box; height:40px; display:flex; gap:10px; align-items:center; min-height:40px; padding:0 10px; font-size:11px; }
+.rcl-site .playoff-slot-teams > div + div { border-top:1px solid var(--line); }
+.rcl-site .playoff-slot-teams b { margin-left:auto; color:var(--muted); }
+.rcl-site .playoff-seed { font:14px var(--mono); color:var(--lane); width:22px; text-align:center; }
+.rcl-site .playoff-lane-final header { height:58px; background:var(--lime); padding:16px 12px; }
+.rcl-site .playoff-lane-final h3 { color:#111; font-size:16px; font-weight:700; }
+.rcl-site .playoff-lane-final header > span { color:#111; }
+.rcl-site .playoff-lane-final .playoff-slot-teams { border-color:var(--lime); }
 
-/* Page-specific styles: playoffs. Base styles, states and responsive rules stay with their component. */
+@media (max-width:520px) { .rcl-site .playoff-format-tag { font-size:9px; } }
 
-/* playoffs page and components */
 
-.rcl-site .bracket-scroll {
-  overflow-x: auto;
-  padding: 6px;
-}
+.rcl-site .playoff-slot-teams .team-badge { width:24px; height:24px; min-width:24px; flex:0 0 24px; }
+.rcl-site .playoff-team-name { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.rcl-site .playoff-slot-teams .playoff-team-winner { background:rgba(244,255,58,.06); box-shadow:inset 3px 0 var(--lime); }
+.rcl-site .playoff-team-winner b { color:var(--lime); }
+.rcl-site .playoff-match-info { display:flex; justify-content:space-between; gap:8px; margin-top:8px; font:8px var(--mono); text-transform:uppercase; color:var(--muted); }
+.rcl-site .playoff-match-info.is-live { color:var(--lime); }
 
-.rcl-site .bracket-grid {
-  display: flex;
-  gap: 32px;
-}
-
-.rcl-site .bracket-column {
-  min-width: 260px;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-around;
-  gap: 24px;
-}
-
-.rcl-site .stage-label {
-  font: 11px var(--mono);
-  text-transform: uppercase;
-  color: var(--muted);
-}
-
-.rcl-site .bracket-match {
-  border: 1px solid var(--line);
-  background: var(--panel);
-  padding: 12px;
-}
-
-.rcl-site .bracket-match > div {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-  padding: 8px 0;
-  font-size: 12px;
-}
-
-.rcl-site .bracket-match strong {
-  margin-left: auto;
-  color: var(--lime);
-}
-
-.rcl-site .bracket-match p {
-  margin: 10px 0 0;
-}
-
-.rcl-site .page-content .bracket-match {
-  background-color: var(--panel);
-  border-color: var(--line);
-  border-radius: 0;
-}
+.rcl-site .playoff-rules { margin-bottom:48px; }
+.rcl-site .playoff-rules .format-card { min-width:0; overflow-x:auto; }
+.rcl-site .playoff-rules .format-card p { white-space:nowrap; }
