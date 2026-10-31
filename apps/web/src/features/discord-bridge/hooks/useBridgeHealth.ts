@@ -1,6 +1,6 @@
+import type { BridgeHealthResponse } from '@rcl/contracts';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { fetchBridgeHealth } from '../api/bridge-api.js';
-import type { BridgeHealthResponse } from '../types/bridge.types.js';
 import type { UseBridgeHealthReturn } from '../types/bridge.types.js';
 
 export { fetchBridgeHealth };

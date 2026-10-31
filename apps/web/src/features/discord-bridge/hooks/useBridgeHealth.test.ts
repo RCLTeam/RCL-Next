@@ -14,7 +14,7 @@ describe('useBridgeHealth hook & transport integration', () => {
       Response.json({
         status: 'connected',
         healthy: true,
-        message: 'Conexión correcta'
+        message: 'Conexion correcta'
       })
     );
     vi.stubGlobal('fetch', fetchMock);

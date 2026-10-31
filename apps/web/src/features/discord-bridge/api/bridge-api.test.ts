@@ -11,7 +11,7 @@ describe('fetchBridgeHealth API client', () => {
       Response.json({
         status: 'connected',
         healthy: true,
-        message: 'Conexión correcta'
+        message: 'Conexion correcta'
       })
     );
     vi.stubGlobal('fetch', fetchMock);
@@ -35,7 +35,7 @@ describe('fetchBridgeHealth API client', () => {
       Response.json({
         status: 'connected',
         healthy: true,
-        message: 'Conexión correcta'
+        message: 'Conexion correcta'
       })
     );
     vi.stubGlobal('fetch', fetchMock);

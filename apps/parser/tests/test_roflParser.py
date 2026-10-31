@@ -161,7 +161,7 @@ class TestRoflParser(unittest.TestCase):
         try:
             with self.assertRaises(ValueError) as ctx:
                 parse_rofl(tmp_path, quiet=True)
-            self.assertIn("Longitud de metadata inválida", str(ctx.exception))
+            self.assertIn("Longitud de metadata invalida", str(ctx.exception))
         finally:
             if os.path.exists(tmp_path):
                 os.remove(tmp_path)
@@ -186,7 +186,7 @@ class TestRoflParser(unittest.TestCase):
             with unittest.mock.patch("sys.stderr", captured_stderr):
                 exit_code = main(["non_existent_file_path.rofl"])
                 self.assertEqual(exit_code, EXIT_FILE_NOT_FOUND)
-                self.assertIn("Error: El archivo no existe o no es válido", captured_stderr.getvalue())
+                self.assertIn("Error: El archivo no existe o no es valido", captured_stderr.getvalue())
 
     def test_cli_main_invalid_magic_header(self):
         """Verifica que main() retorne código 11 cuando la cabecera no es b'RIOT'."""
@@ -215,7 +215,7 @@ class TestRoflParser(unittest.TestCase):
                 with unittest.mock.patch("sys.stderr", captured_stderr):
                     exit_code = main([tmp_path, "-q"])
                     self.assertEqual(exit_code, EXIT_INVALID_PAYLOAD_LENGTH)
-                    self.assertIn("Longitud de metadata inválida", captured_stderr.getvalue())
+                    self.assertIn("Longitud de metadata invalida", captured_stderr.getvalue())
         finally:
             if os.path.exists(tmp_path):
                 os.remove(tmp_path)

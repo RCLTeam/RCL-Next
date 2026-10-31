@@ -1,4 +1,4 @@
-import type { BridgeHealthResponse } from '../types/bridge.types.js';
+import type { BridgeHealthResponse } from '@rcl/contracts';
 
 /**
  * Consulta la sonda de salud del WebSocket Bridge expuesta por apps/api.
@@ -20,12 +20,7 @@ export async function fetchBridgeHealth(
 
     if (response.status === 200 || response.status === 503) {
       const data = (await response.json()) as BridgeHealthResponse;
-      return {
-        ...data,
-        message: data.message.replace(/[áéíóúÁÉÍÓÚ]/g, (letter) =>
-          letter.normalize('NFD').slice(0, 1)
-        )
-      };
+      return data;
     }
 
     return {
