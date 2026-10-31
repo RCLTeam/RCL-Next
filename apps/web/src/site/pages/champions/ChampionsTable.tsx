@@ -21,7 +21,7 @@ export function filterChampionStats(
 ) {
   const search = normalize(query.trim());
   return rows
-    .filter((row) => normalize(`${nameOf(row, catalog)} ${row.champion}`).includes(search))
+    .filter((row) => normalize(nameOf(row, catalog)).includes(search))
     .sort(
       (a, b) =>
         (order === 'name' ? 0 : b[order] - a[order] || b.games - a.games) ||
