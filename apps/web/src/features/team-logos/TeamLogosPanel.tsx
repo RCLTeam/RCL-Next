@@ -45,7 +45,7 @@ export function TeamLogosPanel() {
           onChange={(event) => setFile(event.target.files?.[0] ?? null)}
         />
         <small>
-          PNG, JPEG o WebP · Hasta 5 MB. Nombre con letras, números o guiones. No se sobrescriben
+          PNG, JPEG o WebP · Hasta 5 MB. Nombre con letras, numeros o guiones. No se sobrescriben
           archivos existentes.
         </small>
         <button className="btn-primary" type="submit" disabled={!file || busy || loading}>
@@ -64,9 +64,9 @@ export function TeamLogosPanel() {
       <output>{loading ? 'Cargando logos…' : busy ? 'Procesando…' : message}</output>
       {!loading && !error && logos.length === 0 && <p>No hay logos. Sube el primero.</p>}
       {pendingDelete && (
-        <fieldset className="team-logo-confirm" aria-label="Confirmar eliminación">
+        <fieldset className="team-logo-confirm" aria-label="Confirmar eliminacion">
           <p>
-            ¿Eliminar {pendingDelete.name}? Los equipos que utilicen este logo dejarán de mostrarlo.
+            ¿Eliminar {pendingDelete.name}? Los equipos que utilicen este logo dejaran de mostrarlo.
           </p>
           <button
             className="btn-primary"
@@ -74,7 +74,7 @@ export function TeamLogosPanel() {
             disabled={busy}
             onClick={() => void confirmDelete()}
           >
-            Confirmar eliminación
+            Confirmar eliminacion
           </button>
           <button
             className="btn-ghost"

@@ -33,9 +33,9 @@ test('Team profiles group members and handle an unpublished roster', () => {
     members: []
   };
   const empty = renderToStaticMarkup(<TeamProfile team={team} />);
-  expect(empty).toContain('Todavía no hay jugadores');
+  expect(empty).toContain('Todavia no hay jugadores');
   expect(empty).toContain('Coach pendiente');
-  expect(empty).toContain('Todavía no hay staff');
+  expect(empty).toContain('Todavia no hay staff');
   const member = {
     id: 'p',
     name: 'Jugador',
@@ -67,7 +67,7 @@ test('Team profiles group members and handle an unpublished roster', () => {
   expect(html).toContain('<h3>RiotName</h3>');
   expect(html).toContain('<p>Jugador</p>');
   expect(html).toContain('https://op.gg/es/lol/summoners/euw/RiotName-EUW');
-  expect(html).toContain('Capitán');
+  expect(html).toContain('Capitan');
   expect(html).toMatch(/aria-label="Coach"[\s\S]*Entrenador/);
   expect(html).toMatch(/aria-label="Staff"[\s\S]*Manager/);
 });
@@ -181,7 +181,7 @@ test('Loading and error states never render stale child content', () => {
       </DataState>
     );
     expect(html).not.toContain('Old division results');
-    expect(html).toContain(status === 'loading' ? 'Cargando competición' : 'Reintentar');
+    expect(html).toContain(status === 'loading' ? 'Cargando competicion' : 'Reintentar');
   }
 });
 
@@ -193,7 +193,7 @@ test('DivisionCard renders as SiteLink with default link to /ligas and default d
   expect(premierHtml).toContain('class="league-card premier"');
   expect(premierHtml).toContain('Elite · Máxima categoría');
   expect(premierHtml).toContain('Rift Premier');
-  expect(premierHtml).toContain('La máxima categoría de RCL');
+  expect(premierHtml).toContain('La maxima categoria de RCL');
   expect(premierHtml).toContain('Ver ligas →');
 
   const ascendHtml = renderToStaticMarkup(
@@ -282,7 +282,7 @@ test('Centralized tournament components render correctly', () => {
   ).toContain('href="/equipos/lobos"');
 
   const championsHtml = renderToStaticMarkup(<ChampionsTable />);
-  expect(championsHtml).toContain('Las estadísticas de campeones todavía no están disponibles.');
+  expect(championsHtml).toContain('Las estadisticas de campeones todavia no estan disponibles.');
 });
 
 test('StandingsTable handles malformed or incomplete data gracefully', () => {

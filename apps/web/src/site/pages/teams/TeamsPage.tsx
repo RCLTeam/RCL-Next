@@ -9,17 +9,25 @@ import { PageLayout } from '../../../shared/components/PageLayout/PageLayout.js'
 import { TeamGrid } from './TeamGrid.js';
 import './teams.css';
 
+export function filterTeams<T extends { name: string; shortName?: string | null }>(
+  teams: T[],
+  query: string
+) {
+  const search = query.trim().toLocaleLowerCase('es');
+  return teams.filter((team) =>
+    `${team.name} ${team.shortName ?? ''}`.toLocaleLowerCase('es').includes(search)
+  );
+}
+
 export function TeamsPage({ competition }: { competition: Competition }) {
   const [query, setQuery] = useState('');
-  const teams = competition.teams.data.filter((team) =>
-    team.name.toLocaleLowerCase('es').includes(query.toLocaleLowerCase('es'))
-  );
+  const teams = filterTeams(competition.teams.data, query);
   return (
     <PageLayout
       id="equipos"
       number="05"
       title="Equipos"
-      subtitle="Una identidad. Una rebelión."
+      subtitle="Una identidad. Una rebelion."
       description="Conoce a los equipos que compiten por dejar su marca en la liga."
       toolbar={
         <CompetitionFilters competition={competition}>
@@ -27,7 +35,7 @@ export function TeamsPage({ competition }: { competition: Competition }) {
             Buscar equipo
             <input
               type="search"
-              placeholder="Nombre del equipo"
+              placeholder="Nombre o abreviatura"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
             />
@@ -37,7 +45,7 @@ export function TeamsPage({ competition }: { competition: Competition }) {
     >
       <DataState
         state={resolveCompetitionState(competition, competition.teams)}
-        empty="Todavía no hay equipos inscritos en esta división."
+        empty="Todavia no hay equipos inscritos en esta division."
         retry={competition.retry}
       >
         <TeamGrid teams={teams} divisionName={competition.division?.name} query={query} />

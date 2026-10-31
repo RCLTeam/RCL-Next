@@ -30,7 +30,7 @@ test.each([null, ''])(
   'completed matches without a recording (%s) show no broadcast',
   (streamUrl) => {
     const html = renderToStaticMarkup(<MatchCard match={{ ...match, streamUrl }} />);
-    expect(html).toContain('Sin emisión');
+    expect(html).toContain('Sin emision');
     expect(html).not.toContain('twitch.tv');
     expect(html).not.toContain('match-stream-link');
   }
@@ -41,7 +41,7 @@ test('completed matches link to the recording even when a live URL remains', () 
   const html = renderToStaticMarkup(<MatchCard match={{ ...match, streamUrl }} />);
   expect(html).toContain(`href="${streamUrl}"`);
   expect(html).not.toContain('twitch.tv');
-  expect(html).not.toContain('Sin emisión');
+  expect(html).not.toContain('Sin emision');
 });
 
 test('live matches use the live URL even when a recording exists', () => {

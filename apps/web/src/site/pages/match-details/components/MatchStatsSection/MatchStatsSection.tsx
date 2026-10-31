@@ -19,8 +19,8 @@ export function MatchStatsSection({
         aria-labelledby="tab-estadisticas"
         className="match-report-section"
       >
-        <h2>02 · Estadísticas de jugadores</h2>
-        <div className="empty-state">Estadísticas pendientes de importar.</div>
+        <h2>02 · Estadisticas de jugadores</h2>
+        <div className="empty-state">Estadisticas pendientes de importar.</div>
       </section>
     );
   }
@@ -39,8 +39,8 @@ export function MatchStatsSection({
         aria-labelledby="tab-estadisticas"
         className="match-report-section"
       >
-        <h2>02 · Estadísticas de jugadores</h2>
-        <div className="empty-state">Estadísticas pendientes de importar.</div>
+        <h2>02 · Estadisticas de jugadores</h2>
+        <div className="empty-state">Estadisticas pendientes de importar.</div>
       </section>
     );
   }
@@ -56,7 +56,7 @@ export function MatchStatsSection({
       aria-labelledby="tab-estadisticas"
       className="match-report-section"
     >
-      <h2>02 · Estadísticas de jugadores</h2>
+      <h2>02 · Estadisticas de jugadores</h2>
       <Select
         label="Seleccionar jugador"
         fieldClassName="match-player-select"
@@ -79,7 +79,7 @@ export function MatchStatsSection({
         </span>
       </h3>
       {!stats ? (
-        <div className="empty-state">No hay estadísticas registradas para este jugador.</div>
+        <div className="empty-state">No hay estadisticas registradas para este jugador.</div>
       ) : (
         <>
           <div className="match-stat-highlights">

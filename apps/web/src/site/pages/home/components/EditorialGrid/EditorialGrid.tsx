@@ -47,7 +47,7 @@ function SecondaryNews({ articles }: { articles: EditorialArticle[] }) {
   return (
     <section
       className="news-side"
-      aria-label="Más noticias"
+      aria-label="Mas noticias"
       aria-roledescription={rotating ? 'carrusel' : undefined}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
@@ -57,7 +57,7 @@ function SecondaryNews({ articles }: { articles: EditorialArticle[] }) {
       }}
     >
       <div className="news-side-heading">
-        <span className="meta">Más en la rebelión</span>
+        <span className="meta">Mas en la rebelion</span>
         <span className="news-count">
           {String(articles.length).padStart(2, '0')}{' '}
           {articles.length === 1 ? 'noticia' : 'noticias'}
@@ -110,9 +110,9 @@ function SecondaryNews({ articles }: { articles: EditorialArticle[] }) {
                 type="button"
                 onClick={() => setPaused((value) => !value)}
                 aria-controls={listId}
-                aria-label="Pausar rotación automática"
+                aria-label="Pausar rotacion automatica"
                 aria-pressed={paused}
-                title={paused ? 'Reanudar rotación automática' : 'Pausar rotación automática'}
+                title={paused ? 'Reanudar rotacion automatica' : 'Pausar rotacion automatica'}
               >
                 <span
                   className={paused ? 'news-play-icon' : 'news-pause-icon'}
@@ -142,15 +142,15 @@ export function EditorialGrid() {
   const [featured, ...articles] = content.data ?? [];
   return (
     <section className="section news-section" aria-label="Editorial">
-      <div className="eyebrow">Editorial · Crónica de la Rebelión</div>
+      <div className="eyebrow">Editorial · Cronica de la Rebelion</div>
       <ContentStatus {...content} />
       {!content.loading && !content.error && !featured && (
         <article className="news-hero">
           <span className="news-tag">La comunidad</span>
           <div>
             <h2>Las historias de nuestra liga.</h2>
-            <p>Pronto encontrarás aquí noticias, reportajes y entrevistas de RCL.</p>
-            <span className="meta">Próximamente · Crónicas de la liga</span>
+            <p>Pronto encontraras aqui noticias, reportajes y entrevistas de RCL.</p>
+            <span className="meta">Proximamente · Cronicas de la liga</span>
           </div>
         </article>
       )}

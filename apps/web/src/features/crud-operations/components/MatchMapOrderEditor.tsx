@@ -75,7 +75,7 @@ export function MatchMapOrderEditor({
       )}
       {notice && <output className="crud-operations-success">{notice}</output>}
       {!maps && !error && <output>Cargando mapas…</output>}
-      {maps?.length === 0 && <p>Este encuentro todavía no tiene mapas importados.</p>}
+      {maps?.length === 0 && <p>Este encuentro todavia no tiene mapas importados.</p>}
       <ol>
         {maps?.map((map, index) => (
           <li key={map.id}>

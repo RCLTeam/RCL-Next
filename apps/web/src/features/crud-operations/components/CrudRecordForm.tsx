@@ -290,9 +290,9 @@ function ReferenceField({
           )
         }
       >
-        <option value="">{field.required ? 'Selecciona una opción' : 'Sin asignar'}</option>
+        <option value="">{field.required ? 'Selecciona una opcion' : 'Sin asignar'}</option>
         {value !== null && !eligible.some((row) => optionValue(row) === value) && (
-          <option value={String(value)}>{String(value)} (selección actual)</option>
+          <option value={String(value)}>{String(value)} (seleccion actual)</option>
         )}
         {eligible.map((row) => (
           <option key={String(optionValue(row))} value={String(optionValue(row))}>
@@ -301,7 +301,7 @@ function ReferenceField({
         ))}
       </Select>
       {!loading && !error && eligible.length === 0 && (
-        <output>No hay opciones en esta página. Prueba otra búsqueda o página.</output>
+        <output>No hay opciones en esta pagina. Prueba otra busqueda o pagina.</output>
       )}
       {loading && <output>Cargando opciones…</output>}
       {error && (

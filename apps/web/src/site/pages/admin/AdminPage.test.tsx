@@ -33,6 +33,25 @@ function renderSession(state: AuthState, signingOut = false, path = '/admin') {
 }
 
 describe('administration access', () => {
+  it.each(['admin', 'owner'] as const)('mounts crystal ball management for %s', (role) => {
+    const html = renderSession(
+      { status: 'authenticated', user: { ...admin, role } },
+      false,
+      '/admin/crystal-ball'
+    );
+    expect(html).toContain('Configura la participacion');
+    expect(html).toContain('href="/admin/crystal-ball"');
+    expect(html).toContain('Cargando temporadas');
+  });
+  it.each(['anonymous', 'viewer'] as const)('protects crystal ball management from %s', (role) => {
+    const state: AuthState =
+      role === 'anonymous'
+        ? { status: 'anonymous' }
+        : { status: 'authenticated', user: { ...admin, role } };
+    const html = renderSession(state, false, '/admin/crystal-ball');
+    expect(html).not.toContain('Configura la participacion');
+    expect(html).toContain(role === 'anonymous' ? 'Inicia sesion' : 'No tienes permisos');
+  });
   it('mounts logo management for administrators', () => {
     const html = renderSession(
       { status: 'authenticated', user: admin },
@@ -53,7 +72,7 @@ describe('administration access', () => {
         '/admin/member-roles'
       );
       expect(html).toContain('Cargando miembros');
-      expect(html).toContain('Gestión de roles');
+      expect(html).toContain('Gestion de roles');
       const table = renderToString(
         <MemberRolesTable
           members={[admin]}
@@ -74,8 +93,8 @@ describe('administration access', () => {
   );
   it.each([
     [{ status: 'loading' }, 'Comprobando acceso'],
-    [{ status: 'anonymous' }, 'Inicia sesión'],
-    [{ status: 'error' }, 'No se pudo comprobar tu sesión'],
+    [{ status: 'anonymous' }, 'Inicia sesion'],
+    [{ status: 'error' }, 'No se pudo comprobar tu sesion'],
     [{ status: 'authenticated', user: { ...admin, role: 'viewer' } }, 'No tienes permisos']
   ] satisfies [AuthState, string][])(
     'does not mount the upload console for %j',
@@ -98,7 +117,7 @@ describe('administration access', () => {
     expect(html).toContain('href="/admin"');
     const navigation = html.match(/<nav\b[^>]*id="site-navigation"[^>]*>([\s\S]*?)<\/nav>/)?.[1];
     expect(navigation).toBeDefined();
-    expect(navigation).toMatch(/<a\b[^>]*href="\/admin"[^>]*>Administración<\/a>$/);
+    expect(navigation).toMatch(/<a\b[^>]*href="\/admin"[^>]*>Administracion<\/a>$/);
     expect(html.match(/href="\/admin"/g)).toHaveLength(1);
   });
 
@@ -111,7 +130,7 @@ describe('administration access', () => {
     expect(html).not.toContain('Dropzone for ROFL and ZIP files');
     expect(html).not.toContain('href="/admin/teams"');
     const crud = renderSession({ status: 'authenticated', user: admin }, false, '/admin/crud');
-    expect(crud).toContain('Cargando administración');
+    expect(crud).toContain('Cargando administracion');
     expect(crud).not.toContain('Dropzone for ROFL and ZIP files');
   });
 
@@ -119,7 +138,7 @@ describe('administration access', () => {
     const html = renderSession({ status: 'authenticated', user: admin }, true);
     expect(html).not.toContain('Dropzone for ROFL and ZIP files');
     expect(html).not.toContain('href="/admin"');
-    expect(html).toContain('Cerrando sesión');
+    expect(html).toContain('Cerrando sesion');
   });
 
   it('fails closed when mounted without the session provider', () => {
@@ -156,6 +175,7 @@ describe('editor administration access', () => {
     expect(html).toContain('href="/admin"');
     expect(html).toContain('href="/admin/home-content"');
     for (const section of [
+      'crystal-ball',
       'rofl/upload',
       'crud',
       'member-roles',
@@ -165,18 +185,22 @@ describe('editor administration access', () => {
       expect(html).not.toContain(`href="/admin/${section}"`);
     }
   });
-  it.each(['rofl/upload', 'crud', 'member-roles', 'team-logos', 'database-transfer'])(
-    'blocks direct editor navigation to %s',
-    (section) => {
-      const html = renderSession(
-        { status: 'authenticated', user: { ...admin, role: 'editor' } },
-        false,
-        `/admin/${section}`
-      );
-      expect(html).toContain('No tienes permisos para acceder a esta sección.');
-      expect(html).not.toContain('Team of the Week');
-    }
-  );
+  it.each([
+    'crystal-ball',
+    'rofl/upload',
+    'crud',
+    'member-roles',
+    'team-logos',
+    'database-transfer'
+  ])('blocks direct editor navigation to %s', (section) => {
+    const html = renderSession(
+      { status: 'authenticated', user: { ...admin, role: 'editor' } },
+      false,
+      `/admin/${section}`
+    );
+    expect(html).toContain('No tienes permisos para acceder a esta seccion.');
+    expect(html).not.toContain('Team of the Week');
+  });
   it.each(['admin', 'owner'] as const)('preserves all sections for %s', (role) => {
     const html = renderSession({ status: 'authenticated', user: { ...admin, role } });
     expect(html).toContain('href="/admin/member-roles"');
@@ -185,7 +209,7 @@ describe('editor administration access', () => {
   it('denies viewers and enables the admin navigation entry for editors', () => {
     expect(
       renderSession({ status: 'authenticated', user: { ...admin, role: 'viewer' } })
-    ).toContain('No tienes permisos de administración.');
+    ).toContain('No tienes permisos de administracion.');
     expect(
       canAccessAdmin({
         status: 'authenticated',

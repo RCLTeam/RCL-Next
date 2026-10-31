@@ -10,6 +10,7 @@ import type {
 import { PageLayout } from '../../../shared/components/PageLayout/PageLayout.js';
 import { SiteLink } from '../../../shared/components/SiteLink.js';
 import { displayName } from '../../../shared/display-name.js';
+import { ChampionArt } from '../../../shared/riot/ChampionArt.js';
 import { getGameAsset } from '../../../shared/riot/riot-assets.service.js';
 import { useGameCatalog } from '../../../shared/riot/useGameCatalog.js';
 import './team-details.css';
@@ -53,7 +54,7 @@ function MemberSection({
             >
               <div className="team-member-role">
                 <span className="meta">{roleLabels[member.role]}</span>
-                {member.isCaptain && <span className="team-tag">Capitán</span>}
+                {member.isCaptain && <span className="team-tag">Capitan</span>}
                 {team && member.countryCode && (
                   <span className="meta">{member.countryCode.toUpperCase()}</span>
                 )}
@@ -145,7 +146,7 @@ export function TeamProfile({ team }: { team: TeamDetail }) {
         className="team-profile-header"
         style={{ '--team-color': team.color || 'var(--purple)' } as React.CSSProperties}
       >
-        <div className="team-profile-champions" aria-label="Campeones más jugados de los titulares">
+        <div className="team-profile-champions" aria-label="Campeones mas jugados de los titulares">
           {playerRoles
             .filter((role) => role !== 'substitute')
             .map((role) => {
@@ -157,13 +158,7 @@ export function TeamProfile({ team }: { team: TeamDetail }) {
                 <div className="team-profile-champion" key={role}>
                   <div className="team-profile-champion-art">
                     {champion?.splashImage && (
-                      <img
-                        src={champion.splashImage}
-                        alt=""
-                        onError={(event) => {
-                          event.currentTarget.hidden = true;
-                        }}
-                      />
+                      <ChampionArt asset={champion} variant="centered" alt="" />
                     )}
                   </div>
                   <div className="team-profile-champion-label">
@@ -217,7 +212,7 @@ export function TeamProfile({ team }: { team: TeamDetail }) {
         title="Jugadores"
         team={team}
         members={players}
-        empty="Todavía no hay jugadores inscritos en este equipo."
+        empty="Todavia no hay jugadores inscritos en este equipo."
       />
       <MemberSection
         title="Coach"
@@ -229,7 +224,7 @@ export function TeamProfile({ team }: { team: TeamDetail }) {
         title="Staff"
         team={team}
         members={team.members.filter((member) => member.role === 'staff')}
-        empty="Todavía no hay staff registrado."
+        empty="Todavia no hay staff registrado."
       />
       {team.members.some((member) => member.role === 'partners') && (
         <MemberSection
@@ -252,12 +247,12 @@ export function TeamDetailPage({ teamId }: { teamId: string }) {
       id="equipo"
       number="05"
       title={state.status === 'ready' ? state.data.name : 'Ficha del equipo'}
-      subtitle="Una identidad. Una rebelión."
-      description="Conoce a los jugadores y al equipo que hay detrás de la competición."
+      subtitle="Una identidad. Una rebelion."
+      description="Conoce a los jugadores y al equipo que hay detras de la competicion."
     >
       {state.status === 'loading' && <output className="empty-state">Cargando equipo…</output>}
       {state.status === 'missing' && (
-        <div className="empty-state">Equipo no encontrado. Puede que ya no esté disponible.</div>
+        <div className="empty-state">Equipo no encontrado. Puede que ya no este disponible.</div>
       )}
       {state.status === 'error' && (
         <div className="empty-state" role="alert">

@@ -66,6 +66,14 @@
   width: min(100%, 440px);
 }
 
+.rcl-site .crud-operations-toolbar .crud-operations-season-filter {
+  display: flex;
+  align-items: center;
+  width: auto;
+  min-height: 44px;
+  cursor: pointer;
+}
+
 .rcl-site .crud-operations-pagination {
   justify-content: flex-end;
   margin-top: 20px;

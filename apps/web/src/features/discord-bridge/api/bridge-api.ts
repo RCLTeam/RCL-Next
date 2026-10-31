@@ -26,7 +26,7 @@ export async function fetchBridgeHealth(
     return {
       status: 'unreachable',
       healthy: false,
-      message: 'No se puede llegar a él',
+      message: 'No se puede llegar a el',
       details: `Respuesta inesperada del servidor de bridge (${response.status})`
     };
   } catch (err: unknown) {
@@ -36,8 +36,8 @@ export async function fetchBridgeHealth(
     return {
       status: 'unreachable',
       healthy: false,
-      message: 'No se puede llegar a él',
-      details: err instanceof Error ? err.message : 'Error de conexión de red'
+      message: 'No se puede llegar a el',
+      details: err instanceof Error ? err.message : 'Error de conexion de red'
     };
   }
 }

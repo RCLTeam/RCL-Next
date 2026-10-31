@@ -1,0 +1,36 @@
+/* Shared ballot and management controls. Uses the site's typography and palette. */
+.rcl-site .crystal-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
+@media (min-width: 751px) {
+  .rcl-site .crystal-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+.rcl-site fieldset.crystal-card { min-width: 0; margin: 0; padding: 20px; border: 1px solid var(--line); border-top: 2px solid var(--purple); background: var(--panel); }
+.rcl-site .crystal-card legend { max-width: 100%; padding: 0 8px; color: var(--text); font: 700 21px/1.2 var(--display2); overflow-wrap: anywhere; text-transform: uppercase; }
+.rcl-site .crystal-card .crystal-hint { margin: 0 0 18px; color: var(--muted); font: 10px/1.6 var(--mono); }
+.rcl-site .crystal-card input[type='number'],
+.rcl-site .crystal-window input { box-sizing: border-box; width: 100%; min-width: 0; min-height: 48px; padding: 12px; background: var(--void); border: 1px solid var(--line); color: var(--text); font: 14px var(--mono); color-scheme: dark; }
+.rcl-site fieldset.crystal-bracket { border-top-color: var(--lime); padding: 12px 16px; }
+.rcl-site .crystal-bracket .crystal-hint { margin-bottom: 10px; }
+.rcl-site .crystal-bracket legend { font-size: 28px; }
+.rcl-site .crystal-result { padding-top: 12px; border-top: 1px solid var(--line); color: var(--lime); font: 11px/1.6 var(--mono); overflow-wrap: anywhere; }
+.rcl-site .crystal-section { margin-top: 28px; }
+.rcl-site .crystal-divisions { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+.rcl-site .crystal-divisions button { min-height: 44px; padding: 12px 20px; border: 1px solid var(--line); background: var(--panel); color: var(--muted); font: 11px var(--mono); text-transform: uppercase; cursor: pointer; }
+.rcl-site .crystal-divisions button[aria-pressed='true'] { border-color: var(--purple); color: var(--text); background: var(--purple); }
+.rcl-site .crystal-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; padding-block: 24px; }
+.rcl-site .crystal-actions > button,
+.rcl-site .crystal-admin form > button { min-height: 48px; padding: 14px 24px; border: 1px solid var(--lime); background: var(--lime); color: var(--void); font: 700 12px var(--mono); text-transform: uppercase; cursor: pointer; }
+.rcl-site .crystal-actions > button:disabled,
+.rcl-site .crystal-admin form > button:disabled { background: var(--panel); color: var(--muted); border-color: var(--line); cursor: not-allowed; }
+.rcl-site .crystal-actions output { font: 11px/1.6 var(--mono); color: var(--muted); }
+.rcl-site .crystal-admin { padding: 20px; background: var(--panel); border: 1px solid var(--line); }
+.rcl-site .crystal-admin h2 { font: 700 32px var(--display2); margin-block: 24px 12px; }
+.rcl-site .crystal-admin p { font: 13px/1.7 var(--body-f); color: var(--muted); max-width: 760px; }
+.rcl-site .crystal-admin output { display: block; margin-top: 16px; font: 12px var(--mono); color: var(--lime); }
+.rcl-site .crystal-window { display: grid; gap: 16px; margin-block: 24px; }
+.rcl-site .crystal-window label { min-width: 0; display: grid; gap: 8px; font: 10px var(--mono); text-transform: uppercase; color: var(--muted); }
+@media (min-width: 651px) {
+  .rcl-site .crystal-window { grid-template-columns: repeat(2, minmax(0, 1fr)); max-width: 720px; }
+  .rcl-site .crystal-admin { padding: 32px; }
+}
+.rcl-site .crystal-ballot :focus-visible,
+.rcl-site .crystal-admin-panel :focus-visible { outline: 2px solid var(--lime); outline-offset: 3px; }

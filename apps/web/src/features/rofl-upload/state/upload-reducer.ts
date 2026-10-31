@@ -135,15 +135,15 @@ export function uploadReducer(state: UploadState, action: UploadAction): UploadS
     }
 
     case 'connection_lost': {
-      let customMessage = action.message ?? 'Conexión interrumpida, por favor reintente';
+      let customMessage = action.message ?? 'Conexion interrumpida, por favor reintente';
       if (action.code === 4001) {
-        customMessage = 'Sesión expirada o no autenticada. Por favor, inicia sesión nuevamente.';
+        customMessage = 'Sesion expirada o no autenticada. Por favor, inicia sesion nuevamente.';
       } else if (action.code === 4003) {
         customMessage = 'Acceso denegado: se requieren permisos de administrador.';
       } else if (action.code === 1009) {
-        customMessage = 'El archivo supera el tamaño máximo permitido (50MB).';
+        customMessage = 'El archivo supera el tamaño maximo permitido (50MB).';
       } else if (action.code != null) {
-        customMessage = 'Conexión cerrada inesperadamente con el servidor.';
+        customMessage = 'Conexion cerrada inesperadamente con el servidor.';
       }
 
       const logDetails =

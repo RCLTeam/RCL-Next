@@ -5,7 +5,7 @@ import type { Team } from '../types/competition.types.js';
 import './team-badge.css';
 
 interface TeamBadgeProps {
-  team?: Team | null | undefined;
+  team?: Pick<Team, 'name' | 'shortName' | 'logoUrl'> | null | undefined;
 }
 
 const DEFAULT_LOGO_URL = `${teamLogoDirectory}placeholder.webp`;

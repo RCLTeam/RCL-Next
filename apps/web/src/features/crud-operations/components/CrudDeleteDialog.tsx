@@ -54,7 +54,7 @@ export function CrudDeleteDialog({
       })
       .catch((error: unknown) => {
         if (!controller.signal.aborted)
-          setError(error instanceof Error ? error.message : 'No se pudo calcular la eliminación.');
+          setError(error instanceof Error ? error.message : 'No se pudo calcular la eliminacion.');
       });
     return () => controller.abort();
   }, [record, resource]);
@@ -92,10 +92,10 @@ export function CrudDeleteDialog({
     >
       <h3 id="crud-delete-title">Eliminar {recordLabel(record)}</h3>
       <p id="crud-delete-warning">
-        Esta acción es irreversible.{' '}
+        Esta accion es irreversible.{' '}
         {owner
-          ? 'Se eliminarán el registro y los datos vinculados por relaciones en cascada.'
-          : 'Si tiene datos relacionados, la eliminación se bloqueará.'}
+          ? 'Se eliminaran el registro y los datos vinculados por relaciones en cascada.'
+          : 'Si tiene datos relacionados, la eliminacion se bloqueara.'}
       </p>
       {error && <p role="alert">{error}</p>}
       {dependencies.length > 0 && <CrudDeleteDependencies dependencies={dependencies} />}
@@ -106,7 +106,7 @@ export function CrudDeleteDialog({
           {!preview.allowed ? (
             <p role="alert">
               {owner
-                ? 'Existen referencias protegidas que impiden eliminar. Reasígnalas antes de continuar.'
+                ? 'Existen referencias protegidas que impiden eliminar. Reasignalas antes de continuar.'
                 : 'Existen datos relacionados que impiden eliminar. Solo un owner puede borrar en cascada.'}
             </p>
           ) : (
@@ -118,7 +118,7 @@ export function CrudDeleteDialog({
                   disabled={busy}
                   onChange={(event) => setConfirmed(event.target.checked)}
                 />
-                He revisado las tablas y filas afectadas y confirmo su eliminación definitiva.
+                He revisado las tablas y filas afectadas y confirmo su eliminacion definitiva.
               </label>
             )
           )}
@@ -137,8 +137,8 @@ export function CrudDeleteDialog({
           {busy
             ? 'Eliminando…'
             : owner
-              ? 'Confirmar eliminación en cascada'
-              : 'Confirmar eliminación'}
+              ? 'Confirmar eliminacion en cascada'
+              : 'Confirmar eliminacion'}
         </button>
       </div>
     </dialog>
@@ -176,7 +176,7 @@ export function CrudDeleteImpactTable({
         <caption>
           {caption ?? (
             <>
-              Alcance de la eliminación ·{' '}
+              Alcance de la eliminacion ·{' '}
               {preview.impacts
                 .filter((impact) => impact.action === 'delete')
                 .reduce((sum, impact) => sum + impact.count, 0)}{' '}

@@ -41,7 +41,7 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: 65% 60%;
+  object-position: center;
 }
 .rcl-site .team-profile-champion-label {
   position: relative;
@@ -100,6 +100,7 @@
   .rcl-site .team-profile-champion:first-child .team-profile-champion-art { left: -80px; }
   .rcl-site .team-profile-champion:last-child .team-profile-champion-art { right: -80px; }
   .rcl-site .team-profile-champion-art img { transform: skewX(15deg) scale(1.3); }
+  .rcl-site .team-profile-champion:not(:last-child) .team-profile-champion-art img { object-position: 45% center; }
 }
 @media (min-width: 1501px) {
   .rcl-site .team-profile-header { grid-template-columns: minmax(0, 1.65fr) minmax(0, 1fr) 180px; }

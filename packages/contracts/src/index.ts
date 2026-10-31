@@ -8,6 +8,7 @@ export {
   type PageMetadata
 } from './page-metadata.js';
 export type * from './predictions.js';
+export type * from './crystal-ball.js';
 export type * from './match-detail.js';
 export type * from './member-roles.js';
 export type * from './database-transfer.js';
