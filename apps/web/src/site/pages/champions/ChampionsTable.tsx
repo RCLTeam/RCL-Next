@@ -24,7 +24,7 @@ export function filterChampionStats(
     .filter((row) => normalize(`${nameOf(row, catalog)} ${row.champion}`).includes(search))
     .sort(
       (a, b) =>
-        (order === 'name' ? 0 : b[order] - a[order]) ||
+        (order === 'name' ? 0 : b[order] - a[order] || b.games - a.games) ||
         nameOf(a, catalog).localeCompare(nameOf(b, catalog), 'es')
     );
 }
