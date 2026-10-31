@@ -35,7 +35,7 @@ El campo de mapa `isMvp` se conserva temporalmente por compatibilidad, pero no r
 | **Calendario** | `/calendario` | `site/pages/calendar/CalendarPage.tsx` | `CompetitionFilters`, `RoundFilter`, `DataState`, `MatchList` | `useCompetition` (`calendar`, `rounds`) |
 | **Equipos** | `/equipos` | `site/pages/teams/TeamsPage.tsx` | `CompetitionFilters`, `DataState`, `TeamGrid`, `TeamCard` | `useCompetition` (`teams`) |
 | **Jugadores** | `/jugadores` | `site/pages/players/PlayersPage.tsx` | `CompetitionFilters`, `DataState`, `FeaturedPlayer`, `PlayerGrid` | `useCollection` (`players`) |
-| **Playoffs** | `/playoffs` | `site/pages/playoffs/PlayoffsPage.tsx` | `CompetitionFilters`, `DataState`, `PlayoffBracket` | `useCompetition` (`rounds`, `calendar`) |
+| **Playoffs** | `/playoffs` | `site/pages/playoffs/PlayoffsPage.tsx` | `CompetitionFilters`, `DataState`, `PlayoffFormat` | `useCompetition` (`rounds`, `calendar`, `standings`) |
 | **Campeones** | `/campeones` | `site/pages/champions/ChampionsPage.tsx` | `CompetitionFilters`, `DataState`, `ChampionsTable` | `useCollection` (`champions`) |
 | **Detalle de Partido** | `/partidos/:id` | `site/pages/match-details/MatchDetailPage.tsx` | `TeamBadge`, `MatchReport`, `MatchMatchupsSection`, `MatchStatsSection` (marcador BO, MVP de serie, selector de mapa, enfrentamientos y estadísticas) | `useCompetitionDetail` (`matches`) |
 | **Detalle de Equipo** | `/equipos/:id` | `site/pages/team-details/TeamDetailPage.tsx` | `TeamBadge`, `TeamProfile`, `MemberSection` (perfil institucional, estado activo/inactivo, Multi OP.GG, desglose de plantilla por roles y estadísticas) | `useCompetitionDetail` (`teams`) |
@@ -124,15 +124,14 @@ El campo de mapa `isMvp` se conserva temporalmente por compatibilidad, pero no r
 ---
 
 ### 3.5 `PlayoffsPage` (Cuadro de Eliminatorias)
-**Archivo**: `site/pages/playoffs/PlayoffsPage.tsx:1-38`
+**Archivo**: `site/pages/playoffs/PlayoffsPage.tsx`
 
-- **Filtro de Fase de Eliminatorias**:
-  ```typescript
-  const rounds = competition.rounds.data
-    .filter((round) => round.stage === 'playoff')
-    .sort((a, b) => a.sequence - b.sequence);
-  ```
-  Aísla únicamente las jornadas catalogadas con `stage === 'playoff'` y las presenta secuencialmente en el componente `PlayoffBracket`.
+- La ruta `/playoffs` solicita `rounds`, `calendar` y `standings` de la división seleccionada. La clasificación corresponde a la fase regular.
+- Espera los recursos de competición mediante `DataState`, con estados de carga, error y reintento.
+- Renderiza un único `PlayoffFormat` con los partidos y la clasificación. No hay una sección separada de cruces y resultados.
+- Cuando no hay partidos publicados, conserva el cuadro y sus placeholders en vez de ocultarlo con un estado vacío.
+- La progresión es una proyección en el cliente: la publicación de los enfrentamientos sigue siendo manual. No se añade sondeo periódico ni escritura en la API.
+- Detalle del flujo y condiciones de asignación en [Playoffs](playoffs.md).
 
 ---
 
