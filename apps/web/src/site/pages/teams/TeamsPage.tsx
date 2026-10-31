@@ -9,11 +9,19 @@ import { PageLayout } from '../../../shared/components/PageLayout/PageLayout.js'
 import { TeamGrid } from './TeamGrid.js';
 import './teams.css';
 
+export function filterTeams<T extends { name: string; shortName?: string | null }>(
+  teams: T[],
+  query: string
+) {
+  const search = query.trim().toLocaleLowerCase('es');
+  return teams.filter((team) =>
+    `${team.name} ${team.shortName ?? ''}`.toLocaleLowerCase('es').includes(search)
+  );
+}
+
 export function TeamsPage({ competition }: { competition: Competition }) {
   const [query, setQuery] = useState('');
-  const teams = competition.teams.data.filter((team) =>
-    team.name.toLocaleLowerCase('es').includes(query.toLocaleLowerCase('es'))
-  );
+  const teams = filterTeams(competition.teams.data, query);
   return (
     <PageLayout
       id="equipos"
@@ -27,7 +35,7 @@ export function TeamsPage({ competition }: { competition: Competition }) {
             Buscar equipo
             <input
               type="search"
-              placeholder="Nombre del equipo"
+              placeholder="Nombre o abreviatura"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
             />

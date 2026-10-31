@@ -37,6 +37,10 @@ test('Champion search uses the localized catalog name and ranking does not mutat
   expect(filterChampionStats(rows, catalog, 'missing', 'games')).toEqual([]);
 });
 
+test('Champion search ignores internal identifiers that are not displayed', () => {
+  expect(filterChampionStats(rows, catalog, 'monkey', 'games')).toEqual([]);
+});
+
 test('Equal win rates rank by games played before the champion name', () => {
   const tied: ChampionStats[] = [
     { ...(rows[1] as ChampionStats), champion: 'Aatrox', games: 1, wins: 1 },
