@@ -30,7 +30,7 @@ describe('Discord session API', () => {
         .fn()
         .mockResolvedValue(new Response(JSON.stringify({ data: { ...user, role: 'superadmin' } })))
     );
-    await expect(getSession()).rejects.toThrow('no es válida');
+    await expect(getSession()).rejects.toThrow('no es valida');
   });
   it('recognizes 401 as signed out and sends cookies', async () => {
     const fetcher = vi.fn().mockResolvedValue(new Response(null, { status: 401 }));
@@ -50,14 +50,14 @@ describe('Discord session API', () => {
   });
   it.each([503, 500])('does not treat HTTP %s as an anonymous session', async (status) => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(null, { status })));
-    await expect(getSession()).rejects.toThrow('No se pudo comprobar la sesión');
+    await expect(getSession()).rejects.toThrow('No se pudo comprobar la sesion');
   });
   it('rejects malformed responses', async () => {
     vi.stubGlobal(
       'fetch',
       vi.fn().mockResolvedValue(new Response(JSON.stringify({ data: { role: 'admin' } })))
     );
-    await expect(getSession()).rejects.toThrow('no es válida');
+    await expect(getSession()).rejects.toThrow('no es valida');
   });
   it('posts logout with cookies and waits for confirmation', async () => {
     const fetcher = vi.fn().mockResolvedValue(new Response(null, { status: 204 }));
@@ -70,6 +70,6 @@ describe('Discord session API', () => {
   });
   it('reports a failed logout instead of assuming the session was revoked', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(null, { status: 403 })));
-    await expect(endSession()).rejects.toThrow('No se pudo cerrar la sesión');
+    await expect(endSession()).rejects.toThrow('No se pudo cerrar la sesion');
   });
 });

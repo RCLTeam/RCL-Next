@@ -118,7 +118,7 @@ export async function executePythonParser(
         if (exitCode === EXIT_CODE_INVALID_MAGIC_HEADER) {
           isNonRoflSkipped = true;
           const fileName = path.basename(roflPath);
-          const warningMessage = `El archivo '${fileName}' no tiene la cabecera ROFL válida y ha sido omitido`;
+          const warningMessage = `El archivo '${fileName}' no tiene la cabecera ROFL valida y ha sido omitido`;
           skippedFiles.push(roflPath);
           options.onWarning?.(warningMessage, roflPath);
         } else {

@@ -52,7 +52,7 @@ useEffect(() => {
   setError('');
 
   const timer = window.setTimeout(() => {
-    getCrudRecords(resource.name, search, offset, controller.signal)
+    getCrudRecords(resource.name, search, offset, controller.signal, undefined, latestSeason)
       .then(setData)
       .catch((error: unknown) => {
         if (!controller.signal.aborted)
@@ -97,7 +97,7 @@ useEffect(() => {
 
 El panel delega todas las llamadas en el cliente tipado:
 - `getCrudResources(signal)`: Obtiene el catálogo inicial de entidades.
-- `getCrudRecords(resource, search, offset, signal)`: Consulta paginada con filtrado.
+- `getCrudRecords(resource, search, offset, signal, limit, latestSeason)`: Consulta paginada con filtrado; `latestSeason` limita los recursos con `seasonScoped` a la última temporada.
 - `saveCrudRecord(resource, values, record)`: Emite `POST` para creaciones o `PUT` con `version` para actualizaciones optimistas.
 - `previewCrudDelete(resource, record, signal)`: Emite `POST /delete-preview` para computar impactos y obtener el token SHA-256.
 - `deleteCrudRecord(resource, record, confirmation)`: Emite `DELETE` transmitiendo el token de cascada.

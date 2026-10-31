@@ -15,7 +15,7 @@ export class TeamLogosStore {
       throw new AppError(
         422,
         'INVALID_LOGO_NAME',
-        'Usa un nombre con letras, números, guiones y extensión PNG, JPEG o WebP.'
+        'Usa un nombre con letras, numeros, guiones y extension PNG, JPEG o WebP.'
       );
     return resolve(this.directory, name);
   }
@@ -62,7 +62,7 @@ export class TeamLogosStore {
       throw new AppError(
         422,
         'INVALID_IMAGE',
-        'El contenido y la extensión deben corresponder a una imagen PNG, JPEG o WebP.'
+        'El contenido y la extension deben corresponder a una imagen PNG, JPEG o WebP.'
       );
     await mkdir(this.directory, { recursive: true });
     try {
@@ -85,7 +85,7 @@ export class TeamLogosStore {
       throw new AppError(
         403,
         'PROTECTED_LOGO',
-        'El logo de reserva está protegido y no se puede modificar ni eliminar.'
+        'El logo de reserva esta protegido y no se puede modificar ni eliminar.'
       );
   }
 }

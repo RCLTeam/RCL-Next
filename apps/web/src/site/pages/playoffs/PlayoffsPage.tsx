@@ -19,8 +19,8 @@ export function PlayoffsPage({ competition }: { competition: Competition }) {
       id="playoffs"
       number="10"
       title="Playoffs"
-      subtitle="La corona vacía"
-      description="El último paso hacia el trono. Sigue las eliminatorias de tu división."
+      subtitle="La corona vacia"
+      description="El ultimo paso hacia el trono. Sigue las eliminatorias de tu division."
       toolbar={<CompetitionFilters competition={competition} />}
     >
       <DataState

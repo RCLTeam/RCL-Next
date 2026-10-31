@@ -140,7 +140,7 @@ test('renders the only live match when featured is omitted', () => {
 
 test('uses the selected single match consistently for heading and card', () => {
   const html = render({ featured: { ...first, status: 'scheduled' }, liveMatches: [first] });
-  expect(html).toContain('Próximo encuentro');
+  expect(html).toContain('Proximo encuentro');
   expect(html).toContain('Programado');
   expect(render({})).toContain('href="/calendario"');
 });
@@ -192,14 +192,14 @@ test('moving focus between controls does not restart rotation', () => {
 
 test('supports persistent pause and cyclic manual navigation', () => {
   render();
-  expect(click('Pausar rotación automática')).toContain('aria-pressed="true"');
+  expect(click('Pausar rotacion automatica')).toContain('aria-pressed="true"');
   advance();
   expect(active()).toBe('1 de 2');
   click('Partido anterior');
   expect(active()).toBe('2 de 2');
   click('Partido siguiente');
   expect(active()).toBe('1 de 2');
-  click('Pausar rotación automática');
+  click('Pausar rotacion automatica');
   advance();
   expect(active()).toBe('2 de 2');
 });
