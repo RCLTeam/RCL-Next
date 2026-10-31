@@ -29,6 +29,7 @@
 .rcl-site .playoff-slot-teams > div + div { border-top:1px solid var(--line); }
 .rcl-site .playoff-slot-teams b { margin-left:auto; color:var(--muted); }
 .rcl-site .playoff-seed { font:14px var(--mono); color:var(--lane); width:22px; text-align:center; }
+.rcl-site .playoff-crown { display:inline-block; width:21px; height:21px; object-fit:contain; vertical-align:middle; }
 .rcl-site .playoff-lane-final header { height:58px; background:var(--lime); padding:16px 12px; }
 .rcl-site .playoff-lane-final h3 { color:#111; font-size:16px; font-weight:700; }
 .rcl-site .playoff-lane-final header > span { color:#111; }

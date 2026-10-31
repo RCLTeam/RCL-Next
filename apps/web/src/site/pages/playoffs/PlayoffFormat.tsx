@@ -1,4 +1,5 @@
 import React from 'react';
+import { brandAssets } from '../../../shared/resources/assets.js';
 import '../leagues/leagues.css';
 import { matchStatus } from '../../../features/competition/components/MatchCard.js';
 import { TeamBadge } from '../../../features/competition/components/TeamBadge.js';
@@ -123,7 +124,11 @@ export function PlayoffFormat({ matches, standings }: { matches: Match[]; standi
                         <TeamBadge team={entry.teams[index]} />
                       ) : (
                         <span className="playoff-seed" aria-hidden="true">
-                          {slot.lane === 'final' ? '♛' : '—'}
+                          {slot.lane === 'final' ? (
+                            <img className="playoff-crown" src={brandAssets.ascend} alt="" />
+                          ) : (
+                            '—'
+                          )}
                         </span>
                       )}
                       <span className="playoff-team-name" title={entry.teams[index]?.name ?? team}>
