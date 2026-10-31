@@ -11,12 +11,14 @@ export interface BracketEntry {
 }
 
 export function outcome(match: Match | undefined, winner: boolean): Team | undefined {
-  if (
-    !match ||
-    !['completed', 'forfeit'].includes(match.status) ||
-    match.homeScore === match.awayScore
-  )
+  if (!match || !['completed', 'forfeit'].includes(match.status)) return;
+  if (match.winnerTeamId) {
+    if (match.winnerTeamId === match.homeTeam?.id) return winner ? match.homeTeam : match.awayTeam;
+    if (match.winnerTeamId === match.awayTeam?.id) return winner ? match.awayTeam : match.homeTeam;
     return;
+  }
+  // Forfeits require an explicit winner; scores need not have been entered.
+  if (match.status === 'forfeit' || match.homeScore === match.awayScore) return;
   return match.homeScore > match.awayScore === winner ? match.homeTeam : match.awayTeam;
 }
 
@@ -25,7 +27,7 @@ export function buildPlayoff(
   standings: Standing[]
 ): Record<SlotId, BracketEntry> {
   const games = matches
-    .filter((match) => match.round?.stage === 'playoff')
+    .filter((match) => match.round?.stage === 'playoff' && match.status !== 'cancelled')
     .sort(
       (a, b) => (a.round?.sequence ?? 0) - (b.round?.sequence ?? 0) || a.id.localeCompare(b.id)
     );

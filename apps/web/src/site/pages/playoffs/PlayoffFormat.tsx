@@ -66,10 +66,10 @@ export function PlayoffFormat({ matches, standings }: { matches: Match[]; standi
           <span className="eyebrow">EL CAMINO A LA CORONA</span>
           <h2 id="playoff-format-title">Seis equipos. Una corona.</h2>
         </div>
-        <span className="playoff-format-tag">DOBLE ELIMINACIÓN · BO5</span>
+        <span className="playoff-format-tag">DOBLE ELIMINACION · BO5</span>
       </header>
       <p className="playoff-format-intro">
-        Formato de Premier y Ascend. Sigue las conexiones para descubrir cómo se llega a la gran
+        Formato de Premier y Ascend. Sigue las conexiones para descubrir como se llega a la gran
         final.
       </p>
       <section

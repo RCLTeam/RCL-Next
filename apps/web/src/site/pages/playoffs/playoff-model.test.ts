@@ -77,7 +77,52 @@ test('live, cancelled, scheduled and tied matches never advance teams', () => {
   for (const status of ['live', 'cancelled', 'scheduled'] as const)
     expect(outcome(game('a', 10, 1, 4, status), true)).toBeUndefined();
   expect(outcome({ ...game('a', 10, 1, 4), awayScore: 3 }, true)).toBeUndefined();
-  expect(outcome(game('a', 10, 1, 4, 'forfeit'), false)?.id).toBe('4');
+  expect(outcome({ ...game('a', 10, 1, 4, 'forfeit'), winnerTeamId: '1' }, false)?.id).toBe('4');
+});
+
+test.each(['1', '4'])(
+  'forfeit at 0-0 advances declared winner %s and assigns the loser',
+  (winnerTeamId) => {
+    const match = { ...game('a', 10, 1, 4, 'forfeit'), homeScore: 0, awayScore: 0, winnerTeamId };
+    const loserId = winnerTeamId === '1' ? '4' : '1';
+    expect(outcome(match, true)?.id).toBe(winnerTeamId);
+    expect(outcome(match, false)?.id).toBe(loserId);
+    const lower = game('c', 11, 5, Number(loserId), 'scheduled');
+    const bracket = buildPlayoff([match, game('b', 10, 2, 3), lower], standings);
+    expect(bracket.u.teams[0]?.id).toBe(winnerTeamId);
+    expect(bracket.c.match?.id).toBe('c');
+  }
+);
+
+test('declared winner takes precedence over scores and invalid forfeits do not advance', () => {
+  const match = game('a', 10, 1, 4, 'forfeit');
+  expect(outcome({ ...match, winnerTeamId: '4' }, true)?.id).toBe('4');
+  for (const winnerTeamId of [null, 'unknown']) {
+    expect(outcome({ ...match, winnerTeamId }, true)).toBeUndefined();
+    expect(outcome({ ...match, winnerTeamId }, false)).toBeUndefined();
+  }
+  expect(outcome(match, true)).toBeUndefined();
+  expect(outcome({ ...match, status: 'live', winnerTeamId: '1' }, true)).toBeUndefined();
+});
+
+test('cancelled matches do not displace republished opening or later matches', () => {
+  const bracket = buildPlayoff(
+    [
+      game('0-old-round', 9, 1, 4, 'cancelled'),
+      game('0-old-opening', 10, 1, 4, 'cancelled'),
+      game('a', 10, 1, 4),
+      game('b', 10, 2, 3),
+      game('0-old-upper', 11, 1, 2, 'cancelled'),
+      game('u', 11, 1, 2)
+    ],
+    standings
+  );
+  expect(bracket.a.match?.id).toBe('a');
+  expect(bracket.b.match?.id).toBe('b');
+  expect(bracket.u.match?.id).toBe('u');
+  expect(
+    buildPlayoff([game('cancelled', 10, 1, 4, 'cancelled')], standings).a.match
+  ).toBeUndefined();
 });
 
 test('ignores regular season matches and keeps scheduled playoff scores attached', () => {

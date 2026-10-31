@@ -1,6 +1,7 @@
 .rcl-site .playoff-section-heading { display:flex; justify-content:space-between; align-items:center; gap:20px; flex-wrap:wrap; }
 .rcl-site .playoff-section-heading h2 { font: clamp(32px, 4vw, 52px)/1 var(--display); text-transform:uppercase; margin:10px 0; }
-.rcl-site .playoff-format-tag { font:10px var(--mono); letter-spacing:1px; padding:10px 12px; border:1px solid var(--line); color:var(--lime); }
+.rcl-site .playoff-format-tag { font:9px var(--mono); letter-spacing:1px; padding:10px 12px; border:1px solid var(--line); color:var(--lime); }
+@media (min-width:521px) { .rcl-site .playoff-format-tag { font-size:10px; } }
 .rcl-site .playoff-format-intro { color:var(--muted); font-size:13px; margin:10px 0 24px; }
 .rcl-site .bracket-scroll { overflow-x:auto; padding:8px 0 18px; scrollbar-color:var(--lime) var(--panel); scrollbar-width:thin; }
 .rcl-site .bracket-scroll:focus-visible { outline:2px solid var(--lime); outline-offset:4px; }
@@ -33,7 +34,7 @@
 .rcl-site .playoff-lane-final header > span { color:#111; }
 .rcl-site .playoff-lane-final .playoff-slot-teams { border-color:var(--lime); }
 
-@media (max-width:520px) { .rcl-site .playoff-format-tag { font-size:9px; } }
+
 
 
 .rcl-site .playoff-slot-teams .team-badge { width:24px; height:24px; min-width:24px; flex:0 0 24px; }

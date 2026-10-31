@@ -26,7 +26,6 @@ export function PlayoffsPage({ competition }: { competition: Competition }) {
       <DataState
         state={state ? { status: state.status, data: [] } : { status: 'ready', data: [true] }}
         retry={competition.retry}
-        empty="Los cruces aparecerán cuando se publiquen las jornadas de playoffs."
       >
         <PlayoffFormat matches={competition.calendar.data} standings={competition.standings.data} />
       </DataState>

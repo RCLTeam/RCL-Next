@@ -21,9 +21,9 @@ El formato previsto es BO5. Cada partido publicado muestra su valor real de `bes
 
 `PlayoffsPage` obtiene calendario, jornadas y clasificación regular mediante `useCompetition`. `PlayoffFormat` llama a la función pura `buildPlayoff` de `playoff-model.ts`.
 
-1. Se filtran partidos con `round.stage === 'playoff'` y se ordenan por secuencia de jornada e identificador.
+1. Se excluyen los partidos cancelados y se filtran partidos con `round.stage === 'playoff'` y se ordenan por secuencia de jornada e identificador.
 2. Los dos cruces iniciales se buscan en la primera jornada publicada, excluyendo partidos del 5.º y 6.º. El cruce del líder se identifica por su equipo cuando está disponible.
-3. `outcome` obtiene ganador y perdedor únicamente de partidos `completed` o `forfeit` con marcador desigual. Los partidos programados, en directo, cancelados o empatados no propagan equipos.
+3. `outcome` obtiene ganador y perdedor únicamente de partidos `completed` o `forfeit` usando primero `winnerTeamId`. Una incomparecencia exige un ganador explícito, incluso con marcador 0-0. Para resultados finalizados sin ese campo se conserva la comparación de marcadores desiguales; un identificador ajeno a los participantes no produce avances. Los partidos programados, en directo y cancelados no propagan equipos.
 4. Las siguientes casillas se asignan por identidad de ambos participantes, sin reutilizar el mismo partido. Se respeta el orden local/visitante publicado y sus marcadores.
 5. Los cruces iniciales de lower se identifican por el 5.º o 6.º y un perdedor confirmado del upper. La publicación manual determina qué perdedor se enfrenta a cada uno.
 6. Si todavía no existe un partido posterior, se muestran los participantes que ya puedan deducirse; el resto mantiene su placeholder. No se decide automáticamente la elección de rival del líder ni el reparto inicial de los perdedores en lower.
@@ -33,7 +33,7 @@ La asignación presupone un calendario correspondiente a este formato, una clasi
 ## Gestión manual y actualización
 
 - Los administradores crean los enfrentamientos y publican sus resultados con las herramientas existentes.
-- Si SFD Renegades pierde en upper, el cliente reconoce su derrota cuando el resultado está cerrado. Para mostrar su primer enfrentamiento de lower, debe existir el partido publicado contra el 5.º o 6.º.
+- Si un equipo pierde en upper, el cliente reconoce su derrota cuando el resultado está cerrado. Para mostrar su primer enfrentamiento de lower, debe existir el partido publicado contra el 5.º o 6.º.
 - No se crean registros, no se modifican emparejamientos y no se escribe en la API desde el cuadro.
 - La proyección se recalcula al recibir datos. Esta página no añade sondeo periódico ni actualizaciones push; para recoger cambios externos se recarga la página o se vuelve a cargar la selección de competición.
 
