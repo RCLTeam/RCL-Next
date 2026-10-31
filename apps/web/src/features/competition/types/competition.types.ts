@@ -35,6 +35,7 @@ export interface Match {
   awayTeam?: Team;
   homeScore: number;
   awayScore: number;
+  winnerTeamId?: string | null;
   status: 'scheduled' | 'live' | 'completed' | 'forfeit' | 'cancelled';
   bestOf: number;
   scheduledAt: string | null;

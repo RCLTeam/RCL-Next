@@ -78,6 +78,7 @@ export interface Match {
   awayTeam?: TeamSummary;  // Equipo visitante
   homeScore: number;       // Mapas ganados por el equipo local
   awayScore: number;       // Mapas ganados por el equipo visitante
+  winnerTeamId?: string | null; // Ganador declarado; prioritario sobre el marcador en playoffs
   status: 'scheduled' | 'live' | 'completed' | 'forfeit' | 'cancelled';
   bestOf: number;          // Formato de serie (ej. 3 para BO3)
   scheduledAt: string | null;  // Fecha/hora ISO programada

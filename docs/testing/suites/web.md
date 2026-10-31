@@ -14,6 +14,9 @@ Las pruebas se ejecutan bajo Vitest en el entorno `node` por defecto: los compon
 
 ---
 
+
+Ampliación del 31 de octubre de 2026: `apps/web/src/site/pages/playoffs/playoff-model.test.ts` incorpora 4 pruebas de asignación y progresión del cuadro de seis equipos, sin creación automática de partidos. Se complementa con la suite de renderizado `tests/unit/render/competition-pages.test.tsx` (26 pruebas), actualizada para usar `PlayoffFormat`. Véase [el flujo de playoffs](../../web/competition/playoffs.md).
+
 ## 2. Inventario de Suites de `apps/web`
 
 | # | Archivo de Prueba | Pruebas | LoC brutas | Área / Característica | Alcance y Aserciones Principales |
