@@ -96,7 +96,7 @@ test('Reports expose player runes from matchups, multiple maps and accurate side
   expect(html).toContain('Ver runas de Mid Player#EUW');
   expect(html).toContain('Build no disponible');
   const empty = renderToStaticMarkup(<MatchReport match={{ ...report, games: [] }} />);
-  expect(empty).toContain('todavía no se han importado');
+  expect(empty).toContain('todavia no se han importado');
 });
 
 test('Duration stats display minutes and seconds while other values remain numeric', () => {

@@ -6,7 +6,7 @@ export function PlayerMvpPoll() {
       <h2 id="mvp-poll-title" className="eyebrow">
         Encuesta · MVP del partido
       </h2>
-      <p className="section-intro">La votación del MVP se publicará aquí cuando esté disponible.</p>
+      <p className="section-intro">La votacion del MVP se publicara aqui cuando este disponible.</p>
     </section>
   );
 }

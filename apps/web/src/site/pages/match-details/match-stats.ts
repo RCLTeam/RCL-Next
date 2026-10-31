@@ -5,14 +5,14 @@ export function matchPosition(position: string | null) {
   if (value === 'MIDDLE') return 'MID';
   if (value === 'BOTTOM' || value === 'BOT') return 'ADC';
   if (value === 'UTILITY' || value === 'SUP') return 'SUPPORT';
-  return positions.find((role) => role === value) ?? 'SIN POSICIÓN';
+  return positions.find((role) => role === value) ?? 'SIN POSICION';
 }
 export function positionRows(
   participants: MatchParticipant[],
   homeTeamId: string,
   awayTeamId: string
 ) {
-  return [...positions, 'SIN POSICIÓN'].flatMap((position) => {
+  return [...positions, 'SIN POSICION'].flatMap((position) => {
     const home = participants.filter(
       (player) => player.teamId === homeTeamId && matchPosition(player.position) === position
     );
@@ -41,21 +41,21 @@ export const statGroups: { title: string; stats: [MatchStatKey, string][] }[] = 
       ['crowdControlTime', 'Control de adversarios'],
       ['doubleKills', 'Dobles'],
       ['tripleKills', 'Triples'],
-      ['quadraKills', 'Cuádruples'],
+      ['quadraKills', 'Cuadruples'],
       ['pentaKills', 'Pentakills'],
       ['largestKillingSpree', 'Mayor racha'],
       ['largestAbilityDamage', 'Mayor daño de habilidad'],
       ['largestAttackDamage', 'Mayor daño de ataque'],
-      ['largestCriticalStrike', 'Mayor crítico']
+      ['largestCriticalStrike', 'Mayor critico']
     ]
   },
   {
-    title: 'Economía y visión',
+    title: 'Economia y vision',
     stats: [
       ['level', 'Nivel'],
       ['goldEarned', 'Oro obtenido'],
-      ['cs', 'Súbditos (CS)'],
-      ['visionScore', 'Puntuación de visión'],
+      ['cs', 'Subditos (CS)'],
+      ['visionScore', 'Puntuacion de vision'],
       ['wardsPlaced', 'Guardianes colocados'],
       ['wardsDestroyed', 'Guardianes destruidos'],
       ['controlWardsPurchased', 'Guardianes de control comprados'],
@@ -66,13 +66,13 @@ export const statGroups: { title: string; stats: [MatchStatKey, string][] }[] = 
     title: 'Objetivos',
     stats: [
       ['turretsKilled', 'Torres destruidas'],
-      ['turretTakedowns', 'Participación en torres'],
+      ['turretTakedowns', 'Participacion en torres'],
       ['inhibitorsKilled', 'Inhibidores destruidos'],
-      ['inhibitorTakedowns', 'Participación en inhibidores'],
+      ['inhibitorTakedowns', 'Participacion en inhibidores'],
       ['dragonsKilled', 'Dragones'],
       ['baronsKilled', 'Barones'],
       ['riftHeraldsKilled', 'Heraldos'],
-      ['voidGrubsKilled', 'Larvas del Vacío'],
+      ['voidGrubsKilled', 'Larvas del Vacio'],
       ['elderDragonsKilled', 'Dragones ancianos'],
       ['objectivesStolen', 'Objetivos robados'],
       ['objectivesStolenAssists', 'Asistencias en robos']

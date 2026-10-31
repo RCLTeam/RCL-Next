@@ -63,7 +63,7 @@ function SiteHeader({ leagueSwitch }: { leagueSwitch: ReactNode }) {
           aria-controls="site-navigation"
           onClick={() => setMenuOpen(!menuOpen)}
         >
-          <span>{menuOpen ? 'Cerrar' : 'Menú'}</span>
+          <span>{menuOpen ? 'Cerrar' : 'Menu'}</span>
           <span aria-hidden="true">{menuOpen ? '✕' : '☰'}</span>
         </button>
       </div>
@@ -80,7 +80,7 @@ function SiteNavigation({ onNavigate }: { onNavigate: () => void }) {
   const navigationPath = resolveSiteRoute(path)?.navigationPath;
   const { state, signingOut } = useAuth();
   return (
-    <nav id="site-navigation" aria-label="Navegación principal">
+    <nav id="site-navigation" aria-label="Navegacion principal">
       {siteRoutes.map((route) => (
         <SiteLink
           key={route.path}
@@ -97,7 +97,7 @@ function SiteNavigation({ onNavigate }: { onNavigate: () => void }) {
           aria-current={navigationPath === '/admin' ? 'page' : undefined}
           onClick={onNavigate}
         >
-          Administración
+          Administracion
         </SiteLink>
       )}
     </nav>
@@ -161,7 +161,7 @@ function SiteFooter() {
           PATROCINADA NI RESPALDADA POR RIOT GAMES, INC. NI POR LOL ESPORTS. LEAGUE OF LEGENDS Y SUS
           ELEMENTOS SON MARCAS Y PROPIEDAD DE RIOT GAMES, INC.
         </span>
-        <span>© GUILLERMO-JAVIER MARTÍNEZ NAVARRO TIENE LOS DERECHOS RESERVADOS.</span>
+        <span>© GUILLERMO-JAVIER MARTINEZ NAVARRO TIENE LOS DERECHOS RESERVADOS.</span>
       </div>
       {suggestionModalOpen && <SuggestionModal onClose={() => setSuggestionModalOpen(false)} />}
     </footer>

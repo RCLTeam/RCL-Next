@@ -136,7 +136,7 @@ test('Player profiles show real membership context and handle missing data', () 
     'Premier',
     'Temporada 1',
     'Mid',
-    'Capitán',
+    'Capitan',
     'href="/equipos/lobos"'
   ])
     expect(html).toContain(text);
@@ -155,7 +155,7 @@ test('Player profiles show real membership context and handle missing data', () 
   );
   expect(empty).not.toContain('player-profile-labels');
   expect(empty).toContain('Sin cuenta vinculada');
-  expect(empty).toContain('todavía no tiene inscripciones');
+  expect(empty).toContain('todavia no tiene inscripciones');
 });
 
 test('Player direct links and trailing slashes render their own page with selected navigation', () => {
@@ -163,7 +163,7 @@ test('Player direct links and trailing slashes render their own page with select
     const html = renderToStaticMarkup(<App initialPath={`/jugadores/${reference}`} />);
     expect(html).toContain('id="jugador"');
     expect(html).toContain('Cargando jugador');
-    expect(html).not.toContain('Página no encontrada');
+    expect(html).not.toContain('Pagina no encontrada');
     expect(
       (html.match(/<a\b[^>]*>/g) ?? []).some(
         (tag) => tag.includes('href="/jugadores"') && tag.includes('aria-current="page"')
@@ -201,11 +201,11 @@ test('Player profiles display competition metrics and distinguish missing result
   expect(html).toContain('role="img" aria-label="Ahri"');
   expect(html).toContain('75%');
   expect(html).toContain('4,5');
-  expect(html).toContain('Campeón más jugado');
+  expect(html).toContain('Campeon mas jugado');
   expect(html).toContain('Ahri');
   expect(html).toContain('https://op.gg/es/lol/summoners/euw/Jugador%20Uno-EUW');
   const empty = renderToStaticMarkup(<PlayerProfile player={player} />);
-  expect(empty).toContain('Las estadísticas aparecerán');
+  expect(empty).toContain('Las estadisticas apareceran');
   expect(empty).not.toContain('player-performance-grid');
 });
 
@@ -257,8 +257,8 @@ test('player profiles retain persisted MVP totals when match statistics are unav
   );
   expect(html).toContain('<dt>MVPs</dt><dd>2</dd>');
   expect(html).toContain('<dt>KDA</dt><dd>—</dd>');
-  expect(html).not.toContain('La historia está por escribir');
-  expect(html).toContain('Estadísticas de partidas no disponibles');
+  expect(html).not.toContain('La historia esta por escribir');
+  expect(html).toContain('Estadisticas de partidas no disponibles');
 });
 
 test('profile header uses API registration for team, color, role and captaincy regardless of affiliations order', () => {
@@ -285,7 +285,7 @@ test('profile header uses API registration for team, color, role and captaincy r
     expect(header).toContain('Equipo competitivo');
     expect(header).toContain('Suplente');
     expect(header).not.toContain('Staff Team');
-    expect(header).not.toContain('Capitán');
+    expect(header).not.toContain('Capitan');
     expect(html).toContain('Staff Team');
   }
 });
@@ -313,7 +313,7 @@ test('a profile without competitive registration uses a neutral header and keeps
   const header = html.split('</header>')[0] ?? '';
   expect(header).toContain('--profile-color:var(--purple)');
   expect(header).toContain('Sin equipo competitivo');
-  expect(header).not.toContain('Capitán');
+  expect(header).not.toContain('Capitan');
   expect(header).not.toContain('href="/equipos/');
   const performance = html
     .split('aria-labelledby="player-performance-title"')[1]
@@ -383,7 +383,7 @@ test('profile unifies all roles while retaining context, counts and API order', 
     const previous = teams[index - 1];
     if (previous) expect(section.indexOf(previous.name)).toBeLessThan(section.indexOf(team.name));
   }
-  expect(html).not.toContain('Última inscripción competitiva');
+  expect(html).not.toContain('Ultima inscripcion competitiva');
   expect(html).not.toContain('player-competitive-teams-title');
   expect(html).not.toContain('player-other-teams-title');
 });
@@ -408,7 +408,7 @@ test('staff-only profiles show the unified list without a competitive team', () 
   const section =
     html.split('aria-labelledby="player-memberships-title"')[1]?.split('</section>')[0] ?? '';
   expect(section).toContain('Staff affiliation');
-  expect(section).toContain('1 vinculación');
+  expect(section).toContain('1 vinculacion');
   expect(section).toContain('Staff');
   expect(html).toContain('Sin equipo competitivo');
   expect(html).toContain('<dt>Inscripciones competitivas</dt><dd>0</dd>');
@@ -420,7 +420,7 @@ test('profiles without memberships show a single team empty state', () => {
   );
   const section =
     html.split('aria-labelledby="player-memberships-title"')[1]?.split('</section>')[0] ?? '';
-  expect(section).toContain('todavía no tiene inscripciones en equipos');
+  expect(section).toContain('todavia no tiene inscripciones en equipos');
   expect(section).toContain('0 vinculaciones');
   expect(section).not.toContain('player-profile-membership');
 });

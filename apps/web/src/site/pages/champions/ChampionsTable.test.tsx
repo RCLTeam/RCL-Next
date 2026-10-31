@@ -37,6 +37,19 @@ test('Champion search uses the localized catalog name and ranking does not mutat
   expect(filterChampionStats(rows, catalog, 'missing', 'games')).toEqual([]);
 });
 
+test('Equal win rates rank by games played before the champion name', () => {
+  const tied: ChampionStats[] = [
+    { ...(rows[1] as ChampionStats), champion: 'Aatrox', games: 1, wins: 1 },
+    { ...(rows[1] as ChampionStats), champion: 'Zed', games: 5, wins: 5 },
+    { ...(rows[1] as ChampionStats), champion: 'Ahri', games: 1, wins: 1 }
+  ];
+  expect(filterChampionStats(tied, {}, '', 'winRate').map((row) => row.champion)).toEqual([
+    'Zed',
+    'Aatrox',
+    'Ahri'
+  ]);
+});
+
 test('Renders recorded statistics and provider icons without a bans column', () => {
   const html = renderToStaticMarkup(<ChampionsTable rows={rows} catalog={catalog} />);
   expect(html).toContain('Wukong.png');
@@ -52,5 +65,5 @@ test('Renders recorded statistics and provider icons without a bans column', () 
 test('Empty statistics span all seven table columns', () => {
   const html = renderToStaticMarkup(<ChampionsTable />);
   expect(html).toContain('colSpan="7"');
-  expect(html).toContain('Las estadísticas de campeones todavía no están disponibles.');
+  expect(html).toContain('Las estadisticas de campeones todavia no estan disponibles.');
 });

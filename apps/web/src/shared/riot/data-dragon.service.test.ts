@@ -48,7 +48,7 @@ test('Game catalog maps items, spells and rune paths and tolerates partial catal
   expect(catalog['item:1001']?.name).toBe('Botas');
   expect(catalog['summoner:4']?.image).toContain('/img/spell/SummonerFlash.png');
   expect(catalog['rune:8010']?.name).toBe('Conquistador');
-  expect(catalog['rune:8000']?.name).toBe('Precisión');
+  expect(catalog['rune:8000']?.name).toBe('Precision');
 });
 
 test('Champion splash art uses the canonical Data Dragon id', async () => {

@@ -64,7 +64,8 @@ El enrutador de operaciones CRUD (`apps/api/src/modules/crud-operations/crud-ope
 - **Parámetros de ruta:**
   - `:resource` (`string`): Identificador del recurso mutable.
 - **Parámetros de query string:**
-  - `search` (`string`, opcional): Término de búsqueda textual.
+  - `search` (`string`, opcional): Término de búsqueda textual. Se recorta al buscar, salvo el espacio final tras un número, que pide el número de jornada exacto.
+  - `latestSeason` (`'true'`, opcional): Limita los recursos con `seasonScoped` a la última temporada.
   - `offset` (`number`, opcional, por defecto 0): Índice de inicio para la paginación.
   - `limit` (`number`, opcional, por defecto 50, máximo 50): Ventana de paginación fija para listados tabulares.
 - **Respuesta exitosa (HTTP 200 OK):**

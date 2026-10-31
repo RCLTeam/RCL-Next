@@ -62,7 +62,7 @@ export function WeeklyTeamManager(props: EditorStateProps) {
           ))}
         </Select>
         <Select
-          label="División"
+          label="Division"
           id={`${selectId}-2`}
           value={divisionId ?? ''}
           disabled={busy}
@@ -113,11 +113,11 @@ export function WeeklyTeamManager(props: EditorStateProps) {
       />
       <ContentStatus {...content} />
       {divisionId && rounds.status === 'ready' && !round && (
-        <p>Crea las jornadas de esta división desde CRUD Operations.</p>
+        <p>Crea las jornadas de esta division desde CRUD Operations.</p>
       )}
       {legacy && (
         <p>
-          Existe una selección anterior sin jornada. Se conserva como referencia. Selecciona su
+          Existe una seleccion anterior sin jornada. Se conserva como referencia. Selecciona su
           jornada y confirma los jugadores para publicarla.
         </p>
       )}

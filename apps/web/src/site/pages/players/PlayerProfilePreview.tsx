@@ -10,8 +10,8 @@ export function PlayerProfilePreview() {
         <span className="eyebrow">Cada jugador tiene una historia</span>
         <h3>Deja tu marca.</h3>
         <p>
-          Los perfiles, las plantillas y las estadísticas individuales se publicarán aquí cuando
-          estén disponibles.
+          Los perfiles, las plantillas y las estadisticas individuales se publicaran aqui cuando
+          esten disponibles.
         </p>
         <SiteLink href="/equipos" className="btn-ghost">
           Explorar equipos →

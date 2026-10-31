@@ -7,7 +7,7 @@ export function NotFoundPage() {
     <div className="not-found-page">
       <section className="empty-state not-found">
         <h1>404 — Not Found</h1>
-        <p>La página que buscas no existe.</p>
+        <p>La pagina que buscas no existe.</p>
         <SiteLink className="btn-primary" href="/">
           Volver al inicio
         </SiteLink>
