@@ -4,7 +4,6 @@ import { expect, test } from 'vitest';
 import { DataState } from '../../../apps/web/src/features/competition/components/CompetitionDataState.js';
 import { DivisionCard } from '../../../apps/web/src/features/competition/components/DivisionCard.js';
 import { MatchCard } from '../../../apps/web/src/features/competition/components/MatchCard.js';
-import { PlayoffBracket } from '../../../apps/web/src/features/competition/components/PlayoffBracket.js';
 import { RoundFilter } from '../../../apps/web/src/features/competition/components/RoundFilter.js';
 import { StandingsTable } from '../../../apps/web/src/features/competition/components/StandingsTable.js';
 import { TeamCard } from '../../../apps/web/src/features/competition/components/TeamCard.js';
@@ -15,6 +14,7 @@ import type {
 } from '../../../apps/web/src/features/competition/types/competition.types.js';
 import { MatchList } from '../../../apps/web/src/site/pages/calendar/MatchList.js';
 import { ChampionsTable } from '../../../apps/web/src/site/pages/champions/ChampionsTable.js';
+import { PlayoffFormat } from '../../../apps/web/src/site/pages/playoffs/PlayoffFormat.js';
 import { PlayoffsPage } from '../../../apps/web/src/site/pages/playoffs/PlayoffsPage.js';
 import { PredictionsPage } from '../../../apps/web/src/site/pages/predictions/PredictionsPage.js';
 import { StandingsPage } from '../../../apps/web/src/site/pages/standings/StandingsPage.js';
@@ -259,9 +259,7 @@ test('Centralized tournament components render correctly', () => {
   expect(standingsHtml).toContain('Lobos');
   expect(standingsHtml).toContain('>+3</td>');
 
-  const bracketHtml = renderToStaticMarkup(
-    <PlayoffBracket rounds={[playoffRound]} matches={[match]} />
-  );
+  const bracketHtml = renderToStaticMarkup(<PlayoffFormat standings={[]} matches={[match]} />);
   expect(bracketHtml).toContain('Gran final');
   expect(bracketHtml).toContain('2');
   expect(bracketHtml).toContain('1');
@@ -408,10 +406,10 @@ test('MatchList retains matches between withdrawn teams', () => {
   expect(html).toContain('Cuervos');
 });
 
-test('PlayoffBracket handles missing teams and scores gracefully', () => {
+test('PlayoffFormat handles missing teams and scores gracefully', () => {
   const html = renderToStaticMarkup(
-    <PlayoffBracket
-      rounds={[playoffRound]}
+    <PlayoffFormat
+      standings={[]}
       matches={[
         {
           id: 'malformed-match',
@@ -433,7 +431,7 @@ test('PlayoffBracket handles missing teams and scores gracefully', () => {
       ]}
     />
   );
-  expect(html).toContain('Por definir');
+  expect(html).toContain('Rival elegido');
   expect(html).toContain('—');
   expect(html).not.toContain('undefined');
 });
