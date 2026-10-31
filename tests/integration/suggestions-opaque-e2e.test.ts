@@ -510,7 +510,7 @@ describe('Dual Track Opaque-Box E2E Testing Suite', () => {
     it('T1-F04-02: packages/contracts exports BridgeHealthMessage with 3 canonical Spanish literals', async () => {
       const res = await request(app).get('/api/v1/bridge/health');
       const message: BridgeHealthMessage = res.body.message;
-      expect(['Conexión correcta', 'No se puede llegar a él', 'No se pudo autenticar']).toContain(
+      expect(['Conexion correcta', 'No se puede llegar a el', 'No se pudo autenticar']).toContain(
         message
       );
       recordTest('tier1', true);
@@ -520,7 +520,7 @@ describe('Dual Track Opaque-Box E2E Testing Suite', () => {
       const response: BridgeHealthResponse = {
         status: 'connected',
         healthy: true,
-        message: 'Conexión correcta'
+        message: 'Conexion correcta'
       };
       expect(response.healthy).toBe(true);
       recordTest('tier1', true);
@@ -1010,9 +1010,9 @@ describe('Dual Track Opaque-Box E2E Testing Suite', () => {
       recordTest('tier1', true);
     });
 
-    it('T1-F12-03: On successful LOGIN_SUCCESS, probe classifies state as connected with Conexión correcta', async () => {
+    it('T1-F12-03: On successful LOGIN_SUCCESS, probe classifies state as connected with Conexion correcta', async () => {
       const health = await bridgeClient.checkHealth();
-      expect(health.message).toBe('Conexión correcta');
+      expect(health.message).toBe('Conexion correcta');
       recordTest('tier1', true);
     });
 
@@ -1104,7 +1104,7 @@ describe('Dual Track Opaque-Box E2E Testing Suite', () => {
       expect(res.status).toBe(503);
       expect(res.body.status).toBe('unreachable');
       expect(res.body.healthy).toBe(false);
-      expect(res.body.message).toBe('No se puede llegar a él');
+      expect(res.body.message).toBe('No se puede llegar a el');
       expect(res.body.details).toContain('El websocket no pudo iniciarse');
       recordTest('tier1', true);
     });
@@ -1745,7 +1745,7 @@ describe('Dual Track Opaque-Box E2E Testing Suite', () => {
       const html = renderToString(
         React.createElement(SuggestionModal, { isOpen: true, onClose: () => {} })
       );
-      expect(html).toContain('Buzón de Sugerencias');
+      expect(html).toContain('Buzon de Sugerencias');
       expect(html).toContain('suggestion-dialog');
       recordTest('tier1', true);
     });
@@ -2115,8 +2115,8 @@ describe('Dual Track Opaque-Box E2E Testing Suite', () => {
     });
 
     it('T2-F04-02: Type test: altered casing or punctuation fails compilation against BridgeHealthMessage', () => {
-      const msg: string = 'Conexión correcta';
-      expect(['Conexión correcta', 'No se puede llegar a él', 'No se pudo autenticar']).toContain(
+      const msg: string = 'Conexion correcta';
+      expect(['Conexion correcta', 'No se puede llegar a el', 'No se pudo autenticar']).toContain(
         msg
       );
       recordTest('tier2', true);
@@ -2126,7 +2126,7 @@ describe('Dual Track Opaque-Box E2E Testing Suite', () => {
       const res: BridgeHealthResponse = {
         status: 'connected',
         healthy: true,
-        message: 'Conexión correcta'
+        message: 'Conexion correcta'
       };
       expect(res.details).toBeUndefined();
       recordTest('tier2', true);
@@ -2136,7 +2136,7 @@ describe('Dual Track Opaque-Box E2E Testing Suite', () => {
       const res: BridgeHealthResponse = {
         status: 'connected',
         healthy: true,
-        message: 'Conexión correcta'
+        message: 'Conexion correcta'
       };
       expect(res.status === 'connected' ? res.healthy : !res.healthy).toBe(true);
       recordTest('tier2', true);
@@ -3001,10 +3001,10 @@ describe('Dual Track Opaque-Box E2E Testing Suite', () => {
       const html = renderToString(
         React.createElement(SuggestionForm, {
           isHealthy: false,
-          healthMessage: 'No se puede llegar a él'
+          healthMessage: 'No se puede llegar a el'
         })
       );
-      expect(html).toContain('No se puede llegar a él');
+      expect(html).toContain('No se puede llegar a el');
       expect(html).toContain('suggestion-alert-warning');
       recordTest('tier2', true);
     });
@@ -3083,7 +3083,7 @@ describe('Dual Track Opaque-Box E2E Testing Suite', () => {
     it('T2-F25-01: Textarea at 9 characters disables submit button on UI contract', () => {
       const html = renderToString(React.createElement(SuggestionForm, { suggestion: '123456789' }));
       expect(html).toContain('disabled');
-      expect(html).toContain('Mínimo 10 caracteres');
+      expect(html).toContain('Minimo 10 caracteres');
       recordTest('tier2', true);
     });
     it('T2-F25-02: Textarea at 1000 characters displays counter 1000/1000 with limit indicator', () => {
@@ -3189,7 +3189,7 @@ describe('Dual Track Opaque-Box E2E Testing Suite', () => {
       const html = renderToString(
         React.createElement(SuggestionModal, { isOpen: true, onClose: () => {} })
       );
-      expect(html).toContain('Buzón de Sugerencias');
+      expect(html).toContain('Buzon de Sugerencias');
       recordTest('tier2', true);
     });
     it('T2-F27-04: Click detection differentiates backdrop clicks from clicks inside modal container', () => {
@@ -3430,7 +3430,7 @@ describe('Dual Track Opaque-Box E2E Testing Suite', () => {
     it('T3-COMB-05 (F12+F14): Health probe evaluates connected state and HTTP router returns 200 with canonical message', async () => {
       const res = await request(app).get('/api/v1/bridge/health');
       expect(res.status).toBe(200);
-      expect(res.body.message).toBe('Conexión correcta');
+      expect(res.body.message).toBe('Conexion correcta');
       recordTest('tier3', true);
     });
 
@@ -3473,7 +3473,7 @@ describe('Dual Track Opaque-Box E2E Testing Suite', () => {
         React.createElement(SuggestionModal, { isOpen: true, onClose: () => {} })
       );
       expect(modalHtml).toContain('<dialog');
-      expect(modalHtml).toContain('Buzón de Sugerencias');
+      expect(modalHtml).toContain('Buzon de Sugerencias');
       recordTest('tier3', true);
     });
 

@@ -43,7 +43,7 @@ function PlayerMembershipSection({
       <div className="player-detail-section-heading">
         <h2 id={id}>{title}</h2>
         <span className="meta">
-          {teams.length} {teams.length === 1 ? 'vinculación' : 'vinculaciones'}
+          {teams.length} {teams.length === 1 ? 'vinculacion' : 'vinculaciones'}
         </span>
       </div>
       {teams.length ? (
@@ -62,7 +62,7 @@ function PlayerMembershipSection({
                 <h3 title={team.name}>{team.name}</h3>
                 <p>
                   {roleLabels[team.role]}
-                  {team.isCaptain ? ' · Capitán' : ''}
+                  {team.isCaptain ? ' · Capitan' : ''}
                 </p>
                 {!team.isActive && <span className="meta">Equipo inactivo</span>}
               </div>
@@ -96,9 +96,9 @@ export function PlayerProfile({ player }: { player: PlayerDetail }) {
     ['Victorias', format(stats?.winRate, '%')],
     ['MVPs', mvpCount === undefined ? '—' : String(mvpCount)],
     ['CS / min', format(stats?.csPerMinute)],
-    ['Participación en kills', format(stats?.killParticipation, '%')],
+    ['Participacion en kills', format(stats?.killParticipation, '%')],
     ['Daño / min', format(stats?.damagePerMinute)],
-    ['Visión', format(stats?.visionScore)]
+    ['Vision', format(stats?.visionScore)]
   ];
   return (
     <div
@@ -131,7 +131,7 @@ export function PlayerProfile({ player }: { player: PlayerDetail }) {
                   <span className="player-role-label">{roleLabels[registrationTeam.role]}</span>
                 )}
                 {registrationTeam?.isCaptain && (
-                  <span className="player-captain-label">Capitán</span>
+                  <span className="player-captain-label">Capitan</span>
                 )}
                 {player.countryCode && <span>{player.countryCode.toUpperCase()}</span>}
               </div>
@@ -146,7 +146,7 @@ export function PlayerProfile({ player }: { player: PlayerDetail }) {
           </div>
           <div className="player-profile-details">
             <div className="player-profile-champion-summary">
-              <span className="meta">Campeón más jugado</span>
+              <span className="meta">Campeon mas jugado</span>
               <strong>{champion?.name ?? championName ?? 'Sin partidas registradas'}</strong>
             </div>
             <div className="player-profile-info-row">
@@ -255,7 +255,7 @@ export function PlayerProfile({ player }: { player: PlayerDetail }) {
           <>
             {!stats?.games && (
               <p className="meta">
-                Estadísticas de partidas no disponibles. Se conservan los MVPs registrados.
+                Estadisticas de partidas no disponibles. Se conservan los MVPs registrados.
               </p>
             )}
             <dl className="player-performance-grid">
@@ -272,7 +272,7 @@ export function PlayerProfile({ player }: { player: PlayerDetail }) {
             <h3>Sin partidas registradas</h3>
             <p>
               {player.statisticsSeasonName
-                ? 'Las estadísticas aparecerán cuando haya partidas registradas en esta temporada.'
+                ? 'Las estadisticas apareceran cuando haya partidas registradas en esta temporada.'
                 : 'No hay partidas ni premios registrados para este jugador.'}
             </p>
           </div>
@@ -282,7 +282,7 @@ export function PlayerProfile({ player }: { player: PlayerDetail }) {
         id="player-memberships-title"
         title="Equipos y vinculaciones"
         teams={player.teams}
-        empty="Este jugador todavía no tiene inscripciones en equipos."
+        empty="Este jugador todavia no tiene inscripciones en equipos."
       />
     </div>
   );
@@ -297,12 +297,12 @@ export function PlayerDetailPage({ playerId }: { playerId: string }) {
       id="jugador"
       number="06"
       title={state.status === 'ready' ? state.data.gameName : 'Ficha del jugador'}
-      subtitle="Protagonistas de la rebelión"
-      description="Conoce al jugador y sus inscripciones en la competición."
+      subtitle="Protagonistas de la rebelion"
+      description="Conoce al jugador y sus inscripciones en la competicion."
     >
       {state.status === 'loading' && <output className="empty-state">Cargando jugador…</output>}
       {state.status === 'missing' && (
-        <div className="empty-state">Jugador no encontrado. Puede que ya no esté disponible.</div>
+        <div className="empty-state">Jugador no encontrado. Puede que ya no este disponible.</div>
       )}
       {state.status === 'error' && (
         <div className="empty-state error-state" role="alert">

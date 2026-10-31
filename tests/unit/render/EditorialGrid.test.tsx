@@ -44,7 +44,7 @@ describe('Home editorial', () => {
     expect(html).not.toContain('Story 4');
     expect(html).toContain('Noticias anteriores');
     expect(html).toContain('Noticias siguientes');
-    expect(html).toContain('Pausar rotación automática');
+    expect(html).toContain('Pausar rotacion automatica');
   });
   it.each([1, 2, 3, 4])('omits carousel controls for %i total stories', (count) => {
     const html = renderNews(count);
@@ -54,7 +54,7 @@ describe('Home editorial', () => {
   });
   it('shows the empty state without a carousel', () => {
     const html = renderNews(0);
-    expect(html).toContain('Pronto encontrarás');
+    expect(html).toContain('Pronto encontraras');
     expect(html).not.toContain('Noticias siguientes');
   });
 });
@@ -74,7 +74,7 @@ describe('Editorial carousel edge cases', () => {
     const html = renderNews(6);
     expect(matchMedia).toHaveBeenCalledWith('(prefers-reduced-motion: reduce)');
     expect(html).toContain('aria-live="polite"');
-    expect(html).not.toContain('Pausar rotación automática');
+    expect(html).not.toContain('Pausar rotacion automatica');
     expect(html).toContain('Noticias anteriores');
     expect(html).toContain('Noticias siguientes');
     expect(html.match(/class="news-item"/g)).toHaveLength(3);
@@ -87,7 +87,7 @@ describe('Editorial carousel edge cases', () => {
       onTestFinished(() => vi.unstubAllGlobals());
       const html = renderNews(6);
       expect(html).toContain('aria-live="off"');
-      expect(html).toContain('Pausar rotación automática');
+      expect(html).toContain('Pausar rotacion automatica');
     }
   );
 

@@ -31,7 +31,7 @@ const resource: CrudResource = {
         'partners'
       ]
     },
-    { name: 'isCaptain', label: 'Capitán', type: 'boolean' }
+    { name: 'isCaptain', label: 'Capitan', type: 'boolean' }
   ]
 };
 const record: CrudRecord = {

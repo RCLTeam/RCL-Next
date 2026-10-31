@@ -50,6 +50,6 @@ describe('database transfer UI', () => {
     expect(html).toContain('seasons');
     expect(html).toContain('backup.dump');
     expect(html).toContain('Escribe IMPORTAR');
-    expect(html).toMatch(/disabled="">Confirmar importación/);
+    expect(html).toMatch(/disabled="">Confirmar importacion/);
   });
 });

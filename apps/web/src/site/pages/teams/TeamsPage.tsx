@@ -19,7 +19,7 @@ export function TeamsPage({ competition }: { competition: Competition }) {
       id="equipos"
       number="05"
       title="Equipos"
-      subtitle="Una identidad. Una rebelión."
+      subtitle="Una identidad. Una rebelion."
       description="Conoce a los equipos que compiten por dejar su marca en la liga."
       toolbar={
         <CompetitionFilters competition={competition}>
@@ -37,7 +37,7 @@ export function TeamsPage({ competition }: { competition: Competition }) {
     >
       <DataState
         state={resolveCompetitionState(competition, competition.teams)}
-        empty="Todavía no hay equipos inscritos en esta división."
+        empty="Todavia no hay equipos inscritos en esta division."
         retry={competition.retry}
       >
         <TeamGrid teams={teams} divisionName={competition.division?.name} query={query} />

@@ -41,7 +41,7 @@ export function EditorialManager(props: EditorStateProps) {
         <div>
           <h3>Historias de la liga</h3>
           <p>
-            El orden más bajo ocupa la portada. Solo aparecen en la home los artículos publicados y
+            El orden mas bajo ocupa la portada. Solo aparecen en la home los articulos publicados y
             marcados para mostrar.
           </p>
         </div>
@@ -51,13 +51,13 @@ export function EditorialManager(props: EditorStateProps) {
           disabled={busy}
           onClick={() => select('new')}
         >
-          + Nuevo artículo
+          + Nuevo articulo
         </button>
       </div>
       <div className="editorial-manager-grid">
-        <aside className="content-article-list" aria-label="Artículos">
+        <aside className="content-article-list" aria-label="Articulos">
           <ContentStatus {...content} />
-          {content.data?.length === 0 && <p>Aún no hay artículos. Crea la primera historia.</p>}
+          {content.data?.length === 0 && <p>Aun no hay articulos. Crea la primera historia.</p>}
           {content.data?.map((article) => (
             <button
               type="button"
@@ -102,7 +102,7 @@ export function EditorialManager(props: EditorStateProps) {
             <span className="eyebrow">Editorial</span>
             <h3>Una historia merece su espacio.</h3>
             <p>
-              Selecciona un artículo para editarlo o crea una noticia, un reportaje o una
+              Selecciona un articulo para editarlo o crea una noticia, un reportaje o una
               entrevista.
             </p>
           </div>
@@ -204,7 +204,7 @@ function ArticleForm({
               saveArticle(initial?.id ?? null, form, urls)
             );
             onSaved(article);
-            setMessage(article.published ? 'Artículo publicado.' : 'Borrador guardado.');
+            setMessage(article.published ? 'Articulo publicado.' : 'Borrador guardado.');
           } catch (failure) {
             setError(failure instanceof Error ? failure.message : 'No se pudo guardar.');
           } finally {
@@ -214,16 +214,16 @@ function ArticleForm({
         }}
       >
         <fieldset disabled={busy}>
-          <legend>{initial ? 'Editar artículo' : 'Nuevo artículo'}</legend>
+          <legend>{initial ? 'Editar articulo' : 'Nuevo articulo'}</legend>
           <ContentField
-            label="Título"
+            label="Titulo"
             value={form.title}
             onChange={(title) => update({ title })}
             maxLength={180}
           />
           <div className="content-field">
             <Select
-              label="Tipo de publicación"
+              label="Tipo de publicacion"
               variant="form"
               id="editorial-kind"
               value={form.kind}
@@ -242,7 +242,7 @@ function ArticleForm({
             maxLength={120}
           />
           <ContentField
-            label="Subtítulo (opcional)"
+            label="Subtitulo (opcional)"
             value={form.excerpt}
             onChange={(excerpt) => update({ excerpt })}
             maxLength={500}
@@ -283,7 +283,7 @@ function ArticleForm({
               onChange={(event) => update({ body: event.target.value })}
             />
             <small>
-              Separa párrafos con una línea en blanco. Usa ## para subtítulos y &gt; para citas.
+              Separa parrafos con una linea en blanco. Usa ## para subtitulos y &gt; para citas.
               Coloca el cursor donde quieras insertar una imagen. Puedes mover o eliminar su bloque
               de texto.
             </small>
@@ -335,11 +335,11 @@ function ArticleForm({
           </div>
           <div className="content-actions">
             <button type="submit" className="content-primary">
-              {busy ? 'Guardando…' : 'Guardar artículo'}
+              {busy ? 'Guardando…' : 'Guardar articulo'}
             </button>
             {initial && (
               <button type="button" className="content-danger" onClick={remove}>
-                Eliminar artículo
+                Eliminar articulo
               </button>
             )}
           </div>
