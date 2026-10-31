@@ -56,10 +56,16 @@ export const getCrudRecords = (
   search: string,
   offset: number,
   signal: AbortSignal,
-  limit = 50
+  limit = 50,
+  latestSeason = false
 ) =>
   crudRequest<CrudPageResult>(
-    `${resource}?${new URLSearchParams({ search, offset: String(offset), limit: String(limit) })}`,
+    `${resource}?${new URLSearchParams({
+      search,
+      offset: String(offset),
+      limit: String(limit),
+      ...(latestSeason ? { latestSeason: 'true' } : {})
+    })}`,
     { signal }
   );
 export function saveCrudRecord(

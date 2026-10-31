@@ -64,30 +64,36 @@ Para evitar sobrescrituras silenciosas (*lost updates*) en entornos administrati
 
 ## 4. Motor Dinámico de Búsqueda, Escape SQL y Ranking (`list`)
 
-El método `list(...)` (`postgres-crud-operations.repository.ts:315-500`) ejecuta consultas de búsqueda de texto completo y resolución de referencias:
+El método `list(...)` (`postgres-crud-operations.repository.ts:316-433`) ejecuta consultas de búsqueda de texto completo y resolución de referencias:
 
 ### 4.1 Inmunidad a Inyecciones de Comodines SQL
-- **Cita:** `postgres-crud-operations.repository.ts:323`
+- **Cita:** `crud-search.ts` (`parseCrudSearch`)
 - **Mecanismo:** Antes de generar cláusulas `ILIKE`, se escapan todos los caracteres de control relacional:
   ```typescript
-  const searchEscaped = search.replace(/[\\%_]/g, '\\$&');
+  const escaped = text.replace(/[\\%_]/g, '\\$&');
   ```
   Esto inhabilita ataques basados en comodines (`%`, `_`) y previene búsquedas que puedan degradar el rendimiento del motor de base de datos.
 
-### 4.2 Búsqueda en Múltiples Columnas y Entidades Foráneas
-- Itera sobre todas las columnas declaradas con tipo `'text'`, `'select'` o `'url'`, generando condiciones `ilike(col, `%${searchEscaped}%`)`.
-- **Búsqueda en Tablas Relacionadas (`lines 349-410`):** Si un campo es una clave foránea (`field.reference`), busca en la tabla de destino mediante subconsultas SQL correlacionadas:
-  ```sql
-  EXISTS (
-    SELECT 1 FROM target_table 
-    WHERE target_table.target_key = current_table.local_key 
-      AND (target_table.name ILIKE '%search%' OR ...)
-  )
-  ```
-- **Caso Especial `competitions` (`lines 378-401`):** Al buscar competiciones (`seasons_divisions`), examina de forma simultánea `seasons.name` y `divisions.name`.
+### 4.2 Columnas de Búsqueda por Recurso
+La búsqueda no recorre los campos del recurso: `crud-search.ts` declara una lista explícita. Un recurso sin entrada lanza un error en lugar de buscar en todas sus columnas.
+
+| Recurso | Busca por |
+|---|---|
+| `seasons`, `divisions` | Nombre |
+| `competitions` | Nombre de temporada y de división |
+| `teams` | Nombre y abreviatura |
+| `users` | Usuario y nombre visible |
+| `players` | `gameName`, `riotTag` y `gameName#riotTag` |
+| `memberships` | Nombre del equipo; `gameName` y `gameName#riotTag` de las cuentas Riot del miembro |
+| `rounds` | Nombre y número de jornada |
+| `matches` | Nombre y abreviatura de cualquiera de los dos equipos |
+
+- **Número de jornada:** la coincidencia es parcial (`1` encuentra 1, 10, 11…). Un espacio final tras el número pide el valor exacto (`"1 "` solo encuentra la 1); por eso `search` llega sin recortar al repositorio.
+- **Miembros sin cuenta Riot:** una vinculación cuyo miembro no tiene jugador asociado, como un coach, solo se encuentra por el nombre del equipo.
+- **Última temporada:** con `latestSeason=true`, `competitions`, `teams`, `memberships`, `rounds` y `matches` se limitan a la temporada con `starts_on` más reciente (a igualdad, la de mayor nombre). Estos recursos declaran `seasonScoped` en su definición y el panel muestra la casilla «Buscar solo en la ultima temporada». Sin ese parámetro, la búsqueda abarca todas las temporadas.
 
 ### 4.3 Ranking de Relevancia Ponderado
-- **Cita:** `postgres-crud-operations.repository.ts:415-424`
+- **Cita:** `postgres-crud-operations.repository.ts:332-347`
 - **Mecanismo:** Clasifica los resultados mediante una expresión SQL `CASE`:
   - **Prioridad 0 (Prefijo exacto):** Coincidencia al inicio del campo (`col ILIKE searchEscaped%`).
   - **Prioridad 1 (Subcadena):** Coincidencia en cualquier parte del campo (`col ILIKE %searchEscaped%`).
@@ -95,7 +101,7 @@ El método `list(...)` (`postgres-crud-operations.repository.ts:315-500`) ejecut
   - **Criterio de Desempate:** Ordenación ascendente por las columnas de clave primaria (`asc(column)`).
 
 ### 4.4 Paginación Dinámica y Detección de Páginas Siguientes
-- **Cita:** `postgres-crud-operations.repository.ts:428-433, 499`
+- **Cita:** `postgres-crud-operations.repository.ts:350-365, 432`
 - **Mecanismo:** Ejecuta la consulta con `limit(limit + 1)` y `offset(offset)`.
   - Extrae los registros de la página: `page = result.slice(0, limit)`.
   - Evalúa `hasMore = result.length > limit`, evitando una consulta redundante de `COUNT(*)` sobre tablas voluminosas.
@@ -114,7 +120,7 @@ El método `list(...)` (`postgres-crud-operations.repository.ts:315-500`) ejecut
 ## 5. Gestión y Reordenación de Mapas de Partido
 
 ### 5.1 Consulta de Mapas de Encuentro (`matchMaps`)
-- **Cita:** `postgres-crud-operations.repository.ts:209-228`
+- **Cita:** `postgres-crud-operations.repository.ts:210-229`
 - **Comportamiento:**
   1. Valida la existencia del partido en `schema.matches` mediante `select({ id: matches.id })`. Si no existe, arroja `notFound('Match')` (HTTP 404).
   2. Ejecuta una consulta sobre `schema.matchGames` filtrando por `eq(matchGames.matchesId, matchId)`.
@@ -146,7 +152,7 @@ async matchMaps(matchId: string) {
 ```
 
 ### 5.2 Transacción Pesimista de Reordenación Atómica (`reorderMaps`)
-- **Cita:** `postgres-crud-operations.repository.ts:230-293`
+- **Cita:** `postgres-crud-operations.repository.ts:231-294`
 - **Mecanismos de Concurrencia y Consistencia:**
 
 1. **Bloqueo Pesimista del Partido Padre (`SELECT ... FOR UPDATE`):**
