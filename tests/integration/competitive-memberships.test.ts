@@ -5,6 +5,7 @@ import { btree_gist } from '@electric-sql/pglite/contrib/btree_gist';
 import { drizzle } from 'drizzle-orm/pglite';
 import { migrate } from 'drizzle-orm/pglite/migrator';
 import { expect, onTestFinished, test } from 'vitest';
+import { membershipIntegritySql } from '../../packages/database/src/membership-integrity.js';
 import * as schema from '../../packages/database/src/schema.js';
 
 const migrationsFolder = fileURLToPath(new URL('../../packages/database/drizzle', import.meta.url));
@@ -24,6 +25,59 @@ async function fixtures(client: PGlite, legacy = false) {
     INSERT INTO discord_users(discord_id, username) VALUES ('player', 'Player');
   `);
 }
+
+test('read-only membership diagnostic distinguishes valid affiliations from corrupted imports', async (t) => {
+  const client = new PGlite({ extensions: { btree_gist } });
+  t.onTestFinished(() => client.close());
+  await migrate(drizzle(client, { schema }), { migrationsFolder });
+  await fixtures(client);
+  await client.exec(membership(1, 'top'));
+  await client.exec(membership(2, 'staff'));
+  await client.exec(membership(3, 'substitute'));
+  expect((await client.query(membershipIntegritySql)).rows).toEqual([]);
+  // Simulate a broken import only in this disposable embedded database.
+  await client.exec(`
+    ALTER TABLE team_memberships DROP CONSTRAINT one_competitive_team_per_player_and_season;
+    ALTER TABLE team_memberships DROP CONSTRAINT team_memberships_team_season_fkey;
+    ALTER TABLE team_memberships DROP CONSTRAINT team_memberships_captain_role_check;
+    UPDATE team_memberships SET role = 'mid', season_name = 'S3' WHERE team_id = '${team(2)}';
+  `);
+  const before = await client.query('SELECT * FROM team_memberships ORDER BY team_id');
+  const report = await client.query<{ issue: string }>(membershipIntegritySql);
+  expect(report.rows.map((row) => row.issue)).toEqual([
+    'membership_season_mismatch',
+    'multiple_competitive_teams'
+  ]);
+  expect(await client.query('SELECT * FROM team_memberships ORDER BY team_id')).toEqual(before);
+  await client.exec(
+    `UPDATE team_memberships SET role = 'coach', is_captain = true WHERE team_id = '${team(2)}'`
+  );
+  expect(
+    (await client.query<{ issue: string }>(membershipIntegritySql)).rows.map((row) => row.issue)
+  ).toContain('invalid_captain_role');
+});
+
+test('inactive teams do not release season-wide competitive uniqueness', async (t) => {
+  const client = new PGlite({ extensions: { btree_gist } });
+  t.onTestFinished(() => client.close());
+  await migrate(drizzle(client, { schema }), { migrationsFolder });
+  await fixtures(client);
+  await client.exec('UPDATE teams SET is_active = false');
+  await client.exec(membership(1, 'mid'));
+  await expect(client.exec(membership(2, 'substitute'))).rejects.toMatchObject({
+    code: '23P01',
+    constraint: 'one_competitive_team_per_player_and_season'
+  });
+  expect((await client.query(membershipIntegritySql)).rows).toEqual([]);
+  // Imported invalid history is reported even when both teams are inactive.
+  await client.exec(
+    'ALTER TABLE team_memberships DROP CONSTRAINT one_competitive_team_per_player_and_season'
+  );
+  await client.exec(membership(2, 'substitute'));
+  expect(
+    (await client.query<{ issue: string }>(membershipIntegritySql)).rows.map((r) => r.issue)
+  ).toContain('multiple_competitive_teams');
+});
 
 test('competitive membership is unique per season; other roles remain unrestricted', async (t) => {
   const client = new PGlite({ extensions: { btree_gist } });
@@ -99,6 +153,36 @@ test('competitive membership is unique per season; other roles remain unrestrict
     })
     .returning();
   expect(inserted?.seasonName).toBe('S2');
+});
+
+test('integrity diagnostic reports team season mismatch, duplicate captains and orphan memberships without writes', async (t) => {
+  const client = new PGlite({ extensions: { btree_gist } });
+  t.onTestFinished(() => client.close());
+  await migrate(drizzle(client, { schema }), { migrationsFolder });
+  await fixtures(client);
+  await client.exec(membership(1, 'top'));
+  // Only this disposable database has protections removed to simulate damaged data.
+  await client.exec(`
+    ALTER TABLE teams DROP CONSTRAINT teams_season_division_season_fkey;
+    UPDATE teams SET season_name = 'S3' WHERE id = '${team(1)}';
+    DROP INDEX team_memberships_unique_captain;
+    ALTER TABLE team_memberships DROP CONSTRAINT team_memberships_discord_user_id_fkey;
+    UPDATE team_memberships SET is_captain = true;
+    INSERT INTO team_memberships(team_id, discord_user_id, role, season_name, is_captain)
+    VALUES ('${team(1)}', 'missing-person', 'mid', 'S3', true);
+  `);
+  const before = await client.query('SELECT * FROM team_memberships ORDER BY discord_user_id');
+  await client.exec('BEGIN READ ONLY');
+  const result = await client.query<{ issue: string }>(membershipIntegritySql);
+  await client.exec('COMMIT');
+  expect(result.rows.map((row) => row.issue)).toEqual([
+    'multiple_captains',
+    'orphan_membership',
+    'team_season_mismatch'
+  ]);
+  expect(await client.query('SELECT * FROM team_memberships ORDER BY discord_user_id')).toEqual(
+    before
+  );
 });
 
 test.each([false, true])(

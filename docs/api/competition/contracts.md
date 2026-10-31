@@ -78,6 +78,7 @@ export interface Match {
   awayTeam?: TeamSummary;  // Equipo visitante
   homeScore: number;       // Mapas ganados por el equipo local
   awayScore: number;       // Mapas ganados por el equipo visitante
+  winnerTeamId?: string | null; // Ganador declarado; prioritario sobre el marcador en playoffs
   status: 'scheduled' | 'live' | 'completed' | 'forfeit' | 'cancelled';
   bestOf: number;          // Formato de serie (ej. 3 para BO3)
   scheduledAt: string | null;  // Fecha/hora ISO programada
@@ -167,6 +168,9 @@ export interface Player {
 
 export interface PlayerDetail extends Player {
   teams: PlayerTeam[];
+  registrationTeam?: PlayerTeam | null;
+  statisticsSeasonName?: string | null;
+  linkedAccounts?: Player[];
 }
 ```
 
@@ -181,6 +185,7 @@ export interface TeamDetail extends TeamSummary {
   seasonName: string;
   divisionName: string;
   members: TeamMember[];
+    featuredLineup?: TeamMember[];
 }
 
 export interface TeamMember {
@@ -193,6 +198,7 @@ export interface TeamMember {
   countryCode: string | null;
   playerId?: string | null;
   playerSlug?: string;
+  champion?: string | null;
   rosterStats?: {
     games: number;
     mvps: number;
@@ -262,13 +268,13 @@ playerSeasonGames(
 ): Promise<{
   playerGames: PlayerGameRow[];
   allMatchGames: PlayerGameRow[];
+  mvpMatchIds: string[];
 }>;
 ```
 
 - **`playerId` (`string`)**: UUID del jugador a consultar.
 - **`seasonName` (`string`)**: Nombre canónico de la temporada deportiva (ej. `"Temporada 1"`).
-- **Retorno (`Promise<{ playerGames: PlayerGameRow[]; allMatchGames: PlayerGameRow[] }>`):**
+- **Retorno (`Promise<{ playerGames: PlayerGameRow[]; allMatchGames: PlayerGameRow[]; mvpMatchIds: string[] }>`):**
   - `playerGames`: Colección de todas las partidas disputadas por el jugador a lo largo de la temporada completa (independientemente del equipo o división en que las haya jugado), ordenadas cronológicamente (`asc(matches.finishedAt)`).
-  - `allMatchGames`: Registros de todos los participantes en las series en las que intervino el jugador, requeridos para computar el contexto relativo de MVP de cada enfrentamiento mediante `matchMvps(allMatchGames)`.
-
-
+  - `allMatchGames`: Registros de todos los participantes en las series en las que intervino el jugador, utilizados para calcular estadísticas relativas. Los premios se leen de los MVPs persistidos, sin recalcularlos.
+  - `mvpMatchIds`: Identificadores de partidos completados de la temporada cuyo MVP persistido es el jugador; se conservan aunque falten estadísticas.

@@ -155,11 +155,20 @@ Las cookies se configuran según el entorno de ejecución (`auth.router.ts:37-44
 
 ### 3.3 Jerarquía y Control de Acceso (`requireAuth`)
 
-El middleware `requireAuth(options, role?)` (`auth.router.ts:13-23`) implementa las siguientes reglas de evaluación de permisos sobre `res.locals.user`:
+El middleware `requireAuth(options, role?)` acepta un rol (`AuthUser['role']`) o un array de roles (`readonly AuthUser['role'][]`). Primero resuelve la sesión y después verifica los permisos:
+
 ```typescript
-if (role && user.role !== role && !(role === 'admin' && user.role === 'owner'))
+const allowedRoles = typeof role === 'string' ? [role] : role;
+if (
+  allowedRoles &&
+  !allowedRoles.includes(user.role) &&
+  !(allowedRoles.includes('admin') && user.role === 'owner')
+)
   throw new AppError(403, 'FORBIDDEN', 'Insufficient permissions.');
 ```
-- **Equivalencia de Administración:** Un usuario con rol `'owner'` tiene implícitamente todos los privilegios de un `'admin'`.
-- **Restricción de Propiedad:** Un usuario con rol `'admin'` **no** satisface una comprobación que exija explícitamente `'owner'`.
-- **Miembros sin privilegios:** Un usuario con rol `'viewer'` es rechazado con HTTP 403 ante cualquier comprobación de rol `'admin'` u `'owner'`.
+
+- Sin `role`, basta con una sesión válida; un array vacío no permite ningún rol.
+- Un array permite cualquiera de sus roles. `owner` satisface también `admin`, tanto en un literal como en un array.
+- `requireAuth(auth, ['editor', 'admin'])` permite Home Content a `editor`, `admin` y `owner`.
+- `editor` no satisface una comprobación de `admin` ni de `owner`; `admin` tampoco satisface `owner`. No existe una jerarquía numérica general: un permiso literal `editor` solo admite ese rol.
+- `viewer` no puede acceder a rutas administrativas. Una sesión inválida produce 401; una sesión válida sin el rol permitido produce 403.

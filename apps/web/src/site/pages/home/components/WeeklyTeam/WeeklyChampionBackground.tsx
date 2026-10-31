@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { ChampionArt } from '../../../../../shared/riot/ChampionArt.js';
 import { getGameAsset } from '../../../../../shared/riot/riot-assets.service.js';
 import { useGameCatalog } from '../../../../../shared/riot/useGameCatalog.js';
 
@@ -18,7 +19,7 @@ function ChampionSlides({
   const [active, setActive] = useState(0);
   const slides = [...new Set(champions)].flatMap((id) => {
     const asset = getGameAsset('champion', id, catalog);
-    return asset?.splashImage ? [{ id, name: asset.name, image: asset.splashImage }] : [];
+    return asset?.splashImage ? [{ id, asset }] : [];
   });
   useEffect(() => {
     if (slides.length < 2) return;
@@ -39,15 +40,12 @@ function ChampionSlides({
   return (
     <div className="totw-slides" aria-hidden="true">
       {slides.map((slide, index) => (
-        <img
+        <ChampionArt
           key={slide.id}
           className={`totw-splash${index === active % slides.length ? ' is-active' : ''}`}
-          src={slide.image}
+          asset={slide.asset}
+          variant="original"
           alt=""
-          loading="lazy"
-          onError={(event) => {
-            event.currentTarget.hidden = true;
-          }}
         />
       ))}
     </div>

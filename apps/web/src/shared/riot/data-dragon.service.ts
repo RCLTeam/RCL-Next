@@ -5,6 +5,10 @@ import type { GameCatalog, RuneTree } from './riot-assets.types.js';
 
 const CDN = 'https://ddragon.leagueoflegends.com';
 let catalogRequest: Promise<GameCatalog> | undefined;
+
+// The site typefaces have no accented vowels.
+const removeAccents = (text: string) =>
+  text.replace(/[áéíóúÁÉÍÓÚ]/g, (letter) => letter.normalize('NFD').slice(0, 1));
 async function json(url: string) {
   const response = await fetch(url, { signal: AbortSignal.timeout(10000) });
   if (!response.ok) throw new Error('Catalog unavailable');
@@ -28,9 +32,12 @@ async function fetchGameCatalog(): Promise<{ catalog: GameCatalog; complete: boo
     for (const [id, raw] of Object.entries(result.value.data ?? {})) {
       const value = raw as { name: string; key?: string; image?: { full: string } };
       catalog[`${kind}:${kind === 'summoner' ? value.key : id}`] = {
-        name: value.name,
+        name: removeAccents(value.name),
         ...(kind === 'champion'
-          ? { splashImage: `${CDN}/cdn/img/champion/splash/${encodeURIComponent(id)}_0.jpg` }
+          ? {
+              championId: value.key ? Number(value.key) : undefined,
+              splashImage: `${CDN}/cdn/img/champion/splash/${encodeURIComponent(id)}_0.jpg`
+            }
           : {}),
         image: value.image
           ? `${base}/img/${kind === 'summoner' ? 'spell' : kind}/${encodeURIComponent(value.image.full)}`
@@ -42,12 +49,12 @@ async function fetchGameCatalog(): Promise<{ catalog: GameCatalog; complete: boo
   if (runes?.status === 'fulfilled' && Array.isArray(runes.value)) {
     const trees = runes.value as RuneTree[];
     catalog['rune:trees'] = {
-      name: 'Árboles de Runas',
+      name: 'Arboles de Runas',
       trees
     };
     for (const tree of trees) {
       const treeAsset = {
-        name: tree.name,
+        name: removeAccents(tree.name),
         image: `${CDN}/cdn/img/${tree.icon}`,
         tree
       };
@@ -56,7 +63,7 @@ async function fetchGameCatalog(): Promise<{ catalog: GameCatalog; complete: boo
       for (const slot of tree.slots) {
         for (const rune of slot.runes) {
           catalog[`rune:${rune.id}`] = {
-            name: rune.name,
+            name: removeAccents(rune.name),
             image: `${CDN}/cdn/img/${rune.icon}`
           };
         }

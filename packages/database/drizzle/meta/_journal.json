@@ -15,6 +15,34 @@
       "when": 1791763200000,
       "tag": "0001_competitive_membership_per_season",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791974081118,
+      "tag": "0002_match_mvp",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1792015427294,
+      "tag": "0003_match_mvp_checks",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1792764394548,
+      "tag": "0004_editor_role",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1792777038023,
+      "tag": "0005_crystal_ball",
+      "breakpoints": true
     }
   ]
 }

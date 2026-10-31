@@ -2,11 +2,14 @@ import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { PGlite } from '@electric-sql/pglite';
 import { btree_gist } from '@electric-sql/pglite/contrib/btree_gist';
+import type { Player } from '@rcl/contracts';
 import { drizzle } from 'drizzle-orm/pglite';
 import { migrate } from 'drizzle-orm/pglite/migrator';
 import request from 'supertest';
 import { assert, expect, test } from 'vitest';
 import { createApp } from '../../apps/api/src/app.js';
+import { backfillMatchMvps } from '../../apps/api/src/modules/competition/backfill-match-mvps.js';
+import { mostPlayedChampion } from '../../apps/api/src/modules/competition/player-statistics.js';
 import { PostgresCompetitionRepository } from '../../apps/api/src/modules/competition/postgres-competition.repository.js';
 import * as schema from '../../packages/database/src/schema.js';
 
@@ -22,6 +25,7 @@ test('HTTP -> controller -> service -> real repository -> embedded PostgreSQL', 
     'utf8'
   );
   await client.transaction((tx) => tx.exec(seed));
+  await backfillMatchMvps(db, true);
   const app = createApp({
     repository: new PostgresCompetitionRepository(db),
     checkDatabase: async () => {
@@ -126,6 +130,51 @@ test('HTTP -> controller -> service -> real repository -> embedded PostgreSQL', 
     .get('/api/v1/matches/70000000-0000-4000-8000-000000000001')
     .expect(200);
   expect(matchMvp.body.data.mvpPlayerId).toBe(featuredPlayers[0].id);
+  // Replay positions, including unknown ones, must never inherit mutable roster roles.
+  {
+    const repository = new PostgresCompetitionRepository(db);
+    const matchId = matchMvp.body.data.id as string;
+    await client.query('UPDATE player_game_info SET position = NULL WHERE player_id = $1', [
+      playerId
+    ]);
+    const beforeMaps = await repository.matchGames(matchId);
+    const beforePlayers = await repository.players(divisionId);
+    const beforeSeason = await repository.playerSeasonGames(
+      playerId,
+      'Temporada DEMO — datos ficticios'
+    );
+    expect(beforeSeason.playerGames.length).toBeGreaterThan(0);
+    expect(beforeSeason.playerGames.every((game) => game.position === null)).toBe(true);
+    expect(
+      beforeMaps
+        .flatMap((game) => game.participants)
+        .filter((p) => p.playerId === playerId)
+        .every((p) => p.position === null)
+    ).toBe(true);
+    await client.query("UPDATE team_memberships SET role = 'support' WHERE discord_user_id = $1", [
+      '900000000000000001'
+    ]);
+    expect(await repository.matchGames(matchId)).toEqual(beforeMaps);
+    const awardsAndStats = (entries: Player[]) =>
+      entries.map((entry) => ({
+        id: entry.id,
+        awards: entry.competition?.mvpMatchIds,
+        stats: entry.competition?.stats,
+        featured: entry.competition?.featured
+      }));
+    expect(awardsAndStats(await repository.players(divisionId))).toEqual(
+      awardsAndStats(beforePlayers)
+    );
+    expect(
+      await repository.playerSeasonGames(playerId, 'Temporada DEMO — datos ficticios')
+    ).toEqual(beforeSeason);
+    await client.query("UPDATE team_memberships SET role = 'top' WHERE discord_user_id = $1", [
+      '900000000000000001'
+    ]);
+    await client.query("UPDATE player_game_info SET position = 'top' WHERE player_id = $1", [
+      playerId
+    ]);
+  }
   await db.insert(schema.seasons).values({ name: 'Otra temporada' });
   const [otherSeasonDivision] = await db
     .insert(schema.seasonsDivisions)
@@ -410,4 +459,40 @@ test('HTTP -> controller -> service -> real repository -> embedded PostgreSQL', 
     'Undated'
   ]);
   expect(ordered.body.data.some((season: object) => 'isActive' in season)).toBe(false);
+});
+
+test('season champion batch matches individual histories with one narrow query', async (t) => {
+  const client = new PGlite({ extensions: { btree_gist } });
+  t.onTestFinished(() => client.close());
+  const queries: string[] = [];
+  const db = drizzle(client, {
+    schema,
+    logger: {
+      logQuery: (query) => {
+        queries.push(query);
+      }
+    }
+  });
+  await migrate(db, {
+    migrationsFolder: fileURLToPath(new URL('../../packages/database/drizzle', import.meta.url))
+  });
+  await client.exec(await readFile('packages/database/seed/demo.sql', 'utf8'));
+  const repository = new PostgresCompetitionRepository(db);
+  const players = await db.select({ id: schema.players.id }).from(schema.players);
+  const ids = players.map((player) => player.id);
+  queries.length = 0;
+  const champions = await repository.playerSeasonChampions(ids, 'Temporada DEMO — datos ficticios');
+  expect(queries).toHaveLength(1);
+  expect(queries[0]).not.toContain('player_game_stats');
+  expect(champions.size).toBeGreaterThan(0);
+  for (const id of ids) {
+    const history = await repository.playerSeasonGames(id, 'Temporada DEMO — datos ficticios');
+    expect(champions.get(id) ?? null).toBe(mostPlayedChampion(history.playerGames));
+  }
+  expect(await repository.playerSeasonChampions(ids, 'Missing season')).toEqual(new Map());
+  queries.length = 0;
+  expect(await repository.playerSeasonChampions([], 'Temporada DEMO — datos ficticios')).toEqual(
+    new Map()
+  );
+  expect(queries).toHaveLength(0);
 });

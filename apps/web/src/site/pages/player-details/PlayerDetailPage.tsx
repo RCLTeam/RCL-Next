@@ -1,3 +1,4 @@
+import { type PlayerTeam, isCompetitiveRole, isNonCompetitiveRole } from '@rcl/contracts';
 import type React from 'react';
 import { useEffect } from 'react';
 import { TeamBadge } from '../../../features/competition/components/TeamBadge.js';
@@ -9,6 +10,9 @@ import type {
 import { PageLayout } from '../../../shared/components/PageLayout/PageLayout.js';
 import { SiteLink } from '../../../shared/components/SiteLink.js';
 import { displayName } from '../../../shared/display-name.js';
+import { ChampionArt } from '../../../shared/riot/ChampionArt.js';
+import { getGameAsset } from '../../../shared/riot/riot-assets.service.js';
+import { useGameCatalog } from '../../../shared/riot/useGameCatalog.js';
 import './player-details.css';
 
 const roleLabels: Record<TeamMember['role'], string> = {
@@ -23,95 +27,183 @@ const roleLabels: Record<TeamMember['role'], string> = {
   partners: 'Partner'
 };
 
+function PlayerMembershipSection({
+  id,
+  title,
+  teams,
+  empty
+}: {
+  id: string;
+  title: string;
+  teams: PlayerTeam[];
+  empty: string;
+}) {
+  return (
+    <section className="player-teams" aria-labelledby={id}>
+      <div className="player-detail-section-heading">
+        <h2 id={id}>{title}</h2>
+        <span className="meta">
+          {teams.length} {teams.length === 1 ? 'vinculacion' : 'vinculaciones'}
+        </span>
+      </div>
+      {teams.length ? (
+        <div className="player-profile-team-grid">
+          {teams.map((team) => (
+            <SiteLink
+              className="player-profile-membership"
+              style={{ '--profile-color': team.color || 'var(--purple)' } as React.CSSProperties}
+              key={team.id}
+              href={`/equipos/${encodeURIComponent(team.slug ?? team.id)}`}
+            >
+              <div className="player-membership-body">
+                <span className="meta">
+                  {team.seasonName} · {team.divisionName}
+                </span>
+                <h3 title={team.name}>{team.name}</h3>
+                <p>
+                  {roleLabels[team.role]}
+                  {team.isCaptain ? ' · Capitan' : ''}
+                </p>
+                {!team.isActive && <span className="meta">Equipo inactivo</span>}
+              </div>
+              <TeamBadge team={team} />
+            </SiteLink>
+          ))}
+        </div>
+      ) : (
+        <div className="empty-state">{empty}</div>
+      )}
+    </section>
+  );
+}
+
 export function PlayerProfile({ player }: { player: PlayerDetail }) {
+  const catalog = useGameCatalog();
+  const championName = player.competition?.champion;
+  const champion = getGameAsset('champion', championName ?? null, catalog);
   const tag = player.riotTag?.replace(/^#/, '').trim();
   const riotId = `${player.gameName}${tag ? `#${tag}` : ''}`;
-  const latestTeam = player.teams[0];
+  const registrationTeam = player.registrationTeam ?? null;
+  const competitiveTeams = player.teams.filter((team) => isCompetitiveRole(team.role));
+  const otherTeams = player.teams.filter((team) => isNonCompetitiveRole(team.role));
   const stats = player.competition?.stats;
+  const mvpCount = player.competition?.mvpMatchIds.length;
   const format = (value: number | null | undefined, suffix = '') =>
     value == null ? '—' : `${value.toLocaleString('es', { maximumFractionDigits: 2 })}${suffix}`;
   const metrics = [
     ['Partidas', format(stats?.games)],
     ['KDA', format(stats?.kda)],
     ['Victorias', format(stats?.winRate, '%')],
-    ['MVPs', stats ? String(player.competition?.mvpMatchIds.length ?? 0) : '—'],
+    ['MVPs', mvpCount === undefined ? '—' : String(mvpCount)],
     ['CS / min', format(stats?.csPerMinute)],
-    ['Participación en kills', format(stats?.killParticipation, '%')],
+    ['Participacion en kills', format(stats?.killParticipation, '%')],
     ['Daño / min', format(stats?.damagePerMinute)],
-    ['Visión', format(stats?.visionScore)]
+    ['Vision', format(stats?.visionScore)]
   ];
   return (
     <div
       className="player-detail-profile"
-      style={{ '--profile-color': latestTeam?.color || 'var(--purple)' } as React.CSSProperties}
+      style={
+        { '--profile-color': registrationTeam?.color || 'var(--purple)' } as React.CSSProperties
+      }
     >
-      <header className="player-profile-header">
-        <div className="player-profile-identity">
-          <span className="eyebrow">
-            {player.isMain ? 'Cuenta principal' : 'Cuenta registrada'}
-          </span>
-          <h2>{player.gameName}</h2>
-          <div className="player-profile-account">
-            <div className="player-profile-account-names">
-              <p className="player-profile-riot">{riotId}</p>
-              <p>{displayName(player.displayName ?? 'Jugador RCL')}</p>
+      <header
+        className={`player-profile-header${championName ? ' player-profile-header-featured' : ''}`}
+      >
+        {championName && (
+          <div className="player-profile-champion">
+            <div
+              className="player-profile-champion-fallback"
+              role="img"
+              aria-label={champion?.name ?? championName}
+            >
+              <span aria-hidden="true">{player.gameName.slice(0, 2).toUpperCase()}</span>
+              <span aria-hidden="true">{champion?.name ?? championName}</span>
             </div>
-            {tag && (
-              <a
-                className="player-profile-opgg"
-                href={`https://op.gg/es/lol/summoners/euw/${encodeURIComponent(player.gameName)}-${encodeURIComponent(tag)}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label={`Ver OP.GG de ${player.gameName} (nueva pestaña)`}
-              >
-                <img src="/images/brand/opgg.webp" alt="OP.GG" />
-              </a>
+            {champion?.splashImage && <ChampionArt asset={champion} variant="centered" alt="" />}
+          </div>
+        )}
+        <div className="player-profile-header-body">
+          <div className="player-profile-identity">
+            {(registrationTeam || player.countryCode) && (
+              <div className="player-profile-labels">
+                {registrationTeam && (
+                  <span className="player-role-label">{roleLabels[registrationTeam.role]}</span>
+                )}
+                {registrationTeam?.isCaptain && (
+                  <span className="player-captain-label">Capitan</span>
+                )}
+                {player.countryCode && <span>{player.countryCode.toUpperCase()}</span>}
+              </div>
             )}
+            <p className="player-profile-account-type">
+              {player.isMain ? 'Cuenta principal' : 'Cuenta secundaria'}
+            </p>
+            <div className="player-profile-name">
+              <h2>{player.gameName}</h2>
+              {tag && <span className="player-profile-tag">#{tag}</span>}
+            </div>
           </div>
-          <div className="player-profile-labels">
-            {latestTeam && <span>{roleLabels[latestTeam.role]}</span>}
-            {latestTeam?.isCaptain && <span className="player-captain-label">Capitán</span>}
-            {player.countryCode && <span>{player.countryCode.toUpperCase()}</span>}
+          <div className="player-profile-details">
+            <div className="player-profile-champion-summary">
+              <span className="meta">Campeon mas jugado</span>
+              <strong>{champion?.name ?? championName ?? 'Sin partidas registradas'}</strong>
+            </div>
+            <div className="player-profile-info-row">
+              <dl className="player-profile-info">
+                <div>
+                  <dt>Riot ID</dt>
+                  <dd>{riotId}</dd>
+                </div>
+                <div>
+                  <dt>Comunidad</dt>
+                  <dd>{displayName(player.displayName ?? 'Sin cuenta vinculada')}</dd>
+                </div>
+                <div>
+                  <dt>Inscripciones competitivas</dt>
+                  <dd>{competitiveTeams.length}</dd>
+                </div>
+                <div>
+                  <dt>Otras vinculaciones</dt>
+                  <dd>{otherTeams.length}</dd>
+                </div>
+              </dl>
+              {tag && (
+                <a
+                  className="player-profile-opgg"
+                  href={`https://op.gg/es/lol/summoners/euw/${encodeURIComponent(player.gameName)}-${encodeURIComponent(tag)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={`Ver OP.GG de ${player.gameName} (nueva pestaña)`}
+                >
+                  <img src="/images/brand/opgg.webp" alt="OP.GG" />
+                </a>
+              )}
+            </div>
           </div>
+          {registrationTeam ? (
+            <SiteLink
+              className="player-profile-team"
+              href={`/equipos/${encodeURIComponent(registrationTeam.slug ?? registrationTeam.id)}`}
+            >
+              <span className="meta">Equipo competitivo</span>
+              <TeamBadge team={registrationTeam} />
+              <strong>{registrationTeam.name}</strong>
+              <span className="meta">
+                {registrationTeam.seasonName} · {registrationTeam.divisionName}
+              </span>
+              {!registrationTeam.isActive && <span className="meta">Equipo inactivo</span>}
+            </SiteLink>
+          ) : (
+            <div className="player-profile-unregistered">
+              <span className="player-profile-initials" aria-hidden="true">
+                {player.gameName.slice(0, 2).toUpperCase()}
+              </span>
+              <span className="meta">Sin equipo competitivo</span>
+            </div>
+          )}
         </div>
-        {latestTeam ? (
-          <SiteLink
-            className="player-profile-team"
-            href={`/equipos/${encodeURIComponent(latestTeam.slug ?? latestTeam.id)}`}
-          >
-            <span className="meta">Inscripción más reciente</span>
-            <TeamBadge team={latestTeam} />
-            <strong>{latestTeam.name}</strong>
-            <span className="meta">
-              {latestTeam.seasonName} · {latestTeam.divisionName}
-            </span>
-          </SiteLink>
-        ) : (
-          <span className="player-profile-initials" aria-hidden="true">
-            {player.gameName.slice(0, 2).toUpperCase()}
-          </span>
-        )}
       </header>
-      <dl className="player-profile-info">
-        <div>
-          <dt>Riot ID</dt>
-          <dd>{riotId}</dd>
-        </div>
-        {player.countryCode && (
-          <div>
-            <dt>País</dt>
-            <dd>{player.countryCode.toUpperCase()}</dd>
-          </div>
-        )}
-        <div>
-          <dt>Comunidad</dt>
-          <dd>{displayName(player.displayName ?? 'Sin cuenta vinculada')}</dd>
-        </div>
-        <div>
-          <dt>Inscripciones</dt>
-          <dd>{player.teams.length}</dd>
-        </div>
-      </dl>
       <section className="player-linked-accounts" aria-labelledby="player-accounts-title">
         <div className="player-detail-section-heading">
           <h2 id="player-accounts-title">Cuentas secundarias</h2>
@@ -123,19 +215,16 @@ export function PlayerProfile({ player }: { player: PlayerDetail }) {
               const accountTag = account.riotTag?.replace(/^#/, '').trim();
               return (
                 <div className="player-profile-membership player-linked-account" key={account.id}>
-                  <SiteLink
-                    className="player-linked-account-profile"
-                    href={`/jugadores/${encodeURIComponent(account.slug ?? account.id)}`}
-                  >
+                  <div className="player-linked-account-profile">
                     <span className="meta">
                       {account.isMain ? 'Cuenta principal' : 'Cuenta secundaria'}
                     </span>
-                    <h3>{account.gameName}</h3>
+                    <h3 title={account.gameName}>{account.gameName}</h3>
                     <p>
                       {account.gameName}
                       {accountTag ? `#${accountTag}` : ''}
                     </p>
-                  </SiteLink>
+                  </div>
                   {accountTag && (
                     <a
                       className="player-profile-opgg"
@@ -158,14 +247,17 @@ export function PlayerProfile({ player }: { player: PlayerDetail }) {
       <section className="player-performance" aria-labelledby="player-performance-title">
         <div className="player-detail-section-heading">
           <h2 id="player-performance-title">Rendimiento</h2>
-          {latestTeam && (
-            <span className="meta">
-              {latestTeam.seasonName} · {latestTeam.divisionName}
-            </span>
+          {player.statisticsSeasonName && (
+            <span className="meta">{player.statisticsSeasonName}</span>
           )}
         </div>
-        {stats?.games ? (
+        {stats?.games || (mvpCount ?? 0) > 0 ? (
           <>
+            {!stats?.games && (
+              <p className="meta">
+                Estadisticas de partidas no disponibles. Se conservan los MVPs registrados.
+              </p>
+            )}
             <dl className="player-performance-grid">
               {metrics.map(([label, value]) => (
                 <div key={label}>
@@ -174,53 +266,24 @@ export function PlayerProfile({ player }: { player: PlayerDetail }) {
                 </div>
               ))}
             </dl>
-            {player.competition?.champion && (
-              <p className="player-signature-champion">
-                <span className="meta">Campeón más jugado</span>
-                <strong>{player.competition.champion}</strong>
-              </p>
-            )}
           </>
         ) : (
           <div className="player-performance-empty">
-            <span className="eyebrow">La historia está por escribir</span>
-            <h3>Próxima parada: la Grieta.</h3>
-            <p>Las estadísticas aparecerán cuando haya partidas registradas en esta competición.</p>
+            <h3>Sin partidas registradas</h3>
+            <p>
+              {player.statisticsSeasonName
+                ? 'Las estadisticas apareceran cuando haya partidas registradas en esta temporada.'
+                : 'No hay partidas ni premios registrados para este jugador.'}
+            </p>
           </div>
         )}
       </section>
-      <section className="player-teams" aria-label="Equipos e inscripciones">
-        <div className="player-detail-section-heading">
-          <h2>Equipos e inscripciones</h2>
-          <span className="meta">Por temporada y división</span>
-        </div>
-        {player.teams.length ? (
-          <div className="player-profile-team-grid">
-            {player.teams.map((team) => (
-              <SiteLink
-                className="player-profile-membership"
-                key={team.id}
-                href={`/equipos/${encodeURIComponent(team.slug ?? team.id)}`}
-              >
-                <TeamBadge team={team} />
-                <div>
-                  <span className="meta">
-                    {team.seasonName} · {team.divisionName}
-                  </span>
-                  <h3>{team.name}</h3>
-                  <p>
-                    {roleLabels[team.role]}
-                    {team.isCaptain ? ' · Capitán' : ''}
-                  </p>
-                  {!team.isActive && <span className="meta">Equipo inactivo</span>}
-                </div>
-              </SiteLink>
-            ))}
-          </div>
-        ) : (
-          <div className="empty-state">Este jugador todavía no tiene inscripciones en equipos.</div>
-        )}
-      </section>
+      <PlayerMembershipSection
+        id="player-memberships-title"
+        title="Equipos y vinculaciones"
+        teams={player.teams}
+        empty="Este jugador todavia no tiene inscripciones en equipos."
+      />
     </div>
   );
 }
@@ -234,12 +297,12 @@ export function PlayerDetailPage({ playerId }: { playerId: string }) {
       id="jugador"
       number="06"
       title={state.status === 'ready' ? state.data.gameName : 'Ficha del jugador'}
-      subtitle="Protagonistas de la rebelión"
-      description="Conoce al jugador y sus inscripciones en la competición."
+      subtitle="Protagonistas de la rebelion"
+      description="Conoce al jugador y sus inscripciones en la competicion."
     >
       {state.status === 'loading' && <output className="empty-state">Cargando jugador…</output>}
       {state.status === 'missing' && (
-        <div className="empty-state">Jugador no encontrado. Puede que ya no esté disponible.</div>
+        <div className="empty-state">Jugador no encontrado. Puede que ya no este disponible.</div>
       )}
       {state.status === 'error' && (
         <div className="empty-state error-state" role="alert">

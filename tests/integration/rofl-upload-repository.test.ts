@@ -5,7 +5,9 @@ import { btree_gist } from '@electric-sql/pglite/contrib/btree_gist';
 import { asc, eq } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/pglite';
 import { migrate } from 'drizzle-orm/pglite/migrator';
-import { assert, expect, test } from 'vitest';
+import { assert, expect, onTestFinished, test } from 'vitest';
+import { matchMvps } from '../../apps/api/src/modules/competition/player-statistics.js';
+import { PostgresCompetitionRepository } from '../../apps/api/src/modules/competition/postgres-competition.repository.js';
 import { PostgresRoflUploadRepository } from '../../apps/api/src/modules/rofl-upload/persistence/postgres-rofl-upload.repository.js';
 import type {
   ParsedGameData,
@@ -184,6 +186,56 @@ test('PostgresRoflUploadRepository complete lifecycle and constraints', async (t
 
   // findTeamMembershipsForDiscordUsers maps discord IDs to team UUIDs
   {
+    await db.insert(schema.seasons).values({
+      name: 'Temporada Histórica 2049',
+      startsOn: '2049-01-01',
+      endsOn: '2049-12-31'
+    });
+    await db.insert(schema.seasonsDivisions).values({
+      id: '20000000-0000-4000-8000-000000000099',
+      seasonName: 'Temporada Histórica 2049',
+      divisionName: 'Premier DEMO'
+    });
+    await db.insert(schema.teams).values({
+      id: '30000000-0000-4000-8000-000000000099',
+      seasonDivisionId: '20000000-0000-4000-8000-000000000099',
+      seasonName: 'Temporada Histórica 2049',
+      name: 'Cuervos 2049 DEMO',
+      shortName: 'C49'
+    });
+    await db.insert(schema.teamMemberships).values([
+      {
+        teamId: '30000000-0000-4000-8000-000000000002',
+        discordUserId: '900000000000000001',
+        role: 'coach',
+        seasonName: 'Temporada DEMO — datos ficticios'
+      },
+      {
+        teamId: '30000000-0000-4000-8000-000000000003',
+        discordUserId: '900000000000000001',
+        role: 'staff',
+        seasonName: 'Temporada DEMO — datos ficticios'
+      },
+      {
+        teamId: '30000000-0000-4000-8000-000000000004',
+        discordUserId: '900000000000000001',
+        role: 'partners',
+        seasonName: 'Temporada DEMO — datos ficticios'
+      },
+      {
+        teamId: '30000000-0000-4000-8000-000000000001',
+        discordUserId: '900000000000000099',
+        role: 'coach',
+        seasonName: 'Temporada DEMO — datos ficticios'
+      },
+      {
+        teamId: '30000000-0000-4000-8000-000000000099',
+        discordUserId: '900000000000000006',
+        role: 'top',
+        seasonName: 'Temporada Histórica 2049'
+      }
+    ]);
+
     const teamMap = await repo.findTeamMembershipsForDiscordUsers([
       '900000000000000001',
       '900000000000000006',
@@ -393,6 +445,8 @@ test('PostgresRoflUploadRepository complete lifecycle and constraints', async (t
     expect(match2.status).toBe('completed');
     expect(match2.winnerTeamId).toBe('30000000-0000-4000-8000-000000000001');
     expect(match2.finishedAt).toBeTruthy();
+    expect(match2.mvpPlayerId).toBeTruthy();
+    expect(Number(match2.mvpScore)).toBeGreaterThan(0);
   }
 });
 
@@ -520,7 +574,139 @@ test('concurrent ROFL batches sharing a replay report it as a duplicate', async 
   const [match] = await db.select().from(schema.matches).where(eq(schema.matches.id, matchId));
   expect(match?.team2Score).toBe(3);
   expect(match?.status).toBe('completed');
+  expect(match?.mvpPlayerId).toBe(
+    players.find((player) => player.gameName === 'Jugador Demo 1')?.playerId
+  );
+  expect(Number(match?.mvpScore)).toBeGreaterThan(0);
 });
+
+test.each([1, 3, 5])(
+  'Bo%i seals the full-series MVP atomically and never overwrites it',
+  async (bestOf) => {
+    const client = new PGlite({ extensions: { btree_gist } });
+    onTestFinished(() => client.close());
+    const db = drizzle(client, { schema });
+    await migrate(db, {
+      migrationsFolder: fileURLToPath(new URL('../../packages/database/drizzle', import.meta.url))
+    });
+    await client.exec(await readFile('packages/database/seed/demo.sql', 'utf8'));
+    const matchId = '70000000-0000-4000-8000-000000000002';
+    await db.update(schema.matches).set({ bestOf }).where(eq(schema.matches.id, matchId));
+    const repo = new PostgresRoflUploadRepository(db);
+    const identities = await repo.findPlayersByRiotIds(
+      [1, 2, 6].map((n) => ({
+        gameName: `Jugador Demo ${n}`,
+        riotTag: 'DEMO'
+      }))
+    );
+    const lookup = new Map(identities.map((p) => [`${p.gameName.toLowerCase()}#demo`, p]));
+    const teamMap = await repo.findTeamMembershipsForDiscordUsers(
+      identities.map((p) => p.discordUserId)
+    );
+    const wins = Math.floor(bestOf / 2) + 1;
+    const games: ParsedGameData[] = Array.from({ length: wins }, (_, i) => ({
+      fileName: `mvp-${i}.rofl`,
+      externalGameId: `MVP-${i}`,
+      durationSeconds: 1800 + i * 300,
+      gameCreation: Date.parse('2050-01-17T19:00:00Z'),
+      winnerSide: 'blue',
+      participants: [
+        {
+          ...createParticipant(
+            'Jugador Demo 1',
+            'DEMO',
+            'blue',
+            'Ahri',
+            i === 0 ? 'mid' : 'support'
+          ),
+          kills: i === 0 ? 50 : 3
+        },
+        createParticipant('Jugador Demo 2', 'DEMO', 'blue', 'Vi', 'jungle'),
+        createParticipant('Jugador Demo 6', 'DEMO', 'red', 'Garen', 'top')
+      ]
+    }));
+    const readMatch = async () => {
+      const [match] = await db.select().from(schema.matches).where(eq(schema.matches.id, matchId));
+      assert.ok(match);
+      return match;
+    };
+    for (const game of games.slice(0, -1)) {
+      await repo.executeBatchInsert([game], lookup, teamMap);
+      expect(await readMatch()).toMatchObject({
+        status: 'live',
+        mvpPlayerId: null,
+        mvpScore: null
+      });
+    }
+    const last = games.at(-1);
+    assert.ok(last);
+    const before = await readMatch();
+    // Fail precisely at the MVP write, after maps and completion have been written in the transaction.
+    await client.exec(`
+    CREATE FUNCTION reject_mvp_write() RETURNS trigger LANGUAGE plpgsql AS $$
+    BEGIN RAISE EXCEPTION 'MVP write failed'; END $$;
+    CREATE TRIGGER reject_mvp_write BEFORE UPDATE OF mvp_player_id ON matches
+    FOR EACH ROW EXECUTE FUNCTION reject_mvp_write();
+  `);
+    await expect(repo.executeBatchInsert([last], lookup, teamMap)).rejects.toThrow();
+    expect(await readMatch()).toEqual(before);
+    expect(await repo.checkExternalGamesExist([last.externalGameId])).toEqual([]);
+    await client.exec(
+      'DROP TRIGGER reject_mvp_write ON matches; DROP FUNCTION reject_mvp_write();'
+    );
+    // A trigger can suppress an UPDATE without throwing; RETURNING must detect it.
+    await client.exec(`CREATE FUNCTION suppress_mvp_write() RETURNS trigger LANGUAGE plpgsql AS $$
+      BEGIN RETURN NULL; END $$;
+      CREATE TRIGGER suppress_mvp_write BEFORE UPDATE OF mvp_player_id ON matches
+      FOR EACH ROW EXECUTE FUNCTION suppress_mvp_write();`);
+    await expect(repo.executeBatchInsert([last], lookup, teamMap)).rejects.toThrow(
+      /no row updated/
+    );
+    expect(await readMatch()).toEqual(before);
+    expect(await repo.checkExternalGamesExist([last.externalGameId])).toEqual([]);
+    await client.exec(
+      'DROP TRIGGER suppress_mvp_write ON matches; DROP FUNCTION suppress_mvp_write();'
+    );
+    await repo.executeBatchInsert([last], lookup, teamMap);
+    const sealed = await readMatch();
+    expect(sealed.status).toBe('completed');
+    expect(sealed.mvpPlayerId).toBeTruthy();
+    expect(Number(sealed.mvpScore)).toBeGreaterThan(0);
+    const identity = identities[0];
+    assert.ok(identity);
+    const history = await new PostgresCompetitionRepository(db).playerSeasonGames(
+      identity.playerId,
+      'Temporada DEMO — datos ficticios'
+    );
+    const expected = matchMvps(history.allMatchGames.filter((row) => row.matchId === matchId))[0];
+    expect(sealed.mvpPlayerId).toBe(expected?.playerId);
+    expect(Number(sealed.mvpScore)).toBe(expected?.score);
+
+    // Roster edits and duplicate uploads cannot change either persisted value.
+    await client.query("UPDATE team_memberships SET role = 'support' WHERE discord_user_id = $1", [
+      identity.discordUserId
+    ]);
+    expect(await repo.executeBatchInsert(games, lookup, teamMap)).toMatchObject({
+      insertedGames: 0
+    });
+    expect(await readMatch()).toEqual(sealed);
+    await expect(
+      repo.executeBatchInsert([{ ...last, externalGameId: 'MVP-EXTRA' }], lookup, teamMap)
+    ).rejects.toThrow(/closed/);
+    expect(await readMatch()).toEqual(sealed);
+
+    // Even an administratively reopened series keeps an already sealed award.
+    await db
+      .update(schema.matches)
+      .set({ status: 'live', team2Score: wins - 1 })
+      .where(eq(schema.matches.id, matchId));
+    await repo.executeBatchInsert([{ ...last, externalGameId: 'MVP-REOPENED' }], lookup, teamMap);
+    expect(await readMatch()).toMatchObject({
+      mvpPlayerId: sealed.mvpPlayerId,
+      mvpScore: sealed.mvpScore
+    });
+  }
+);
 
 test('a replay committed after the duplicate read is skipped when its match is closed', async (t) => {
   const client = new PGlite({ extensions: { btree_gist } });
@@ -577,4 +763,67 @@ test('a replay committed after the duplicate read is skipped when its match is c
     .from(schema.matchGames)
     .where(eq(schema.matchGames.matchesId, matchId));
   expect(rows.length).toBe(2);
+});
+
+test('Unordered Bo3 batch seals a 2-1 series using all three ordered maps', async () => {
+  const client = new PGlite({ extensions: { btree_gist } });
+  onTestFinished(() => client.close());
+  const db = drizzle(client, { schema });
+  await migrate(db, {
+    migrationsFolder: fileURLToPath(new URL('../../packages/database/drizzle', import.meta.url))
+  });
+  await client.exec(await readFile('packages/database/seed/demo.sql', 'utf8'));
+  const matchId = '70000000-0000-4000-8000-000000000002';
+  await db.update(schema.matches).set({ bestOf: 3 }).where(eq(schema.matches.id, matchId));
+  const repo = new PostgresRoflUploadRepository(db);
+  const identities = await repo.findPlayersByRiotIds(
+    [1, 2, 6].map((n) => ({
+      gameName: `Jugador Demo ${n}`,
+      riotTag: 'DEMO'
+    }))
+  );
+  const lookup = new Map(identities.map((p) => [`${p.gameName.toLowerCase()}#demo`, p]));
+  const teamMap = await repo.findTeamMembershipsForDiscordUsers(
+    identities.map((p) => p.discordUserId)
+  );
+  const wins = 3;
+  const games: ParsedGameData[] = Array.from({ length: wins }, (_, i) => ({
+    fileName: `mvp-${i}.rofl`,
+    externalGameId: `MVP-${i}`,
+    durationSeconds: 1800 + i * 300,
+    gameCreation: Date.parse('2050-01-17T19:00:00Z'),
+    winnerSide: i === 1 ? 'red' : 'blue',
+    participants: [
+      {
+        ...createParticipant('Jugador Demo 1', 'DEMO', 'blue', 'Ahri', i === 0 ? 'mid' : 'support'),
+        kills: i === 0 ? 50 : 3
+      },
+      createParticipant('Jugador Demo 2', 'DEMO', 'blue', 'Vi', 'jungle'),
+      createParticipant('Jugador Demo 6', 'DEMO', 'red', 'Garen', 'top')
+    ]
+  }));
+  const [first, second, third] = games;
+  assert.ok(first && second && third);
+  const result = await repo.executeBatchInsert([first, third, second], lookup, teamMap);
+  expect(result.insertedGames).toBe(3);
+  const [match] = await db.select().from(schema.matches).where(eq(schema.matches.id, matchId));
+  expect(match).toMatchObject({ status: 'completed', team1Score: 1, team2Score: 2 });
+  const maps = await db
+    .select()
+    .from(schema.matchGames)
+    .where(eq(schema.matchGames.matchesId, matchId))
+    .orderBy(asc(schema.matchGames.gameNumber));
+  expect(maps.map((map) => map.externalGameId)).toEqual(['MVP-0', 'MVP-1', 'MVP-2']);
+  expect(maps.map((map) => map.gameNumber)).toEqual([1, 2, 3]);
+  const identity = identities[0];
+  assert.ok(identity);
+  const history = await new PostgresCompetitionRepository(db).playerSeasonGames(
+    identity.playerId,
+    'Temporada DEMO — datos ficticios'
+  );
+  const rows = history.allMatchGames.filter((row) => row.matchId === matchId);
+  expect(new Set(rows.map((row) => row.gameId)).size).toBe(3);
+  const expected = matchMvps(rows)[0];
+  expect(match?.mvpPlayerId).toBe(expected?.playerId);
+  expect(Number(match?.mvpScore)).toBe(expected?.score);
 });

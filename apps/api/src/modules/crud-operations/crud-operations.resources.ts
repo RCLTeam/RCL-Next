@@ -1,4 +1,5 @@
 import type { CrudField, CrudResource } from '@rcl/contracts';
+import { ROSTER_ROLES } from '@rcl/contracts';
 import { z } from 'zod';
 
 export type ResourceDefinition = CrudResource;
@@ -72,27 +73,29 @@ export const crudResources: ResourceDefinition[] = [
   {
     name: 'divisions',
     label: 'Divisiones',
-    description: 'Catálogo de divisiones y orden de presentación.',
+    description: 'Catalogo de divisiones y orden de presentacion.',
     keys: ['name'],
     fields: [fixed(text('name', 'Nombre', 80, true)), number('sortOrder', 'Orden')]
   },
   {
     name: 'competitions',
+    seasonScoped: true,
     label: 'Competiciones',
-    description: 'Vincula cada división con las temporadas en las que participa.',
+    description: 'Vincula cada division con las temporadas en las que participa.',
     keys: ['id'],
     fields: [
       ref('seasonName', 'Temporada', 'seasons'),
-      ref('divisionName', 'División', 'divisions')
+      ref('divisionName', 'Division', 'divisions')
     ]
   },
   {
     name: 'teams',
+    seasonScoped: true,
     label: 'Equipos',
-    description: 'Equipos inscritos en cada competición y su identidad visual.',
+    description: 'Equipos inscritos en cada competicion y su identidad visual.',
     keys: ['id'],
     fields: [
-      ref('seasonDivisionId', 'Competición', 'competitions'),
+      ref('seasonDivisionId', 'Competicion', 'competitions'),
       text('name', 'Nombre', 120, true),
       text('shortName', 'Abreviatura', 16),
       text('logoUrl', 'URL o ruta del escudo', 2048),
@@ -104,42 +107,40 @@ export const crudResources: ResourceDefinition[] = [
   {
     name: 'players',
     label: 'Jugadores',
-    description: 'Cuentas Riot y su vínculo con Discord para identificar las repeticiones.',
+    description: 'Cuentas Riot y su vinculo con Discord para identificar las repeticiones.',
     keys: ['id'],
     fields: [
       text('gameName', 'Nombre Riot', 64, true),
       text('riotTag', 'Tag Riot (sin #)', 16),
       ref('discordUserId', 'Miembro de Discord', 'users', false),
       text('puuid', 'PUUID', 128),
-      text('countryCode', 'País (ES, FR…)', 2),
+      text('countryCode', 'Pais (ES, FR…)', 2),
       bool('isMain', 'Cuenta principal')
     ]
   },
   {
     name: 'memberships',
+    seasonScoped: true,
     label: 'Plantillas',
-    description: 'Asigna miembros a equipos, roles y capitanía. Cada cambio queda en el historial.',
+    description:
+      'Cada miembro puede competir en un solo equipo por temporada, incluidos suplentes. Coach, staff y partner permiten otras vinculaciones. Cada cambio queda en el historial.',
     keys: ['teamId', 'discordUserId'],
     fields: [
       fixed(ref('teamId', 'Equipo', 'teams')),
       fixed(ref('discordUserId', 'Miembro de Discord', 'users')),
-      options(
-        'role',
-        'Rol',
-        ['top', 'jungle', 'mid', 'adc', 'support', 'substitute', 'coach', 'staff', 'partners'],
-        'substitute'
-      ),
-      bool('isCaptain', 'Capitán')
+      options('role', 'Rol', [...ROSTER_ROLES], 'substitute'),
+      bool('isCaptain', 'Capitan')
     ]
   },
   {
     name: 'rounds',
+    seasonScoped: true,
     label: 'Jornadas',
-    description: 'Jornadas de fase regular o playoffs dentro de cada competición.',
+    description: 'Jornadas de fase regular o playoffs dentro de cada competicion.',
     keys: ['id', 'idSeasonDivision'],
     fields: [
-      fixed(ref('idSeasonDivision', 'Competición', 'competitions')),
-      fixed(number('id', 'Número de jornada', 1, 32767, 1)),
+      fixed(ref('idSeasonDivision', 'Competicion', 'competitions')),
+      fixed(number('id', 'Numero de jornada', 1, 32767, 1)),
       options('stage', 'Fase', ['regular', 'playoff'], 'regular'),
       text('name', 'Nombre', 120),
       date('startsAt', 'Fecha de inicio')
@@ -147,12 +148,13 @@ export const crudResources: ResourceDefinition[] = [
   },
   {
     name: 'matches',
+    seasonScoped: true,
     label: 'Encuentros',
     description:
       'Calendario y resultados de las series. Para registrar un resultado sin ROFL, indica el marcador, el ganador y el estado completed.',
     keys: ['id'],
     fields: [
-      ref('idSeasonDivision', 'Competición', 'competitions'),
+      ref('idSeasonDivision', 'Competicion', 'competitions'),
       ref('idRound', 'Jornada', 'rounds', false),
       ref('team1Id', 'Equipo 1', 'teams'),
       ref('team2Id', 'Equipo 2', 'teams'),
@@ -167,8 +169,8 @@ export const crudResources: ResourceDefinition[] = [
       number('team2Score', 'Partidas ganadas — equipo 2'),
       ref('winnerTeamId', 'Ganador', 'teams', false),
       date('scheduledAt', 'Fecha programada'),
-      date('finishedAt', 'Fecha de finalización'),
-      { ...text('streamUrl', 'URL de retransmisión (stream_url)', 2048), type: 'url' },
+      date('finishedAt', 'Fecha de finalizacion'),
+      { ...text('streamUrl', 'URL de retransmision (stream_url)', 2048), type: 'url' },
       { ...text('streamUrlLive', 'URL del directo (stream_url_live)', 255), type: 'url' }
     ]
   }

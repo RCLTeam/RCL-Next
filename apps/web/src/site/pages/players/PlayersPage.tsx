@@ -1,4 +1,5 @@
 import type { Player, PlayerStatistics } from '@rcl/contracts';
+import { isCompetitiveRole } from '@rcl/contracts';
 import React, { useState } from 'react';
 import {
   DataState,
@@ -12,27 +13,30 @@ import { PageLayout } from '../../../shared/components/PageLayout/PageLayout.js'
 import { Select } from '../../../shared/components/Selector/Selector.js';
 import { SiteLink } from '../../../shared/components/SiteLink.js';
 import { resolveTeamLogo } from '../../../shared/resources/team-logos.js';
+import { ChampionArt } from '../../../shared/riot/ChampionArt.js';
 import { type GameCatalog, getGameAsset } from '../../../shared/riot/riot-assets.service.js';
 import { useGameCatalog } from '../../../shared/riot/useGameCatalog.js';
 import './players.css';
 
 export const playerSortOptions = [
   ['kda', 'KDA'],
+  ['mvps', 'MVPs'],
   ['csPerMinute', 'CS/min'],
   ['killParticipation', 'Kill participation'],
   ['winRate', '% de victorias'],
   ['damagePerMinute', 'Daño a campeones/min'],
-  ['visionScore', 'Puntuación de visión'],
+  ['visionScore', 'Puntuacion de vision'],
   ['damageMitigated', 'Daño mitigado']
 ] as const;
 export type PlayerSort = (typeof playerSortOptions)[number][0];
 const playerCardStats: Record<PlayerSort, string> = {
   kda: 'KDA',
+  mvps: 'MVPs',
   csPerMinute: 'CS/min',
   killParticipation: 'KP',
   winRate: 'WR',
   damagePerMinute: 'Daño/min',
-  visionScore: 'Visión',
+  visionScore: 'Vision',
   damageMitigated: 'Mitigado'
 };
 const roles = [
@@ -45,10 +49,15 @@ const roles = [
   ['substitute', 'Suplente']
 ] as const;
 const roleLabel = (role: string | null | undefined) =>
-  roles.find(([key]) => key === role)?.[1] ?? 'Sin posición';
+  roles.find(([key]) => key === role)?.[1] ?? 'Sin posicion';
 const playerHref = (player: Player) => `/jugadores/${encodeURIComponent(player.slug ?? player.id)}`;
 
-export function formatPlayerStat(stats: PlayerStatistics | null | undefined, key: PlayerSort) {
+export function formatPlayerStat(
+  stats: PlayerStatistics | null | undefined,
+  key: PlayerSort,
+  mvps?: number
+) {
+  if (key === 'mvps') return mvps?.toLocaleString('es') ?? '—';
   const value = stats?.[key];
   if (value === null || value === undefined) return '—';
   return `${value.toLocaleString('es', { maximumFractionDigits: key === 'kda' || key === 'csPerMinute' ? 2 : 1 })}${key === 'winRate' || key === 'killParticipation' ? '%' : ''}`;
@@ -73,15 +82,15 @@ export function PlayersPage({ competition }: { competition: Competition }) {
       id="jugadores"
       number="06"
       title="Jugadores"
-      subtitle="Protagonistas de la rebelión"
-      description="El MVP de la jornada y todos los protagonistas de RCL, con sus estadísticas de temporada."
+      subtitle="Protagonistas de la rebelion"
+      description="El MVP de la jornada y todos los protagonistas de RCL, con sus estadisticas de temporada."
       toolbar={<CompetitionFilters competition={competition} />}
     >
       <DataState
         state={resolveCompetitionState(competition, players)}
         loadingMessage="Cargando jugadores…"
         errorMessage="No se han podido cargar los jugadores."
-        empty="Todavía no hay jugadores registrados en esta temporada y división."
+        empty="Todavia no hay jugadores registrados en esta temporada y division."
         retry={() => {
           competition.retry();
           setRevision((value) => value + 1);
@@ -99,7 +108,7 @@ export function PlayersPage({ competition }: { competition: Competition }) {
             <span className="meta">{filtered.length} jugadores</span>
           </div>
           <div className="players-controls">
-            <fieldset className="players-roles" aria-label="Filtrar por posición">
+            <fieldset className="players-roles" aria-label="Filtrar por posicion">
               {roles.map(([value, label]) => (
                 <button
                   key={value}
@@ -140,7 +149,6 @@ export function PlayersPage({ competition }: { competition: Competition }) {
   );
 }
 
-const VALID_PLAYER_ROLES = ['top', 'jungle', 'mid', 'adc', 'support', 'substitute'];
 export function filterPlayers(
   players: Player[],
   query: string,
@@ -152,12 +160,13 @@ export function filterPlayers(
     .filter((player) => {
       const playerRole = player.competition?.role;
       const hasStats = Boolean(player.competition?.stats);
+      const hasAwards = Boolean(player.competition?.mvpMatchIds.length);
 
       let matchesRole = false;
       if (role === 'all') {
-        matchesRole = VALID_PLAYER_ROLES.includes(playerRole ?? '') || hasStats;
+        matchesRole = isCompetitiveRole(playerRole) || hasStats || hasAwards;
       } else {
-        matchesRole = playerRole === role;
+        matchesRole = isCompetitiveRole(role) && playerRole === role;
       }
 
       const matchesQuery =
@@ -168,8 +177,10 @@ export function filterPlayers(
       return matchesRole && matchesQuery;
     })
     .sort((a, b) => {
-      const left = a.competition?.stats?.[sort];
-      const right = b.competition?.stats?.[sort];
+      const left =
+        sort === 'mvps' ? (a.competition?.mvpMatchIds.length ?? 0) : a.competition?.stats?.[sort];
+      const right =
+        sort === 'mvps' ? (b.competition?.mvpMatchIds.length ?? 0) : b.competition?.stats?.[sort];
       if (left == null && right != null) return 1;
       if (right == null && left != null) return -1;
       if (left == null && right == null) {
@@ -216,23 +227,16 @@ function PlayerArt({ player, catalog }: { player: Player; catalog: GameCatalog }
               <TeamBadge team={player.competition?.team} />
             </span>
           )}
-          <span className="player-unplayed-label">Sin campeón registrado</span>
+          <span className="player-unplayed-label">Sin campeon registrado</span>
         </>
       )}
       {champion?.splashImage && (
-        <img
-          src={champion.splashImage}
-          alt={champion.name}
-          loading="lazy"
-          onError={(event) => {
-            event.currentTarget.hidden = true;
-          }}
-        />
+        <ChampionArt asset={champion} variant="centered" alt={champion.name} />
       )}
       <div className="player-art-labels">
         <span className="role-chip">{roleLabel(player.competition?.role)}</span>
         {player.competition?.isCaptain && (
-          <span className="role-chip player-captain-chip">Capitán</span>
+          <span className="role-chip player-captain-chip">Capitan</span>
         )}
       </div>
     </div>
@@ -258,19 +262,29 @@ export function FeaturedPlayer({
         MVP de la jornada
       </h2>
       {player?.competition?.featured ? (
-        <SiteLink className="featured-player-card" href={playerHref(player)}>
+        <SiteLink
+          className="featured-player-card"
+          href={playerHref(player)}
+          style={
+            {
+              '--player-team-color': player.competition.team?.color || 'var(--purple)'
+            } as React.CSSProperties
+          }
+        >
           <div className="featured-player-portrait">
             <PlayerArt player={player} catalog={catalog} />
           </div>
           <div className="featured-player-body">
-            <div className="featured-player-header">
-              <span className="featured-player-award">MVP</span>
-              <span className="featured-player-round">{player.competition.featured.roundName}</span>
-            </div>
             <div className="featured-player-identity">
               <div className="featured-player-identity-text">
+                <div className="featured-player-header">
+                  <span className="featured-player-award">MVP</span>
+                  <span className="featured-player-round">
+                    {player.competition.featured.roundName}
+                  </span>
+                </div>
                 <div className="featured-player-name">
-                  <h3>{player.gameName}</h3>
+                  <h3 title={player.gameName}>{player.gameName}</h3>
                   {player.riotTag && <span className="featured-player-tag">#{player.riotTag}</span>}
                 </div>
                 <div className="featured-player-meta">
@@ -278,23 +292,30 @@ export function FeaturedPlayer({
                 </div>
               </div>
               {player.competition.champion && resolveTeamLogo(player.competition.team?.logoUrl) && (
-                <TeamBadge team={player.competition.team} />
+                <div className="player-identity-emblem">
+                  <TeamBadge team={player.competition.team} />
+                </div>
               )}
             </div>
             <dl className="featured-player-stats">
-              {playerSortOptions.map(([key, label]) => (
-                <div key={key}>
-                  <dt>{label}</dt>
-                  <dd>{formatPlayerStat(player.competition?.featured?.stats, key)}</dd>
-                </div>
-              ))}
+              {playerSortOptions
+                .filter(([key]) => key !== 'mvps')
+                .map(([key, label]) => (
+                  <div key={key}>
+                    <dt>{label}</dt>
+                    <dd>{formatPlayerStat(player.competition?.featured?.stats, key)}</dd>
+                  </div>
+                ))}
+              <div>
+                <dt>MVPs de temporada</dt>
+                <dd>{player.competition.mvpMatchIds.length}</dd>
+              </div>
             </dl>
           </div>
         </SiteLink>
       ) : (
         <div className="empty-state">
-          El MVP se anunciará cuando haya enfrentamientos finalizados con estadísticas en la jornada
-          actual.
+          Todavia no hay un MVP de jornada disponible en esta division.
         </div>
       )}
     </section>
@@ -307,7 +328,7 @@ export function PlayerGrid({
   catalog = {}
 }: { players: Player[]; sort?: PlayerSort; catalog?: GameCatalog }) {
   if (!players.length)
-    return <div className="empty-state">No hay jugadores que coincidan con la búsqueda.</div>;
+    return <div className="empty-state">No hay jugadores que coincidan con la busqueda.</div>;
   return (
     <div className="player-grid players-cards">
       {players.map((player) => (
@@ -329,20 +350,27 @@ export function PlayerGrid({
                 <span className="player-team">
                   {player.competition?.team?.name ?? 'Sin equipo'}
                 </span>
-                <h3>{player.gameName}</h3>
+                <h3 title={player.gameName}>{player.gameName}</h3>
+                <dl className="player-card-selected-stat">
+                  <div>
+                    <dt>{playerCardStats[sort]}</dt>
+                    <dd>
+                      {formatPlayerStat(
+                        player.competition?.stats,
+                        sort,
+                        player.competition?.mvpMatchIds.length ?? 0
+                      )}
+                    </dd>
+                  </div>
+                </dl>
               </div>
-              {player.competition?.team && <TeamBadge team={player.competition.team} />}
+              {player.competition?.champion &&
+                resolveTeamLogo(player.competition.team?.logoUrl) && (
+                  <div className="player-identity-emblem">
+                    <TeamBadge team={player.competition.team} />
+                  </div>
+                )}
             </div>
-            {!player.competition?.champion && !player.competition?.stats ? (
-              <p className="player-pending-stats">Estadísticas pendientes.</p>
-            ) : (
-              <dl className="player-card-stats">
-                <div>
-                  <dt>{playerCardStats[sort]}</dt>
-                  <dd>{formatPlayerStat(player.competition?.stats, sort)}</dd>
-                </div>
-              </dl>
-            )}
           </div>
         </SiteLink>
       ))}

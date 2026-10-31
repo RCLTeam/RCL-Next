@@ -25,6 +25,7 @@ const teams: Team[] = [homeId, awayId].map((id, index) => ({
   discordRoleId: null
 }));
 const match: Match = {
+  mvpPlayerId: null,
   id: '70000000-0000-4000-8000-000000000001',
   divisionId,
   roundId,
@@ -45,7 +46,8 @@ function repository(): CompetitionRepository {
   const division = { id: divisionId, seasonId, code: 'premier', name: 'Premier', sortOrder: 1 };
   return {
     players: async () => [],
-    playerSeasonGames: async () => ({ playerGames: [], allMatchGames: [] }),
+    playerSeasonChampions: async () => new Map(),
+    playerSeasonGames: async () => ({ playerGames: [], allMatchGames: [], mvpMatchIds: [] }),
     playerDetail: async () => undefined,
     matchDirectory: async () => [],
     match: async () => undefined,
@@ -258,6 +260,28 @@ test('calendar filters by round and expands teams', async () => {
     .expect(200);
   expect(result.body.data.length).toBe(2);
   expect(result.body.data[0].homeTeam.name).toBe('A');
+  expect(result.body.data[0].winnerTeamId).toBe(homeId);
+});
+
+test('calendar exposes the declared winner for a scoreless forfeit', async () => {
+  const source = repository();
+  source.matches = async () => [
+    { ...match, status: 'forfeit', homeScore: 0, awayScore: 0, winnerTeamId: awayId }
+  ];
+  const localApp = createApp({
+    repository: source,
+    checkDatabase: async () => {},
+    corsOrigin: '*'
+  });
+  const result = await request(localApp)
+    .get(`/api/v1/divisions/${divisionId}/calendar`)
+    .expect(200);
+  expect(result.body.data[0]).toMatchObject({
+    status: 'forfeit',
+    homeScore: 0,
+    awayScore: 0,
+    winnerTeamId: awayId
+  });
 });
 
 test('roster statistics count distinct champions in completed team games', async () => {

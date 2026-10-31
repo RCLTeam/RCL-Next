@@ -48,7 +48,7 @@ test('Game catalog maps items, spells and rune paths and tolerates partial catal
   expect(catalog['item:1001']?.name).toBe('Botas');
   expect(catalog['summoner:4']?.image).toContain('/img/spell/SummonerFlash.png');
   expect(catalog['rune:8010']?.name).toBe('Conquistador');
-  expect(catalog['rune:8000']?.name).toBe('Precisión');
+  expect(catalog['rune:8000']?.name).toBe('Precision');
 });
 
 test('Champion splash art uses the canonical Data Dragon id', async () => {
@@ -61,7 +61,9 @@ test('Champion splash art uses the canonical Data Dragon id', async () => {
           ? ['16.1.1']
           : url.endsWith('champion.json')
             ? {
-                data: Object.fromEntries([['Ahri', { name: 'Ahri', image: { full: 'Ahri.png' } }]])
+                data: Object.fromEntries([
+                  ['Ahri', { name: 'Ahri', key: '103', image: { full: 'Ahri.png' } }]
+                ])
               }
             : url.endsWith('runesReforged.json')
               ? []
@@ -71,6 +73,7 @@ test('Champion splash art uses the canonical Data Dragon id', async () => {
   const { loadGameCatalog } = await import('./data-dragon.service.js');
   const { getGameAsset } = await import('./riot-assets.service.js');
   const catalog = await loadGameCatalog();
+  expect(getGameAsset('champion', 'ahri', catalog)?.championId).toBe(103);
   expect(getGameAsset('champion', 'ahri', catalog)?.splashImage).toBe(
     'https://ddragon.leagueoflegends.com/cdn/img/champion/splash/Ahri_0.jpg'
   );

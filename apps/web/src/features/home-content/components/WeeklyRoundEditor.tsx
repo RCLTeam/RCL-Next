@@ -98,8 +98,8 @@ function WeeklyRoundForm({
       <fieldset disabled={busy}>
         <legend>El quinteto de la jornada</legend>
         <p>
-          Cada selector muestra solo jugadores que disputaron esa posición en la jornada. Los splash
-          arts de todos los campeones que hayan jugado en esta jornada se alternarán automáticamente
+          Cada selector muestra solo jugadores que disputaron esa posicion en la jornada. Los splash
+          arts de todos los campeones que hayan jugado en esta jornada se alternaran automaticamente
           en sus tarjetas.
         </p>
         {!candidates.length && (
@@ -150,7 +150,7 @@ function WeeklyRoundForm({
                     }}
                   >
                     <option value="">
-                      {eligible.length ? 'Seleccionar jugador' : 'Sin jugadores en esta posición'}
+                      {eligible.length ? 'Seleccionar jugador' : 'Sin jugadores en esta posicion'}
                     </option>
                     {eligible.map((item) => (
                       <option
@@ -166,11 +166,11 @@ function WeeklyRoundForm({
                 </div>
                 {!candidate && player.name && (
                   <p>
-                    Selección anterior: {player.name} · {player.team}. Confirma un jugador de esta
+                    Seleccion anterior: {player.name} · {player.team}. Confirma un jugador de esta
                     jornada.
                   </p>
                 )}
-                <p>{candidate?.team ?? 'El equipo se asigna automáticamente.'}</p>
+                <p>{candidate?.team ?? 'El equipo se asigna automaticamente.'}</p>
                 {candidate && <p>Campeones: {candidate.champions.join(', ')}</p>}
               </div>
             );

@@ -207,13 +207,18 @@ Controlador de nivel superior para el quinteto ideal. Coordina la selección jer
 
 ## 3. Componentes de la Página de Inicio (`apps/web/src/site/pages/home/components/`)
 
-### 3.1 `EditorialGrid.tsx` (`EditorialGrid.tsx:7-61`)
-Sección editorial integrada en la página de inicio (`HomePage.tsx:58`).
-- Descarga los artículos publicados mediante `useHomeContent<EditorialArticle[]>('articles')`.
-- Divide la lista en un artículo destacado principal (`featured`) y los artículos secundarios restantes (`articles`, línea 9).
-- El artículo destacado se renderiza a la izquierda en un banner de gran formato (`.news-hero`).
-- Los artículos secundarios se apilan en la columna lateral (`.news-side`), precedidos por su número ordinal formateado a dos dígitos (`String(index + 1).padStart(2, '0')`, línea 48).
-- Cada tarjeta enlaza a `/editorial/:id`, abriendo el modal de lectura.
+### 3.1 `EditorialGrid.tsx` (`EditorialGrid/EditorialGrid.tsx:7-193`)
+Sección editorial de la home, con el rótulo «Editorial · Crónica de la Rebelión».
+- `EditorialGrid` obtiene los artículos publicados mediante `useHomeContent<EditorialArticle[]>('articles')`. Mantiene el primero como noticia principal fija y pasa los restantes a `SecondaryNews`, conservando su orden.
+- La portada enlaza a `/editorial/:id`; si es el único artículo, `.news-grid-solo` ocupa todo el ancho. Sin artículos se muestra el estado vacío.
+- `SecondaryNews` muestra como máximo **3 noticias secundarias**. Solo activa el carrusel y sus controles cuando hay más de 3 secundarias (más de 4 artículos en total).
+- La rotación avanza una posición cada **6.000 ms** y no avanza si el documento está oculto. Se detiene con el cursor o el foco dentro del bloque y con la pausa manual. El intervalo se limpia al cambiar sus dependencias o desmontar.
+- Los botones anterior/siguiente recorren las noticias cíclicamente y activan la pausa persistente. El botón de pausa/reanudación indica su estado con `aria-pressed`; los controles usan `aria-controls` con un identificador único generado por `useId`.
+- `circularNewsIndex` normaliza los índices tanto del avance automático/manual como de las tres posiciones visibles; permite volver del principio al final y viceversa.
+- Con `prefers-reduced-motion: reduce` no hay rotación automática ni botón de pausa, pero siguen disponibles las flechas manuales. La preferencia se escucha en tiempo real y el listener se elimina al desmontar. Si `window.matchMedia` no está disponible se utiliza el comportamiento normal.
+- La lista usa `aria-live="off"` durante la rotación automática y `aria-live="polite"` cuando está detenida. Si cambia la lista de identificadores se reinicia el estado del carrusel.
+- El CSS es mobile-first: portada de al menos 420 px y tarjetas compactas en la base, ampliadas desde 651 px; dos columnas desde 851 px. Los controles tienen al menos 44 × 44 px con cualquier puntero. Las consultas de tamaño y movimiento están junto a sus bloques.
+- `tests/unit/render/EditorialGrid.test.tsx` cubre el renderizado en Node, el límite de tres secundarias, los estados vacío y de artículo único, movimiento reducido, `window` parcial y cálculo circular. Estas pruebas no simulan interacción real en navegador.
 
 ### 3.2 `TeamOfTheWeekStrip.tsx` (`TeamOfTheWeekStrip.tsx:12-79`)
 Tira horizontal en la página de inicio que exhibe el quinteto ideal de la división activa.
@@ -221,8 +226,20 @@ Tira horizontal en la página de inicio que exhibe el quinteto ideal de la divis
 - Renderiza 5 tarjetas (`.totw-card`) para los roles competitivos. Si una posición no ha sido cubierta, muestra una silueta de torre de ajedrez (`♜`, línea 66).
 - Integra como fondo de tarjeta el carrusel de splash arts de campeones `WeeklyChampionBackground`.
 
-### 3.3 `WeeklyChampionBackground.tsx` (`WeeklyChampionBackground.tsx:5-56`)
+### 3.3 `WeeklyChampionBackground.tsx`
 Carrusel rotativo de fondos de campeones utilizados por el jugador en esa jornada.
 - **Rotación Automática:** Conmuta de campeón cada 4.500 ms mediante `setInterval` (`WeeklyChampionBackground.tsx:30`).
 - **Respeto a Accesibilidad de Movimiento:** Escucha la consulta de medios `window.matchMedia('(prefers-reduced-motion: reduce)')`. Si el usuario tiene habilitada la reducción de movimiento en su sistema operativo, el temporizador se detiene por completo (`lines 25-37`), manteniendo estática la primera imagen.
-- **Ocultamiento de Imágenes Rotas:** Incorpora manejador `onError={(event) => { event.currentTarget.hidden = true; }}` para no mostrar marcos rotos si falla la carga de un recurso gráfico externo.
+- **Arte original:** Usa `ChampionArt` de `shared/riot/` con `variant="original"`, sin `skinId`. El hook `useChampionArt` utiliza directamente el splash base de Data Dragon, sin consultar metadatos de CommunityDragon. La imagen rellena la celda con `object-fit: cover` y `object-position: center`.
+- **Fallos de imagen:** `ChampionArt` gestiona los errores de sus fuentes y devuelve `null` cuando se agotan, dejando visible el fondo de la tarjeta. Conserva el nodo `<img>` al cambiar de fuente, sin reiniciar la transición de opacidad por una clave basada en URLs.
+
+
+### 3.4 `FeaturedMatch.tsx` (`FeaturedMatch/FeaturedMatch.tsx:6-130`)
+`HomeFeaturedMatch` recibe `featured?: Match` y `liveMatches?: Match[]` (por defecto `[]`).
+- Con cero o un partido en directo muestra una única `MatchCard` de `featured ?? liveMatches[0]`, incluido un encuentro programado. El encabezado refleja el estado del partido seleccionado. Sin ninguno de los dos muestra un enlace al calendario.
+- Con varios partidos en directo muestra un carrusel y el contador «N partidos en directo». Las diapositivas inactivas tienen `inert` y `aria-hidden` para excluir sus controles de la navegación y de los lectores de pantalla.
+- Avanza cíclicamente cada 10 segundos. El temporizador se detiene mientras el cursor o el foco estén dentro del componente y reinicia el plazo completo al salir de ambos.
+- Consulta `prefers-reduced-motion: reduce` al montar y escucha sus cambios: con movimiento reducido no hay rotación automática. El intervalo y el listener se eliminan al desmontar.
+- Incluye botones de partido anterior/siguiente y un control persistente de pausa con `aria-pressed`. La navegación manual permite consultar todos los partidos incluso con movimiento reducido.
+- Los controles miden al menos 44 × 44 px desde las reglas base, independientemente del tipo de puntero.
+- Las pruebas de `tests/unit/render/home-featured-match.test.tsx` usan Node y `react-dom/server`, con dobles de hooks y `window` para comprobar callbacks, temporizadores y limpieza; no simulan un DOM ni verifican el foco real del navegador.

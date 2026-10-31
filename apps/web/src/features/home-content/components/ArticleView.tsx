@@ -14,7 +14,7 @@ export function ArticleView({
   return (
     <article className="editorial-article">
       <header className="editorial-header">
-        <span className="eyebrow">Editorial · Crónica de la Rebelión</span>
+        <span className="eyebrow">Editorial · Cronica de la Rebelion</span>
         <span className="news-tag">{article.kind === 'otro' ? 'Otro tema' : article.kind}</span>
         <h1>{article.title}</h1>
         {article.excerpt && <p className="editorial-excerpt">{article.excerpt}</p>}

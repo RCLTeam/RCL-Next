@@ -136,6 +136,7 @@ const matchId = (index: number) => `c0000000-0000-4000-8000-${String(index + 1).
 function countingRepository(completedMatches: number, statuses: Match['status'][] = []) {
   const calls: string[] = [];
   const matches: Match[] = Array.from({ length: completedMatches }, (_, index) => ({
+    mvpPlayerId: null,
     id: matchId(index),
     divisionId,
     roundId: '1',
@@ -178,7 +179,8 @@ function countingRepository(completedMatches: number, statuses: Match['status'][
     matchGamesByMatch: async (ids) => new Map(ids.map((id) => [id, []])),
     teamDirectory: async () => directory,
     players: async () => [player],
-    playerSeasonGames: async () => ({ playerGames: [], allMatchGames: [] }),
+    playerSeasonChampions: async () => new Map(),
+    playerSeasonGames: async () => ({ playerGames: [], allMatchGames: [], mvpMatchIds: [] }),
     playerDetail: async (id) =>
       id === playerId ? { ...player, linkedAccounts: [], teams: [] } : undefined,
     teamDetail: async (id) => {

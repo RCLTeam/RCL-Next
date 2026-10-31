@@ -57,7 +57,7 @@ export const siteRoutes = [
   {
     path: '/clasificacion',
     id: 'clasificacion',
-    title: 'Clasificación',
+    title: 'Clasificacion',
     competition: ['calendar', 'standings'],
     render: ({ competition }) => <StandingsPage competition={competition} />
   },
@@ -94,13 +94,13 @@ export const siteRoutes = [
     id: 'bola-cristal',
     title: 'Bola de Cristal',
     competition: ['calendar'],
-    render: () => <CrystalBallPage />
+    render: ({ competition }) => <CrystalBallPage competition={competition} />
   },
   {
     path: '/playoffs',
     id: 'playoffs',
     title: 'Playoffs',
-    competition: ['calendar', 'rounds'],
+    competition: ['calendar', 'rounds', 'standings'],
     render: ({ competition }) => <PlayoffsPage competition={competition} />
   }
 ] satisfies RouteDefinition[];
@@ -137,11 +137,12 @@ const detailRoutes = [
 ] satisfies RouteDefinition[];
 
 export const adminRoutes = [
+  { path: '/admin/crystal-ball', title: 'Bola de cristal' },
   { path: '/admin/home-content', title: 'Contenido de la home' },
   { path: '/admin', title: 'Admin' },
   { path: '/admin/rofl/upload', title: 'ROFL Upload' },
   { path: '/admin/crud', title: 'CRUD Operations' },
-  { path: '/admin/member-roles', title: 'Gestión de roles' },
+  { path: '/admin/member-roles', title: 'Gestion de roles' },
   { path: '/admin/team-logos', title: 'Team Logos' },
   { path: '/admin/database-transfer', title: 'Database Transfer' }
 ];

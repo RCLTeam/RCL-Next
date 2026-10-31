@@ -19,7 +19,7 @@ export function CrudOperationsPanel() {
       .then(setResources)
       .catch((error: unknown) => {
         if (!controller.signal.aborted)
-          setError(error instanceof Error ? error.message : 'No se pudo cargar la administración.');
+          setError(error instanceof Error ? error.message : 'No se pudo cargar la administracion.');
       })
       .finally(() => {
         if (!controller.signal.aborted) setLoading(false);
@@ -27,7 +27,7 @@ export function CrudOperationsPanel() {
     return () => controller.abort();
   }, [retry]);
   const resource = resources.find((resource) => resource.name === selected);
-  if (loading) return <output>Cargando administración…</output>;
+  if (loading) return <output>Cargando administracion…</output>;
   if (error)
     return (
       <div role="alert">

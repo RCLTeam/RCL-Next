@@ -121,7 +121,7 @@ describe('suggestions API client', () => {
         await expect(
           createSuggestion({ suggestion: 'Texto suficientemente largo para validación' })
         ).rejects.toThrow(
-          'El servicio de sugerencias no está disponible en este momento. Inténtalo más tarde.'
+          'El servicio de sugerencias no esta disponible en este momento. Intentalo mas tarde.'
         );
       }
     );

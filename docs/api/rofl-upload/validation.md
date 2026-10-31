@@ -38,14 +38,16 @@ La función `validateParticipantCache()` (`apps/api/src/modules/rofl-upload/vali
 
 ## 3. Validación de Unanimidad de Equipo y Roster Oficial
 
-Antes de asignar los puntos de una partida en la serie, el repositorio valida que la alineación de cada lado corresponda estrictamente a un único equipo federado (`apps/api/src/modules/rofl-upload/persistence/postgres-rofl-upload.repository.ts:218-280`):
+Previamente a la inserción del lote, `findTeamMembershipsForDiscordUsers()` (`apps/api/src/modules/rofl-upload/persistence/postgres-rofl-upload.repository.ts:175-205`) resuelve el equipo competitivo de cada usuario de Discord filtrando exclusivamente los roles jugables (`'top'`, `'jungle'`, `'mid'`, `'adc'`, `'support'`, `'substitute'`, definidos en `PLAYABLE_ROSTER_ROLES` en `postgres-rofl-upload.repository.ts:28`) en correspondencia con la restricción de exclusión GiST de PostgreSQL `one_competitive_team_per_player_and_season` (`packages/database/drizzle/0001_competitive_membership_per_season.sql:46-52`), excluyendo los roles no jugables (`'coach'`, `'staff'`, `'partners'`). La consulta realiza un `INNER JOIN` con `teams` y `seasons`, ordena los resultados por equipo activo (`teams.is_active DESC`), temporada actual (`seasons.starts_on DESC NULLS LAST`) y última actualización (`team_memberships.updated_at DESC`, con desempate determinista por `seasons.name ASC` y `teams.id ASC`), y conserva la primera membresía encontrada para cada `discordUserId`.
+
+Antes de asignar los puntos de una partida en la serie, el repositorio valida en `executeBatchInsert()` que la alineación de cada lado corresponda estrictamente a un único equipo federado (`apps/api/src/modules/rofl-upload/persistence/postgres-rofl-upload.repository.ts:334-402`):
 
 1. **Unanimidad Lado Azul:** Todos los jugadores del lado azul deben pertenecer al mismo equipo registrado en la base de datos (`blueTeamIds.size === 1`).
 2. **Unanimidad Lado Rojo:** Todos los jugadores del lado rojo deben pertenecer al mismo equipo registrado en la base de datos (`redTeamIds.size === 1`).
 3. **Equipos Distintos:** El equipo del lado azul no puede ser idéntico al del lado rojo (`blueTeamId !== redTeamId`).
 4. **Alineación No Contaminada:** Si se detectan jugadores pertenecientes a un tercer equipo o sin membresía activa en el equipo en juego, la transacción se aborta con un mensaje descriptivo que desglosa el roster:
    ```typescript
-   // postgres-rofl-upload.repository.ts:325-327
+   // postgres-rofl-upload.repository.ts:376-378
    throw new RoflUploadDomainError(
      `Unanimous team membership validation failed: blue side players belong to ${blueTeamIds.size} different teams in game ${game.fileName}. Roster breakdown: [${breakdown}]`
    );

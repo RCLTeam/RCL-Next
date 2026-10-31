@@ -28,7 +28,7 @@
 }
 
 .rcl-site .totw-round-select {
-  margin: 0 0 24px;
+  margin: 20px 0 24px;
   max-width: 100%;
 }
 
@@ -52,7 +52,7 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: 62% center;
+  object-position: center;
   z-index: -2;
 }
 

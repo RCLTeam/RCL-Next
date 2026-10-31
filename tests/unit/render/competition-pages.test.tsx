@@ -4,7 +4,6 @@ import { expect, test } from 'vitest';
 import { DataState } from '../../../apps/web/src/features/competition/components/CompetitionDataState.js';
 import { DivisionCard } from '../../../apps/web/src/features/competition/components/DivisionCard.js';
 import { MatchCard } from '../../../apps/web/src/features/competition/components/MatchCard.js';
-import { PlayoffBracket } from '../../../apps/web/src/features/competition/components/PlayoffBracket.js';
 import { RoundFilter } from '../../../apps/web/src/features/competition/components/RoundFilter.js';
 import { StandingsTable } from '../../../apps/web/src/features/competition/components/StandingsTable.js';
 import { TeamCard } from '../../../apps/web/src/features/competition/components/TeamCard.js';
@@ -15,6 +14,7 @@ import type {
 } from '../../../apps/web/src/features/competition/types/competition.types.js';
 import { MatchList } from '../../../apps/web/src/site/pages/calendar/MatchList.js';
 import { ChampionsTable } from '../../../apps/web/src/site/pages/champions/ChampionsTable.js';
+import { PlayoffFormat } from '../../../apps/web/src/site/pages/playoffs/PlayoffFormat.js';
 import { PlayoffsPage } from '../../../apps/web/src/site/pages/playoffs/PlayoffsPage.js';
 import { PredictionsPage } from '../../../apps/web/src/site/pages/predictions/PredictionsPage.js';
 import { StandingsPage } from '../../../apps/web/src/site/pages/standings/StandingsPage.js';
@@ -33,9 +33,9 @@ test('Team profiles group members and handle an unpublished roster', () => {
     members: []
   };
   const empty = renderToStaticMarkup(<TeamProfile team={team} />);
-  expect(empty).toContain('Todavía no hay jugadores');
+  expect(empty).toContain('Todavia no hay jugadores');
   expect(empty).toContain('Coach pendiente');
-  expect(empty).toContain('Todavía no hay staff');
+  expect(empty).toContain('Todavia no hay staff');
   const member = {
     id: 'p',
     name: 'Jugador',
@@ -67,7 +67,7 @@ test('Team profiles group members and handle an unpublished roster', () => {
   expect(html).toContain('<h3>RiotName</h3>');
   expect(html).toContain('<p>Jugador</p>');
   expect(html).toContain('https://op.gg/es/lol/summoners/euw/RiotName-EUW');
-  expect(html).toContain('Capitán');
+  expect(html).toContain('Capitan');
   expect(html).toMatch(/aria-label="Coach"[\s\S]*Entrenador/);
   expect(html).toMatch(/aria-label="Staff"[\s\S]*Manager/);
 });
@@ -181,7 +181,7 @@ test('Loading and error states never render stale child content', () => {
       </DataState>
     );
     expect(html).not.toContain('Old division results');
-    expect(html).toContain(status === 'loading' ? 'Cargando competición' : 'Reintentar');
+    expect(html).toContain(status === 'loading' ? 'Cargando competicion' : 'Reintentar');
   }
 });
 
@@ -193,7 +193,7 @@ test('DivisionCard renders as SiteLink with default link to /ligas and default d
   expect(premierHtml).toContain('class="league-card premier"');
   expect(premierHtml).toContain('Elite · Máxima categoría');
   expect(premierHtml).toContain('Rift Premier');
-  expect(premierHtml).toContain('La máxima categoría de RCL');
+  expect(premierHtml).toContain('La maxima categoria de RCL');
   expect(premierHtml).toContain('Ver ligas →');
 
   const ascendHtml = renderToStaticMarkup(
@@ -259,9 +259,7 @@ test('Centralized tournament components render correctly', () => {
   expect(standingsHtml).toContain('Lobos');
   expect(standingsHtml).toContain('>+3</td>');
 
-  const bracketHtml = renderToStaticMarkup(
-    <PlayoffBracket rounds={[playoffRound]} matches={[match]} />
-  );
+  const bracketHtml = renderToStaticMarkup(<PlayoffFormat standings={[]} matches={[match]} />);
   expect(bracketHtml).toContain('Gran final');
   expect(bracketHtml).toContain('2');
   expect(bracketHtml).toContain('1');
@@ -274,7 +272,7 @@ test('Centralized tournament components render correctly', () => {
 
   const teamCardHtml = renderToStaticMarkup(<TeamCard team={home} divisionName="Premier" />);
   expect(teamCardHtml).toContain('Lobos');
-  expect(teamCardHtml).not.toContain('Premier');
+  expect(teamCardHtml).toContain('Premier');
   expect(teamCardHtml).toContain('team-card-abbreviation');
   expect(teamCardHtml).not.toContain('Ver equipo →');
   expect(teamCardHtml).toContain('LOB');
@@ -284,7 +282,7 @@ test('Centralized tournament components render correctly', () => {
   ).toContain('href="/equipos/lobos"');
 
   const championsHtml = renderToStaticMarkup(<ChampionsTable />);
-  expect(championsHtml).toContain('Las estadísticas de campeones todavía no están disponibles.');
+  expect(championsHtml).toContain('Las estadisticas de campeones todavia no estan disponibles.');
 });
 
 test('StandingsTable handles malformed or incomplete data gracefully', () => {
@@ -408,10 +406,10 @@ test('MatchList retains matches between withdrawn teams', () => {
   expect(html).toContain('Cuervos');
 });
 
-test('PlayoffBracket handles missing teams and scores gracefully', () => {
+test('PlayoffFormat handles missing teams and scores gracefully', () => {
   const html = renderToStaticMarkup(
-    <PlayoffBracket
-      rounds={[playoffRound]}
+    <PlayoffFormat
+      standings={[]}
       matches={[
         {
           id: 'malformed-match',
@@ -433,7 +431,87 @@ test('PlayoffBracket handles missing teams and scores gracefully', () => {
       ]}
     />
   );
-  expect(html).toContain('Por definir');
+  expect(html).toContain('Rival elegido');
   expect(html).toContain('—');
   expect(html).not.toContain('undefined');
+});
+
+test('team champion header honors featured lineup and empty lane states', () => {
+  const member = {
+    id: 'starter',
+    playerId: 'starter',
+    name: 'Starter',
+    gameName: 'Starter',
+    role: 'top' as const,
+    isCaptain: false,
+    riotTag: null,
+    countryCode: null,
+    champion: 'Garen'
+  };
+  const team = {
+    id: 'team',
+    name: 'Team',
+    shortName: null,
+    logoUrl: null,
+    color: null,
+    seasonName: '2026',
+    divisionName: 'Premier',
+    isActive: true,
+    members: [member]
+  };
+  const html = renderToStaticMarkup(
+    <TeamProfile
+      team={{
+        ...team,
+        featuredLineup: [{ ...member, id: 'replacement', gameName: 'Replacement', champion: null }]
+      }}
+    />
+  );
+  const header = html.split('</header>')[0] ?? '';
+  expect(header).toContain('team-profile-champions');
+  expect(header).toContain('Replacement');
+  expect(header).not.toContain('Starter');
+  expect(header.match(/Sin titular<\/strong>/g)).toHaveLength(4);
+  expect(header).toContain('Sin partidas');
+  expect(header).toContain('--team-color:var(--purple)');
+  const legacy = renderToStaticMarkup(<TeamProfile team={team} />).split('</header>')[0];
+  expect(legacy).toContain('Starter');
+  expect(legacy).toContain('Garen');
+  const empty = renderToStaticMarkup(<TeamProfile team={{ ...team, featuredLineup: [] }} />).split(
+    '</header>'
+  )[0];
+  expect(empty?.match(/Sin titular<\/strong>/g)).toHaveLength(5);
+});
+
+test('roster announces role and identity before statistics and avoids duplicate display names', () => {
+  for (const gameName of [null, 'Coach', '𝑪𝒐𝒂𝒄𝒉', 'Riot Name']) {
+    const html = renderToStaticMarkup(
+      <TeamProfile
+        team={{
+          id: 'team',
+          name: 'Team',
+          shortName: null,
+          logoUrl: null,
+          seasonName: '2026',
+          divisionName: 'Premier',
+          isActive: true,
+          members: [
+            {
+              id: 'member',
+              name: 'Coach',
+              gameName,
+              role: 'top',
+              isCaptain: false,
+              riotTag: null,
+              countryCode: null
+            }
+          ]
+        }}
+      />
+    );
+    const card = html.split('<article')[1] ?? '';
+    expect(card.indexOf('team-member-role')).toBeLessThan(card.indexOf('team-member-identity'));
+    expect(card.indexOf('team-member-identity')).toBeLessThan(card.indexOf('team-player-overview'));
+    expect(card.includes('<p>Coach</p>')).toBe(gameName === 'Riot Name');
+  }
 });

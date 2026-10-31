@@ -20,7 +20,7 @@ El monorepo RCL-Next sigue un diseño estrictamente desacoplado organizado en cu
    Motor de bajo nivel (`roflParser.py`) que analiza archivos de repetición `.rofl` de League of Legends mediante un algoritmo de búsqueda inversa (*reverse seek*) que lee directamente los metadatos finales sin descomprimir paquetes pesados de red. Opera con cero dependencias externas de terceros y códigos de salida delimitados (0-14). Consulta la [documentación de ROFL](docs/rofl/README.md).
 
 4. **Capa de Persistencia Relacional (`packages/database`) — PostgreSQL & PGlite:**  
-   Modelo de 21 tablas relacionales y 6 enums tipados con Drizzle ORM (`packages/database/src/schema.ts`). Utiliza claves primarias naturales e inmutables, transacciones ACID con bloqueos consultivos de PostgreSQL (`pg_advisory_lock`), y disparadores PL/pgSQL transaccionales y diferidos (`complete_player_game`). Para pruebas automatizadas, utiliza PostgreSQL embebido en memoria (**PGlite 0.3+**) sin dependencias de red ni servicios externos. Consulta la [documentación de base de datos](docs/database/README.md).
+   Modelo de 21 tablas relacionales y 6 enums tipados con Drizzle ORM (`packages/database/src/schema.ts`). Utiliza claves primarias naturales e inmutables, transacciones ACID con bloqueos consultivos de PostgreSQL (`pg_advisory_lock`), y disparadores PL/pgSQL transaccionales y diferidos (`complete_player_game`). Para pruebas automatizadas, utiliza PostgreSQL embebido en memoria (**PGlite 0.3+**) sin dependencias de red ni servicios externos. Consulta la [documentación de base de datos](docs/database/README.md) y la [guía de backfill de MVP](docs/database/mvp-backfill.md).
 
 ---
 
@@ -47,14 +47,18 @@ RCL-Next/
 │   │       ├── server.ts                        # Punto de entrada, escucha HTTP/WS y apagado controlado
 │   │       ├── config/                          # Carga y validación estricta de variables de entorno
 │   │       ├── shared/                          # Errores de dominio (AppError) y utilidades HTTP
+│   │       ├── scripts/                         # Herramientas operativas de la API
+│   │       │   └── backfill-match-mvps.ts         # CLI de simulación y aplicación de MVP históricos
 │   │       └── modules/                         # Rebanadas verticales de negocio
 │   │           ├── auth/                        # Discord OAuth2, sesiones opacas (hash SHA-256 en BD), cookie y proxy de avatares
 │   │           ├── competition/                 # Clasificaciones, desempates, estadísticas, visibilidad y algoritmo MVP
+│   │           │   ├── backfill-match-mvps.ts    # Procesamiento y verificación por serie
+│   │           │   └── match-mvp-data.ts         # Consulta compartida de mapas y estadísticas para MVP
 │   │           ├── crud-operations/             # Motor CRUD administrativo con detección de dependencias FK y reordenación de mapas
 │   │           ├── database-transfer/           # Copia con pg_dump (formato custom) y restauración de los datos COPY leídos con pg_restore
 │   │           ├── discord-bridge/              # Cliente WebSocket hacia el bot de Discord con reintentos
 │   │           ├── home-content/                # Publicaciones editoriales y equipo de la semana
-│   │           ├── member-roles/                # Control de roles de usuario (viewer, admin, owner)
+│   │           ├── member-roles/                # Control de roles de usuario (viewer, editor, admin, owner)
 │   │           ├── page-metadata/               # Títulos y descripciones por ruta para el HTML inicial y GET /api/v1/page-metadata
 │   │           ├── predictions/                 # Quinielas semanales con bloqueo horario (Europe/Madrid)
 │   │           ├── rofl-upload/                 # Subida por WebSocket, spooling en disco y persistencia
@@ -99,6 +103,9 @@ RCL-Next/
 │       ├── drizzle.config.ts                    # Configuración de Drizzle Kit (esquema, salida de migraciones y conexión)
 │       ├── drizzle/                             # Migraciones DDL SQL y journal versionado de Drizzle
 │       │   ├── 0000_initial_schema.sql          # Esquema relacional consolidado (21 tablas, 6 enums)
+│       │   ├── 0001_competitive_membership_per_season.sql # Una inscripción competitiva por temporada
+│       │   ├── 0002_match_mvp.sql               # MVP persistido por enfrentamiento
+│       │   ├── 0003_match_mvp_checks.sql         # Restricciones de coherencia del MVP
 │       │   └── meta/                            # Journal y snapshot de Drizzle Kit
 │       ├── seed/                                # Conjuntos de datos reproducibles
 │       │   ├── demo.sql                         # Fixture mínimo para pruebas automatizadas
@@ -116,6 +123,7 @@ RCL-Next/
 └── docs/                                        # Documentación técnica canónica e hipergranular
     ├── README.md                                # Portal central de documentación y sitemap maestro
     ├── database/                                # Arquitectura relacional, tablas, constraints y migraciones
+    │   └── mvp-backfill.md                      # Guía de recálculo y verificación de MVP históricos
     ├── reference/                               # Referencia histórica y esquema original conservado
     ├── rofl/                                    # Formato binario, algoritmo del parser y mapeo de datos
     ├── api/                                     # Especificaciones de los módulos de la API y su configuración
@@ -173,12 +181,12 @@ RCL-Next/
 
 ## 4. Consola de Administración (`/admin`)
 
-El panel administrativo en `/admin` ofrece seis consolas operativas protegidas mediante la guarda `RequireAdmin` y verificación de roles (`admin` u `owner`):
+El panel administrativo en `/admin` admite `editor`, `admin` y `owner` mediante `RequireAdmin`. El editor entra directamente en Home Content y solo puede ver y gestionar esa sección; las demás URLs y APIs administrativas permanecen bloqueadas. `admin` y `owner` conservan las seis consolas:
 
 1. **Contenido Editorial e Inicio (`/admin/home-content`):** Publicación de noticias y selección del quinteto ideal con guarda de navegación contra cambios sin guardar y purga de imágenes huérfanas. Consulta [docs/api/home-content/README.md](docs/api/home-content/README.md) y [docs/web/home-content/README.md](docs/web/home-content/README.md).
 2. **Subida de Repeticiones ROFL (`/admin/rofl/upload`):** Ingesta por lotes de partidas mediante streaming WebSocket con análisis sintáctico en caliente. Consulta [docs/api/rofl-upload/README.md](docs/api/rofl-upload/README.md) y [docs/web/rofl-upload/README.md](docs/web/rofl-upload/README.md).
 3. **Operaciones CRUD (`/admin/crud`):** Mantenimiento de temporadas, divisiones, competiciones, equipos, invocadores y plantillas con validación transaccional y bloqueo preventivo ante dependencias relacionales activas. Consulta [docs/api/crud-operations/README.md](docs/api/crud-operations/README.md) y [docs/web/crud-operations/README.md](docs/web/crud-operations/README.md).
-4. **Gestión de Roles (`/admin/member-roles`):** Asignación y revocación de permisos de aplicación (`viewer`, `admin`, `owner`) con trazabilidad en logs de auditoría. Consulta [docs/api/member-roles/README.md](docs/api/member-roles/README.md) y [docs/web/member-roles/README.md](docs/web/member-roles/README.md).
+4. **Gestión de Roles (`/admin/member-roles`):** Asignación y revocación de permisos de aplicación (`viewer`, `editor`, `admin`, `owner`) con trazabilidad en logs de auditoría. Consulta [docs/api/member-roles/README.md](docs/api/member-roles/README.md) y [docs/web/member-roles/README.md](docs/web/member-roles/README.md).
 5. **Logos de Equipos (`/admin/team-logos`):** Galería interactiva, carga segura con validación de bytes mágicos, copia de rutas al portapapeles y eliminación con confirmación. Consulta [docs/api/team-logos/README.md](docs/api/team-logos/README.md) y [docs/web/team-logos/README.md](docs/web/team-logos/README.md).
 6. **Transferencia de Base de Datos (`/admin/database-transfer`):** Exportación de una copia `.dump` generada con `pg_dump --format=custom` (hasta 64 MiB, que la API acumula en memoria antes de enviarla; la única compresión es la propia de ese formato) y restauración integral de datos: `pg_restore` extrae los bloques `COPY` del fichero, la API los analiza y vuelve a insertar las filas en una transacción. Consulta [docs/api/database-transfer/README.md](docs/api/database-transfer/README.md) y [docs/web/database-transfer/README.md](docs/web/database-transfer/README.md).
 
@@ -217,3 +225,7 @@ Para más detalles sobre la pirámide de pruebas, arneses y límites de concurre
 - **Fuentes Tipográficas:** La jerarquía visual utiliza *Manuka* para titulares y cifras, *PP Fraktion Sans* para controles y cuerpo, y *PP Fraktion Mono* para metadatos y estadísticas. Los archivos de fuentes se sirven localmente desde `apps/web/src/shared/assets/fonts/` junto a sus respectivas licencias. Vite las incluye en la compilación sin depender de CDNs externas.
 - **Activos Deportivos:** Los logotipos oficiales de la liga se ubican en `apps/web/public/images/brand/` y los escudos de los equipos en `apps/web/public/images/teams_logo/`, directorio por defecto del almacén de logos (configurable con `TEAM_LOGO_DIR`); el repositorio solo versiona `placeholder.webp` y el resto se gestiona desde `/admin/team-logos`.
 - **Esquema Histórico:** Se conserva el archivo arqueológico preliminar en `docs/reference/0000_initial_schema.original.sql` junto a su análisis comparativo en [docs/reference/README.md](docs/reference/README.md).
+
+## Bola de cristal
+
+Pronósticos de playoffs por liga y resolución de resultados: [API](docs/api/crystal-ball/README.md) · [Web](docs/web/crystal-ball/README.md).

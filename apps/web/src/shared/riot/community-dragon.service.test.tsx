@@ -24,10 +24,10 @@ test.each([
   );
 });
 
-test.each([null, '', 'SIN POSICIÓN', 'unknown', '../top'])(
+test.each([null, '', 'SIN POSICION', 'unknown', '../top'])(
   'Unknown position %s has no fabricated URL',
   (position) => {
-    expect(getPositionAsset(position)).toEqual({ name: 'Sin posición' });
+    expect(getPositionAsset(position)).toEqual({ name: 'Sin posicion' });
   }
 );
 
@@ -40,7 +40,7 @@ test('Position icons work before the Data Dragon catalog has loaded', () => {
 test('Missing positions render accessible text instead of a broken image', () => {
   const html = renderToStaticMarkup(<GameIcon kind="position" id={null} catalog={{}} />);
   expect(html).not.toContain('<img');
-  expect(html).toContain('Sin posición');
+  expect(html).toContain('Sin posicion');
 });
 
 test('Community Dragon assets survive a Data Dragon outage', async () => {

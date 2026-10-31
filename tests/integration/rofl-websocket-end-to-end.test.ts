@@ -24,7 +24,8 @@ const fixtureRoflPath = path.resolve('apps/parser/data/RCL-FIXTURE-0001.rofl');
 
 const mockCompetitionRepo: CompetitionRepository = {
   players: async () => [],
-  playerSeasonGames: async () => ({ playerGames: [], allMatchGames: [] }),
+  playerSeasonChampions: async () => new Map(),
+  playerSeasonGames: async () => ({ playerGames: [], allMatchGames: [], mvpMatchIds: [] }),
   playerDetail: async () => undefined,
   matchDirectory: async () => [],
   match: async () => undefined,
@@ -456,7 +457,7 @@ test('Test 4: Batch containing non-ROFL (exit code 11) emitting warning and succ
     const warningMsg = messages.find((m) => m.type === 'warning');
     assert.ok(warningMsg && warningMsg.type === 'warning');
     expect(warningMsg.message).toMatch(
-      /El archivo 'corrupted_fake\.rofl' no tiene la cabecera ROFL válida y ha sido omitido/
+      /El archivo 'corrupted_fake\.rofl' no tiene la cabecera ROFL valida y ha sido omitido/
     );
 
     // 2. Verify success event was received for the valid replay
@@ -512,7 +513,7 @@ test('Test 4: Batch containing non-ROFL (exit code 11) emitting warning and succ
     const warningMsg = messages.find((m) => m.type === 'warning');
     assert.ok(warningMsg && warningMsg.type === 'warning');
     expect(warningMsg.message).toMatch(
-      /El archivo 'only_fake\.rofl' no tiene la cabecera ROFL válida y ha sido omitido/
+      /El archivo 'only_fake\.rofl' no tiene la cabecera ROFL valida y ha sido omitido/
     );
 
     const errorMsg = messages.find((m) => m.type === 'error');

@@ -18,7 +18,7 @@ Para insertar o eliminar registros masivamente sin violar restricciones de clave
 
 ### 2.1 Algoritmo de Ordenación Topológica
 - **Cita:** `postgres-database-transfer.repository.ts:63-71`
-- **Mecanismo:** La función constructora del repositorio recorre el grafo de dependencias de las 21 tablas relacionales del esquema:
+- **Mecanismo:** La función constructora del repositorio recorre el grafo de dependencias de las 23 tablas relacionales del esquema:
   ```typescript
   const visited = new Set<PgTable>();
   const insertOrder: PgTable[] = [];

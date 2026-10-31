@@ -60,37 +60,11 @@ Además, el menú de navegación (`SiteNavigation`) utiliza `canAccessAdmin(auth
 
 ## 3. Barrera Perimetral en Vistas de Administración (`AdminPage.tsx`)
 
-En `apps/web/src/site/pages/admin/AdminPage.tsx:21-103`, toda la estructura de pestañas de administración queda envuelta bajo el componente de protección perimetral `<RequireAdmin>`:
+`AdminPage` envuelve la navegación y los paneles en `<RequireAdmin>`. Los roles `editor`, `admin` y `owner` ven el enlace «Administración» en `SiteNavigation`.
 
-```tsx
-export function AdminPage({ wsUrl, path = '/admin' }: { wsUrl?: string; path?: string }) {
-  return (
-    <section id="admin" className="admin-content" aria-label="Administración">
-      <div className="admin-heading">
-        <span className="eyebrow">Gestión de la competición</span>
-        <h1>Admin</h1>
-      </div>
-      <RequireAdmin>
-        <nav className="admin-navigation" aria-label="Funciones de administración">
-          <SiteLink href="/admin/home-content">Home content</SiteLink>
-          <SiteLink href="/admin/rofl/upload">ROFL Upload</SiteLink>
-          <SiteLink href="/admin/crud">CRUD Operations</SiteLink>
-          <SiteLink href="/admin/member-roles">Roles Management</SiteLink>
-          <SiteLink href="/admin/database-transfer">Database Transfer</SiteLink>
-        </nav>
-        {/* Renderizado de paneles según path */}
-      </RequireAdmin>
-    </section>
-  );
-}
-```
-
-### Funciones Protegidas por `<RequireAdmin>`:
-- `/admin/home-content`: Publicación de noticias, editoriales y quintetos de la semana.
-- `/admin/rofl/upload`: Subida y parseo de ficheros binarios `.rofl`.
-- `/admin/crud`: Inspección y modificación directa de entidades relacionales.
-- `/admin/member-roles`: Auditoría y mutación de roles de acceso (`MemberRolesPanel`).
-- `/admin/database-transfer`: Exportación e importación de volcados de base de datos.
+- **Editor:** Solo ve el enlace Home Content. Tanto `/admin` como `/admin/home-content` montan `HomeContentPanel` y marcan ese enlace con `aria-current="page"`. Una URL de otra sección muestra «No tienes permisos para acceder a esta sección.» sin montar su panel.
+- **Admin y owner:** Conservan el resumen de `/admin` y las seis secciones: Home Content, ROFL Upload, CRUD Operations, Roles Management, Team Logos y Database Transfer. Solo owner puede cambiar roles e importar copias.
+- **Viewer o sesión sin verificar:** La guarda bloquea los paneles. Ocultar enlaces no sustituye los permisos de la API.
 
 ---
 

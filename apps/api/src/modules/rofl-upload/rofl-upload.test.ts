@@ -592,7 +592,7 @@ test('executePythonParser skips files with invalid magic header (code 11) and em
   expect(result.skippedFiles[0]).toBe(fakeRofl);
   expect(warnings.length).toBe(1);
   expect(warnings[0] ?? '').toMatch(
-    /El archivo 'fake_invalid_magic\.rofl' no tiene la cabecera ROFL válida y ha sido omitido/
+    /El archivo 'fake_invalid_magic\.rofl' no tiene la cabecera ROFL valida y ha sido omitido/
   );
 });
 
@@ -621,13 +621,13 @@ test('executePythonParser cleanly aborts when 0 valid ROFL files remain in batch
   expect(warnings.length).toBe(2);
   expect(
     warnings.some((w) =>
-      /El archivo 'fake1\.rofl' no tiene la cabecera ROFL válida y ha sido omitido/.test(w)
+      /El archivo 'fake1\.rofl' no tiene la cabecera ROFL valida y ha sido omitido/.test(w)
     ),
     'Expected warning for fake1.rofl'
   ).toBeTruthy();
   expect(
     warnings.some((w) =>
-      /El archivo 'fake2\.rofl' no tiene la cabecera ROFL válida y ha sido omitido/.test(w)
+      /El archivo 'fake2\.rofl' no tiene la cabecera ROFL valida y ha sido omitido/.test(w)
     ),
     'Expected warning for fake2.rofl'
   ).toBeTruthy();

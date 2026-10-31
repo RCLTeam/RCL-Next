@@ -23,7 +23,8 @@ export interface CrudOperationsRepository {
     resource: ResourceDefinition,
     offset: number,
     search: string,
-    limit?: number
+    limit?: number,
+    latestSeason?: boolean
   ): Promise<CrudPageResult>;
   mutate(resource: ResourceDefinition, mutation: CrudMutation): Promise<CrudRecord>;
 }

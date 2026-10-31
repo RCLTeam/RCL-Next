@@ -40,7 +40,7 @@ test('percentages stay hidden even if supplied while voting is open; closed card
     <PredictionCard match={match} summary={summary} authenticated save={async () => {}} />
   );
   expect(open).not.toContain('73%');
-  expect(open).toContain('Guardar predicción');
+  expect(open).toContain('Guardar prediccion');
   const closed = renderToStaticMarkup(
     <PredictionCard
       match={match}
@@ -96,7 +96,7 @@ test('ranking shows the top five and the current user outside them', () => {
   const highlightedRows = rows.filter((row) => row.includes('class="predictor-row is-you"'));
   expect(highlightedRows).toHaveLength(1);
   expect(highlightedRows[0]).toContain(
-    '<strong>Predictor 7<span class="sr-only"> (tú)</span></strong>'
+    '<strong>Predictor 7<span class="sr-only"> (tu)</span></strong>'
   );
   // Only the user's row carries the text marker; the others rely on nothing hidden.
   expect(rows.filter((row) => row.includes('class="sr-only"'))).toHaveLength(1);
@@ -109,7 +109,7 @@ test('the user row is identified by text, not only by its highlight colour', () 
   ];
   const own = renderToStaticMarkup(<PredictorRankingPanel ranking={ranking} userId="2" />);
   const ownRow = own.match(/<li class="predictor-row is-you">[\s\S]*?<\/li>/)?.[0] ?? '';
-  expect(ownRow).toContain('<span class="sr-only"> (tú)</span>');
+  expect(ownRow).toContain('<span class="sr-only"> (tu)</span>');
   const visitor = renderToStaticMarkup(<PredictorRankingPanel ranking={ranking} />);
   expect(visitor).not.toContain('is-you');
   expect(visitor).not.toContain('(tú)');

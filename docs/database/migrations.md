@@ -1,16 +1,23 @@
 # Migraciones, Concurrencia y Verificación Criptográfica
 
-[⬅️ Volver a Documentación de Base de Datos](./README.md) | [Siguiente: Datos de Siembra y Fixtures ➡️](./seed.md)
+[⬅️ Volver a Documentación de Base de Datos](./README.md) | [Siguiente: Backfill de MVP históricos ➡️](./mvp-backfill.md)
 
 ---
+
+Para poblar los MVP históricos después de aplicar las migraciones `0002_match_mvp` y `0003_match_mvp_checks`, consultar [Backfill de MVP históricos](./mvp-backfill.md).
 
 ## 1. Arquitectura de Migraciones
 
 La base de datos utiliza **Drizzle Kit** y un ejecutor programático dedicado ubicado en `packages/database/src/migrate.ts` para aplicar evoluciones del esquema relacional de forma segura y reproducible.
 
 Las migraciones SQL versionadas residen en el directorio `packages/database/drizzle/`:
-- `0000_initial_schema.sql` (456 LoC): Contiene el DDL completo del esquema baseline, la creación de tipos enumerados, restricciones, índices y los procedimientos y disparadores PL/pgSQL.
-- `meta/_journal.json`: Registro de control de versiones generado por Drizzle Kit con el histórico de migraciones aplicadas.
+- `0000_initial_schema.sql`: Contiene el DDL completo del esquema baseline, la creación de tipos enumerados, restricciones, índices y los procedimientos y disparadores PL/pgSQL.
+- `0001_competitive_membership_per_season.sql`: Añade la temporada a equipos e inscripciones, claves foráneas compuestas y la exclusión de varias inscripciones competitivas por usuario y temporada. Los conflictos previos abortan la migración sin borrar ni reasignar inscripciones.
+- `0002_match_mvp.sql`: Añade `matches.mvp_player_id`, su FK a `players` con `ON DELETE SET NULL`, `mvp_score numeric(5,1)` y el índice parcial `matches_round_mvp_score_idx`.
+- `0003_match_mvp_checks.sql`: Impide puntuaciones negativas y jugadores MVP con puntuación nula; permite conservar el score cuando se elimina el jugador.
+- `0004_editor_role.sql`: Añade `editor` al enum `public.app_role`, antes de `admin`, conservando los usuarios y sus roles existentes. Su tag es `0004_editor_role` y su snapshot es `meta/0004_snapshot.json`. Se aplica con `pnpm db:migrate` antes de asignar el nuevo rol.
+- `0005_crystal_ball.sql`: Crea únicamente las campañas y boletos por liga, con procedencia de resultados automáticos, claves foráneas cortas y triggers `set_updated_at`. Sustituye las dos migraciones preliminares de este PR.
+- `meta/_journal.json`: Inventario ordenado de migraciones versionadas generado por Drizzle Kit. La tabla `drizzle.__drizzle_migrations` registra cuáles se han aplicado en cada base; los snapshots versionados describen el esquema tras cada migración.
 
 ---
 
@@ -109,3 +116,11 @@ console.info('PostgreSQL migrations applied.');
 |---|---|---|
 | `pnpm db:generate` | Lee `packages/database/src/schema.ts` y genera un nuevo archivo `.sql` si detecta diferencias respecto al baseline. | Debe retornar `No schema changes, nothing to migrate` si el esquema TypeScript coincide con el DDL versionado. |
 | `pnpm db:migrate` | Ejecuta `packages/database/src/migrate.ts`, adquiriendo el lock `72160419` y aplicando las migraciones pendientes. | Registra `PostgreSQL migrations applied.` en la salida estándar. |
+
+## Bases de desarrollo con migraciones preliminares de Bola de cristal
+
+La consolidación de este PR conserva `0000`–`0004`; elimina la antigua `0006` y las tablas globales por temporada. Una base que ya aplicó las versiones preliminares no debe ejecutar el migrador nuevo directamente: su verificación de hashes rechazará ese historial.
+
+Antes de reconciliar una base local, guardar un volcado completo y verificar su restauración. Crear una base nueva con las seis migraciones actuales y trasladar los datos por columnas, conservando IDs, campañas por liga, horarios y boletos. Para campañas anteriores sin procedencia de cálculo, conservar `results`, inicializar `automatic_results` a `{}`, `calculated_at` a `NULL` y revisar/recalcular antes de dar la resolución por finalizada. Archivar las tablas globales antiguas en el respaldo; no reinterpretarlas como campañas por liga. Verificar conteos, claves y datos antes de cambiar la conexión. No sustituir hashes a ciegas ni borrar datos para forzar el arranque.
+
+Una reconciliación local en la misma base también requiere respaldo, reconocimiento exacto del historial previo, verificación contra una base limpia de los objetos modificados y comparación de los datos antes/después dentro de una transacción. Los objetos obsoletos con datos pueden archivarse en un esquema separado. Cualquier deriva previa ajena al módulo debe registrarse sin corregirla silenciosamente; el historial solo se actualiza después de verificar la transformación.

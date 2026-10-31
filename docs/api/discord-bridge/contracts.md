@@ -22,8 +22,8 @@ export type BridgeHealthStatus =
   | 'authentication_failed';
 
 export type BridgeHealthMessage =
-  | 'Conexión correcta'
-  | 'No se puede llegar a él'
+  | 'Conexion correcta'
+  | 'No se puede llegar a el'
   | 'No se pudo autenticar';
 ```
 

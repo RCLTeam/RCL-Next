@@ -29,11 +29,11 @@ En `AuthProvider.tsx:29-31`, se implementa una función pura para evaluar si un 
 
 ```typescript
 export function canAccessAdmin(state: AuthState): boolean {
-  return state.status === 'authenticated' && ['admin', 'owner'].includes(state.user.role);
+  return state.status === 'authenticated' && ['editor', 'admin', 'owner'].includes(state.user.role);
 }
 ```
 
-Esta función garantiza que tanto los usuarios con rol `'admin'` como los que poseen rango `'owner'` puedan franquear las barreras de control de acceso en el frontend.
+Esta función permite entrar en administración a `editor`, `admin` y `owner`. `AdminPage` restringe a los editores a Home Content; la API verifica los permisos de cada operación por separado.
 
 ---
 

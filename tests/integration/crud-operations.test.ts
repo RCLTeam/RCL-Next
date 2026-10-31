@@ -5,10 +5,11 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { PGlite } from '@electric-sql/pglite';
 import { btree_gist } from '@electric-sql/pglite/contrib/btree_gist';
-import type { CrudDeletePreview, CrudRecord } from '@rcl/contracts';
+import type { CrudDeletePreview, CrudRecord, PlayerDetail } from '@rcl/contracts';
 import { eq, sql } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/pglite';
 import { migrate } from 'drizzle-orm/pglite/migrator';
+
 import request from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createApp } from '../../apps/api/src/app.js';
@@ -19,6 +20,7 @@ import { PostgresCompetitionRepository } from '../../apps/api/src/modules/compet
 import { crudResources } from '../../apps/api/src/modules/crud-operations/crud-operations.resources.js';
 import { PostgresCrudOperationsRepository } from '../../apps/api/src/modules/crud-operations/postgres-crud-operations.repository.js';
 import { resolveTeamLogo } from '../../apps/web/src/shared/resources/team-logos.js';
+
 import * as schema from '../../packages/database/src/schema.js';
 
 describe('admin CRUD with HTTP sessions and PostgreSQL constraints', () => {
@@ -575,27 +577,20 @@ describe('admin CRUD with HTTP sessions and PostgreSQL constraints', () => {
     }).expect(409);
   });
 
-  it('searches teams by their competition season and division and preserves reference labels', async () => {
-    for (const search of ['base SEASON', 'base DIVISION']) {
-      const response = await request(app)
-        .get(endpoint('teams'))
-        .query({ search })
-        .set('Cookie', cookie)
-        .expect(200);
-      expect(response.body.data.records).toEqual([
-        expect.objectContaining({
-          id: team1,
-          name: 'Home',
-          seasonDivisionIdLabel: 'Base season · Base division'
-        }),
-        expect.objectContaining({
-          id: team2,
-          name: 'Away',
-          seasonDivisionIdLabel: 'Base season · Base division'
-        })
-      ]);
-      expect(response.body.data.hasMore).toBe(false);
-    }
+  it('searches teams by name and preserves reference labels', async () => {
+    const response = await request(app)
+      .get(endpoint('teams'))
+      .query({ search: 'hOmE' })
+      .set('Cookie', cookie)
+      .expect(200);
+    expect(response.body.data.records).toEqual([
+      expect.objectContaining({
+        id: team1,
+        name: 'Home',
+        seasonDivisionIdLabel: 'Base season · Base division'
+      })
+    ]);
+    expect(response.body.data.hasMore).toBe(false);
     for (const search of ["' OR 1=1 --", '%', '_', '\\']) {
       const response = await request(app)
         .get(endpoint('teams'))
@@ -604,6 +599,149 @@ describe('admin CRUD with HTTP sessions and PostgreSQL constraints', () => {
         .expect(200);
       expect(response.body.data.records).toEqual([]);
     }
+  });
+
+  describe('search scope', () => {
+    const userId = '323456789012345678';
+    const teamId = '20000000-0000-4000-8000-000000000003';
+    const latestCompetitionId = '10000000-0000-4000-8000-000000000002';
+    const latestTeamId = '20000000-0000-4000-8000-000000000004';
+    const matchId = '30000000-0000-4000-8000-000000000001';
+    const list = async (name: string, search: string, query: object = {}) =>
+      (
+        await request(app)
+          .get(endpoint(name))
+          .query({ search, ...query })
+          .set('Cookie', cookie)
+          .expect(200)
+      ).body.data.records as CrudRecord[];
+
+    beforeAll(async () => {
+      await db.insert(schema.discordUsers).values({
+        discordId: userId,
+        username: 'Hidden handle',
+        globalName: 'Hidden display'
+      });
+      await db.insert(schema.players).values({
+        gameName: 'Riot Scope',
+        riotTag: 'EUW9',
+        discordUserId: userId,
+        puuid: 'hidden-puuid-value',
+        countryCode: 'FR'
+      });
+      await db.insert(schema.teams).values({
+        id: teamId,
+        seasonName: 'Base season',
+        seasonDivisionId: competitionId,
+        name: 'Scope Lions',
+        shortName: 'SCPL',
+        color: '#123456',
+        discordRoleId: 998877665544332211n
+      });
+      await db.insert(schema.teamMemberships).values({
+        teamId,
+        discordUserId: userId,
+        seasonName: 'Base season',
+        role: 'top'
+      });
+      await db.insert(schema.rounds).values([
+        { id: 2, idSeasonDivision: competitionId, name: 'Scope final 1' },
+        { id: 10, idSeasonDivision: competitionId }
+      ]);
+      await db.insert(schema.matches).values({
+        id: matchId,
+        idSeasonDivision: competitionId,
+        idRound: 2,
+        team1Id: teamId,
+        team2Id: team1
+      });
+      await db.insert(schema.seasons).values({ name: 'Zeta season', startsOn: '2099-01-01' });
+      await db.insert(schema.seasonsDivisions).values({
+        id: latestCompetitionId,
+        seasonName: 'Zeta season',
+        divisionName: 'Base division'
+      });
+      await db.insert(schema.teams).values({
+        id: latestTeamId,
+        seasonName: 'Zeta season',
+        seasonDivisionId: latestCompetitionId,
+        name: 'Scope Lions'
+      });
+    });
+
+    afterAll(async () => {
+      await db.delete(schema.matches).where(eq(schema.matches.id, matchId));
+      await db.delete(schema.teamMemberships).where(eq(schema.teamMemberships.teamId, teamId));
+      await db.delete(schema.players).where(eq(schema.players.discordUserId, userId));
+      await db.delete(schema.teams).where(eq(schema.teams.id, teamId));
+      await db.delete(schema.teams).where(eq(schema.teams.id, latestTeamId));
+      await db.delete(schema.rounds).where(sql`${schema.rounds.id} IN (2, 10)`);
+      await db
+        .delete(schema.seasonsDivisions)
+        .where(eq(schema.seasonsDivisions.id, latestCompetitionId));
+      await db.delete(schema.seasons).where(eq(schema.seasons.name, 'Zeta season'));
+      await db.delete(schema.discordUsers).where(eq(schema.discordUsers.discordId, userId));
+    });
+
+    it('finds teams by name or abbreviation, across seasons, and nothing else', async () => {
+      for (const search of ['scope lions', 'SCPL'])
+        expect((await list('teams', search)).map((row) => row.id).sort()).toContain(teamId);
+      expect((await list('teams', 'Scope lions')).map((row) => row.id).sort()).toEqual([
+        teamId,
+        latestTeamId
+      ]);
+      for (const search of ['#123456', '998877', teamId, 'Base season', 'Base division'])
+        expect(await list('teams', search)).toEqual([]);
+    });
+
+    it('finds players by name, tag or Riot ID only', async () => {
+      for (const search of ['riot scope', 'EUW9', 'Riot Scope#EUW9'])
+        expect((await list('players', search)).map((row) => row.gameName)).toEqual(['Riot Scope']);
+      for (const search of ['hidden-puuid', 'FR', 'Hidden handle', 'Hidden display', userId])
+        expect(await list('players', search)).toEqual([]);
+    });
+
+    it('finds memberships by Riot account or team name only', async () => {
+      for (const search of ['Riot Scope', 'Riot Scope#EUW9', 'Scope Lions'])
+        expect((await list('memberships', search)).map((row) => row.teamId)).toEqual([teamId]);
+      for (const search of ['Hidden handle', 'SCPL', userId, 'top'])
+        expect(await list('memberships', search)).toEqual([]);
+    });
+
+    it('matches round numbers partially unless a trailing space asks for the exact one', async () => {
+      const partial = (await list('rounds', '1')).map((row) => row.id);
+      expect(partial).toEqual(expect.arrayContaining([1, 2, 10]));
+      expect((await list('rounds', '1 ')).map((row) => row.id)).toEqual([1]);
+      expect((await list('rounds', 'scope final')).map((row) => row.id)).toEqual([2]);
+      expect(await list('rounds', 'regular')).toEqual([]);
+    });
+
+    it('finds matches by the name or abbreviation of either team only', async () => {
+      for (const search of ['Scope Lions', 'SCPL'])
+        expect((await list('matches', search)).map((row) => row.id)).toEqual([matchId]);
+      for (const search of ['scheduled', 'Scope final', 'Base season'])
+        expect(await list('matches', search)).toEqual([]);
+    });
+
+    it('limits season-scoped resources to the latest season on request', async () => {
+      expect(
+        (await list('teams', 'Scope Lions', { latestSeason: 'true' })).map((row) => row.id)
+      ).toEqual([latestTeamId]);
+      expect((await list('teams', '', { latestSeason: 'true' })).map((row) => row.id)).toEqual([
+        latestTeamId
+      ]);
+      expect(
+        (await list('competitions', '', { latestSeason: 'true' })).map((row) => row.id)
+      ).toEqual([latestCompetitionId]);
+      expect(await list('matches', 'Scope Lions', { latestSeason: 'true' })).toEqual([]);
+      expect(await list('rounds', '', { latestSeason: 'true' })).toEqual([]);
+      expect(await list('memberships', '', { latestSeason: 'true' })).toEqual([]);
+      await request(app)
+        .get(endpoint('teams'))
+        .query({ latestSeason: 'yes' })
+        .set('Cookie', cookie)
+        .expect(422);
+    });
   });
 
   it('ranks name prefixes before substring matches with stable pagination', async () => {
@@ -998,6 +1136,39 @@ describe('admin CRUD with HTTP sessions and PostgreSQL constraints', () => {
       history: (await db.select().from(schema.rosterMovements)).length
     });
     const before = await counts();
+    const duplicate = await send('post', 'memberships', {
+      teamId: a.id,
+      discordUserId: playerId,
+      role: 'coach'
+    }).expect(409);
+    expect(duplicate.body.error.message).toBe(
+      'Este miembro ya esta inscrito en el equipo. Edita su inscripcion existente.'
+    );
+    const invalidCaptain = await send('post', 'memberships', {
+      teamId: b.id,
+      discordUserId: playerId,
+      role: 'staff',
+      isCaptain: true
+    }).expect(409);
+    expect(invalidCaptain.body.error.message).toBe(
+      'Solo los roles top, jungle, mid, adc y support pueden ser capitan.'
+    );
+    const blockedMove = await send(
+      'put',
+      'teams',
+      updateBody('teams', a, {
+        seasonDivisionId: String(c.seasonDivisionId)
+      })
+    ).expect(409);
+    expect(blockedMove.body.error.code).toBe('RELATED_RECORDS');
+    expect(
+      (
+        await db
+          .select()
+          .from(schema.teams)
+          .where(eq(schema.teams.id, String(a.id)))
+      )[0]?.seasonName
+    ).toBe('Roster S1');
     for (const role of ['top', 'jungle', 'mid', 'adc', 'support', 'substitute']) {
       const rejected = await send('post', 'memberships', {
         teamId: b.id,
@@ -1082,5 +1253,113 @@ describe('admin CRUD with HTTP sessions and PostgreSQL constraints', () => {
       .delete(schema.rosterMovements)
       .where(eq(schema.rosterMovements.discordUserId, playerId));
     await db.delete(schema.discordUsers).where(eq(schema.discordUsers.discordId, playerId));
+  });
+
+  it('admin role changes reach the public API without mixing affiliations', async () => {
+    const person = '833456789012345678';
+    const secondPerson = '843456789012345678';
+    await db.insert(schema.discordUsers).values([
+      { discordId: person, username: 'Profile flow' },
+      { discordId: secondPerson, username: 'Captain conflict' }
+    ]);
+    await create('seasons', { name: 'Profile flow season', startsOn: '2026-01-01' });
+    const competition = await create('competitions', {
+      seasonName: 'Profile flow season',
+      divisionName: 'Base division'
+    });
+    const a = await create('teams', {
+      name: 'Flow Alpha',
+      seasonDivisionId: competition.id,
+      color: '#112233'
+    });
+    const b = await create('teams', {
+      name: 'Flow Beta',
+      seasonDivisionId: competition.id,
+      color: '#445566'
+    });
+    const account = await create('players', {
+      gameName: 'Flow player',
+      discordUserId: person,
+      isMain: true
+    });
+    const alpha = await create('memberships', {
+      teamId: a.id,
+      discordUserId: person,
+      role: 'mid',
+      isCaptain: true
+    });
+    const beta = await create('memberships', {
+      teamId: b.id,
+      discordUserId: person,
+      role: 'staff'
+    });
+    const counts = async () => [
+      (await db.select().from(schema.auditLogs)).length,
+      (await db.select().from(schema.rosterMovements)).length
+    ];
+    const beforeRejected = await counts();
+    const captain = await send('post', 'memberships', {
+      teamId: a.id,
+      discordUserId: secondPerson,
+      role: 'top',
+      isCaptain: true
+    }).expect(409);
+    expect(captain.body.error.message).toBe(
+      'El equipo ya tiene un capitan. Retira esa capitania antes de asignar otra.'
+    );
+    for (const role of ['substitute', 'coach', 'staff', 'partners']) {
+      const invalid = await send('post', 'memberships', {
+        teamId: b.id,
+        discordUserId: secondPerson,
+        role,
+        isCaptain: true
+      }).expect(409);
+      expect(invalid.body.error.message).toBe(
+        'Solo los roles top, jungle, mid, adc y support pueden ser capitan.'
+      );
+    }
+    await send(
+      'put',
+      'memberships',
+      updateBody('memberships', beta, { role: 'substitute' })
+    ).expect(409);
+    expect(await counts()).toEqual(beforeRejected);
+
+    const publicProfile = async () => {
+      const response = await request(app).get(`/api/v1/players/${account.id}`).expect(200);
+      const detail = response.body.data as PlayerDetail;
+      return { detail };
+    };
+    const before = await publicProfile();
+    expect(before.detail.registrationTeam?.id).toBe(a.id);
+
+    await send(
+      'put',
+      'memberships',
+      updateBody('memberships', alpha, { role: 'coach', isCaptain: false })
+    ).expect(200);
+    const promoted = await send(
+      'put',
+      'memberships',
+      updateBody('memberships', beta, { role: 'substitute' })
+    ).expect(200);
+    const after = await publicProfile();
+    expect(after.detail.registrationTeam?.id).toBe(b.id);
+    expect(after.detail.statisticsSeasonName).toBe('Profile flow season');
+    const directory = await request(app)
+      .get(`/api/v1/divisions/${competition.id}/players`)
+      .expect(200);
+    expect(directory.body.data).toHaveLength(1);
+    expect(directory.body.data[0].competition.team.id).toBe(b.id);
+
+    await send(
+      'put',
+      'memberships',
+      updateBody('memberships', promoted.body.data, { role: 'partners' })
+    ).expect(200);
+    const retired = await publicProfile();
+    expect(retired.detail.registrationTeam).toBeNull();
+    const empty = await request(app).get(`/api/v1/divisions/${competition.id}/players`).expect(200);
+    expect(empty.body.data).toEqual([]);
   });
 });

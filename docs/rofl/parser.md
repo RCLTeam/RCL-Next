@@ -100,14 +100,14 @@ Cuando se descomprime un paquete `.zip` que contiene archivos que no son repetic
 
 ## 6. Ordenación Natural Determinista de Mapas Importados (`orderImportedGames`)
 
-Tras completar la inserción por lotes de las partidas pertenecientes a una serie o enfrentamiento competitivo, el repositorio asegura que los mapas importados queden indexados de acuerdo con su orden cronológico y secuencial natural. Esta lógica está implementada en la función `orderImportedGames(tx, matchId)` (`apps/api/src/modules/rofl-upload/persistence/postgres-rofl-upload.repository.ts:41-83`).
+Tras completar la inserción por lotes de las partidas pertenecientes a una serie o enfrentamiento competitivo, el repositorio asegura que los mapas importados queden indexados de acuerdo con su orden cronológico y secuencial natural. Esta lógica está implementada en la función `orderImportedGames(tx, matchId)` (`apps/api/src/modules/rofl-upload/persistence/postgres-rofl-upload.repository.ts:68-110`).
 
 ### 6.1 Propósito y Ordenación Alfanumérica Natural
 
 Cuando se importan múltiples archivos `.rofl` con identificadores externos (`externalGameId`, tales como `EUW1-1`, `EUW1-2`, `EUW1-10`), una ordenación puramente léxica situaría erróneamente `EUW1-10` antes de `EUW1-2`. Para garantizar que la columna `game_number` refleje con exactitud la secuencia deportiva:
 
 ```typescript
-// apps/api/src/modules/rofl-upload/persistence/postgres-rofl-upload.repository.ts:51-58
+// apps/api/src/modules/rofl-upload/persistence/postgres-rofl-upload.repository.ts:78-85
 // Keep maps without a replay identifier in their existing positions.
 const imported = games.filter((game) => game.externalGameId !== null);
 const sorted = [...imported].sort((a, b) =>
@@ -120,7 +120,7 @@ const sorted = [...imported].sort((a, b) =>
 
 - **Aislamiento de Mapas Manuales:** La función filtra exclusivamente los mapas con `externalGameId !== null` (`imported`). Aquellas partidas registradas de forma manual sin archivo de repetición preservan inalteradas sus posiciones preexistentes.
 - **Comparación Natural:** El parámetro `{ numeric: true, sensitivity: 'base' }` en `localeCompare` evalúa los segmentos numéricos por su magnitud real, garantizando la secuencia `EUW1-1` $\rightarrow$ `EUW1-2` $\rightarrow$ `EUW1-10`.
-- **Verificación de Cortocircuito (No-op):** Si el orden actual de `imported` ya coincide elemento a elemento con la secuencia ordenada (`sorted.every((game, index) => game.id === imported[index]?.id)`), la función retorna de inmediato sin emitir operaciones de actualización sobre PostgreSQL (`postgres-rofl-upload.repository.ts:59`).
+- **Verificación de Cortocircuito (No-op):** Si el orden actual de `imported` ya coincide elemento a elemento con la secuencia ordenada (`sorted.every((game, index) => game.id === imported[index]?.id)`), la función retorna de inmediato sin emitir operaciones de actualización sobre PostgreSQL (`postgres-rofl-upload.repository.ts:86`).
 
 ### 6.2 Algoritmo de Desplazamiento Atómico ante la Restricción `UNIQUE`
 
@@ -136,7 +136,7 @@ Si se intentara reordenar dos mapas intercambiando directamente sus valores de `
 2. **Búsqueda de Posición Temporal Libre:**
    Se calcula la menor posición libre dentro del rango válido de enteros pequeños de PostgreSQL (`smallint`, 1 a 32767) que no esté ocupada por ninguna partida del partido:
    ```typescript
-   // apps/api/src/modules/rofl-upload/persistence/postgres-rofl-upload.repository.ts:60-64
+   // apps/api/src/modules/rofl-upload/persistence/postgres-rofl-upload.repository.ts:87-91
    const positions = new Map(games.map((game) => [game.id, game.gameNumber]));
    const occupied = new Set(positions.values());
    let temporary = 1;
@@ -151,7 +151,7 @@ Si se intentara reordenar dos mapas intercambiando directamente sus valores de `
    - La partida desplazada (`other`) se mueve a la posición liberada `current`.
    - Si la posición `target` no estaba ocupada, se ejecuta un único `UPDATE` hacia `target`.
    ```typescript
-   // apps/api/src/modules/rofl-upload/persistence/postgres-rofl-upload.repository.ts:72-82
+   // apps/api/src/modules/rofl-upload/persistence/postgres-rofl-upload.repository.ts:99-109
    for (const [index, game] of sorted.entries()) {
      const target = imported[index]?.gameNumber;
      const current = positions.get(game.id);

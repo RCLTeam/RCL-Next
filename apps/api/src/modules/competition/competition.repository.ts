@@ -34,6 +34,7 @@ export interface Round {
   lockAt: Date | null;
 }
 export interface Match {
+  mvpPlayerId: string | null;
   id: string;
   divisionId: string;
   roundId: string | null;
@@ -67,15 +68,18 @@ export interface CompetitionRepository {
     { id: string; name: string; seasonName: string; divisionName: string }[]
   >;
   players(divisionId?: string): Promise<Player[]>;
+  playerSeasonChampions(playerIds: string[], seasonName: string): Promise<Map<string, string>>;
   playerSeasonGames(
     playerId: string,
     seasonName: string
   ): Promise<{
     playerGames: PlayerGameRow[];
     allMatchGames: PlayerGameRow[];
+    mvpMatchIds: string[];
   }>;
   playerDetail(id: string): Promise<PlayerDetail | undefined>;
   teamDetail(id: string): Promise<TeamDetail | undefined>;
+  /** Newest startsOn first, undated seasons last; names break ties deterministically. */
   seasons(): Promise<Season[]>;
   season(id: string): Promise<Season | undefined>;
   divisions(seasonId: string): Promise<Division[]>;
