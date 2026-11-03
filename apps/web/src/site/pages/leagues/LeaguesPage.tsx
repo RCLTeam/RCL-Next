@@ -14,7 +14,7 @@ export function LeaguesPage({ competition }: { competition: Competition }) {
       number="02"
       title="Ligas"
       subtitle="Hub de competiciones"
-      description="Descubre las divisiones, el formato de la competición y el camino hacia la corona."
+      description="Descubre las divisiones, el formato de la competicion y el camino hacia la corona."
     >
       <DataState
         state={{ ...competition.seasons, data: competition.season ? [competition.season] : [] }}
@@ -24,7 +24,7 @@ export function LeaguesPage({ competition }: { competition: Competition }) {
         <DataState
           state={competition.divisions}
           retry={competition.retry}
-          empty="Esta temporada todavía no tiene divisiones."
+          empty="Esta temporada todavia no tiene divisiones."
         >
           <LeagueDivisionGrid
             divisions={competition.divisions.data}

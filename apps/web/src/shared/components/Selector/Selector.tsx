@@ -48,6 +48,18 @@ export function Select({
   const activeOption = enabled[active];
   const listId = `${selectId}-options`;
 
+  // Let touch devices use their native picker instead of competing with it
+  // and opening a keyboard that can scroll/resize the page under the popup.
+  function canUsePopup() {
+    return (
+      !props.multiple &&
+      (props.size ?? 0) <= 1 &&
+      typeof popupRef.current?.showPopover === 'function' &&
+      typeof popupRef.current?.hidePopover === 'function' &&
+      window.matchMedia('(hover: hover) and (pointer: fine)').matches
+    );
+  }
+
   useEffect(() => {
     if (!open) return;
     const dismiss = (event: Event) => {
@@ -82,8 +94,7 @@ export function Select({
   function show(initialQuery = '') {
     const select = nativeRef.current;
     const popup = popupRef.current;
-    if (!select || !popup || select.matches(':disabled') || props.multiple || (props.size ?? 0) > 1)
-      return;
+    if (!select || !popup || select.matches(':disabled') || !canUsePopup()) return;
     const rect = select.getBoundingClientRect();
     const below = Math.max(0, window.innerHeight - rect.bottom - 8);
     // The search replaces the visible selection; only the results extend below it.
@@ -113,29 +124,19 @@ export function Select({
         className={['rcl-select', `rcl-select--${variant}`, className].filter(Boolean).join(' ')}
         onMouseDown={(event) => {
           onMouseDown?.(event);
-          if (
-            event.defaultPrevented ||
-            event.button !== 0 ||
-            props.multiple ||
-            (props.size ?? 0) > 1
-          )
-            return;
+          if (event.defaultPrevented || event.button !== 0 || !canUsePopup()) return;
           event.preventDefault();
         }}
         onClick={(event) => {
           onClick?.(event);
-          if (!event.defaultPrevented) show();
+          if (!event.defaultPrevented && canUsePopup()) {
+            event.preventDefault();
+            show();
+          }
         }}
         onKeyDown={(event) => {
           onKeyDown?.(event);
-          if (
-            event.defaultPrevented ||
-            props.multiple ||
-            (props.size ?? 0) > 1 ||
-            event.ctrlKey ||
-            event.metaKey
-          )
-            return;
+          if (event.defaultPrevented || !canUsePopup() || event.ctrlKey || event.metaKey) return;
           if (['ArrowDown', 'ArrowUp', 'Enter', ' '].includes(event.key)) {
             event.preventDefault();
             show();

@@ -36,7 +36,7 @@ export interface DatabaseImportPreview {
 ```
 - **`confirmation`:** Token criptográfico SHA-256 de 64 caracteres generado durante la simulación transaccional con `SAVEPOINT`. Debe enviarse obligatoriamente en la cabecera `X-Import-Confirmation` al confirmar la importación definitiva.
 - **`exportedAt`:** Marca de tiempo ISO-8601 en la que se generó originalmente el volcado (o `null` si no está disponible en los metadatos de PostgreSQL).
-- **`tables`:** Matriz con el desglose de conteos de filas para cada una de las 21 tablas relacionales del esquema.
+- **`tables`:** Matriz con el desglose de conteos de filas para cada una de las 23 tablas relacionales del esquema.
 
 ---
 

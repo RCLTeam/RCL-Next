@@ -15,6 +15,7 @@ import {
   crudReferences,
   crudResources
 } from './crud-operations.resources.js';
+import { crudLatestSeasonCondition, crudSearchCondition, parseCrudSearch } from './crud-search.js';
 import {
   buildDeletePlan,
   deletePlannedDependents,
@@ -114,7 +115,7 @@ async function findDependents(db: Database, table: PgTable, row: CrudRecord) {
       matches: 'Encuentros',
       match_games: 'Partidas',
       player_game_info: 'Participaciones en partidas',
-      player_game_stats: 'Estadísticas de partidas',
+      player_game_stats: 'Estadisticas de partidas',
       player_game_build: 'Equipamiento de partidas',
       player_game_runes: 'Runas de partidas',
       predictions: 'Predicciones',
@@ -155,7 +156,7 @@ async function validateRelations(
       participants.some((team) => team.seasonDivisionId !== next.idSeasonDivision)
     )
       throw conflict(
-        'Los dos equipos deben ser distintos y pertenecer a la competición seleccionada.'
+        'Los dos equipos deben ser distintos y pertenecer a la competicion seleccionada.'
       );
     if (
       before &&
@@ -312,7 +313,13 @@ export class PostgresCrudOperationsRepository implements CrudOperationsRepositor
     });
   }
 
-  async list(descriptor: ResourceDefinition, offset: number, search: string, limit = 50) {
+  async list(
+    descriptor: ResourceDefinition,
+    offset: number,
+    search: string,
+    limit = 50,
+    latestSeason = false
+  ) {
     const resource = storedResource(descriptor);
     const projection = Object.fromEntries(
       [...new Set([...resource.keys, ...resource.fields.map((field) => field.name)])].map(
@@ -320,98 +327,19 @@ export class PostgresCrudOperationsRepository implements CrudOperationsRepositor
       )
     );
 
-    const searchEscaped = search.replace(/[\\%_]/g, '\\$&');
-    const searchPattern = `%${searchEscaped}%`;
-    const conditions: ReturnType<typeof sql>[] = [];
-
-    if (search) {
-      const searchableNames = [
-        ...new Set([
-          ...resource.keys,
-          ...resource.fields
-            .filter(
-              (field) => field.type === 'text' || field.type === 'select' || field.type === 'url'
-            )
-            .map((field) => field.name)
-        ])
-      ];
-
-      for (const fieldName of searchableNames) {
-        try {
-          const col = column(resource.table, fieldName);
-          if (col) {
-            conditions.push(sql`${col}::text ILIKE ${searchPattern}`);
-          }
-        } catch {
-          // Ignore if the column does not exist in the physical table
-        }
-      }
-      for (const field of resource.fields) {
-        if (!field.reference) continue;
-
-        const refDescriptor = [...crudResources, ...crudReferences].find(
-          (entry) => entry.name === field.reference
-        );
-        if (!refDescriptor) continue;
-
-        const target = storedResource(refDescriptor);
-        const localCol = column(resource.table, field.name);
-        const primaryKeyName = target.keys[0];
-        if (!localCol || !primaryKeyName) continue;
-
-        const targetKeyCol = column(target.table, primaryKeyName);
-
-        const targetSearchFields = target.fields
-          .filter(
-            (f) =>
-              f.type === 'text' ||
-              f.name === 'name' ||
-              f.name === 'username' ||
-              f.name === 'globalName'
-          )
-          .map((f) => f.name);
-
-        const targetConditions: ReturnType<typeof sql>[] = [];
-        for (const tName of targetSearchFields) {
-          try {
-            const tCol = column(target.table, tName);
-            if (tCol) {
-              targetConditions.push(sql`${tCol}::text ILIKE ${searchPattern}`);
-            }
-          } catch {
-            // Ignore missing columns
-          }
-        }
-
-        if (target.name === 'competitions') {
-          targetConditions.push(
-            sql`(${column(target.table, 'seasonName')} ILIKE ${searchPattern} OR ${column(target.table, 'divisionName')} ILIKE ${searchPattern})`
-          );
-        }
-
-        if (targetConditions.length > 0) {
-          conditions.push(
-            sql`EXISTS (
-              SELECT 1 FROM ${target.table}
-              WHERE ${targetKeyCol} = ${localCol}
-                AND (${or(...targetConditions)})
-            )`
-          );
-        }
-      }
-    }
+    const term = parseCrudSearch(search);
 
     const orderByClauses: ReturnType<typeof sql>[] = [];
     const primaryNameField = resource.fields.find(
       (f) => f.name === 'name' || f.name === 'username'
     )?.name;
 
-    if (search && primaryNameField) {
+    if (term.text && primaryNameField) {
       const nameCol = column(resource.table, primaryNameField);
       orderByClauses.push(
         sql`CASE 
-          WHEN ${nameCol}::text ILIKE ${`${searchEscaped}%`} THEN 0 
-          WHEN ${nameCol}::text ILIKE ${searchPattern} THEN 1 
+          WHEN ${nameCol}::text ILIKE ${`${term.escaped}%`} THEN 0 
+          WHEN ${nameCol}::text ILIKE ${term.pattern} THEN 1 
           ELSE 2 
         END`
       );
@@ -423,7 +351,12 @@ export class PostgresCrudOperationsRepository implements CrudOperationsRepositor
       await this.db
         .select({ ...projection, updatedAt: selection(resource.table).updatedAt })
         .from(resource.table)
-        .where(search && conditions.length > 0 ? or(...conditions) : undefined)
+        .where(
+          and(
+            term.text ? crudSearchCondition(resource.name, term) : undefined,
+            latestSeason ? crudLatestSeasonCondition(resource.name) : undefined
+          )
+        )
         .orderBy(...orderByClauses)
         .limit(limit + 1)
         .offset(offset)
@@ -545,7 +478,7 @@ export class PostgresCrudOperationsRepository implements CrudOperationsRepositor
               .from(schema.seasonsDivisions)
               .where(eq(schema.seasonsDivisions.id, String(next.seasonDivisionId)))
               .for('share');
-            if (!competition) throw conflict('La competición seleccionada no existe.');
+            if (!competition) throw conflict('La competicion seleccionada no existe.');
             values.seasonName = competition.seasonName;
           } else if (resource.name === 'memberships') {
             const [team] = await tx
@@ -606,17 +539,17 @@ export class PostgresCrudOperationsRepository implements CrudOperationsRepositor
           if ('constraint' in cause) {
             if (cause.code === '23505' && cause.constraint === 'team_memberships_pkey')
               throw conflict(
-                'Este miembro ya está inscrito en el equipo. Edita su inscripción existente.'
+                'Este miembro ya esta inscrito en el equipo. Edita su inscripcion existente.'
               );
             if (cause.code === '23505' && cause.constraint === 'team_memberships_unique_captain')
               throw conflict(
-                'El equipo ya tiene un capitán. Retira esa capitanía antes de asignar otra.'
+                'El equipo ya tiene un capitan. Retira esa capitania antes de asignar otra.'
               );
             if (
               cause.code === '23514' &&
               cause.constraint === 'team_memberships_captain_role_check'
             )
-              throw conflict('Solo los roles top, jungle, mid, adc y support pueden ser capitán.');
+              throw conflict('Solo los roles top, jungle, mid, adc y support pueden ser capitan.');
           }
           if (cause.code === '23505')
             throw conflict('A record with these values already exists. Check the captain too.');

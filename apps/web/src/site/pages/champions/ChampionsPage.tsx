@@ -27,15 +27,15 @@ export function ChampionsPage({ competition }: { competition: Competition }) {
       id="campeones"
       number="07"
       title="Campeones"
-      subtitle="Estadísticas de juego"
-      description="Selecciones y victorias de cada campeón en los mapas de la competición."
+      subtitle="Estadisticas de juego"
+      description="Selecciones y victorias de cada campeon en los mapas de la competicion."
       toolbar={<CompetitionFilters competition={competition} />}
     >
       <DataState
         state={state}
-        loadingMessage="Cargando estadísticas de campeones…"
-        errorMessage="No se han podido cargar las estadísticas de campeones."
-        empty="Todavía no hay mapas finalizados con datos de campeones en esta división."
+        loadingMessage="Cargando estadisticas de campeones…"
+        errorMessage="No se han podido cargar las estadisticas de campeones."
+        empty="Todavia no hay mapas finalizados con datos de campeones en esta division."
         retry={() => {
           competition.retry();
           setRevision((value) => value + 1);

@@ -28,7 +28,7 @@ export function createDiscordBridgeRouter(options: DiscordBridgeRouterOptions): 
       const fallbackResponse: BridgeHealthResponse = {
         status: 'unreachable',
         healthy: false,
-        message: 'No se puede llegar a él',
+        message: 'No se puede llegar a el',
         details:
           'El websocket no pudo iniciarse, comprobar variables env para asegurar la url correcta'
       };

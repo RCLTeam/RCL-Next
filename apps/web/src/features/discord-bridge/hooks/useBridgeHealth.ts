@@ -79,7 +79,7 @@ export function useBridgeHealth(): UseBridgeHealthReturn {
         data ?? {
           status: 'unreachable',
           healthy: false,
-          message: 'No se puede llegar a él'
+          message: 'No se puede llegar a el'
         }
       );
     }

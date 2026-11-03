@@ -27,7 +27,7 @@ export function useAuth() {
 }
 
 export function canAccessAdmin(state: AuthState): boolean {
-  return state.status === 'authenticated' && ['admin', 'owner'].includes(state.user.role);
+  return state.status === 'authenticated' && ['editor', 'admin', 'owner'].includes(state.user.role);
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {

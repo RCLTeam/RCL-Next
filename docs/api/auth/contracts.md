@@ -14,7 +14,7 @@ export interface AuthUser {
   username: string;
   globalName: string | null;
   avatarHash: string | null;
-  role: 'viewer' | 'admin' | 'owner';
+  role: 'viewer' | 'editor' | 'admin' | 'owner';
 }
 ```
 
@@ -23,7 +23,7 @@ export interface AuthUser {
 - `username` (*string*): Nombre de usuario primario en Discord (sin discriminador numérico).
 - `globalName` (*string \| null*): Nombre público para mostrar configurado por el usuario en Discord. Puede ser `null` si no lo ha definido.
 - `avatarHash` (*string \| null*): Hash identificador del recurso de avatar en los servidores CDN de Discord. Si el hash comienza con `a_`, representa un avatar animado (formato GIF). Es `null` si el usuario no tiene avatar personalizado.
-- `role` (*'viewer' \| 'admin' \| 'owner'*): Rol de acceso y permisos en el sistema RCL-Next.
+- `role` (*'viewer' \| 'editor' \| 'admin' \| 'owner'*): Rol de acceso y permisos en el sistema RCL-Next.
 
 ---
 

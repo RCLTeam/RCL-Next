@@ -52,7 +52,7 @@ describe('CRUD deletion confirmation', () => {
     expect(html).toContain('<dialog');
     expect(html).toContain('aria-describedby="crud-delete-warning"');
     expect(html).toContain('Calculando filas afectadas');
-    expect(html).toMatch(/disabled="">Confirmar eliminación en cascada/);
+    expect(html).toMatch(/disabled="">Confirmar eliminacion en cascada/);
     expect(html).toContain('irreversible');
   });
   it('keeps ordinary admin deletion and explains the dependency restriction', () => {
@@ -65,10 +65,10 @@ describe('CRUD deletion confirmation', () => {
         onDeleted={() => {}}
       />
     );
-    expect(html).toContain('Si tiene datos relacionados, la eliminación se bloqueará.');
-    expect(html).not.toContain('Confirmar eliminación en cascada');
+    expect(html).toContain('Si tiene datos relacionados, la eliminacion se bloqueara.');
+    expect(html).not.toContain('Confirmar eliminacion en cascada');
     expect(html).toContain('Calculando filas afectadas');
-    expect(html).toMatch(/disabled="">Confirmar eliminación/);
+    expect(html).toMatch(/disabled="">Confirmar eliminacion/);
     expect(html).not.toContain('type="checkbox"');
   });
   it('shows per-table counts and distinguishes deleted rows, unlinked rows and blockers', () => {

@@ -110,7 +110,7 @@ export function MatchCard({ match }: { match: Match }) {
           {showScore ? (
             <label className="match-score-spoiler">
               <input type="checkbox" className="spoiler-toggle" />
-              <span className="spoiler-cover">HAZ CLIC PARA VER MÁS</span>
+              <span className="spoiler-cover">HAZ CLIC PARA VER MAS</span>
               <strong className="match-score">{`${match.homeScore} – ${match.awayScore}`}</strong>
             </label>
           ) : (
@@ -171,7 +171,7 @@ export function MatchCard({ match }: { match: Match }) {
             );
           })()
         ) : (
-          <span className="meta">Sin emisión</span>
+          <span className="meta">Sin emision</span>
         )}
       </div>
     </article>

@@ -30,6 +30,7 @@ export interface CrudResource {
   description: string;
   keys: string[];
   fields: CrudField[];
+  seasonScoped?: boolean;
 }
 export interface CrudPageResult {
   records: CrudRecord[];

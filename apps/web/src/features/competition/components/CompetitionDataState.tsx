@@ -16,8 +16,8 @@ export function resolveCompetitionState<T>(
 }
 
 export function DataState<T>({
-  loadingMessage = 'Cargando competición…',
-  errorMessage = 'No se pudo cargar la competición.',
+  loadingMessage = 'Cargando competicion…',
+  errorMessage = 'No se pudo cargar la competicion.',
   ...props
 }: DataStateProps<T>) {
   return <SharedDataState loadingMessage={loadingMessage} errorMessage={errorMessage} {...props} />;

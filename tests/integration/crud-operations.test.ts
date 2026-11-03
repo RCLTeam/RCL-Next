@@ -577,27 +577,20 @@ describe('admin CRUD with HTTP sessions and PostgreSQL constraints', () => {
     }).expect(409);
   });
 
-  it('searches teams by their competition season and division and preserves reference labels', async () => {
-    for (const search of ['base SEASON', 'base DIVISION']) {
-      const response = await request(app)
-        .get(endpoint('teams'))
-        .query({ search })
-        .set('Cookie', cookie)
-        .expect(200);
-      expect(response.body.data.records).toEqual([
-        expect.objectContaining({
-          id: team1,
-          name: 'Home',
-          seasonDivisionIdLabel: 'Base season · Base division'
-        }),
-        expect.objectContaining({
-          id: team2,
-          name: 'Away',
-          seasonDivisionIdLabel: 'Base season · Base division'
-        })
-      ]);
-      expect(response.body.data.hasMore).toBe(false);
-    }
+  it('searches teams by name and preserves reference labels', async () => {
+    const response = await request(app)
+      .get(endpoint('teams'))
+      .query({ search: 'hOmE' })
+      .set('Cookie', cookie)
+      .expect(200);
+    expect(response.body.data.records).toEqual([
+      expect.objectContaining({
+        id: team1,
+        name: 'Home',
+        seasonDivisionIdLabel: 'Base season · Base division'
+      })
+    ]);
+    expect(response.body.data.hasMore).toBe(false);
     for (const search of ["' OR 1=1 --", '%', '_', '\\']) {
       const response = await request(app)
         .get(endpoint('teams'))
@@ -606,6 +599,149 @@ describe('admin CRUD with HTTP sessions and PostgreSQL constraints', () => {
         .expect(200);
       expect(response.body.data.records).toEqual([]);
     }
+  });
+
+  describe('search scope', () => {
+    const userId = '323456789012345678';
+    const teamId = '20000000-0000-4000-8000-000000000003';
+    const latestCompetitionId = '10000000-0000-4000-8000-000000000002';
+    const latestTeamId = '20000000-0000-4000-8000-000000000004';
+    const matchId = '30000000-0000-4000-8000-000000000001';
+    const list = async (name: string, search: string, query: object = {}) =>
+      (
+        await request(app)
+          .get(endpoint(name))
+          .query({ search, ...query })
+          .set('Cookie', cookie)
+          .expect(200)
+      ).body.data.records as CrudRecord[];
+
+    beforeAll(async () => {
+      await db.insert(schema.discordUsers).values({
+        discordId: userId,
+        username: 'Hidden handle',
+        globalName: 'Hidden display'
+      });
+      await db.insert(schema.players).values({
+        gameName: 'Riot Scope',
+        riotTag: 'EUW9',
+        discordUserId: userId,
+        puuid: 'hidden-puuid-value',
+        countryCode: 'FR'
+      });
+      await db.insert(schema.teams).values({
+        id: teamId,
+        seasonName: 'Base season',
+        seasonDivisionId: competitionId,
+        name: 'Scope Lions',
+        shortName: 'SCPL',
+        color: '#123456',
+        discordRoleId: 998877665544332211n
+      });
+      await db.insert(schema.teamMemberships).values({
+        teamId,
+        discordUserId: userId,
+        seasonName: 'Base season',
+        role: 'top'
+      });
+      await db.insert(schema.rounds).values([
+        { id: 2, idSeasonDivision: competitionId, name: 'Scope final 1' },
+        { id: 10, idSeasonDivision: competitionId }
+      ]);
+      await db.insert(schema.matches).values({
+        id: matchId,
+        idSeasonDivision: competitionId,
+        idRound: 2,
+        team1Id: teamId,
+        team2Id: team1
+      });
+      await db.insert(schema.seasons).values({ name: 'Zeta season', startsOn: '2099-01-01' });
+      await db.insert(schema.seasonsDivisions).values({
+        id: latestCompetitionId,
+        seasonName: 'Zeta season',
+        divisionName: 'Base division'
+      });
+      await db.insert(schema.teams).values({
+        id: latestTeamId,
+        seasonName: 'Zeta season',
+        seasonDivisionId: latestCompetitionId,
+        name: 'Scope Lions'
+      });
+    });
+
+    afterAll(async () => {
+      await db.delete(schema.matches).where(eq(schema.matches.id, matchId));
+      await db.delete(schema.teamMemberships).where(eq(schema.teamMemberships.teamId, teamId));
+      await db.delete(schema.players).where(eq(schema.players.discordUserId, userId));
+      await db.delete(schema.teams).where(eq(schema.teams.id, teamId));
+      await db.delete(schema.teams).where(eq(schema.teams.id, latestTeamId));
+      await db.delete(schema.rounds).where(sql`${schema.rounds.id} IN (2, 10)`);
+      await db
+        .delete(schema.seasonsDivisions)
+        .where(eq(schema.seasonsDivisions.id, latestCompetitionId));
+      await db.delete(schema.seasons).where(eq(schema.seasons.name, 'Zeta season'));
+      await db.delete(schema.discordUsers).where(eq(schema.discordUsers.discordId, userId));
+    });
+
+    it('finds teams by name or abbreviation, across seasons, and nothing else', async () => {
+      for (const search of ['scope lions', 'SCPL'])
+        expect((await list('teams', search)).map((row) => row.id).sort()).toContain(teamId);
+      expect((await list('teams', 'Scope lions')).map((row) => row.id).sort()).toEqual([
+        teamId,
+        latestTeamId
+      ]);
+      for (const search of ['#123456', '998877', teamId, 'Base season', 'Base division'])
+        expect(await list('teams', search)).toEqual([]);
+    });
+
+    it('finds players by name, tag or Riot ID only', async () => {
+      for (const search of ['riot scope', 'EUW9', 'Riot Scope#EUW9'])
+        expect((await list('players', search)).map((row) => row.gameName)).toEqual(['Riot Scope']);
+      for (const search of ['hidden-puuid', 'FR', 'Hidden handle', 'Hidden display', userId])
+        expect(await list('players', search)).toEqual([]);
+    });
+
+    it('finds memberships by Riot account or team name only', async () => {
+      for (const search of ['Riot Scope', 'Riot Scope#EUW9', 'Scope Lions'])
+        expect((await list('memberships', search)).map((row) => row.teamId)).toEqual([teamId]);
+      for (const search of ['Hidden handle', 'SCPL', userId, 'top'])
+        expect(await list('memberships', search)).toEqual([]);
+    });
+
+    it('matches round numbers partially unless a trailing space asks for the exact one', async () => {
+      const partial = (await list('rounds', '1')).map((row) => row.id);
+      expect(partial).toEqual(expect.arrayContaining([1, 2, 10]));
+      expect((await list('rounds', '1 ')).map((row) => row.id)).toEqual([1]);
+      expect((await list('rounds', 'scope final')).map((row) => row.id)).toEqual([2]);
+      expect(await list('rounds', 'regular')).toEqual([]);
+    });
+
+    it('finds matches by the name or abbreviation of either team only', async () => {
+      for (const search of ['Scope Lions', 'SCPL'])
+        expect((await list('matches', search)).map((row) => row.id)).toEqual([matchId]);
+      for (const search of ['scheduled', 'Scope final', 'Base season'])
+        expect(await list('matches', search)).toEqual([]);
+    });
+
+    it('limits season-scoped resources to the latest season on request', async () => {
+      expect(
+        (await list('teams', 'Scope Lions', { latestSeason: 'true' })).map((row) => row.id)
+      ).toEqual([latestTeamId]);
+      expect((await list('teams', '', { latestSeason: 'true' })).map((row) => row.id)).toEqual([
+        latestTeamId
+      ]);
+      expect(
+        (await list('competitions', '', { latestSeason: 'true' })).map((row) => row.id)
+      ).toEqual([latestCompetitionId]);
+      expect(await list('matches', 'Scope Lions', { latestSeason: 'true' })).toEqual([]);
+      expect(await list('rounds', '', { latestSeason: 'true' })).toEqual([]);
+      expect(await list('memberships', '', { latestSeason: 'true' })).toEqual([]);
+      await request(app)
+        .get(endpoint('teams'))
+        .query({ latestSeason: 'yes' })
+        .set('Cookie', cookie)
+        .expect(422);
+    });
   });
 
   it('ranks name prefixes before substring matches with stable pagination', async () => {
@@ -1006,7 +1142,7 @@ describe('admin CRUD with HTTP sessions and PostgreSQL constraints', () => {
       role: 'coach'
     }).expect(409);
     expect(duplicate.body.error.message).toBe(
-      'Este miembro ya está inscrito en el equipo. Edita su inscripción existente.'
+      'Este miembro ya esta inscrito en el equipo. Edita su inscripcion existente.'
     );
     const invalidCaptain = await send('post', 'memberships', {
       teamId: b.id,
@@ -1015,7 +1151,7 @@ describe('admin CRUD with HTTP sessions and PostgreSQL constraints', () => {
       isCaptain: true
     }).expect(409);
     expect(invalidCaptain.body.error.message).toBe(
-      'Solo los roles top, jungle, mid, adc y support pueden ser capitán.'
+      'Solo los roles top, jungle, mid, adc y support pueden ser capitan.'
     );
     const blockedMove = await send(
       'put',
@@ -1169,7 +1305,7 @@ describe('admin CRUD with HTTP sessions and PostgreSQL constraints', () => {
       isCaptain: true
     }).expect(409);
     expect(captain.body.error.message).toBe(
-      'El equipo ya tiene un capitán. Retira esa capitanía antes de asignar otra.'
+      'El equipo ya tiene un capitan. Retira esa capitania antes de asignar otra.'
     );
     for (const role of ['substitute', 'coach', 'staff', 'partners']) {
       const invalid = await send('post', 'memberships', {
@@ -1179,7 +1315,7 @@ describe('admin CRUD with HTTP sessions and PostgreSQL constraints', () => {
         isCaptain: true
       }).expect(409);
       expect(invalid.body.error.message).toBe(
-        'Solo los roles top, jungle, mid, adc y support pueden ser capitán.'
+        'Solo los roles top, jungle, mid, adc y support pueden ser capitan.'
       );
     }
     await send(

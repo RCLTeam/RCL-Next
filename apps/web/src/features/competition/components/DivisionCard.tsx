@@ -26,8 +26,8 @@ export function DivisionCard({
   const resolvedImage = brandAssets[image] ?? image;
   const defaultDescription =
     image === 'premier'
-      ? 'La máxima categoría de RCL. Los equipos se disputan la corona temporada tras temporada.'
-      : 'La cantera competitiva de RCL. El siguiente capítulo del camino hacia la corona.';
+      ? 'La maxima categoria de RCL. Los equipos se disputan la corona temporada tras temporada.'
+      : 'La cantera competitiva de RCL. El siguiente capitulo del camino hacia la corona.';
 
   const cardClass = ['league-card', active ? 'is-active' : '', image].filter(Boolean).join(' ');
 

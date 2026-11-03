@@ -129,7 +129,7 @@ describe('DiscordBridgeClient', () => {
   }
 
   describe('checkHealth ephemeral probe', () => {
-    it('returns "Conexión correcta" (200 OK) when LOGIN_SUCCESS is received', async () => {
+    it('returns "Conexion correcta" (200 OK) when LOGIN_SUCCESS is received', async () => {
       const client = createClient();
       const probePromise = client.checkHealth();
       const ws = getSocket(0);
@@ -150,12 +150,12 @@ describe('DiscordBridgeClient', () => {
       expect(result).toEqual({
         status: 'connected',
         healthy: true,
-        message: 'Conexión correcta'
+        message: 'Conexion correcta'
       });
       expect(ws.closeCode).toBe(1000);
     });
 
-    it('returns "No se puede llegar a él" (503) when socket errors before open', async () => {
+    it('returns "No se puede llegar a el" (503) when socket errors before open', async () => {
       const client = createClient();
       const probePromise = client.checkHealth();
       const ws = getSocket(0);
@@ -166,13 +166,13 @@ describe('DiscordBridgeClient', () => {
       expect(result).toEqual({
         status: 'unreachable',
         healthy: false,
-        message: 'No se puede llegar a él',
+        message: 'No se puede llegar a el',
         details:
           'El websocket no pudo iniciarse, comprobar variables env para asegurar la url correcta'
       });
     });
 
-    it('returns "No se puede llegar a él" (503) when socket closes before open', async () => {
+    it('returns "No se puede llegar a el" (503) when socket closes before open', async () => {
       const client = createClient();
       const probePromise = client.checkHealth();
       const ws = getSocket(0);
@@ -183,13 +183,13 @@ describe('DiscordBridgeClient', () => {
       expect(result).toEqual({
         status: 'unreachable',
         healthy: false,
-        message: 'No se puede llegar a él',
+        message: 'No se puede llegar a el',
         details:
           'El websocket no pudo iniciarse, comprobar variables env para asegurar la url correcta'
       });
     });
 
-    it('returns "No se puede llegar a él" (503) when connection times out before open', async () => {
+    it('returns "No se puede llegar a el" (503) when connection times out before open', async () => {
       const client = createClient();
       const probePromise = client.checkHealth();
 
@@ -199,13 +199,13 @@ describe('DiscordBridgeClient', () => {
       expect(result).toEqual({
         status: 'unreachable',
         healthy: false,
-        message: 'No se puede llegar a él',
+        message: 'No se puede llegar a el',
         details:
           'El websocket no pudo iniciarse, comprobar variables env para asegurar la url correcta'
       });
     });
 
-    it('returns "No se puede llegar a él" (503) immediately when wsUrl is empty', async () => {
+    it('returns "No se puede llegar a el" (503) immediately when wsUrl is empty', async () => {
       const emptyClient = new DiscordBridgeClient({
         wsUrl: '',
         supertoken: 'secret-token-123'
@@ -215,7 +215,7 @@ describe('DiscordBridgeClient', () => {
       expect(result).toEqual({
         status: 'unreachable',
         healthy: false,
-        message: 'No se puede llegar a él',
+        message: 'No se puede llegar a el',
         details:
           'El websocket no pudo iniciarse, comprobar variables env para asegurar la url correcta'
       });
@@ -827,7 +827,7 @@ describe('DiscordBridgeClient', () => {
         checkHealth: vi.fn().mockResolvedValue({
           status: 'connected',
           healthy: true,
-          message: 'Conexión correcta'
+          message: 'Conexion correcta'
         })
       };
       app.use('/api/v1/bridge', createDiscordBridgeRouter({ bridgeClient: mockChecker }));
@@ -838,7 +838,7 @@ describe('DiscordBridgeClient', () => {
       expect(res.body).toEqual({
         status: 'connected',
         healthy: true,
-        message: 'Conexión correcta'
+        message: 'Conexion correcta'
       });
     });
 
@@ -848,7 +848,7 @@ describe('DiscordBridgeClient', () => {
         checkHealth: vi.fn().mockResolvedValue({
           status: 'unreachable',
           healthy: false,
-          message: 'No se puede llegar a él',
+          message: 'No se puede llegar a el',
           details:
             'El websocket no pudo iniciarse, comprobar variables env para asegurar la url correcta'
         })
@@ -861,7 +861,7 @@ describe('DiscordBridgeClient', () => {
       expect(res.body).toEqual({
         status: 'unreachable',
         healthy: false,
-        message: 'No se puede llegar a él',
+        message: 'No se puede llegar a el',
         details:
           'El websocket no pudo iniciarse, comprobar variables env para asegurar la url correcta'
       });
@@ -903,7 +903,7 @@ describe('DiscordBridgeClient', () => {
       expect(res.body).toEqual({
         status: 'unreachable',
         healthy: false,
-        message: 'No se puede llegar a él',
+        message: 'No se puede llegar a el',
         details:
           'El websocket no pudo iniciarse, comprobar variables env para asegurar la url correcta'
       });

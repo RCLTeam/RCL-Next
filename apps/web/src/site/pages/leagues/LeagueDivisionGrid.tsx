@@ -32,14 +32,14 @@ function LeagueFormatCard({
           <h3>{division.name}</h3>
           <img className="league-card-crown" src={brandAssets[brand]} alt="" loading="lazy" />
         </div>
-        <p>Consulta los equipos, las jornadas y la clasificación de esta división.</p>
+        <p>Consulta los equipos, las jornadas y la clasificacion de esta division.</p>
         <div className="league-card-actions">
           <SiteLink
             className="btn-ghost"
             href="/clasificacion"
             onClick={() => onSelectDivision(division.id)}
           >
-            Ver clasificación
+            Ver clasificacion
           </SiteLink>
         </div>
       </div>
@@ -48,7 +48,7 @@ function LeagueFormatCard({
           <iframe
             className="league-format-video"
             src={source}
-            title={`Vídeo del formato de ${division.name}`}
+            title={`Video del formato de ${division.name}`}
             loading="lazy"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
             allowFullScreen

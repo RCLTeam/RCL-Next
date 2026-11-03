@@ -70,7 +70,7 @@ export function CalendarPage({ competition }: { competition: Competition }) {
       number="03"
       title="Calendario"
       subtitle="Cada mapa cuenta"
-      description="Consulta los encuentros, las jornadas y los resultados de tu división."
+      description="Consulta los encuentros, las jornadas y los resultados de tu division."
       toolbar={
         <CompetitionFilters competition={competition}>
           <RoundFilter
@@ -91,7 +91,7 @@ export function CalendarPage({ competition }: { competition: Competition }) {
       )}
       <DataState
         state={resolveCompetitionState(competition, competition.calendar)}
-        empty="Todavía no hay partidos programados en esta división."
+        empty="Todavia no hay partidos programados en esta division."
         retry={competition.retry}
       >
         <MatchList matches={matches} />

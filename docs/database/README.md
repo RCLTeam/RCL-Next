@@ -26,7 +26,7 @@ La arquitectura relacional implementa un diseño de alta integridad deportiva qu
 
 | Documento | Descripción |
 |---|---|
-| [schema.md](./schema.md) | Catálogo detallado de las 21 tablas Drizzle y 6 tipos enumerados (`pgEnum`), especificación de columnas, tipos, claves y nulabilidad. |
+| [schema.md](./schema.md) | Catálogo detallado de las 23 tablas Drizzle y 6 tipos enumerados (`pgEnum`), especificación de columnas, tipos, claves y nulabilidad. |
 | [constraints.md](./constraints.md) | Restricciones relacionales, índices únicos parciales, reglas de validación `CHECK` y disparadores PL/pgSQL (`set_updated_at`, `check_match_games_teams`, `complete_player_game`). |
 | [migrations.md](./migrations.md) | Ciclo de vida de migraciones con Drizzle Kit, ejecutor programático con bloqueo consultivo `72160419` y verificación de integridad criptográfica SHA-256. |
 | [mvp-backfill.md](./mvp-backfill.md) | Simulación, aplicación y verificación del MVP histórico por enfrentamiento; incidencias y reintentos por serie. |

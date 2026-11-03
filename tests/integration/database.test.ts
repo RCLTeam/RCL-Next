@@ -29,8 +29,19 @@ test('PostgreSQL migrations, fixtures and relational constraints', async (t) => 
     const result = await client.query<{ total: number }>(
       'SELECT count(*)::int AS total FROM drizzle.__drizzle_migrations'
     );
-    expect(result.rows[0]?.total).toBe(4);
+    expect(result.rows[0]?.total).toBe(6);
   }
+  const legacy = await client.query<{ name: string | null }>(
+    "SELECT to_regclass('public.crystal_ball_campaigns')::text AS name UNION ALL SELECT to_regclass('public.crystal_ball_entries')::text"
+  );
+  expect(legacy.rows.every((row) => row.name === null)).toBe(true);
+  const crystalTriggers = await client.query<{ table_name: string }>(
+    "SELECT event_object_table AS table_name FROM information_schema.triggers WHERE trigger_name='set_updated_at' AND event_object_table LIKE 'crystal_ball_%' ORDER BY event_object_table"
+  );
+  expect(crystalTriggers.rows.map((row) => row.table_name)).toEqual([
+    'crystal_ball_league_campaigns',
+    'crystal_ball_league_entries'
+  ]);
   // matches schema defines stream_url_live column
   expect(schema.matches.streamUrlLive).toBeTruthy();
   expect(schema.matches.streamUrlLive.name).toBe('stream_url_live');
@@ -53,10 +64,10 @@ test('PostgreSQL migrations, fixtures and relational constraints', async (t) => 
   expect((await db.select().from(schema.teams)).length).toBe(4);
   expect((await db.select().from(schema.playerGameInfo)).length).toBe(10);
   expect('isActive' in ((await db.select().from(schema.seasons))[0] ?? {})).toBe(false);
-  // all 21 ORM tables map to executable SQL
+  // All ORM tables map to executable SQL.
   {
     const tables = Object.values(schema).filter((value) => is(value, Table));
-    expect(tables.length).toBe(21);
+    expect(tables.length).toBe(23);
     for (const table of tables) await db.select().from(table).limit(1);
   }
   // SQL columns, foreign keys, checks and indexes match Drizzle metadata

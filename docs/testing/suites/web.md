@@ -14,6 +14,9 @@ Las pruebas se ejecutan bajo Vitest en el entorno `node` por defecto: los compon
 
 ---
 
+
+Ampliación del 31 de octubre de 2026: `apps/web/src/site/pages/playoffs/playoff-model.test.ts` incorpora 4 pruebas de asignación y progresión del cuadro de seis equipos, sin creación automática de partidos. Se complementa con la suite de renderizado `tests/unit/render/competition-pages.test.tsx` (26 pruebas), actualizada para usar `PlayoffFormat`. Véase [el flujo de playoffs](../../web/competition/playoffs.md).
+
 ## 2. Inventario de Suites de `apps/web`
 
 | # | Archivo de Prueba | Pruebas | LoC brutas | Área / Característica | Alcance y Aserciones Principales |
@@ -59,9 +62,8 @@ Las pruebas se ejecutan bajo Vitest en el entorno `node` por defecto: los compon
 2. **Funcionalidad `rofl-upload` (`apps/web/src/features/rofl-upload/`):**
    - *Ausencia en carpeta local:* Cero archivos `*.test.tsx` directos dentro de `features/rofl-upload/`.
    - *Dónde se prueba:* En `tests/unit/useRoflUploadWs.test.ts` (16 pruebas, 255 LoC brutas) para toda la orquestación del hook de streaming binario y en `tests/unit/render/rofl-upload.test.tsx` (7 pruebas, 127 LoC brutas) para la interfaz de arrastrar y soltar repeticiones.
-3. **Página `crystal-ball` (`/bola-cristal`):**
-   - *Ausencia de pruebas dedicadas:* No cuenta con un archivo `*.test.tsx` dedicado a su vista aislada.
-   - *Dónde se prueba:* Su montaje y resolución de navegación están garantizados por la suite general de rutas `apps/web/src/site/routes.test.tsx` y la suite de integración de la aplicación `tests/unit/render/App.test.tsx`.
+3. **Bola de cristal (`/bola-cristal` y administración):**
+   - Pruebas junto a los componentes `CrystalAnswerPicker`, `CrystalSeason`, `CrystalAdmin` y al hook `useCrystalBall`: limpieza e intercambio de ramas, estados de catálogo, guard de navegación, sincronización de resultados y aislamiento por liga/usuario. Véase [documentación web](../../web/crystal-ball/README.md).
 4. **Fechas y horas en la zona horaria de la liga:**
    - `apps/web/src/shared/league-time.test.ts` (3 pruebas) cubre `formatLeagueDate`: instante cercano a medianoche, cambio de horario de invierno y fecha no válida.
    - `MatchCard.test.tsx`, `PredictionCard.test.tsx` y `ArticleView.test.tsx` renderizan `2026-10-04T22:30:00Z` y comprueban la fecha y hora de `Europe/Madrid` (`05 oct` / `00:30`, `lun, 00:30`, `5 de octubre de 2026`).

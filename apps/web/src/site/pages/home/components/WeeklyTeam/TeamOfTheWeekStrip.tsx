@@ -47,7 +47,7 @@ export function TeamOfTheWeekStrip({ competition }: { competition: Competition }
       )}
       <ContentStatus {...content} />
       {!content.loading && !content.error && !team && (
-        <p>No hay quintetos publicados para esta división.</p>
+        <p>No hay quintetos publicados para esta division.</p>
       )}
       {!content.loading && !content.error && (
         <div className="totw-grid">
@@ -67,7 +67,7 @@ export function TeamOfTheWeekStrip({ competition }: { competition: Competition }
                     </div>
                   )}
                   <h3>{displayName(player?.name ?? 'Por anunciar')}</h3>
-                  <p>{player?.team ?? 'Próxima selección'}</p>
+                  <p>{player?.team ?? 'Proxima seleccion'}</p>
                 </div>
               </article>
             );

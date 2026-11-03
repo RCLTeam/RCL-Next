@@ -9,8 +9,8 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   if (!response.ok)
     throw new Error(
       response.status === 409
-        ? 'Las votaciones ya están cerradas.'
-        : 'No se han podido cargar o guardar las predicciones. Inténtalo de nuevo.'
+        ? 'Las votaciones ya estan cerradas.'
+        : 'No se han podido cargar o guardar las predicciones. Intentalo de nuevo.'
     );
   return (await response.json()).data as T;
 }

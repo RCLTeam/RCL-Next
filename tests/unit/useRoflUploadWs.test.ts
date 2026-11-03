@@ -117,7 +117,7 @@ test('uploadReducer handles socket disconnect cleanly', () => {
   );
   expect(state.status).toBe('error');
   expect(state.stage).toBe('error');
-  expect(state.errorMessage ?? '').toMatch(/desconexión|interrumpida|connection/i);
+  expect(state.errorMessage ?? '').toMatch(/desconexion|interrumpida|connection/i);
   expect(state.terminalLogs.some((l) => l.includes('interrumpida'))).toBeTruthy();
 });
 
@@ -168,7 +168,7 @@ test('uploadReducer handles specific connection_lost messages for 4001 and 4003'
   });
   expect(state4001.status).toBe('error');
   expect(
-    state4001.errorMessage?.includes('sesión') || state4001.errorMessage?.includes('inicia sesión')
+    state4001.errorMessage?.includes('sesion') || state4001.errorMessage?.includes('inicia sesion')
   ).toBeTruthy();
   expect(
     state4001.terminalLogs.some((l) => l.includes('4001') && l.includes('Unauthorized'))
@@ -196,10 +196,10 @@ test('uploadReducer handles specific connection_lost message for 1009 and defaul
     reason: 'Message too big'
   });
   expect(state1009.status).toBe('error');
-  expect(state1009.errorMessage).toBe('El archivo supera el tamaño máximo permitido (50MB).');
+  expect(state1009.errorMessage).toBe('El archivo supera el tamaño maximo permitido (50MB).');
   expect(
     state1009.terminalLogs.some(
-      (l) => l.includes('code: 1009') && l.includes('El archivo supera el tamaño máximo permitido')
+      (l) => l.includes('code: 1009') && l.includes('El archivo supera el tamaño maximo permitido')
     )
   ).toBeTruthy();
 
@@ -208,10 +208,10 @@ test('uploadReducer handles specific connection_lost message for 1009 and defaul
     code: 1006
   });
   expect(stateDefault.status).toBe('error');
-  expect(stateDefault.errorMessage).toBe('Conexión cerrada inesperadamente con el servidor.');
+  expect(stateDefault.errorMessage).toBe('Conexion cerrada inesperadamente con el servidor.');
   expect(
     stateDefault.terminalLogs.some(
-      (l) => l.includes('code: 1006') && l.includes('Conexión cerrada inesperadamente')
+      (l) => l.includes('code: 1006') && l.includes('Conexion cerrada inesperadamente')
     )
   ).toBeTruthy();
 });

@@ -24,7 +24,7 @@ describe('home content publication, authorization and persistence', () => {
   const client = new PGlite({ extensions: { btree_gist } });
   const db = drizzle(client, { schema });
   const origin = 'http://localhost:5173';
-  const tokens = { admin: 'a'.repeat(64), viewer: 'b'.repeat(64) };
+  const tokens = { admin: 'a'.repeat(64), viewer: 'b'.repeat(64), editor: 'c'.repeat(64) };
   const app = createApp({
     editorialImageDirectory: imageDirectory,
     teamLogoDirectory: join(imageDirectory, 'teams'),
@@ -46,6 +46,36 @@ describe('home content publication, authorization and persistence', () => {
     }
   });
   const root = '/api/v1/home-content';
+  it('allows editors to manage home content while denying team logo administration', async () => {
+    await request(app).get(`${root}/admin/articles`).set('Cookie', cookie('editor')).expect(200);
+    await request(app)
+      .get(`${root}/admin/weekly-teams/${divisionA}/rounds`)
+      .set('Cookie', cookie('editor'))
+      .expect(200);
+    await request(app).get('/api/v1/team-logos/admin').set('Cookie', cookie('editor')).expect(403);
+    await request(app)
+      .post(`${root}/admin/articles`)
+      .set('Cookie', cookie('editor'))
+      .send(article)
+      .expect(403);
+    const created = await request(app)
+      .post(`${root}/admin/articles`)
+      .set('Cookie', cookie('editor'))
+      .set('Origin', origin)
+      .send({ ...article, title: 'Editor article' })
+      .expect(201);
+    await request(app)
+      .put(`${root}/admin/articles/${created.body.data.id}`)
+      .set('Cookie', cookie('editor'))
+      .set('Origin', origin)
+      .send({ ...article, title: 'Editor updated' })
+      .expect(200);
+    await request(app)
+      .delete(`${root}/admin/articles/${created.body.data.id}`)
+      .set('Cookie', cookie('editor'))
+      .set('Origin', origin)
+      .expect(200);
+  });
   it('discards abandoned uploads but preserves images referenced by saved drafts', async () => {
     const images = new EditorialImageStore(imageDirectory);
     const upload = () => images.save(Buffer.from('89504e470d0a1a0a', 'hex'), 'image/png');
@@ -208,7 +238,7 @@ describe('home content publication, authorization and persistence', () => {
     await migrate(db, {
       migrationsFolder: fileURLToPath(new URL('../../packages/database/drizzle', import.meta.url))
     });
-    for (const [index, role] of (['admin', 'viewer'] as const).entries()) {
+    for (const [index, role] of (['admin', 'viewer', 'editor'] as const).entries()) {
       const id = `${index + 1}23456789012345678`;
       await db.insert(schema.discordUsers).values({ discordId: id, username: role, role });
       await db.insert(schema.authSessions).values({

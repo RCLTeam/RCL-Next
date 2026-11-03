@@ -39,7 +39,7 @@ export function PredictionsPage({ competition }: { competition: Competition }) {
       number="08"
       title="Elige tu ganador"
       subtitle="Predicciones de la comunidad"
-      description="Antes de cada jornada, vota quién crees que se lleva cada serie. Cada acierto suma puntos a tu clasificación personal de predictor."
+      description="Antes de cada jornada, vota quien crees que se lleva cada serie. Cada acierto suma puntos a tu clasificacion personal de predictor."
     >
       <div className="page-toolbar">
         <CompetitionFilters competition={competition}>
@@ -77,7 +77,7 @@ export function PredictionsPage({ competition }: { competition: Competition }) {
       )}
       {state.status === 'anonymous' && data?.open && (
         <p className="prediction-login">
-          <a href={discordLoginUrl}>Inicia sesión con Discord</a> para guardar tus predicciones.
+          <a href={discordLoginUrl}>Inicia sesion con Discord</a> para guardar tus predicciones.
         </p>
       )}
       <DataState
@@ -89,7 +89,7 @@ export function PredictionsPage({ competition }: { competition: Competition }) {
           predictions.retry();
           competition.retry();
         }}
-        empty="No hay encuentros programados para esta jornada en esta división."
+        empty="No hay encuentros programados para esta jornada en esta division."
       >
         <div className="prediction-groups">
           {[true, false].map((open) => {

@@ -12,23 +12,23 @@ async function request(path: string, init: RequestInit = {}) {
     const messages: Record<string, string> = {
       IMPORT_PREVIEW_CHANGED:
         'El archivo o la base de datos han cambiado. Vuelve a validar antes de importar.',
-      DATABASE_BUSY: 'Hay otra operación en curso. Inténtalo de nuevo en unos instantes.',
+      DATABASE_BUSY: 'Hay otra operacion en curso. Intentalo de nuevo en unos instantes.',
       POSTGRES_TOOLS_UNAVAILABLE:
-        'No están disponibles pg_dump y pg_restore. Revisa POSTGRES_BIN_DIR en la API.',
-      INCOMPATIBLE_BACKUP: 'El backup no corresponde al esquema actual de RCL o está incompleto.',
-      INVALID_BACKUP: 'Selecciona un backup PostgreSQL válido en formato .dump.',
+        'No estan disponibles pg_dump y pg_restore. Revisa POSTGRES_BIN_DIR en la API.',
+      INCOMPATIBLE_BACKUP: 'El backup no corresponde al esquema actual de RCL o esta incompleto.',
+      INVALID_BACKUP: 'Selecciona un backup PostgreSQL valido en formato .dump.',
       INVALID_BACKUP_DATA:
         'El backup contiene datos incompatibles. La base actual se ha conservado.'
     };
     throw new Error(
       messages[String(body?.error?.code)] ??
         (response.status === 401
-          ? 'La sesión ha caducado. Vuelve a iniciar sesión.'
+          ? 'La sesion ha caducado. Vuelve a iniciar sesion.'
           : response.status === 403
-            ? 'No tienes permiso para realizar esta operación.'
+            ? 'No tienes permiso para realizar esta operacion.'
             : response.status === 413
-              ? 'El archivo supera el límite permitido para transferencias web.'
-              : 'No se pudo completar la operación. Comprueba la conexión y la configuración de PostgreSQL.')
+              ? 'El archivo supera el limite permitido para transferencias web.'
+              : 'No se pudo completar la operacion. Comprueba la conexion y la configuracion de PostgreSQL.')
     );
   }
   return response;

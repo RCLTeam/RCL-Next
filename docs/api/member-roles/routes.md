@@ -19,7 +19,7 @@ Todas las rutas inyectan de forma homogénea la cabecera HTTP defensiva (`member
 
 - **Ruta:** `GET /api/v1/member-roles`
 - **Controlador:** `member-roles.router.ts:11-13`
-- **Autenticación requerida:** Rol `'admin'` o superior (`requireAuth(auth, 'admin')`). Un usuario con rol `'owner'` satisface este requisito; un `'viewer'` es denegado con 403.
+- **Autenticación requerida:** Rol `'admin'` o superior (`requireAuth(auth, 'admin')`). Un usuario con rol `'owner'` satisface este requisito; un `'viewer'` o `'editor'` es denegado con 403.
 - **Parámetros de consulta (Query Parameters):**
   - `search` (*string, opcional, por defecto `""`*): Cadena de texto para filtrar miembros. Se somete a `trim()` y se limita a un máximo de 120 caracteres (`member-roles.service.ts:10`).
   - `offset` (*entero, opcional, por defecto `0`*): Número de registros a omitir para paginación (`0 <= offset <= 1000000`).
@@ -48,7 +48,7 @@ Todas las rutas inyectan de forma homogénea la cabecera HTTP defensiva (`member
 - **Códigos de Estado:**
   - `200 OK`: Petición procesada con éxito.
   - `401 Unauthorized` (`UNAUTHENTICATED`): Sin sesión activa.
-  - `403 Forbidden` (`FORBIDDEN`): El usuario no posee privilegios de administración (`viewer`).
+  - `403 Forbidden` (`FORBIDDEN`): El usuario no posee privilegios de administración (`viewer` o `editor`).
   - `422 Unprocessable Entity` (`VALIDATION_ERROR`): Parámetros de query inválidos (longitud mayor a 120, offset negativo o no numérico).
 
 ---
@@ -71,7 +71,7 @@ Todas las rutas inyectan de forma homogénea la cabecera HTTP defensiva (`member
   ```
 - **Comportamiento:**
   1. Extrae el identificador del usuario que ejecuta la petición: `actorId = String(res.locals.user.discordId)` (`member-roles.router.ts:20`).
-  2. Valida mediante Zod que `role` y `expectedRole` pertenezcan al enum `['viewer', 'admin', 'owner']` (`member-roles.service.ts:22`).
+  2. Valida mediante Zod que `role` y `expectedRole` pertenezcan al enum `['viewer', 'editor', 'admin', 'owner']` (`member-roles.service.ts:22`).
   3. Ejecuta la mutación atómica en `service.changeRole(actorId, id, input)`.
   4. Responde con el objeto `RoleMember` actualizado.
 - **Respuesta (HTTP 200 OK):**

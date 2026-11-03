@@ -5,7 +5,7 @@ const CDRAGON_PERKS =
 export const statShardAssets: GameCatalog = {
   'rune:5001': { name: 'Vida por nivel', image: `${CDRAGON_PERKS}/statmodshealthplusicon.png` },
   'rune:5002': { name: 'Armadura', image: `${CDRAGON_PERKS}/statmodsarmoricon.png` },
-  'rune:5003': { name: 'Resistencia mágica', image: `${CDRAGON_PERKS}/statmodsmagicresicon.png` },
+  'rune:5003': { name: 'Resistencia magica', image: `${CDRAGON_PERKS}/statmodsmagicresicon.png` },
   'rune:5008': {
     name: 'Fuerza adaptable',
     image: `${CDRAGON_PERKS}/statmodsadaptiveforceicon.png`

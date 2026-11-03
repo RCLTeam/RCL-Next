@@ -18,7 +18,7 @@ export function teamLogosRouter(auth?: AuthOptions, store = new TeamLogosStore()
   });
   if (!auth) {
     router.use((_req, res) => {
-      res.status(503).json({ error: { message: 'La autenticación no está configurada.' } });
+      res.status(503).json({ error: { message: 'La autenticacion no esta configurada.' } });
     });
     return router;
   }

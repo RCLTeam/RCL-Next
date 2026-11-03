@@ -88,29 +88,29 @@ export function MatchMatchupsSection({
       aria-labelledby="tab-enfrentamientos"
       className="match-report-section"
     >
-      <h2>01 · Enfrentamientos por posición y runas</h2>
+      <h2>01 · Enfrentamientos por posicion y runas</h2>
       <p className="meta">
         Campeones, K/D/A y build final · Pulsa la tarjeta de un jugador para ver sus runas
       </p>
       {!game ? (
         <div className="empty-state">
-          El resultado está registrado, pero todavía no se han importado los datos de las partidas.
+          El resultado esta registrado, pero todavia no se han importado los datos de las partidas.
         </div>
       ) : (
         <>
           {rows.length === 0 && (
             <div className="empty-state">Jugadores pendientes de importar para este mapa.</div>
           )}
-          {rows.some((row) => row.position === 'SIN POSICIÓN') && (
-            <p className="meta">Algunos jugadores no tienen posición registrada en este mapa.</p>
+          {rows.some((row) => row.position === 'SIN POSICION') && (
+            <p className="meta">Algunos jugadores no tienen posicion registrada en este mapa.</p>
           )}
-          <div className="match-lanes-scroll" aria-label="Comparativa de los equipos por posición">
+          <div className="match-lanes-scroll" aria-label="Comparativa de los equipos por posicion">
             <div className="match-lane-heading">
               <span>
                 {match.homeTeam.name} ·{' '}
                 {game.blueTeamId === match.homeTeam.id ? 'Lado azul' : 'Lado rojo'}
               </span>
-              <span>Posición</span>
+              <span>Posicion</span>
               <span>
                 {match.awayTeam.name} ·{' '}
                 {game.blueTeamId === match.awayTeam.id ? 'Lado azul' : 'Lado rojo'}

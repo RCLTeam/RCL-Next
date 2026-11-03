@@ -86,7 +86,7 @@ export function SuggestionModal({ isOpen = true, onClose, children }: Suggestion
       onCancel={handleCancel}
     >
       <div className="suggestion-modal-header">
-        <h2 id="suggestion-modal-title">Buzón de Sugerencias</h2>
+        <h2 id="suggestion-modal-title">Buzon de Sugerencias</h2>
         <button
           type="button"
           className="suggestion-modal-close"

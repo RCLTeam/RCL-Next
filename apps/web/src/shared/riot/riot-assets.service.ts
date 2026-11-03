@@ -18,7 +18,7 @@ export type {
 export const defaultGameCatalog: GameCatalog = {
   ...statShardAssets,
   ...positionAssets,
-  'rune:statShards': { name: 'Fragmentos de Estadísticas', slots: STAT_SHARD_SLOTS }
+  'rune:statShards': { name: 'Fragmentos de Estadisticas', slots: STAT_SHARD_SLOTS }
 };
 
 export async function loadGameCatalog(): Promise<GameCatalog> {

@@ -102,7 +102,7 @@ export function SuggestionForm({
           ✓
         </div>
         <h3>¡Sugerencia enviada!</h3>
-        <p>Tu sugerencia ha sido tramitada y publicada con éxito en el canal de Discord.</p>
+        <p>Tu sugerencia ha sido tramitada y publicada con exito en el canal de Discord.</p>
         <button type="button" className="btn-primary" onClick={onReset}>
           Enviar otra sugerencia
         </button>
@@ -130,7 +130,7 @@ export function SuggestionForm({
           <p>{error || 'Ha ocurrido un error inesperado al tramitar tu sugerencia.'}</p>
           {incidentId && (
             <div className="suggestion-incident-box">
-              <span className="suggestion-incident-label">Código de incidencia:</span>
+              <span className="suggestion-incident-label">Codigo de incidencia:</span>
               <code className="suggestion-incident-id">{`[INCIDENT ${incidentId}]`}</code>
               <button
                 type="button"
@@ -182,7 +182,7 @@ export function SuggestionForm({
         />
         {charCount > 0 && trimmedLength < 10 && (
           <small className="suggestion-hint">
-            Mínimo 10 caracteres (faltan {10 - trimmedLength})
+            Minimo 10 caracteres (faltan {10 - trimmedLength})
           </small>
         )}
       </div>
@@ -195,7 +195,7 @@ export function SuggestionForm({
           onChange={(e) => handleAnonChange(e.target.checked)}
           disabled={!isHealthy || isInProgress}
         />
-        <span>Enviar de forma anónima</span>
+        <span>Enviar de forma anonima</span>
       </label>
 
       <div className="suggestion-actions">

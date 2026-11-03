@@ -102,7 +102,7 @@ export function useSuggestion(): UseSuggestionReturn {
             stopTimers();
             dispatch({
               type: 'POLL_ERROR',
-              error: 'Error persistente de conexión al consultar el estado.',
+              error: 'Error persistente de conexion al consultar el estado.',
               terminal: true
             });
           } else {

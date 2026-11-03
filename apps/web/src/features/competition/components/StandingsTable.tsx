@@ -8,9 +8,9 @@ export function StandingsTable({ rows }: { rows: Standing[] }) {
   const activeRows = rows.filter((row) => isActiveTeam(row.team));
   return (
     // biome-ignore lint/a11y/noNoninteractiveTabindex: Keyboard users need to scroll wide tables.
-    <section className="table-scroll" aria-label="Tabla de clasificación" tabIndex={0}>
+    <section className="table-scroll" aria-label="Tabla de clasificacion" tabIndex={0}>
       <table className="standings-table">
-        <caption className="sr-only">Clasificación de la fase regular</caption>
+        <caption className="sr-only">Clasificacion de la fase regular</caption>
         <thead>
           <tr>
             {['Pos', 'Equipo', 'PJ', 'V', 'D', 'Mapas +', 'Mapas −', 'Diferencia'].map((label) => (

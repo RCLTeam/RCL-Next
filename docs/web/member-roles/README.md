@@ -6,7 +6,7 @@
 
 ## 1. Resumen Ejecutivo
 
-El módulo `apps/web/src/features/member-roles/` implementa la interfaz de usuario y la orquestación del estado de cliente para la auditoría, búsqueda interactiva y asignación de roles de acceso al sistema (`appRole`: `'viewer'`, `'admin'`, `'owner'`) en RCL-Next.
+El módulo `apps/web/src/features/member-roles/` implementa la interfaz de usuario y la orquestación del estado de cliente para la auditoría, búsqueda interactiva y asignación de roles de acceso al sistema (`appRole`: `'viewer'`, `'editor'`, `'admin'`, `'owner'`) en RCL-Next.
 
 Su diseño arquitectónico sigue rigurosamente el **Golden Standard Modular**:
 1. **Componentes Presentacionales Puros (*Dumb UI*):** La tabla de visualización `MemberRolesTable` (`MemberRolesPanel.tsx:210-269`) posee **estrictamente cero llamadas a red** (`fetch`, `WebSocket` o APIs remotas). Es un componente determinista que recibe datos y *callbacks* exclusivamente vía *props*.

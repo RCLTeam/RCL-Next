@@ -40,7 +40,7 @@ export function DatabaseTransferPanel() {
       await action();
     } catch (error) {
       if (mounted.current)
-        setError(error instanceof Error ? error.message : 'No se pudo completar la operación.');
+        setError(error instanceof Error ? error.message : 'No se pudo completar la operacion.');
     } finally {
       running.current = false;
       if (mounted.current) setBusy('');
@@ -58,7 +58,7 @@ export function DatabaseTransferPanel() {
     link.remove();
     window.setTimeout(() => URL.revokeObjectURL(url), 1000);
     if (mounted.current)
-      setNotice('Exportación completada. Se ha iniciado la descarga del backup .dump.');
+      setNotice('Exportacion completada. Se ha iniciado la descarga del backup .dump.');
   }
 
   async function validate() {
@@ -86,13 +86,13 @@ export function DatabaseTransferPanel() {
   if (completed)
     return (
       <section className="database-transfer" aria-label="Base de datos">
-        <h2>Importación completada</h2>
+        <h2>Importacion completada</h2>
         <p>
           Los datos se han restaurado y las sesiones se han cerrado. Tu cuenta conserva el rol
           owner.
         </p>
         <a className="btn-primary" href="/api/v1/auth/discord">
-          Volver a iniciar sesión con Discord
+          Volver a iniciar sesion con Discord
         </a>
       </section>
     );
@@ -101,7 +101,7 @@ export function DatabaseTransferPanel() {
     <section className="database-transfer" aria-label="Importar y exportar base de datos">
       <div className="content-manager-heading">
         <div>
-          <span className="eyebrow">Restauración</span>
+          <span className="eyebrow">Restauracion</span>
           <h2>Base de datos</h2>
           <p>
             Exporta una copia PostgreSQL o restaura los datos desde un backup compatible con el
@@ -119,7 +119,7 @@ export function DatabaseTransferPanel() {
         <section>
           <h3>Exportar base de datos</h3>
           <p>
-            Descarga un archivo nativo .dump con el esquema y los datos de la aplicación, incluidos
+            Descarga un archivo nativo .dump con el esquema y los datos de la aplicacion, incluidos
             miembros, roles e historial. Disponible para admin y owner.
           </p>
           <button
@@ -136,10 +136,10 @@ export function DatabaseTransferPanel() {
           {owner ? (
             <>
               <p>
-                La importación reemplaza los datos actuales. Exporta una copia antes de continuar.
+                La importacion reemplaza los datos actuales. Exporta una copia antes de continuar.
                 Se conserva tu cuenta owner y se cierran todas las sesiones.
               </p>
-              <label htmlFor="database-backup">Backup PostgreSQL (.dump, máximo 64 MiB)</label>
+              <label htmlFor="database-backup">Backup PostgreSQL (.dump, maximo 64 MiB)</label>
               <input
                 id="database-backup"
                 type="file"
@@ -157,7 +157,7 @@ export function DatabaseTransferPanel() {
                       selected.size === 0)
                   ) {
                     setFile(null);
-                    setError('Selecciona un archivo .dump no vacío de hasta 64 MiB.');
+                    setError('Selecciona un archivo .dump no vacio de hasta 64 MiB.');
                     event.target.value = '';
                   } else setFile(selected);
                 }}
@@ -168,18 +168,18 @@ export function DatabaseTransferPanel() {
                 disabled={!file || Boolean(busy)}
                 onClick={() => void run('Validando backup…', validate)}
               >
-                Validar y revisar importación
+                Validar y revisar importacion
               </button>
             </>
           ) : (
             <p>
-              Solo un owner puede importar una base de datos. Puedes utilizar la exportación para
+              Solo un owner puede importar una base de datos. Puedes utilizar la exportacion para
               descargar una copia.
             </p>
           )}
         </section>
       </div>
-      {busy && <output>{busy} No cierres esta página hasta que termine.</output>}
+      {busy && <output>{busy} No cierres esta pagina hasta que termine.</output>}
       {owner && preview && (
         <DatabaseImportDialog
           preview={preview}
@@ -213,12 +213,12 @@ export function DatabaseImportDialog({
   };
 
   return (
-    <Modal title="Confirmar importación" onClose={handleClose}>
+    <Modal title="Confirmar importacion" onClose={handleClose}>
       <p>{filename}</p>
       {preview.exportedAt && <p>Fecha del backup: {preview.exportedAt}</p>}
       <p id="database-import-warning">
-        Se reemplazarán los datos de todas las tablas indicadas. Esta acción no se puede deshacer
-        desde la web. El esquema se conserva; se cierran las sesiones y tu cuenta mantendrá el rol
+        Se reemplazaran los datos de todas las tablas indicadas. Esta accion no se puede deshacer
+        desde la web. El esquema se conserva; se cierran las sesiones y tu cuenta mantendra el rol
         owner.
       </p>
       <div className="database-import-table">
@@ -262,7 +262,7 @@ export function DatabaseImportDialog({
           disabled={busy || confirmation !== 'IMPORTAR'}
           onClick={onConfirm}
         >
-          {busy ? 'Importando…' : 'Confirmar importación'}
+          {busy ? 'Importando…' : 'Confirmar importacion'}
         </button>
       </div>
     </Modal>

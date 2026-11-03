@@ -36,7 +36,7 @@ export function useTeamLogos() {
     try {
       await operation();
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'No se pudo completar la operación.');
+      setError(cause instanceof Error ? cause.message : 'No se pudo completar la operacion.');
     } finally {
       setBusy(false);
     }
@@ -46,7 +46,7 @@ export function useTeamLogos() {
     if (!file) return;
     await run(async () => {
       if (file.name.toLowerCase() === 'placeholder.webp')
-        throw new Error('El logo de reserva está protegido y no se puede modificar.');
+        throw new Error('El logo de reserva esta protegido y no se puede modificar.');
       if (file.size > 5 * 1024 * 1024) throw new Error('La imagen supera los 5 MB.');
       const logo = await teamLogosApi.upload(file);
       setLogos((items) => [...items, logo].sort((a, b) => a.name.localeCompare(b.name)));

@@ -1,6 +1,6 @@
 import React from 'react';
 
-const leaderboards = ['KDA', 'Oro por minuto', 'Daño por minuto', 'Visión'] as const;
+const leaderboards = ['KDA', 'Oro por minuto', 'Daño por minuto', 'Vision'] as const;
 
 export function PlayerLeaderboards() {
   return (
@@ -9,7 +9,7 @@ export function PlayerLeaderboards() {
         <article className="leaderboard-card" key={stat}>
           <h3>{stat}</h3>
           <strong>—</strong>
-          <p>Estadísticas pendientes</p>
+          <p>Estadisticas pendientes</p>
         </article>
       ))}
     </div>

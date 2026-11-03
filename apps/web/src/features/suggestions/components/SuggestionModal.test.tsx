@@ -13,7 +13,7 @@ describe('SuggestionModal', () => {
 
     expect(html).toContain('<dialog');
     expect(html).toContain('aria-labelledby="suggestion-modal-title"');
-    expect(html).toContain('Buzón de Sugerencias');
+    expect(html).toContain('Buzon de Sugerencias');
     expect(html).toContain('Contenido del formulario de prueba');
   });
 
@@ -44,6 +44,6 @@ describe('SuggestionModal', () => {
 
     expect(html).toContain('Tu sugerencia');
     expect(html).toContain('Enviar sugerencia');
-    expect(html).toContain('Enviar de forma anónima');
+    expect(html).toContain('Enviar de forma anonima');
   });
 });

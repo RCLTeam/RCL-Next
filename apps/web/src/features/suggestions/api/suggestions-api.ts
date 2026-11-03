@@ -34,7 +34,7 @@ export async function createSuggestion(
 }
 
 const UNAVAILABLE_MESSAGE =
-  'El servicio de sugerencias no está disponible en este momento. Inténtalo más tarde.';
+  'El servicio de sugerencias no esta disponible en este momento. Intentalo mas tarde.';
 
 /**
  * Traduce la respuesta de error de `POST /api/v1/suggestions` a un mensaje para
@@ -63,7 +63,7 @@ async function readSubmitError(response: Response): Promise<string> {
     const minutes = Number.isFinite(seconds) && seconds > 0 ? Math.ceil(seconds / 60) : 0;
     return minutes > 0
       ? `Has enviado demasiadas sugerencias. Vuelve a intentarlo dentro de ${minutes} ${minutes === 1 ? 'minuto' : 'minutos'}.`
-      : 'Has enviado demasiadas sugerencias. Vuelve a intentarlo más tarde.';
+      : 'Has enviado demasiadas sugerencias. Vuelve a intentarlo mas tarde.';
   }
   if (response.status === 503) {
     return UNAVAILABLE_MESSAGE;

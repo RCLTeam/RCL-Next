@@ -116,7 +116,7 @@ export function MatchReport({
               tabIndex={section === id ? 0 : -1}
               onClick={() => setSection(id)}
             >
-              {['Enfrentamiento', 'Estadísticas'][index]}
+              {['Enfrentamiento', 'Estadisticas'][index]}
             </button>
           ))}
         </div>

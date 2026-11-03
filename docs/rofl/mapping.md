@@ -33,7 +33,7 @@ Las tablas `player_game_stats`, `player_game_runes` y `player_game_build` utiliz
 | Campo en `statsJson` / Metadatos | Columna Drizzle en `match_games` | Tipo SQL | Regla de Transformación / Lógica |
 |---|---|---|---|
 | `meta.gameLength` | `duration_seconds` | `integer` | `Math.floor(Number(gameLength) / 1000)` (`roflParser.py:371`). |
-| Inferencia de serie | `game_number` | `smallint` | Secuencial calculado con bloqueo pesimista `FOR UPDATE` (`postgres-rofl-upload.repository.ts:369, 386-395`). |
+| Inferencia de serie | `game_number` | `smallint` | Secuencial calculado con bloqueo pesimista `FOR UPDATE` (`postgres-rofl-upload.repository.ts:431, 453-462`). |
 | `meta.fuente.archivo` / `gameId` | `external_game_id` | `varchar(128)` | Nombre base normalizado del archivo `.rofl` sin sufijos (`transform-parser-json.ts:182-184`). |
 | `p.TEAM` + `p.WIN` | `winner_team_id` | `uuid` | UUID del equipo ganador (`blueTeamId` si gana 100, `redTeamId` si gana 200) (`roflParser.py:340-346`). |
 | Parámetros de serie | `matches_id` | `uuid` | Clave foránea al registro del partido en `matches` (`schema.ts:367`). |
@@ -45,22 +45,22 @@ Las tablas `player_game_stats`, `player_game_runes` y `player_game_build` utiliz
 
 | Campo en `statsJson` | Columna Drizzle | Tipo SQL | Regla de Transformación / Lógica |
 |---|---|---|---|
-| `crypto.randomUUID()` | `id` | `uuid` | Identificador primario compartido con las 3 tablas hijas (`postgres-rofl-upload.repository.ts:424`). |
+| `crypto.randomUUID()` | `id` | `uuid` | Identificador primario compartido con las 3 tablas hijas (`postgres-rofl-upload.repository.ts:500`). |
 | Identificador de partida | `match_game_id` | `uuid` | Clave foránea al registro padre en `match_games` (`schema.ts:417`). |
-| `RIOT_ID_GAME_NAME` # `RIOT_ID_TAG_LINE` | `player_id` | `uuid` | Resuelto contra `players.id` mediante búsqueda insensible a mayúsculas y derivado a la cuenta principal (`findPlayersByRiotIds` en `postgres-rofl-upload.repository.ts:88-134`). |
-| Asignación de equipo | `team_id` | `uuid` | UUID del equipo al que pertenece el jugador según el roster del partido (`postgres-rofl-upload.repository.ts:425`). |
+| `RIOT_ID_GAME_NAME` # `RIOT_ID_TAG_LINE` | `player_id` | `uuid` | Resuelto contra `players.id` mediante búsqueda insensible a mayúsculas y derivado a la cuenta principal (`findPlayersByRiotIds` en `postgres-rofl-upload.repository.ts:115-161`). |
+| Asignación de equipo | `team_id` | `uuid` | UUID del equipo al que pertenece el jugador según el roster del partido (`postgres-rofl-upload.repository.ts:501`). |
 | `TEAM` | `side` | `game_side` enum | Si `TEAM === 100` $\rightarrow$ `'blue'`; si `TEAM === 200` $\rightarrow$ `'red'` (`schema.ts:420`). |
 | `SKIN` | `champion` | `varchar(64)` | Identificador o nombre de aspecto/campeón de Riot (`roflParser.py:179`). |
 | Múltiples fuentes en cascada | `position` | `varchar(64)` | Cascada de resolución: `INDIVIDUAL_POSITION` $\rightarrow$ `TEAM_POSITION` $\rightarrow$ `PLAYER_POSITION` $\rightarrow$ `PLAYER_ROLE` (`roflParser.py:181-187`). |
 
 ### 4.1 Derivación de Cuentas Secundarias / Smurfs a Cuenta Principal (`findPlayersByRiotIds`)
 
-En el ecosistema competitivo de RCL, los jugadores pueden disputar partidas oficiales utilizando cuentas secundarias (*smurfs*) vinculadas a su identidad en Discord. Para evitar la fragmentación de estadísticas entre distintas cuentas de Riot y asegurar la consistencia del perfil competitivo, el método `findPlayersByRiotIds` (`apps/api/src/modules/rofl-upload/persistence/postgres-rofl-upload.repository.ts:88-134`) implementa una política obligatoria de redirección hacia la cuenta principal (*main*):
+En el ecosistema competitivo de RCL, los jugadores pueden disputar partidas oficiales utilizando cuentas secundarias (*smurfs*) vinculadas a su identidad en Discord. Para evitar la fragmentación de estadísticas entre distintas cuentas de Riot y asegurar la consistencia del perfil competitivo, el método `findPlayersByRiotIds` (`apps/api/src/modules/rofl-upload/persistence/postgres-rofl-upload.repository.ts:115-161`) implementa una política obligatoria de redirección hacia la cuenta principal (*main*):
 
 1. **Búsqueda Insensible a Mayúsculas:**
    Al procesar los participantes de un archivo `.rofl`, el repositorio busca las cuentas en la tabla `players` contrastando `gameName` y `riotTag` de forma insensible a mayúsculas (`LOWER(players.game_name) = LOWER(...) AND LOWER(players.riot_tag) = LOWER(...)`) e integrando la tabla `discord_users` mediante un `INNER JOIN`:
    ```typescript
-   // apps/api/src/modules/rofl-upload/persistence/postgres-rofl-upload.repository.ts:92-108
+   // apps/api/src/modules/rofl-upload/persistence/postgres-rofl-upload.repository.ts:119-135
    const conditions = riotIds.map((r) =>
      and(
        sql`LOWER(${players.gameName}) = LOWER(${r.gameName})`,
@@ -83,7 +83,7 @@ En el ecosistema competitivo de RCL, los jugadores pueden disputar partidas ofic
 2. **Resolución de la Cuenta Principal Asociada:**
    Si la cuenta localizada es una cuenta secundaria (`isMain: false`), o para cualquier cuenta del lote, el repositorio toma todos los `discordUserId` correspondientes y consulta todas las cuentas con `isMain: true` asociadas al mismo usuario de Discord:
    ```typescript
-   // apps/api/src/modules/rofl-upload/persistence/postgres-rofl-upload.repository.ts:111-115
+   // apps/api/src/modules/rofl-upload/persistence/postgres-rofl-upload.repository.ts:138-142
    const discordIds = rows.flatMap((row) => (row.discordUserId ? [row.discordUserId] : []));
    const mainAccounts = await this.db
      .select({ id: players.id, discordUserId: players.discordUserId })
@@ -94,11 +94,11 @@ En el ecosistema competitivo de RCL, los jugadores pueden disputar partidas ofic
 3. **Exigencia Estricta de Unicidad:**
    Debe existir **exactamente una** cuenta principal para dicho usuario de Discord (`if (!main || mains.length !== 1)`). Si no existe una cuenta principal o hay múltiples cuentas principales, el proceso de importación se aborta de forma inmediata arrojando una excepción:
    ```typescript
-   // apps/api/src/modules/rofl-upload/persistence/postgres-rofl-upload.repository.ts:118-124
+   // apps/api/src/modules/rofl-upload/persistence/postgres-rofl-upload.repository.ts:145-151
    const mains = mainAccounts.filter((account) => account.discordUserId === row.discordUserId);
    const main = mains[0];
    if (!main || mains.length !== 1) {
-     throw new Error(
+     throw new RoflUploadDomainError(
        `Cannot import statistics for ${row.gameName}#${row.riotTag ?? ''}: exactly one main account must exist for this Discord user.`
      );
    }
@@ -109,7 +109,7 @@ En el ecosistema competitivo de RCL, los jugadores pueden disputar partidas ofic
    - Se conserva el Riot ID del archivo de repetición (`gameName`, `riotTag`) para el matching del lote en memoria.
    - El identificador `playerId` se reasigna a `main.id`.
 
-   En consecuencia, cuando se persisten los registros de la partida en PostgreSQL (`postgres-rofl-upload.repository.ts:430, 479`), la columna `player_game_info.player_id` almacena el UUID de la cuenta principal. Todas las estadísticas relacionales (`player_game_info`, `player_game_stats`, `player_game_build`, `player_game_runes`), los reconocimientos de MVP y el historial competitivo se acumulan en el perfil primario del jugador en la base de datos, garantizando que el rendimiento deportivo se atribuya a la identidad competitiva central del invocador.
+   En consecuencia, cuando se persisten los registros de la partida en PostgreSQL (`postgres-rofl-upload.repository.ts:506, 555`), la columna `player_game_info.player_id` almacena el UUID de la cuenta principal. Todas las estadísticas relacionales (`player_game_info`, `player_game_stats`, `player_game_build`, `player_game_runes`), los reconocimientos de MVP y el historial competitivo se acumulan en el perfil primario del jugador en la base de datos, garantizando que el rendimiento deportivo se atribuya a la identidad competitiva central del invocador.
 
 ---
 

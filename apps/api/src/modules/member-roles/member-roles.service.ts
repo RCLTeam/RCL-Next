@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import type { MemberRolesRepository } from './member-roles.repository.js';
 
-const role = z.enum(['viewer', 'admin', 'owner']);
+const role = z.enum(['viewer', 'editor', 'admin', 'owner']);
 export class MemberRolesService {
   constructor(private readonly repository: MemberRolesRepository) {}
   list(query: unknown) {

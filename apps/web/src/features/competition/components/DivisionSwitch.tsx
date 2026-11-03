@@ -5,7 +5,7 @@ import './competition-filters.css';
 export function DivisionSwitch({ competition }: { competition: Competition }) {
   if (competition.divisions.data.length === 0) return null;
   return (
-    <fieldset className="league-switch" aria-label="Seleccionar división">
+    <fieldset className="league-switch" aria-label="Seleccionar division">
       {competition.divisions.data.map((division) => (
         <button
           key={division.id}

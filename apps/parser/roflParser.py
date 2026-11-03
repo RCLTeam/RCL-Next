@@ -98,17 +98,17 @@ def read_rofl(path: Union[str, os.PathLike]) -> Dict[str, Any]:
 
             (n,) = struct.unpack("<I", tail)
             if n <= 0 or n > MAX_METADATA_SIZE:
-                raise InvalidPayloadLengthError(f"Longitud de metadata inválida: {n}")
+                raise InvalidPayloadLengthError(f"Longitud de metadata invalida: {n}")
 
             if total_size < 4 + n + 4:
-                raise InvalidPayloadLengthError("Longitud de metadata inválida: excede el tamaño del archivo")
+                raise InvalidPayloadLengthError("Longitud de metadata invalida: excede el tamaño del archivo")
 
             f.seek(-4 - n, os.SEEK_END)
             payload = f.read(n)
             if len(payload) != n:
                 raise InvalidPayloadLengthError("No se pudieron leer todos los bytes de metadata")
     except (FileNotFoundError, IsADirectoryError) as e:
-        raise RoflFileNotFoundError(f"El archivo no existe o no es válido: {path}") from e
+        raise RoflFileNotFoundError(f"El archivo no existe o no es valido: {path}") from e
 
     try:
         decoded_payload = payload.decode("utf-8")
@@ -117,7 +117,7 @@ def read_rofl(path: Union[str, os.PathLike]) -> Dict[str, Any]:
         raise CorruptMetadataError(f"Metadata corrupta o no parseable: {e}") from e
 
     if not isinstance(meta, dict):
-        raise CorruptMetadataError("Metadata inválida")
+        raise CorruptMetadataError("Metadata invalida")
 
     return meta
 
@@ -302,7 +302,7 @@ def parse_rofl(
 
     stats_json_str = meta.get("statsJson")
     if not stats_json_str:
-        raise CorruptMetadataError("No se encontró statsJson")
+        raise CorruptMetadataError("No se encontro statsJson")
 
     try:
         raw = json.loads(stats_json_str)
@@ -310,7 +310,7 @@ def parse_rofl(
         raise CorruptMetadataError(f"statsJson corrupto o no parseable: {e}") from e
 
     if not isinstance(raw, list) or not raw:
-        raise CorruptMetadataError("No se encontró statsJson")
+        raise CorruptMetadataError("No se encontro statsJson")
 
     players = [
         player(x)
@@ -448,7 +448,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     args = parser.parse_args(argv)
 
     if not os.path.isfile(args.path):
-        sys.stderr.write(f"Error: El archivo no existe o no es válido: {args.path}\n")
+        sys.stderr.write(f"Error: El archivo no existe o no es valido: {args.path}\n")
         return EXIT_FILE_NOT_FOUND
 
     try:

@@ -6,8 +6,8 @@
 export type BridgeHealthStatus = 'connected' | 'unreachable' | 'authentication_failed';
 
 export type BridgeHealthMessage =
-  | 'Conexión correcta'
-  | 'No se puede llegar a él'
+  | 'Conexion correcta'
+  | 'No se puede llegar a el'
   | 'No se pudo autenticar';
 
 export interface BridgeHealthResponse {

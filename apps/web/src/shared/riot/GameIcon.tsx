@@ -16,10 +16,10 @@ export function GameIcon({
       : `${kind === 'item' ? 'Objeto' : kind === 'summoner' ? 'Hechizo' : 'Runa'} ${id}`;
   const name =
     kind === 'position'
-      ? (asset?.name ?? 'Sin posición')
+      ? (asset?.name ?? 'Sin posicion')
       : id
         ? (asset?.name ?? fallback)
-        : 'Hueco vacío';
+        : 'Hueco vacio';
   return (
     <span className={`game-asset ${label ? 'with-label' : ''}`} title={name}>
       {asset?.image && failed !== asset.image ? (

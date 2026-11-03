@@ -143,8 +143,11 @@ export type {
     seasonName: string;
     divisionName: string;
     members: TeamMember[];
+    featuredLineup?: TeamMember[];
   }
   ```
+  - `featuredLineup`: selección de hasta cinco miembros por posición para la cabecera; si falta se utiliza la plantilla. Un arreglo vacío indica que no hay selección.
+  - `TeamMember.champion?: string | null`: campeón más jugado en la temporada, también para suplentes; `null` si no hay partidas válidas.
   - `isActive`: Bandera booleana de actividad competitiva en la temporada.
   - `members`: Arreglo de integrantes del club (`TeamMember[]`) clasificados en roles de juego (`playerRoles`), cuerpo técnico (`coach`), gestión (`staff`) y colaboradores (`partners`).
 

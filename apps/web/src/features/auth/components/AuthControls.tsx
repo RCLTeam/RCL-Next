@@ -64,7 +64,7 @@ export function AuthControlsView({
       aria-label="Cuenta de Discord"
       aria-busy={state.status === 'loading' || signingOut}
     >
-      {state.status === 'loading' && <output className="auth-hint">Comprobando sesión…</output>}
+      {state.status === 'loading' && <output className="auth-hint">Comprobando sesion…</output>}
       {state.status === 'anonymous' && (
         <a className="auth-button auth-login" href={discordLoginUrl}>
           Entrar con Discord <span aria-hidden="true">↗</span>
@@ -83,7 +83,9 @@ export function AuthControlsView({
                   ? 'Owner'
                   : state.user.role === 'admin'
                     ? 'Administrador'
-                    : 'Miembro'}
+                    : state.user.role === 'editor'
+                      ? 'Editor'
+                      : 'Miembro'}
               </span>
             </div>
           </div>
@@ -93,11 +95,11 @@ export function AuthControlsView({
             onClick={onLogout}
             disabled={signingOut}
           >
-            {signingOut ? 'Cerrando sesión…' : 'Cerrar sesión'}
+            {signingOut ? 'Cerrando sesion…' : 'Cerrar sesion'}
           </button>
           {logoutError && (
             <span className="auth-error" role="alert">
-              No se pudo cerrar la sesión. Vuelve a intentarlo.
+              No se pudo cerrar la sesion. Vuelve a intentarlo.
             </span>
           )}
         </>
@@ -105,7 +107,7 @@ export function AuthControlsView({
       {state.status === 'error' && (
         <>
           <span className="auth-error" role="alert">
-            No se pudo comprobar tu sesión.
+            No se pudo comprobar tu sesion.
           </span>
           <button className="auth-button auth-logout" type="button" onClick={onRetry}>
             Reintentar

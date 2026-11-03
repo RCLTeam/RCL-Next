@@ -130,3 +130,11 @@ A continuación se detalla la matriz completa de las 12 rutas registradas en `co
 | **`404 Not Found`** | Recurso no encontrado (temporada, división, jornada, equipo, jugador o partido inexistente), o partido no finalizado (`competition.service.ts:109-110, 175, 261, 265, 283`). | `{"error": "NOT_FOUND", "message": "<Resource> not found"}` |
 | **`422 Unprocessable Entity`** | Error de validación Zod en parámetros de ruta (UUID inválido, regex slug inválida) o en query string (claves extra no permitidas por `.strict()`, rango numérico excedido). | `{"error": "VALIDATION_ERROR", "details": [...]}` |
 | **`500 Internal Server Error`** | Error inesperado del motor de base de datos PostgreSQL o fallo no capturado en ejecución. | `{"error": "INTERNAL_SERVER_ERROR", "message": "..."}` |
+
+### Selección de cabecera en GET /api/v1/teams/:teamId
+
+La selección `featuredLineup` de `teamDetail` se calcula con mapas con ganador de series completadas del equipo. Normaliza posiciones con `playerRole` (incluidos middle, bottom/bot, utility/sup y jg/jungla). Primero reserva los titulares que hayan jugado en su posición; si hay varios, gana el de más mapas en esa posición y después el ID alfabético. Un titular elegible tiene prioridad aunque un suplente acumule más mapas.
+
+Las posiciones restantes se resuelven en orden top, jungle, mid, adc, support por número de mapas y luego ID, excluyendo cuentas ya asignadas. Se admiten participantes históricos que ya no estén en la plantilla. Finalmente se conserva un titular sin debut si no hay reemplazo disponible; nunca se repite un playerId y una posición sin candidato queda ausente.
+
+`playerSeasonChampions(playerIds, seasonName)` obtiene en una consulta los picks de todos los miembros y jugadores destacados, incluidos suplentes no destacados. Solo selecciona playerId y campeón de mapas con ganador en series completadas de esa temporada, también de equipos anteriores. Agrega en memoria con `mostPlayedChampion`; en empate gana el pick más reciente según fecha de finalización, fecha programada, ID de serie y número de mapa. No carga estadísticas ni premios por jugador. Sin historial, `champion` es null. Los `rosterStats` siguen limitados a las apariciones con el equipo consultado.

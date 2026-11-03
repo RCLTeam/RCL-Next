@@ -34,6 +34,6 @@ El módulo también sirve el avatar de la cuenta mediante un [proxy público de 
 
 ## 3. Garantías de Fiabilidad y Reglas de Dominio
 
-- **Disociación Estricta de Dominios de Roles:** El módulo de autenticación resuelve y valida el rol de gobernanza del sistema (`appRole`: `'viewer'`, `'admin'`, `'owner'`, `packages/contracts/src/auth.ts:1-7`). No gestiona ni muta roles de plantilla deportiva (`rosterRole`: top, jungle, mid, adc, support, substitute, coach, staff, partners) ni capitanías, los cuales pertenecen a `team_memberships` y se mutan vía `crud-operations`.
+- **Disociación Estricta de Dominios de Roles:** El módulo de autenticación resuelve y valida el rol de gobernanza del sistema (`appRole`: `'viewer'`, `'editor'`, `'admin'`, `'owner'`, `packages/contracts/src/auth.ts:1-7`). No gestiona ni muta roles de plantilla deportiva (`rosterRole`: top, jungle, mid, adc, support, substitute, coach, staff, partners) ni capitanías, los cuales pertenecen a `team_memberships` y se mutan vía `crud-operations`.
 - **Inmunidad a Open Redirect:** El callback OAuth2 redirige de forma fija e inmutable a `options.frontendOrigin` (`auth.router.ts:79`). El enrutador no acepta parámetros de redirección dinámica en query string bajo ninguna circunstancia.
 - **Purga Pasiva de Registros:** Cada inicio de flujo de login (`AuthService.start`, `auth.service.ts:21`) ejecuta `deleteExpired` sobre `oauth_states` y `auth_sessions`, impidiendo la acumulación indefinida de registros caducados en disco.

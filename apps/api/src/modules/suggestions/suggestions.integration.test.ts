@@ -54,7 +54,7 @@ describe('Suggestions Integration (Full App Pipeline)', () => {
       mockBridgeClient.checkHealth.mockResolvedValueOnce({
         status: 'connected',
         healthy: true,
-        message: 'Conexión correcta'
+        message: 'Conexion correcta'
       });
 
       const res = await request(app).get('/api/v1/bridge/health');
@@ -64,7 +64,7 @@ describe('Suggestions Integration (Full App Pipeline)', () => {
       expect(res.body).toEqual({
         status: 'connected',
         healthy: true,
-        message: 'Conexión correcta'
+        message: 'Conexion correcta'
       });
     });
 
@@ -72,7 +72,7 @@ describe('Suggestions Integration (Full App Pipeline)', () => {
       mockBridgeClient.checkHealth.mockResolvedValueOnce({
         status: 'unreachable',
         healthy: false,
-        message: 'No se puede llegar a él',
+        message: 'No se puede llegar a el',
         details:
           'El websocket no pudo iniciarse, comprobar variables env para asegurar la url correcta'
       });

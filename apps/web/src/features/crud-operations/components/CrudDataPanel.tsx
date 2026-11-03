@@ -16,6 +16,7 @@ export function CrudDataPanel({ resource }: { resource: CrudResource }) {
   const { state } = useAuth();
   const owner = state.status === 'authenticated' && state.user.role === 'owner';
   const [search, setSearch] = useState('');
+  const [latestSeason, setLatestSeason] = useState(false);
   const [offset, setOffset] = useState(0);
   const [revision, setRevision] = useState(0);
   const [data, setData] = useState<CrudPageResult | null>(null);
@@ -41,7 +42,7 @@ export function CrudDataPanel({ resource }: { resource: CrudResource }) {
     setData(null);
     setError('');
     const timer = window.setTimeout(() => {
-      getCrudRecords(resource.name, search, offset, controller.signal)
+      getCrudRecords(resource.name, search, offset, controller.signal, undefined, latestSeason)
         .then(setData)
         .catch((error: unknown) => {
           if (!controller.signal.aborted)
@@ -57,7 +58,7 @@ export function CrudDataPanel({ resource }: { resource: CrudResource }) {
       window.clearTimeout(timer);
       controller.abort();
     };
-  }, [resource.name, search, offset, revision]);
+  }, [resource.name, search, latestSeason, offset, revision]);
   useEffect(() => {
     if (editor) editorRef.current?.focus();
   }, [editor]);
@@ -171,7 +172,7 @@ export function CrudDataPanel({ resource }: { resource: CrudResource }) {
           Buscar registros
           <input
             type="search"
-            placeholder="Nombre, identificador…"
+            placeholder="Buscar…"
             value={search}
             maxLength={120}
             disabled={busy}
@@ -181,6 +182,20 @@ export function CrudDataPanel({ resource }: { resource: CrudResource }) {
             }}
           />
         </label>
+        {resource.seasonScoped && (
+          <label className="crud-operations-season-filter">
+            <input
+              type="checkbox"
+              checked={latestSeason}
+              disabled={busy}
+              onChange={(event) => {
+                setLatestSeason(event.target.checked);
+                setOffset(0);
+              }}
+            />
+            Buscar solo en la ultima temporada
+          </label>
+        )}
         <button
           type="button"
           className="btn-ghost"
@@ -198,8 +213,8 @@ export function CrudDataPanel({ resource }: { resource: CrudResource }) {
             {data.records.length === 0 ? (
               <p className="empty-state">
                 {search
-                  ? 'No hay registros que coincidan con la búsqueda.'
-                  : 'Todavía no hay registros.'}
+                  ? 'No hay registros que coincidan con la busqueda.'
+                  : 'Todavia no hay registros.'}
               </p>
             ) : (
               <div className="crud-operations-table-scroll">
@@ -222,7 +237,7 @@ export function CrudDataPanel({ resource }: { resource: CrudResource }) {
                           <td key={field.name}>
                             {typeof record[field.name] === 'boolean'
                               ? record[field.name]
-                                ? 'Sí'
+                                ? 'Si'
                                 : 'No'
                               : String(record[`${field.name}Label`] ?? record[field.name] ?? '—')}
                           </td>
@@ -272,7 +287,7 @@ export function CrudDataPanel({ resource }: { resource: CrudResource }) {
                 Anterior
               </button>
               <span>
-                Página {offset / 50 + 1} · {data.records.length} registros
+                Pagina {offset / 50 + 1} · {data.records.length} registros
               </span>
               <button
                 type="button"

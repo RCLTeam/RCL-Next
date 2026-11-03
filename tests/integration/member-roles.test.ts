@@ -5,7 +5,7 @@ import { btree_gist } from '@electric-sql/pglite/contrib/btree_gist';
 import { drizzle } from 'drizzle-orm/pglite';
 import { migrate } from 'drizzle-orm/pglite/migrator';
 import request from 'supertest';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, onTestFinished } from 'vitest';
 import { createApp } from '../../apps/api/src/app.js';
 import { AuthService } from '../../apps/api/src/modules/auth/auth.service.js';
 import { DiscordOAuthClient } from '../../apps/api/src/modules/auth/discord.client.js';
@@ -56,6 +56,13 @@ describe('member role authorization and persistence', () => {
   beforeAll(async () => {
     await migrate(db, {
       migrationsFolder: fileURLToPath(new URL('../../packages/database/drizzle', import.meta.url))
+    });
+  });
+  beforeEach(async () => {
+    onTestFinished(async () => {
+      await db.delete(schema.auditLogs);
+      await db.delete(schema.authSessions);
+      await db.delete(schema.discordUsers);
     });
     for (const role of ['owner', 'admin', 'viewer'] as const) {
       await db.insert(schema.discordUsers).values({ discordId: ids[role], username: role, role });
@@ -139,6 +146,7 @@ describe('member role authorization and persistence', () => {
     });
   });
   it('can transfer ownership and immediately removes role-write permission from the former owner', async () => {
+    await patch('owner', ids.viewer, { role: 'admin', expectedRole: 'viewer' }).expect(200);
     await patch('owner', ids.admin, { role: 'owner', expectedRole: 'admin' }).expect(200);
     await patch('owner', ids.owner, { role: 'admin', expectedRole: 'owner' }).expect(200);
     await patch('owner', ids.viewer, { role: 'viewer', expectedRole: 'admin' }).expect(403);
@@ -166,5 +174,20 @@ describe('member role authorization and persistence', () => {
     expect((await repository.list('%', 0)).members).toHaveLength(0);
     expect((await repository.list(ids.owner, 0)).members[0]?.discordId).toBe(ids.owner);
     await request(app).get(`${endpoint}?offset=-1`).set('Cookie', cookie('admin')).expect(422);
+  });
+  it('lets owners assign editor and revoke it while editors cannot access other admin APIs', async () => {
+    await patch('owner', ids.viewer, { role: 'editor', expectedRole: 'viewer' }).expect(200);
+    const session = await request(app)
+      .get('/api/v1/auth/me')
+      .set('Cookie', cookie('viewer'))
+      .expect(200);
+    expect(session.body.data.role).toBe('editor');
+    await request(app).get(endpoint).set('Cookie', cookie('viewer')).expect(403);
+    await request(app)
+      .get('/api/v1/crud-operations/resources')
+      .set('Cookie', cookie('viewer'))
+      .expect(403);
+    await patch('viewer', ids.viewer, { role: 'owner', expectedRole: 'editor' }).expect(403);
+    await patch('owner', ids.viewer, { role: 'viewer', expectedRole: 'editor' }).expect(200);
   });
 });

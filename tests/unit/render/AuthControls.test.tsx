@@ -82,7 +82,7 @@ describe('Discord header controls', () => {
     );
     expect(html).toContain(`href="${discordLoginUrl}"`);
     expect(html).toContain('Entrar con Discord');
-    expect(html).not.toContain('Cerrar sesión');
+    expect(html).not.toContain('Cerrar sesion');
   });
   it('shows the user, role and logout after authentication', () => {
     const html = renderToString(
@@ -90,15 +90,25 @@ describe('Discord header controls', () => {
     );
     expect(html).toContain('Jugador RCL');
     expect(html).toContain('Miembro');
-    expect(html).toContain('Cerrar sesión');
+    expect(html).toContain('Cerrar sesion');
     expect(html).not.toContain('Entrar con Discord');
+  });
+  it('shows the Editor label for authenticated editors', () => {
+    const html = renderToString(
+      <AuthControlsView
+        state={{ status: 'authenticated', user: { ...user, role: 'editor' } }}
+        {...callbacks}
+      />
+    );
+    expect(html).toContain('>Editor</span>');
+    expect(html).toContain('Cerrar sesion');
   });
   it('disables logout while it is pending', () => {
     const html = renderToString(
       <AuthControlsView state={{ status: 'authenticated', user }} signingOut {...callbacks} />
     );
     expect(html).toContain('disabled=""');
-    expect(html).toContain('Cerrando sesión');
+    expect(html).toContain('Cerrando sesion');
   });
   it('provides a retry when the API is unavailable', () => {
     const html = renderToString(<AuthControlsView state={{ status: 'error' }} {...callbacks} />);
@@ -110,6 +120,6 @@ describe('Discord header controls', () => {
       <AuthControlsView state={{ status: 'authenticated', user }} logoutError {...callbacks} />
     );
     expect(html).toContain('Jugador RCL');
-    expect(html).toContain('No se pudo cerrar la sesión');
+    expect(html).toContain('No se pudo cerrar la sesion');
   });
 });

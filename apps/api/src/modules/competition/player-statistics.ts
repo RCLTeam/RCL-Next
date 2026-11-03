@@ -287,7 +287,7 @@ export interface PersistedMatchMvp {
   matchId: string;
 }
 
-export function mostPlayedChampion(games: PlayerGameRow[]): string | null {
+export function mostPlayedChampion(games: Pick<PlayerGameRow, 'champion'>[]): string | null {
   const championCounts = new Map<string, number>();
   for (const game of games) {
     championCounts.set(game.champion, (championCounts.get(game.champion) ?? 0) + 1);

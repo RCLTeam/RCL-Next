@@ -41,7 +41,7 @@ describe('Empirical Adversarial Stress Suite: Modal, Clipboard & Layout Integrat
       expect(html).toContain('aria-labelledby="suggestion-modal-title"');
       expect(html).toContain('aria-modal="true"');
       expect(html).toContain('id="suggestion-modal-title"');
-      expect(html).toContain('Buzón de Sugerencias');
+      expect(html).toContain('Buzon de Sugerencias');
       expect(html).toContain('Children content');
     });
 
@@ -439,7 +439,7 @@ describe('Empirical Adversarial Stress Suite: Modal, Clipboard & Layout Integrat
       const html = renderToString(
         <NavigationContext.Provider value={{ path: '/', navigate: () => {} }}>
           <SiteLayout>
-            <div id="page-body">Página principal</div>
+            <div id="page-body">Pagina principal</div>
           </SiteLayout>
         </NavigationContext.Provider>
       );
@@ -465,7 +465,7 @@ describe('Empirical Adversarial Stress Suite: Modal, Clipboard & Layout Integrat
       );
 
       expect(html).not.toContain('suggestion-dialog');
-      expect(html).not.toContain('Buzón de Sugerencias');
+      expect(html).not.toContain('Buzon de Sugerencias');
     });
 
     it('3.3 site-footer.css rules for .footer-suggestion-btn match footer link aesthetics with zero layout shift', () => {

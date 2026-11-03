@@ -120,7 +120,7 @@ test('featured stats and selected card metric render without internal MVP scores
   expect(grid).not.toContain('Daño a campeones por minuto.');
   expect(grid).toContain('700');
   expect(renderToStaticMarkup(<FeaturedPlayer player={undefined} />)).toContain(
-    'Todavía no hay un MVP de jornada disponible en esta división.'
+    'Todavia no hay un MVP de jornada disponible en esta division.'
   );
 });
 
@@ -131,9 +131,12 @@ test('historical awards remain visible in the directory without statistics or a 
   };
   expect(filterPlayers([historical], '').map((p) => p.id)).toEqual([player.id]);
   const html = renderToStaticMarkup(<PlayerGrid players={[historical]} />);
-  expect(html).toContain('<dt>MVPs</dt><dd>1</dd>');
+  expect(html).not.toContain('<dt>MVPs</dt>');
+  expect(renderToStaticMarkup(<PlayerGrid players={[historical]} sort="mvps" />)).toContain(
+    '<dt>MVPs</dt><dd>1</dd>'
+  );
   expect(html).toContain('<dt>KDA</dt><dd>—</dd>');
-  expect(html).not.toContain('Estadísticas pendientes.');
+  expect(html).not.toContain('Estadisticas pendientes.');
   expect(
     filterPlayers(
       [{ ...historical, competition: { ...historical.competition, mvpMatchIds: [] } }],
@@ -194,7 +197,7 @@ test('banner renders the awarded round supplied by the API even without current 
   expect(html).toContain('Jornada 1');
   expect(html).toContain('Jugador A');
   expect(html).not.toContain('jornada actual');
-  expect(html).not.toContain('Todavía no hay');
+  expect(html).not.toContain('Todavia no hay');
 });
 
 test('players missing the selected statistic sort by team, then name, with no team last', () => {
@@ -286,4 +289,33 @@ test('MVP sorting uses persisted awards without stats and renders the count once
   const html = renderToStaticMarkup(<PlayerGrid players={[winner]} sort="mvps" />);
   expect(html.match(/<dt>MVPs<\/dt>/g)).toHaveLength(1);
   expect(html).toContain('<dd>2</dd>');
+});
+
+test('directory cards show a single logo with or without champion history', () => {
+  for (const champion of ['Ahri', null]) {
+    const html = renderToStaticMarkup(
+      <PlayerGrid
+        players={[
+          {
+            ...player,
+            competition: {
+              ...player.competition,
+              champion,
+              team: {
+                id: 'team',
+                name: 'Team',
+                shortName: null,
+                logoUrl: '/images/team.png'
+              }
+            }
+          }
+        ]}
+      />
+    );
+    expect(html.match(/class="team-badge/g)).toHaveLength(1);
+    expect(html.includes('player-identity-emblem')).toBe(champion !== null);
+  }
+  expect(renderToStaticMarkup(<PlayerGrid players={[player]} />)).not.toContain(
+    'player-identity-emblem'
+  );
 });

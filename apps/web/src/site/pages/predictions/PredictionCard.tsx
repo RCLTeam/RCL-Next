@@ -103,7 +103,7 @@ export function PredictionCard({
                 homeScore: homeScore ?? null,
                 awayScore: awayScore ?? null
               });
-              setMessage('Predicción guardada.');
+              setMessage('Prediccion guardada.');
             } catch (error) {
               setMessage(error instanceof Error ? error.message : 'No se pudo guardar.');
             } finally {
@@ -150,7 +150,7 @@ export function PredictionCard({
             ))}
           </Select>
           <button type="submit" disabled={!team || saving}>
-            {saving ? 'Guardando…' : pick ? 'Actualizar predicción' : 'Guardar predicción'}
+            {saving ? 'Guardando…' : pick ? 'Actualizar prediccion' : 'Guardar prediccion'}
           </button>
         </form>
       )}
@@ -168,10 +168,10 @@ export function PredictionCard({
         <span className={pick ? 'prediction-saved' : ''}>
           {pick
             ? `✓ ${savedTeam?.name ?? 'Guardada'}${pick.homeScore !== null ? ` · ${pick.homeScore}–${pick.awayScore}` : ''}`
-            : 'Sin predicción'}
+            : 'Sin prediccion'}
         </span>
       </div>
-      {!summary.open && <p className="prediction-notice">Votación cerrada</p>}
+      {!summary.open && <p className="prediction-notice">Votacion cerrada</p>}
       {!eligible && (
         <p className="prediction-notice">Predicciones no disponibles para equipos inactivos.</p>
       )}

@@ -4,6 +4,8 @@
 
 ---
 
+El selector de `MemberRolesPanel` ofrece `viewer`, `editor`, `admin` y `owner` únicamente a propietarios. Los editores no pueden abrir este panel.
+
 ## 1. Montaje en la Página de Administración (`AdminPage.tsx`)
 
 El panel de gobernanza de miembros no constituye una ruta aislada, sino que se ensambla como una sección integrada dentro de `apps/web/src/site/pages/admin/AdminPage.tsx:39-43, 57-58`:
@@ -69,5 +71,5 @@ El acceso al panel se adapta según el nivel de privilegios del usuario:
    - La columna de mutación de rol no se renderiza (`canManage === false`).
 2. **Para Propietarios (`user.role === 'owner'`):**
    - Poseen facultades plenas de gestión (`canManage === true`).
-   - El panel muestra el subtítulo operativo: `"Gestiona el acceso de los miembros: viewer, admin u owner."` (`MemberRolesPanel.tsx:76`).
+   - El panel muestra el subtítulo operativo: `"Gestiona el acceso de los miembros: viewer, editor, admin u owner."` (`MemberRolesPanel.tsx:76`).
    - Se activa la columna interactiva con desplegables `<Select>` y el flujo de confirmación modal para promover o degradar miembros.

@@ -47,10 +47,10 @@ Para no comprometer la cola de trabajo ni las transacciones en vuelo, la sonda *
 
 | Código HTTP | Condición Técnica | Payload de Respuesta (`BridgeHealthResponse`) |
 |---|---|---|
-| **`200 OK`** | El socket efímero se conectó, transmitió `LOGIN` y recibió `LOGIN_SUCCESS` en menos de 5 segundos. | `{"status": "connected", "healthy": true, "message": "Conexión correcta"}` |
-| **`503 Service Unavailable`** | `wsUrl` no configurada, socket inalcanzable, o fallo de red en la apertura. | `{"status": "unreachable", "healthy": false, "message": "No se puede llegar a él", "details": "El websocket no pudo iniciarse..."}` |
+| **`200 OK`** | El socket efímero se conectó, transmitió `LOGIN` y recibió `LOGIN_SUCCESS` en menos de 5 segundos. | `{"status": "connected", "healthy": true, "message": "Conexion correcta"}` |
+| **`503 Service Unavailable`** | `wsUrl` no configurada, socket inalcanzable, o fallo de red en la apertura. | `{"status": "unreachable", "healthy": false, "message": "No se puede llegar a el", "details": "El websocket no pudo iniciarse..."}` |
 | **`503 Service Unavailable`** | El socket abrió la conexión pero se cerró antes de `LOGIN_SUCCESS`, o expiró el temporizador de 5 segundos tras el `LOGIN`. | `{"status": "authentication_failed", "healthy": false, "message": "No se pudo autenticar", "details": "Enviar el login, no recibir respuesta y cerrarse el websocket por parte del servidor, revisen el super token en env"}` |
-| **`503 Service Unavailable`** | Excepción imprevista no controlada en la ejecución de `checkHealth()`. Capturada por el router (`discord-bridge.router.ts:27-36`). | `{"status": "unreachable", "healthy": false, "message": "No se puede llegar a él", "details": "<error.message>"}` |
+| **`503 Service Unavailable`** | Excepción imprevista no controlada en la ejecución de `checkHealth()`. Capturada por el router (`discord-bridge.router.ts:27-36`). | `{"status": "unreachable", "healthy": false, "message": "No se puede llegar a el", "details": "<error.message>"}` |
 
 ---
 

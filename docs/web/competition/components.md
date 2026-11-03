@@ -23,7 +23,7 @@ En estricta conformidad con el **Golden Standard Arquitectónico**, la totalidad
 | 4 | `TeamBadge` | `TeamBadge.tsx` | 51 | **0** | Emblema de equipo con triple degradación ante fallos y delimitación CLS. |
 | 5 | `DivisionCard` | `DivisionCard.tsx` | 58 | **0** | Tarjeta interactiva de división en modalidades botón y enlace. |
 | 6 | `DivisionSwitch` | `DivisionSwitch.tsx` | 24 | **0** | Barra selectora de botones para alternar entre divisiones. |
-| 7 | `PlayoffBracket` | `PlayoffBracket.tsx` | 50 | **0** | Cuadro visual de eliminatorias por columnas de jornadas. |
+| 7 | `PlayoffFormat` | `site/pages/playoffs/PlayoffFormat.tsx` | — | **0** | Cuadro de doble eliminación con equipos y resultados integrados. |
 | 8 | `RoundFilter` | `RoundFilter.tsx` | 28 | **0** | Selector desplegable accesible para filtrado por jornada. |
 | 9 | `CompetitionFilters` | `CompetitionFilters.tsx` | 61 | **0** | Barra de herramientas que agrupa selección de temporada y división. |
 | 10 | `CompetitionDataState`| `CompetitionDataState.tsx`| 25 | **0** | Contenedor de estados asíncronos con resolución jerárquica de dependencias. |
@@ -83,9 +83,11 @@ En estricta conformidad con el **Golden Standard Arquitectónico**, la totalidad
 **Archivo**: `TeamCard.tsx:1-24`  
 **Props**: `{ team: Team; divisionName?: string }`
 
-- Inyecta la variable CSS `--team-color` con el color corporativo del equipo (`team.color || 'var(--panel)'`).
+- Inyecta la variable CSS `--team-color` con el color corporativo del equipo (`team.color || 'var(--purple)'`).
 - Renderiza el `TeamBadge`, el acrónimo `shortName` (fallback a `'RCL'`) y el nombre completo.
 - Enlace semántico accesible con `aria-label="Ver equipo <nombre>"`.
+- `.team-card-footer` reúne la división (o Rebel Crown Legacy) y la acción «Ver equipo», sin flecha.
+- La tarjeta no define `--team-logo-scale`: la compensación óptica pertenece a `TeamBadge`, junto a la normalización `teamLogoBounds`, y solo se activa tras cargar correctamente el logo oficial. Placeholder e iniciales mantienen escala 1, también tras cambiar de equipo.
 
 ### 3.4 `TeamBadge`
 **Archivo**: `TeamBadge.tsx:1-51`  
@@ -113,13 +115,16 @@ En estricta conformidad con el **Golden Standard Arquitectónico**, la totalidad
 - Accesibilidad ARIA: Marca el botón de la división activa mediante `aria-pressed={competition.division?.id === division.id}`.
 - Invoca `competition.selectDivision(division.id)` al interactuar.
 
-### 3.7 `PlayoffBracket`
-**Archivo**: `PlayoffBracket.tsx:1-50`  
-**Props**: `{ rounds: Round[]; matches: Match[] }`
+### 3.7 `PlayoffFormat`
+**Archivo**: `apps/web/src/site/pages/playoffs/PlayoffFormat.tsx`
+**Props**: `{ matches: Match[]; standings: Standing[] }`
 
-- Contenedor con desplazamiento accesible por teclado (`tabIndex={0}`, `aria-label="Cruces de playoffs"`).
-- Renderiza una cuadrícula de columnas (`bracket-column`), una por cada jornada de eliminatorias, listando los enfrentamientos con sus puntuaciones y estado (BO3/BO5).
-- Si una jornada no tiene partidos asignados aún, muestra el estado vacío `"Cruces por confirmar"` (`líneas 41-43`).
+- Sustituye al componente retirado `PlayoffBracket`: ocho casillas conectadas de upper, lower y gran final para seis equipos.
+- Usa `buildPlayoff` para asignar partidos publicados y proyectar equipos a partir de resultados cerrados; no crea partidos.
+- Muestra escudos, nombres, marcadores, ganadores, estado, BO y horario de la liga dentro del cuadro.
+- Conserva placeholders compactos en las casillas pendientes, desplazamiento horizontal accesible por teclado y ampliación al 150 %.
+- Las tres normas reutilizan `format-grid` y `format-card`, como Predicciones, con explicaciones de una línea.
+- Véanse [las reglas de asignación y sus límites](playoffs.md).
 
 ### 3.8 `RoundFilter`
 **Archivo**: `RoundFilter.tsx:1-28`  

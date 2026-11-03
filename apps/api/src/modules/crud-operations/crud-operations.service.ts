@@ -38,7 +38,7 @@ export class CrudOperationsService {
     const resource = reference
       ? (crudReferences.find((item) => item.name === name) ?? this.resource(name))
       : this.resource(name);
-    const { offset, search, limit } = z
+    const { offset, search, limit, latestSeason } = z
       .object({
         limit: z.coerce
           .number()
@@ -47,11 +47,13 @@ export class CrudOperationsService {
           .max(reference ? 250 : 50)
           .default(50),
         offset: z.coerce.number().int().min(0).max(1000000).default(0),
-        search: z.string().trim().max(120).default('')
+        // Untrimmed: a trailing space after a number means an exact match.
+        search: z.string().max(120).default(''),
+        latestSeason: z.enum(['true']).optional()
       })
       .strict()
       .parse(query);
-    return this.repository.list(resource, offset, search, limit);
+    return this.repository.list(resource, offset, search, limit, latestSeason === 'true');
   }
   previewDelete(name: string, body: unknown, actorId: string) {
     const resource = this.resource(name);
@@ -118,7 +120,7 @@ export class CrudOperationsService {
             values.winnerTeamId !== winner
           )
             fail(
-              'El marcador y el ganador deben corresponder a una serie finalizada según su formato.'
+              'El marcador y el ganador deben corresponder a una serie finalizada segun su formato.'
             );
         }
         if (values.status === 'forfeit' && !values.winnerTeamId)

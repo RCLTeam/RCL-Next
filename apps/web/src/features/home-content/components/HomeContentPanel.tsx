@@ -19,7 +19,7 @@ export function HomeContentPanel() {
     <div className="home-content-admin">
       <div className="content-manager-heading">
         <div>
-          <span className="eyebrow">Publicación</span>
+          <span className="eyebrow">Publicacion</span>
           <h2>Home content</h2>
           <p>Elige a los protagonistas de la jornada y cuenta las historias de RCL.</p>
         </div>

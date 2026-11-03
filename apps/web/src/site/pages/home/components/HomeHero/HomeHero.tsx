@@ -23,7 +23,7 @@ export function HomeHero({ seasonName, streamUrl }: HomeHeroProps) {
         </h1>
         <p>
           Una liga construida por rebeldes. Cada equipo lucha por dejar su marca y tomar la corona -
-          no es solo un torneo, es una rebelión.
+          no es solo un torneo, es una rebelion.
         </p>
         <div className="btn-row">
           {streamUrl ? (

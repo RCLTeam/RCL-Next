@@ -24,15 +24,16 @@ La arquitectura del frontend sigue el **Golden Standard Modular** del monorepo, 
 
 ## 3. Catálogo de Características Web
 
-`apps/web/src/features/` contiene once características. Diez tienen su propia subcarpeta de documentación, listadas a continuación; `discord-bridge` (cliente `bridge-api.ts` y hook `useBridgeHealth`, que consulta la salud del puente con Discord) no tiene subcarpeta propia y su contrapartida de API está en [docs/api/discord-bridge](../api/discord-bridge/README.md). Los metadatos de página de la web (`PageHead` y el plugin de Vite) se describen en [page-metadata.md](page-metadata.md).
+`apps/web/src/features/` contiene doce características. Once tienen su propia subcarpeta de documentación, listadas a continuación; `discord-bridge` (cliente `bridge-api.ts` y hook `useBridgeHealth`, que consulta la salud del puente con Discord) no tiene subcarpeta propia y su contrapartida de API está en [docs/api/discord-bridge](../api/discord-bridge/README.md). Los metadatos de página de la web (`PageHead` y el plugin de Vite) se describen en [page-metadata.md](page-metadata.md).
 
 | Característica | Enlace | Resumen Funcional |
 |---|---|---|
+| **Bola de cristal** | [crystal-ball/README.md](crystal-ball/README.md) | Pronósticos de playoffs por liga, ranking de videntes y resolución automática con alternativas manuales. |
 | **Subida de Repeticiones ROFL** | [rofl-upload/README.md](rofl-upload/README.md) | Panel interactivo de arrastrar y soltar repeticiones `.rofl` y paquetes `.zip`, gancho `useRoflUploadWs` para streaming de chunks binarios por WebSocket, barras de progreso y visor de anomalías. |
 | **Buzón de Sugerencias** | [suggestions/README.md](suggestions/README.md) | Diálogo modal accesible, formulario con contador de caracteres, gancho `useSuggestion`, reducer de máquina de estados pura y pruebas de estrés de maquetación en múltiples viewports. |
 | **Competición y Estadísticas** | [competition/README.md](competition/README.md) | Tablas de clasificaciones de liga, calendarios interactivos de jornadas, eliminatorias de playoffs, fichas de equipo, perfiles de jugadores y tablas de campeones con cálculo de MVP. |
 | **Autenticación y Sesión** | [auth/README.md](auth/README.md) | Botones de inicio de sesión con Discord, controles de cabecera con avatar dinámico, proveedor de contexto de sesión y barreras perimetrales de renderizado para rutas protegidas. |
-| **Gobernanza de Roles** | [member-roles/README.md](member-roles/README.md) | Panel de auditoría de miembros registrados en la plataforma, tabla con búsqueda reactiva, selectores de rol de sistema (`viewer`, `admin`, `owner`) y diálogos de confirmación. |
+| **Gobernanza de Roles** | [member-roles/README.md](member-roles/README.md) | Panel de auditoría de miembros registrados en la plataforma, tabla con búsqueda reactiva, selectores de rol de sistema (`viewer`, `editor`, `admin`, `owner`) y diálogos de confirmación. |
 | **Operaciones CRUD de Liga** | [crud-operations/README.md](crud-operations/README.md) | Tablas dinámicas para gestión de entidades deportivas, formularios fuertemente tipados con soporte de claves foráneas y modales accesibles para confirmación de borrados relacionales en cascada. |
 | **Transferencia y Copias de Seguridad** | [database-transfer/README.md](database-transfer/README.md) | Panel de administración de volcados PostgreSQL, descarga de copias `.dump`, área de subida con validación previa de archivos y barreras de confirmación tipada antes de restaurar. |
 | **Contenido Editorial e Inicio** | [home-content/README.md](home-content/README.md) | Visor de artículos de noticias y comunicados oficiales, vista modal de lectura y tarjetas interactivas del quinteto ideal de la jornada (*Team of the Week*). |
