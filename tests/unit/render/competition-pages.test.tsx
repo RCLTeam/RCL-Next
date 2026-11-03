@@ -79,7 +79,13 @@ const home: Team = {
   logoUrl: null,
   discordRoleId: '123456789012345678'
 };
-const away: Team = { id: 'away', name: 'Cuervos', shortName: 'CUE', logoUrl: null };
+const away: Team = {
+  id: 'away',
+  name: 'Cuervos',
+  shortName: 'CUE',
+  logoUrl: null,
+  discordRoleId: '0'
+};
 const playoffRound = { id: '3', sequence: 3, stage: 'playoff', name: 'Gran final' };
 const match: Match = {
   id: 'match-1',

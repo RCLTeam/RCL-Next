@@ -1,3 +1,4 @@
+import { isActiveTeam } from '../../../features/competition/team-visibility.js';
 import type {
   Match,
   Standing,
@@ -26,12 +27,24 @@ export function buildPlayoff(
   matches: Match[],
   standings: Standing[]
 ): Record<SlotId, BracketEntry> {
+  const activeStandings = standings
+    .filter((row) => isActiveTeam(row.team))
+    .sort((a, b) => a.position - b.position);
+  const teamIndex = new Map(standings.map((row) => [row.team.id, row.team]));
+  const eligible = (team: Team | undefined) =>
+    !team || isActiveTeam(teamIndex.get(team.id) ?? team);
   const games = matches
-    .filter((match) => match.round?.stage === 'playoff' && match.status !== 'cancelled')
+    .filter(
+      (match) =>
+        match.round?.stage === 'playoff' &&
+        match.status !== 'cancelled' &&
+        eligible(match.homeTeam) &&
+        eligible(match.awayTeam)
+    )
     .sort(
       (a, b) => (a.round?.sequence ?? 0) - (b.round?.sequence ?? 0) || a.id.localeCompare(b.id)
     );
-  const seed = (position: number) => standings.find((row) => row.position === position)?.team;
+  const seed = (position: number) => activeStandings[position - 1]?.team;
   const used = new Set<string>();
   const entry = (teams: BracketEntry['teams'], match?: Match): BracketEntry => {
     if (match) used.add(match.id);

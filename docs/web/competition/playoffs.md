@@ -21,6 +21,8 @@ El formato previsto es BO5. Cada partido publicado muestra su valor real de `bes
 
 `PlayoffsPage` obtiene calendario, jornadas y clasificación regular mediante `useCompetition`. `PlayoffFormat` llama a la función pura `buildPlayoff` de `playoff-model.ts`.
 
+La clasificación se filtra con `isActiveTeam`, igual que la tabla pública, y las posiciones se renumeran entre los equipos activos. Los roles negativos, ausentes o nulos no clasifican. Los partidos publicados con participantes inactivos tampoco alimentan el cuadro; si hay discrepancias con el calendario, se usa el estado del equipo en la clasificación.
+
 1. Se excluyen los partidos cancelados y se filtran partidos con `round.stage === 'playoff'` y se ordenan por secuencia de jornada e identificador.
 2. Los dos cruces iniciales se buscan en la primera jornada publicada, excluyendo partidos del 5.º y 6.º. El cruce del líder se identifica por su equipo cuando está disponible.
 3. `outcome` obtiene ganador y perdedor únicamente de partidos `completed` o `forfeit` usando primero `winnerTeamId`. Una incomparecencia exige un ganador explícito, incluso con marcador 0-0. Para resultados finalizados sin ese campo se conserva la comparación de marcadores desiguales; un identificador ajeno a los participantes no produce avances. Los partidos programados, en directo y cancelados no propagan equipos.
@@ -39,7 +41,7 @@ La asignación presupone un calendario correspondiente a este formato, una clasi
 
 ## Presentación
 
-- Cuadro ampliado al 150 %, con desplazamiento horizontal y acceso mediante teclado.
+- Cuadro escalado según el ancho real del contenedor entre el 100 % y el 150 %, actualizado mediante ResizeObserver. En pantallas pequeñas se conserva el tamaño mínimo legible y el desplazamiento horizontal queda dentro del cuadro, accesible mediante teclado.
 - Final upper alineada verticalmente con final lower; las conexiones de la gran final llegan al centro de cada fila de equipo.
 - Escudos y nombres reales sustituyen los placeholders. Los marcadores solo se muestran en partidos en directo, finalizados o por incomparecencia.
 - El ganador confirmado se destaca en lima. Estado y horario aparecen en la casilla; las fechas usan la zona horaria de la liga.

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { brandAssets } from '../../../shared/resources/assets.js';
 import '../leagues/leagues.css';
 import { matchStatus } from '../../../features/competition/components/MatchCard.js';
@@ -60,6 +60,17 @@ const slots = [
 
 export function PlayoffFormat({ matches, standings }: { matches: Match[]; standings: Standing[] }) {
   const bracket = buildPlayoff(matches, standings);
+  const viewport = useRef<HTMLElement>(null);
+  const [scale, setScale] = useState(1);
+  useEffect(() => {
+    const element = viewport.current;
+    if (!element) return;
+    const resize = () => setScale(Math.min(1.5, Math.max(1, element.clientWidth / 1240)));
+    resize();
+    const observer = new ResizeObserver(resize);
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
   return (
     <section className="playoff-format" aria-labelledby="playoff-format-title">
       <header className="playoff-section-heading">
@@ -75,11 +86,12 @@ export function PlayoffFormat({ matches, standings }: { matches: Match[]; standi
       </p>
       <section
         className="bracket-scroll"
+        ref={viewport}
         // biome-ignore lint/a11y/noNoninteractiveTabindex: Allows keyboard scrolling of the complete bracket.
         tabIndex={0}
         aria-label="Formato de playoffs: cuadro desplazable horizontalmente"
       >
-        <div className="playoff-map">
+        <div className="playoff-map" style={{ zoom: scale }}>
           <svg
             className="playoff-connections"
             viewBox="0 0 1240 650"

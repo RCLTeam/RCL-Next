@@ -131,7 +131,11 @@ function SiteFooter() {
           </div>
           <div>
             <h2>Comunidad</h2>
-            <SiteLink href="https://discord.gg/sjBAv2kZ7" target="_blank" rel="noopener noreferrer">
+            <SiteLink
+              href="https://discord.gg/qKcM5eu38y"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
               Discord
             </SiteLink>
             <SiteLink href="https://x.com/RCL_LoL" target="_blank" rel="noopener noreferrer">
